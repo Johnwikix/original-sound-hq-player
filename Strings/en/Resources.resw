@@ -2518,9 +2518,6 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Off by default. Useful when reducing bit depth after processing; disable for bit-transparent playback.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed cutoff (Hz)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed amount (%)</value></data>
-  <data name="MusicAdditionalTags.Header" xml:space="preserve">
-    <value>Additional music information</value>
-  </data>
   <data name="SortOrderAlbumArtist" xml:space="preserve">
     <value>Album artist</value>
   </data>

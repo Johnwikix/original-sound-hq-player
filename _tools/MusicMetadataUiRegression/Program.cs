@@ -34,21 +34,19 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
         try
         {
             await LoadingRegression.RunAsync(window);
-            var source = new Music { Id = 1, Title = "Original" };
+            var source = new Music { Id = 1, Title = "Original", Path = new string('D', 300), LastLevelFolderPath = new string('F', 120) };
             var panel = new MetadataPanel(source);
             window.Content = panel;
             window.AppWindow.MoveAndResize(new(-30000, -30000, 850, 700));
             window.Activate();
             await Task.Delay(150);
-            var area = (Expander)panel.FindName("OptionalTags");
-            Check(!area.IsExpanded && (string)area.Header == "其他音乐信息", "Absent tags are collapsed with localized header");
-            area.IsExpanded = true;
-            await Task.Delay(100);
+            var area = (Grid)panel.FindName("OptionalTags");
+            Check(area.Visibility == Visibility.Visible && area.ActualWidth > 400, "Optional tags grid is always visible");
             string[] names = ["AlbumArtist", "Genre", "Composer", "Lyricist", "Conductor", "CatalogNumber"];
             foreach (string name in names)
             {
                 var input = (TextBox)panel.FindName(name + "Input");
-                Check(input.Text == "" && input.PlaceholderText == "未提供（可选）" && input.ActualWidth > 100,
+                Check(input.Text == "" && input.PlaceholderText == "未提供（可选）" && input.ActualWidth > 100 && input.ActualHeight < 100,
                     name + " empty display and layout");
                 input.Text = name + " value";
             }
@@ -56,15 +54,21 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             var tags = AdditionalMusicMetadata.From(panel.MetadataEditor.Draft);
             Check(tags == new AdditionalMusicMetadata("AlbumArtist value", "Genre value", "Composer value", "Lyricist value", "Conductor value", "CatalogNumber value"),
                 "All six shipping two-way bindings update the production model");
+            var pathInput = (TextBox)panel.FindName("PathInput");
+            Check(pathInput.IsReadOnly && pathInput.TextWrapping == TextWrapping.NoWrap,
+                "Path row is a read-only single-line text box");
+            Check(pathInput.ActualHeight <= 32 && pathInput.ActualWidth > 300 && pathInput.Text.Length == 300,
+                $"300-char path stays on one half-width line (h={pathInput.ActualHeight:F0}, w={pathInput.ActualWidth:F0}, len={pathInput.Text.Length})");
+            Check(((TextBox)panel.FindName("LastFolderInput")).IsReadOnly, "Folder row is read-only");
             Check(AdditionalMusicMetadata.From(source).IsEmpty, "Editing UI retains a private draft");
             var saved = panel.MetadataEditor.Capture();
             Check(panel.MetadataEditor.AcceptSaved(saved) && source.AlbumArtist == "AlbumArtist value", "Successful snapshot publishes tags");
             var remote = new MetadataPanel(new Music { SourceId = 1, Genre = "Jazz", AdditionalMetadataRead = true });
             window.Content = remote;
             await Task.Delay(100);
-            Check(((Expander)remote.FindName("OptionalTags")).IsExpanded, "Existing tags expand automatically");
+            Check(((TextBox)remote.FindName("GenreInput")).Text == "Jazz", "Existing tags populate the visible grid");
             foreach (string name in names) Check(((TextBox)remote.FindName(name + "Input")).IsReadOnly, "Remote tag is read-only: " + name);
-            File.WriteAllText(ResultPath, "PASS: shipping loading/content bindings after real old-database backfill; loading/save/failure transitions.\nPASS: shipping optional-tag XAML compiled bindings; six editable fields; sparse default; localized labels/placeholders; layout; private draft; saved snapshot; populated expansion; remote read-only.");
+            File.WriteAllText(ResultPath, "PASS: shipping loading/content bindings after real old-database backfill; loading/save/failure transitions.\nPASS: shipping optional-tag XAML compiled bindings; six always-visible editable fields; sparse default; localized labels/placeholders; layout; private draft; saved snapshot; populated tags; remote read-only; read-only single-line path and folder rows.");
         }
         catch (Exception ex) { File.WriteAllText(ResultPath, "FAIL: " + ex); }
         window.Close();

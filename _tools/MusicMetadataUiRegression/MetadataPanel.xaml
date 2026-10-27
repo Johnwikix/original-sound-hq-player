@@ -1,17 +1,46 @@
-<UserControl x:Class="MusicMetadataUiRegression.MetadataPanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Grid Padding="20"><Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Visibility="{x:Bind BoolToVisibility(IsLoading), Mode=OneWay}" x:Name="LoadingOverlay">
+<UserControl x:Class="MusicMetadataUiRegression.MetadataPanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Grid Padding="20"><Grid.Resources><Style xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Key="CopyableInfoTextBox" TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+                <Setter Property="IsReadOnly" Value="True" />
+                <Setter Property="IsTabStop" Value="False" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="TextWrapping" Value="NoWrap" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
+            </Style>
+        </Grid.Resources><Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Visibility="{x:Bind BoolToVisibility(IsLoading), Mode=OneWay}" x:Name="LoadingOverlay">
             <ProgressRing Width="100" Height="100" HorizontalAlignment="Center" VerticalAlignment="Center" IsActive="True" />
             <TextBlock Margin="0,180,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="正在处理保存，请稍候..." />
         </Grid>
 
-        <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="EditorContent" Visibility="{x:Bind BoolToNVisibility(IsLoading), Mode=OneWay}"><Expander Margin="12,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="{x:Bind MetadataEditor.IsAdditionalExpanded, Mode=TwoWay}" Header="其他音乐信息" x:Name="OptionalTags">
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="12">
-                            <TextBox Grid.Row="0" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="专辑艺术家" PlaceholderText="未提供（可选）" x:Name="AlbumArtistInput" />
-                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="流派" PlaceholderText="未提供（可选）" x:Name="GenreInput" />
-                            <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="作曲者" PlaceholderText="未提供（可选）" x:Name="ComposerInput" />
-                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="作词者" PlaceholderText="未提供（可选）" x:Name="LyricistInput" />
-                            <TextBox Grid.Row="2" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="指挥" PlaceholderText="未提供（可选）" x:Name="ConductorInput" />
-                            <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="目录编号" PlaceholderText="未提供（可选）" x:Name="CatalogNumberInput" />
-                        </Grid>
-                    </Expander>
+        <StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="EditorContent" Visibility="{x:Bind BoolToNVisibility(IsLoading), Mode=OneWay}"><Grid x:Name="OptionalTags" Margin="12,0" ColumnDefinitions="*,*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="4">
+                        <TextBox Grid.Row="0" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="专辑艺术家" PlaceholderText="未提供（可选）" x:Name="AlbumArtistInput" />
+                        <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="流派" PlaceholderText="未提供（可选）" x:Name="GenreInput" />
+                        <TextBox Grid.Row="0" Grid.Column="2" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="作曲者" PlaceholderText="未提供（可选）" x:Name="ComposerInput" />
+                        <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="作词者" PlaceholderText="未提供（可选）" x:Name="LyricistInput" />
+                        <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="指挥" PlaceholderText="未提供（可选）" x:Name="ConductorInput" />
+                        <TextBox Grid.Row="1" Grid.Column="2" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="目录编号" PlaceholderText="未提供（可选）" x:Name="CatalogNumberInput" />
+                    </Grid>
 
-                    </Grid></Grid></UserControl>
+                    <StackPanel x:Name="FileInfoSection" Margin="12,0" Spacing="6">
+                        <StackPanel>
+                            <TextBlock Margin="0,0,0,2" FontSize="12" Opacity="0.7" Text="路径" />
+                            <TextBox x:Name="PathInput" Style="{StaticResource CopyableInfoTextBox}" Text="{x:Bind MusicDetail.Path, Mode=OneWay}" />
+                        </StackPanel>
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Margin="0,0,0,2" FontSize="12" Opacity="0.7" Text="最后目录" />
+                                <TextBox x:Name="LastFolderInput" Style="{StaticResource CopyableInfoTextBox}" Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Margin="0,0,0,2" FontSize="12" Opacity="0.7" Text="创建时间" />
+                                <TextBox Style="{StaticResource CopyableInfoTextBox}" Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Margin="0,0,0,2" FontSize="12" Opacity="0.7" Text="修改时间" />
+                                <TextBox Style="{StaticResource CopyableInfoTextBox}" Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    </StackPanel></Grid></UserControl>

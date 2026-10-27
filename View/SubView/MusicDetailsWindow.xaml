@@ -55,7 +55,7 @@
                 Grid.Row="0"
                 Padding="14,8,14,4"
                 VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="10">
+                <StackPanel Spacing="8">
                     <StackPanel Margin="12,0" Spacing="6">
                         <StackPanel>
                             <TextBlock
@@ -95,50 +95,49 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Expander
-                        x:Uid="MusicAdditionalTags"
+                    <Grid
+                        x:Name="OptionalTags"
                         Margin="12,0"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Stretch"
-                        IsExpanded="{x:Bind MetadataEditor.IsAdditionalExpanded, Mode=TwoWay}">
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="12">
-                            <TextBox
-                                x:Uid="MusicTagAlbumArtist"
-                                Grid.Row="0" Grid.Column="0"
-                                IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
-                                Text="{x:Bind MetadataEditor.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox
-                                x:Uid="MusicTagGenre"
-                                Grid.Row="0" Grid.Column="1"
-                                IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
-                                Text="{x:Bind MetadataEditor.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox
-                                x:Uid="MusicTagComposer"
-                                Grid.Row="1" Grid.Column="0"
-                                IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
-                                Text="{x:Bind MetadataEditor.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox
-                                x:Uid="MusicTagLyricist"
-                                Grid.Row="1" Grid.Column="1"
-                                IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
-                                Text="{x:Bind MetadataEditor.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox
-                                x:Uid="MusicTagConductor"
-                                Grid.Row="2" Grid.Column="0"
-                                IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
-                                Text="{x:Bind MetadataEditor.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox
-                                x:Uid="MusicTagCatalogNumber"
-                                Grid.Row="2" Grid.Column="1"
-                                IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
-                                Text="{x:Bind MetadataEditor.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </Grid>
-                    </Expander>
+                        ColumnDefinitions="*,*,*"
+                        ColumnSpacing="10"
+                        RowDefinitions="Auto,Auto"
+                        RowSpacing="4">
+                        <TextBox
+                            x:Uid="MusicTagAlbumArtist"
+                            Grid.Row="0" Grid.Column="0"
+                            IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                            Text="{x:Bind MetadataEditor.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox
+                            x:Uid="MusicTagGenre"
+                            Grid.Row="0" Grid.Column="1"
+                            IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                            Text="{x:Bind MetadataEditor.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox
+                            x:Uid="MusicTagComposer"
+                            Grid.Row="0" Grid.Column="2"
+                            IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                            Text="{x:Bind MetadataEditor.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox
+                            x:Uid="MusicTagLyricist"
+                            Grid.Row="1" Grid.Column="0"
+                            IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                            Text="{x:Bind MetadataEditor.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox
+                            x:Uid="MusicTagConductor"
+                            Grid.Row="1" Grid.Column="1"
+                            IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                            Text="{x:Bind MetadataEditor.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox
+                            x:Uid="MusicTagCatalogNumber"
+                            Grid.Row="1" Grid.Column="2"
+                            IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                            Text="{x:Bind MetadataEditor.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
 
                     <Grid
                         Margin="12,0"
                         ColumnDefinitions="*,*,*,*"
-                        ColumnSpacing="14"
+                        ColumnSpacing="10"
                         RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
@@ -198,7 +197,7 @@
                     <Grid
                         Margin="12,0"
                         ColumnDefinitions="*,*,*,*"
-                        ColumnSpacing="14"
+                        ColumnSpacing="10"
                         RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
@@ -235,9 +234,10 @@
                     </Grid>
 
                     <Grid
+                        x:Name="FileInfoSection"
                         Margin="12,0"
                         ColumnDefinitions="*,*"
-                        ColumnSpacing="14"
+                        ColumnSpacing="10"
                         RowDefinitions="Auto,Auto"
                         RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
@@ -246,11 +246,10 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="Wrap" />
+                            <TextBox
+                                x:Name="LastFolderInput"
+                                IsReadOnly="True"
+                                Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="1">
                             <TextBlock
@@ -258,11 +257,10 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind MusicDetail.Path, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="Wrap" />
+                            <TextBox
+                                x:Name="PathInput"
+                                IsReadOnly="True"
+                                Text="{x:Bind MusicDetail.Path, Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="0">
                             <TextBlock
@@ -270,10 +268,9 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <TextBox
+                                IsReadOnly="True"
+                                Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="1">
                             <TextBlock
@@ -281,10 +278,9 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <TextBox
+                                IsReadOnly="True"
+                                Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}" />
                         </StackPanel>
                     </Grid>
 

@@ -2518,9 +2518,6 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Varsayılan kapalıdır. DSP sonrası bit derinliğini azaltmak için; bit saydam çalma için kapatın.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed kesim frekansı (Hz)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed yoğunluğu (%)</value></data>
-  <data name="MusicAdditionalTags.Header" xml:space="preserve">
-    <value>Ek müzik bilgileri</value>
-  </data>
   <data name="SortOrderAlbumArtist" xml:space="preserve">
     <value>Albüm sanatçısı</value>
   </data>

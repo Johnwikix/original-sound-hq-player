@@ -21,7 +21,7 @@ try
 {
     var source = new Music { Id = 1, Path = "test.flac", Title = "original", Author = "artist", PlayCount = 7, IsFavorite = true };
     var editor = new MusicMetadataEditorViewModel(source);
-    Check(!editor.IsAdditionalExpanded && AdditionalMusicMetadata.From(editor.Draft).IsEmpty, "Missing metadata is empty and collapsed, with no invented labels");
+    Check(AdditionalMusicMetadata.From(editor.Draft).IsEmpty, "Missing metadata is empty with no invented labels");
     Check(!editor.Capture().AdditionalMetadataRead, "Unknown tags are not mistaken for an explicit clear");
     editor.Draft.Title = "draft";
     Check(source.Title == "original", "Typing does not mutate the library row");
@@ -32,12 +32,12 @@ try
     Check(!editor.AcceptSaved(snapshot) && editor.Draft.Title == "newer draft" && source.Title == "draft", "Late edits remain in the window while the committed snapshot is published");
     Check(source.PlayCount == 7 && source.IsFavorite, "Metadata commit preserves playback-owned state");
     var emptyEditor = new MusicMetadataEditorViewModel(new Music { AdditionalMetadataRead = true });
-    Check(emptyEditor.Capture().AdditionalMetadataRead && !emptyEditor.IsAdditionalExpanded, "Known-empty tags remain distinct from unread tags");
+    Check(emptyEditor.Capture().AdditionalMetadataRead, "Known-empty tags remain distinct from unread tags");
     Check(!emptyEditor.ApplyLoaded(AdditionalMusicMetadata.From(new Music())), "Confirming absent tags does not request a library list rebuild");
     var loadingEditor = new MusicMetadataEditorViewModel(new Music());
     var tags = new AdditionalMusicMetadata("专辑艺术家", "Classical", "作曲者", "作词者", "指挥", "CAT-001");
     loadingEditor.ApplyLoaded(tags);
-    Check(loadingEditor.IsAdditionalExpanded && AdditionalMusicMetadata.From(loadingEditor.Draft) == tags, "On-demand file metadata populates the draft");
+    Check(AdditionalMusicMetadata.From(loadingEditor.Draft) == tags, "On-demand file metadata populates the draft");
     Check(tags.Matches("cat-001") && !default(AdditionalMusicMetadata).Matches("anything"), "Sparse metadata search handles default nulls and case folding");
 
     var db = new SQLiteAsyncConnection(Path.Combine(root, "old.db"));

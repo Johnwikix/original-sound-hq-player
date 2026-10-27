@@ -12,16 +12,12 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
     /// <summary>获取仅供窗口编辑的曲目标签草稿。</summary>
     public Music Draft { get; }
 
-    /// <summary>获取或设置可选信息区域是否展开；无标签时默认收起。</summary>
-    public bool IsAdditionalExpanded { get => field; set => SetProperty(ref field, value); }
-
     /// <summary>初始化曲目属性草稿。</summary>
     public MusicMetadataEditorViewModel(Music source)
     {
         _source = source;
         Draft = Copy(source);
         _initialAdditional = AdditionalMusicMetadata.From(source);
-        IsAdditionalExpanded = !_initialAdditional.IsEmpty;
     }
 
     /// <summary>在窗口尚未开放编辑时应用从文件补读且已入库的标签。</summary>
@@ -34,7 +30,6 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
         {
             tags.ApplyTo(Draft);
             _initialAdditional = tags;
-            IsAdditionalExpanded = !tags.IsEmpty;
         }
         return changed;
     }

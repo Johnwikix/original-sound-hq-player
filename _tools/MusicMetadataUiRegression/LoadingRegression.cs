@@ -97,7 +97,7 @@ internal static class LoadingRegression
     private static void CheckState(MetadataPanel panel, bool loading, string stage)
     {
         var overlay = (Grid)panel.FindName("LoadingOverlay");
-        var editor = (Grid)panel.FindName("EditorContent");
+        var editor = (StackPanel)panel.FindName("EditorContent");
         if (overlay.Visibility != (loading ? Visibility.Visible : Visibility.Collapsed) ||
             editor.Visibility != (loading ? Visibility.Collapsed : Visibility.Visible))
             throw new Exception($"{stage}: overlay={overlay.Visibility}, editor={editor.Visibility}; expected loading={loading}");

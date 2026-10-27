@@ -2520,9 +2520,6 @@ SHA-256：{5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>默认关闭。用于处理后降低位深；开启会改变样本，原始位透明播放应关闭。</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed 截止频率（Hz）</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed 强度（%）</value></data>
-  <data name="MusicAdditionalTags.Header" xml:space="preserve">
-    <value>其他音乐信息</value>
-  </data>
   <data name="SortOrderAlbumArtist" xml:space="preserve">
     <value>专辑艺术家</value>
   </data>

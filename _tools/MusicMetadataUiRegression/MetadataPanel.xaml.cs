@@ -31,4 +31,5 @@ public sealed partial class MetadataPanel : UserControl, INotifyPropertyChanged
 
     private Visibility BoolToVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
     private Visibility BoolToNVisibility(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+    private string ConvertTime(DateTime time) => time.ToString("yyyy-MM-dd HH:mm:ss");
 }

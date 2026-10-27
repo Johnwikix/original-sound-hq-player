@@ -1,3 +1,10 @@
+## 2026-10-27 属性窗口信息区紧凑化
+- `View/SubView/MusicDetailsWindow.xaml`：移除"其他音乐信息"Expander，六项可选标签改为常显 3 列网格；最后目录/路径/创建时间/修改时间由会换行的 TextBlock 改为默认样式 `IsReadOnly` TextBox（单行不换行、可复制、不可编辑），维持 2×2 网格；整体列间距 14→10、区块间距 10→8。
+- `ViewModel/Controls/MusicMetadataEditorViewModel.cs`：删除仅服务于折叠状态的 `IsAdditionalExpanded`。
+- `Strings/*/Resources.resw`：删除不再使用的 `MusicAdditionalTags.Header`（七语言）。
+- `_tools/MusicMetadataRegression`、`_tools/MusicMetadataUiRegression`：适配无展开态断言；UI 夹具改为提取常显标签网格与文件信息区，新增 300 字符路径单行不换行与只读断言。
+- 验证：中间版本经元数据回归 42/42、UI 回归与 lvt 可见窗口几何实测（拦下样式未 `BasedOn` 丢模板、网格漏 `RowDefinitions` 两行重叠两个缺陷）；最终改默认样式后按指示未重跑回归。
+
 ## 2026-10-27 文件夹重扫接入标题栏进度指示
 - `ViewModel/Pages/AddFolderViewModel.cs`、`Services/MusicDatabaseService.Scanning.cs`：重新扫描（含文件夹卡片入口）在标题栏进度指示器注册"正在重新扫描"条目；分母取扫描根现有歌曲行数（新增 `CountSongsInFolderAsync` 计数查询），百分比整数前进封顶 99、完成后移除，外部导入对账与空扫描根保持不定进度；复用 `LibraryRescanning` 键与既有七语言资源，无新增字符串。
 - `_tools/FolderScanRegression`：链接生产 ProgressCenter，断言重扫期间条目激活且为确定进度、完成后移除；全套回归通过。

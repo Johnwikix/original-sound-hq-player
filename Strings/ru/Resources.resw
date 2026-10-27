@@ -2518,9 +2518,6 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>По умолчанию выключен. Для уменьшения разрядности после DSP; выключите для побитовой передачи.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Частота Crossfeed (Гц)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Интенсивность Crossfeed (%)</value></data>
-  <data name="MusicAdditionalTags.Header" xml:space="preserve">
-    <value>Дополнительные сведения</value>
-  </data>
   <data name="SortOrderAlbumArtist" xml:space="preserve">
     <value>Исполнитель альбома</value>
   </data>

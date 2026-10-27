@@ -2518,9 +2518,6 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Standardmäßig aus. Zur Wortbreitenreduktion nach DSP; für bittransparente Wiedergabe ausschalten.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed-Grenzfrequenz (Hz)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed-Stärke (%)</value></data>
-  <data name="MusicAdditionalTags.Header" xml:space="preserve">
-    <value>Weitere Musikinformationen</value>
-  </data>
   <data name="SortOrderAlbumArtist" xml:space="preserve">
     <value>Albuminterpret</value>
   </data>
