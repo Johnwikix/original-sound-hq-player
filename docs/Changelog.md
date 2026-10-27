@@ -1,3 +1,7 @@
+## 2026-10-27 文件夹重扫接入标题栏进度指示
+- `ViewModel/Pages/AddFolderViewModel.cs`、`Services/MusicDatabaseService.Scanning.cs`：重新扫描（含文件夹卡片入口）在标题栏进度指示器注册"正在重新扫描"条目；分母取扫描根现有歌曲行数（新增 `CountSongsInFolderAsync` 计数查询），百分比整数前进封顶 99、完成后移除，外部导入对账与空扫描根保持不定进度；复用 `LibraryRescanning` 键与既有七语言资源，无新增字符串。
+- `_tools/FolderScanRegression`：链接生产 ProgressCenter，断言重扫期间条目激活且为确定进度、完成后移除；全套回归通过。
+
 ## 2026-10-27 修复歌曲属性窗口持续显示等待状态
 - `View/SubView/MusicDetailsWindow.xaml`：等待层和编辑区可见性改用 OneWay 绑定，响应标签补读结束及保存后的状态变化，修复新增标签后打开属性始终显示“正在处理保存”的回归。
 - `_tools/MusicMetadataUiRegression`：加入旧库不重扫、真实标签补读与 WinUI 可见性切换回归，覆盖保存失败与重试时的状态恢复。

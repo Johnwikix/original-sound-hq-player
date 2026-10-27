@@ -155,12 +155,45 @@ public partial class AddFolderViewModel : ObservableObject
         }
     });
 
-    public Task RescanFolderWithLoadingAsync(int folderId) => RunOperationAsync(async () =>
+    public Task RescanFolderWithLoadingAsync(int folderId) => RunOperationAsync(() => RescanFolderWithProgressAsync(folderId));
+
+    private async Task RescanFolderWithProgressAsync(int folderId)
     {
         // Existing songs remain visible; new songs use the same committed-batch callback as adding.
         _needsReconcile = true;
-        await Task.Run(() => _database.RescanFolder(folderId, ApplyBatchAsync));
-    });
+        var folder = await _database.GetFolder(folderId);
+        if (folder is null) return;
+        var progress = _appViewModel.Progress;
+        // 分母取库内现有行数：重扫以复查既有文件为主，新增/缺失文件只让百分比近似；
+        // 外部导入虚拟行是哨兵路径且只做存在性对账，无计数回调，保持不定进度。
+        int total = folder.IsExternalImport ? 0 : await _database.CountSongsInFolderAsync(folder.Path);
+        progress.Begin(ProgressCenter.Keys.LibraryRescanning, ToolUtils.GetString("ProgressRescanning"));
+        if (total > 0) progress.Report(ProgressCenter.Keys.LibraryRescanning, 0);
+        long checkedCount = 0;
+        int lastPercent = 0;
+        var gate = new object();
+        try
+        {
+            await Task.Run(() => _database.RescanFolder(folderId, ApplyBatchAsync, count =>
+            {
+                // 枚举跳过与批次提交在不同线程推进计数；整数百分点前进才上报，避免逐文件派发 UI 更新。
+                int percent;
+                lock (gate)
+                {
+                    checkedCount += count;
+                    if (total == 0) return;
+                    percent = (int)Math.Min(99, checkedCount * 100 / total);
+                    if (percent <= lastPercent) return;
+                    lastPercent = percent;
+                }
+                progress.Report(ProgressCenter.Keys.LibraryRescanning, percent);
+            }));
+        }
+        finally
+        {
+            progress.Complete(ProgressCenter.Keys.LibraryRescanning);
+        }
+    }
 
     public Task RemoveFolderWithLoadingAsync(int folderId) => RunOperationAsync(async () =>
     {

@@ -22,6 +22,7 @@
     <Compile Include="../../Services/FolderCommands.cs" />
     <Compile Include="../../Services/FolderAccessService.cs" />
     <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
+    <Compile Include="../../ViewModel/ProgressCenter.cs" />
     <Compile Include="../../Model/Folder.cs" />
     <Compile Include="../../Model/SubFolder.cs" />
     <Compile Include="../../Model/MusicLyrics.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyricsRecord.cs" />

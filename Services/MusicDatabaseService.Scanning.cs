@@ -130,6 +130,16 @@ public partial class MusicDatabaseService
                 root, prefix.Length, prefix);
         }
 
+        /// <summary>扫描根下现有歌曲行数（含子目录），与 GetSongsInFolderAsync 的递归口径一致；供重扫进度做分母，不物化行。</summary>
+        public Task<int> CountSongsInFolderAsync(string folderPath)
+        {
+            string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folderPath));
+            string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
+            return _dbConnection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,?) = ? COLLATE NOCASE",
+                root, prefix.Length, prefix);
+        }
+
         public async Task RemoveFolder(int folderId)
         {
             var folder = await GetFolder(folderId);
@@ -186,7 +196,8 @@ public partial class MusicDatabaseService
             }
         }
 
-        public async Task RescanFolder(int folderId, Func<IReadOnlyList<Music>, Task>? onBatchInserted = null)
+        public async Task RescanFolder(int folderId, Func<IReadOnlyList<Music>, Task>? onBatchInserted = null,
+            Action<int>? onFilesChecked = null)
         {
             var folder = await GetFolder(folderId);
             if (folder is null) return;
@@ -196,7 +207,7 @@ public partial class MusicDatabaseService
                 await ReconcileExternalImportsAsync();
                 return;
             }
-            await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted);
+            await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted, onFilesChecked: onFilesChecked);
         }
 
         public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)

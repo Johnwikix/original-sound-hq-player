@@ -92,6 +92,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
         public bool IsPlaybackEngineReady => false;
+        public ProgressCenter Progress { get; } = new();
         public List<Music> SongsSource { get; } = [];
         public Music? FindById(int id) => SongsSource.Find(music => music.Id == id);
         public int SourceNotifications { get; private set; }
