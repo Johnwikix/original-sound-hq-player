@@ -40,7 +40,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             window.AppWindow.MoveAndResize(new(-30000, -30000, 850, 700));
             window.Activate();
             await Task.Delay(150);
-            var area = (Grid)panel.FindName("OptionalTags");
+            var area = (StackPanel)panel.FindName("OptionalTags");
             Check(area.Visibility == Visibility.Visible && area.ActualWidth > 400, "Optional tags grid is always visible");
             string[] names = ["AlbumArtist", "Genre", "Composer", "Lyricist", "Conductor", "CatalogNumber"];
             foreach (string name in names)

@@ -2524,40 +2524,40 @@ SHA-256: {5}
   <data name="SortOrderGenre" xml:space="preserve">
     <value>ジャンル</value>
   </data>
-  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+  <data name="MusicTagAlbumArtist.Text" xml:space="preserve">
     <value>アルバムアーティスト</value>
   </data>
-  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagAlbumArtistInput.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
-  <data name="MusicTagGenre.Header" xml:space="preserve">
+  <data name="MusicTagGenre.Text" xml:space="preserve">
     <value>ジャンル</value>
   </data>
-  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagGenreInput.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
-  <data name="MusicTagComposer.Header" xml:space="preserve">
+  <data name="MusicTagComposer.Text" xml:space="preserve">
     <value>作曲者</value>
   </data>
-  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagComposerInput.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
-  <data name="MusicTagLyricist.Header" xml:space="preserve">
+  <data name="MusicTagLyricist.Text" xml:space="preserve">
     <value>作詞者</value>
   </data>
-  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagLyricistInput.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
-  <data name="MusicTagConductor.Header" xml:space="preserve">
+  <data name="MusicTagConductor.Text" xml:space="preserve">
     <value>指揮者</value>
   </data>
-  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagConductorInput.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
-  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+  <data name="MusicTagCatalogNumber.Text" xml:space="preserve">
     <value>カタログ番号</value>
   </data>
-  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagCatalogNumberInput.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍サンプリング周波数の上限</value></data>

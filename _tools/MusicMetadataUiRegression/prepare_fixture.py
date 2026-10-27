@@ -11,9 +11,19 @@ source = ET.parse(root / "View/SubView/MusicDetailsWindow.xaml")
 root_grid = source.getroot().find(ns + "Grid")
 loading = next(e for e in root_grid if "BoolToVisibility(IsLoading)" in e.get("Visibility", ""))
 content = next(e for e in root_grid if "BoolToNVisibility(IsLoading)" in e.get("Visibility", ""))
-area = next(e for e in source.iter(ns + "Grid") if e.get(xn + "Name") == "OptionalTags")
-assert len(list(area.iter(ns + "TextBox"))) == 6
-info = next(e for e in source.iter(ns + "StackPanel") if e.get(xn + "Name") == "FileInfoSection")
+parents = {c: p for p in source.iter() for c in p}
+def nearest_grid(e):
+    while e is not None and e.tag != ns + "Grid":
+        e = parents.get(e)
+    return e
+tag_boxes = [e for e in source.iter(ns + "TextBox") if (e.get(xn + "Uid") or "").startswith("MusicTag")]
+assert len(tag_boxes) == 6
+tag_grids = list(dict.fromkeys(nearest_grid(e) for e in tag_boxes))
+assert len(tag_grids) == 2
+area = ET.Element(ns + "StackPanel", {xn + "Name": "OptionalTags"})
+for grid in tag_grids:
+    area.append(grid)
+info = next(e for e in source.iter() if e.get(xn + "Name") == "FileInfoSection")
 page_resources = root_grid.find(ns + "Grid.Resources")
 resources = {e.get("name"): e.findtext("value") for e in ET.parse(root / "Strings/zh-CN/Resources.resw").getroot().findall("data")}
 for e in [*area.iter(), *info.iter(), *loading.iter()]:
@@ -21,8 +31,8 @@ for e in [*area.iter(), *info.iter(), *loading.iter()]:
     if uid:
         for prop in ("Header", "PlaceholderText", "Text"):
             if uid + "." + prop in resources: e.set(prop, resources[uid + "." + prop])
-        if uid != "LoadingGrid" and uid.startswith("MusicTag"):
-            e.set(xn + "Name", uid.removeprefix("MusicTag") + "Input")
+        if e.tag == ns + "TextBox" and uid.startswith("MusicTag") and uid.endswith("Input"):
+            e.set(xn + "Name", uid.removeprefix("MusicTag"))
 loading.set(xn + "Name", "LoadingOverlay")
 editor = ET.Element(ns + "StackPanel", {xn + "Name": "EditorContent", "Visibility": content.get("Visibility")})
 editor.append(area)

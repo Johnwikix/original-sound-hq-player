@@ -1,3 +1,9 @@
+## 2026-10-27 属性窗口标签区重排与标签样式统一
+- `View/SubView/MusicDetailsWindow.xaml`：标题|艺术家一行两列，专辑|专辑艺术家|流派一行三列，作曲|作词|指挥|目录号一行四列，信息区 5 行缩至 3 行；六个可选标签由 TextBox Header 改为与其余字段一致的 12px/70% TextBlock 标签，TextBox 改用 `MusicTag*Input` Uid 仅承载占位符。
+- `Strings/*/Resources.resw`：`MusicTag*.Header` 改名 `MusicTag*.Text`（标签），`MusicTag*.PlaceholderText` 改名 `MusicTag*Input.PlaceholderText`（七语言，值不变）。
+- `_tools/MusicMetadataUiRegression`：`prepare_fixture.py` 适配新结构（按 MusicTag Uid 定位两个网格包入 `OptionalTags` StackPanel、仅 TextBox 命名 `*Input`），并修复 72853f2b 遗留的 `FileInfoSection` 仍按 StackPanel 查找导致的生成失败；`Program.cs` 对应改类型；重新生成 `MetadataPanel.xaml`。
+- 验证：夹具生成脚本重跑通过；UI 回归按指示未重跑。
+
 ## 2026-10-27 属性窗口信息区紧凑化
 - `View/SubView/MusicDetailsWindow.xaml`：移除"其他音乐信息"Expander，六项可选标签改为常显 3 列网格；最后目录/路径/创建时间/修改时间由会换行的 TextBlock 改为默认样式 `IsReadOnly` TextBox（单行不换行、可复制、不可编辑），维持 2×2 网格；整体列间距 14→10、区块间距 10→8。
 - `ViewModel/Controls/MusicMetadataEditorViewModel.cs`：删除仅服务于折叠状态的 `IsAdditionalExpanded`。

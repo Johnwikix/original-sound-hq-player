@@ -2524,40 +2524,40 @@ SHA-256: {5}
   <data name="SortOrderGenre" xml:space="preserve">
     <value>Genre</value>
   </data>
-  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+  <data name="MusicTagAlbumArtist.Text" xml:space="preserve">
     <value>Album artist</value>
   </data>
-  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagAlbumArtistInput.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
-  <data name="MusicTagGenre.Header" xml:space="preserve">
+  <data name="MusicTagGenre.Text" xml:space="preserve">
     <value>Genre</value>
   </data>
-  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagGenreInput.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
-  <data name="MusicTagComposer.Header" xml:space="preserve">
+  <data name="MusicTagComposer.Text" xml:space="preserve">
     <value>Composer</value>
   </data>
-  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagComposerInput.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
-  <data name="MusicTagLyricist.Header" xml:space="preserve">
+  <data name="MusicTagLyricist.Text" xml:space="preserve">
     <value>Lyricist</value>
   </data>
-  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagLyricistInput.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
-  <data name="MusicTagConductor.Header" xml:space="preserve">
+  <data name="MusicTagConductor.Text" xml:space="preserve">
     <value>Conductor</value>
   </data>
-  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagConductorInput.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
-  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+  <data name="MusicTagCatalogNumber.Text" xml:space="preserve">
     <value>Catalog number</value>
   </data>
-  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+  <data name="MusicTagCatalogNumberInput.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Integer-multiple rate limit</value></data>
