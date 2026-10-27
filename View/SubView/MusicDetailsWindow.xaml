@@ -64,10 +64,7 @@
                                     Margin="0,0,0,2"
                                     FontSize="12"
                                     Opacity="0.7" />
-                                <TextBox
-                                    IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                    Text="{x:Bind MetadataEditor.Draft.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    TextWrapping="Wrap" />
+                                <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock
@@ -75,10 +72,7 @@
                                     Margin="0,0,0,2"
                                     FontSize="12"
                                     Opacity="0.7" />
-                                <TextBox
-                                    IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                    Text="{x:Bind MetadataEditor.Draft.Author, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    TextWrapping="Wrap" />
+                                <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Author, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                         </Grid>
 
@@ -89,10 +83,7 @@
                                     Margin="0,0,0,2"
                                     FontSize="12"
                                     Opacity="0.7" />
-                                <TextBox
-                                    IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                    Text="{x:Bind MetadataEditor.Draft.Album, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    TextWrapping="Wrap" />
+                                <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Album, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock
@@ -300,9 +291,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox
-                                IsReadOnly="True"
-                                Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}" />
+                            <TextBox IsReadOnly="True" Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="1">
                             <TextBlock
@@ -310,9 +299,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox
-                                IsReadOnly="True"
-                                Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}" />
+                            <TextBox IsReadOnly="True" Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}" />
                         </StackPanel>
                     </Grid>
 
@@ -519,9 +506,7 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="8">
-                    <Button
-                        x:Uid="SaveButton"
-                        IsEnabled="{x:Bind LyricsEditor.CanSaveFile, Mode=OneWay}">
+                    <Button x:Uid="SaveButton" IsEnabled="{x:Bind LyricsEditor.CanSaveFile, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout x:Name="ConfirmFlyout">
                                 <StackPanel>
