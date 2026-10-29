@@ -1,3 +1,7 @@
+## 2026-10-29 修正首页拼贴点击行为
+- `View/HomePage.xaml`：三图拼贴点击改为从对应歌曲开始播放当前推荐栏目队列，复用现有播放命令与可用条件，修复错误打开音乐属性窗口的行为。
+- `_tools/HomeUiRegression`：61 项通过，新增三个拼贴按钮的原生 UIA 点击回归，确认对应歌曲、推荐队列和未触发属性事件；x64 构建通过。
+
 ## 2026-10-29 移植 DevWinUI 轮播原版动效并保持拼贴同排
 - `View/Controls/HomeHeroCard*`：按 DevWinUI 10.8.0 `RunTextAnimation` 移植整组文字/按钮动效：700ms、横移 100→0、透明度 0→1、缩放 0.8→1；移除逐项延迟和自定义 easing。
 - `StoreCarouselImageMotion.cs`、`MusicCoverControl*`：移植 ImageFrame 的整幅 SlideLeft/SlideRight 与旧图淡出，包括首次进入；保留现有封面读取/解码/缓存链路，主视图保持单实例，当前/旧图最多各保留一张，快速切换和卸载释放自有源及动画。

@@ -159,7 +159,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             double shelfOffset = shelfScroll.HorizontalOffset;
             var coverBeforePlay = Descendants<MusicCoverControl>(shelf).First();
             var sourceBeforePlay = ((Image)coverBeforePlay.FindName("CoverImage")).Source;
-            var button = Descendants<Button>(page).First(b => ReferenceEquals(b.Command, home.PlaySongCommand));
+            var button = Descendants<Button>(shelf).First(b => ReferenceEquals(b.Command, home.PlaySongCommand));
             Check(button.IsEnabled && button.CommandParameter is HomeSong, "shipping template binds live commands and parameters");
             var selected = (HomeSong)button.CommandParameter;
             var peer = new ButtonAutomationPeer(button);
@@ -167,6 +167,19 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Wait(() => playback.LastId == selected.Music.Id);
             Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(selected.Queue.Select(m => m.Id)),
                 "native button invocation plays the explicit shelf queue");
+            bool openedDetails = false;
+            home.DetailsRequested += _ => openedDetails = true;
+            foreach (string name in new[] { "PrimaryThumbnail", "SecondaryThumbnail", "TertiaryThumbnail" })
+            {
+                var tile = (Button)carousel.FindName(name);
+                var song = (HomeSong)tile.CommandParameter;
+                playback.LastId = 0;
+                var tilePeer = new ButtonAutomationPeer(tile);
+                ((IInvokeProvider)tilePeer.GetPattern(PatternInterface.Invoke)).Invoke();
+                await Wait(() => playback.LastId == song.Music.Id);
+                Check(!openedDetails && app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(song.Queue.Select(m => m.Id)),
+                    name + " starts its song in the recommendation queue without opening music properties");
+            }
             await Task.Delay(450);
             Check(ReferenceEquals(initialSongs, home.Songs) && ReferenceEquals(initialThemes, home.Themes)
                 && Math.Abs(shelfOffset - shelfScroll.HorizontalOffset) < .5
