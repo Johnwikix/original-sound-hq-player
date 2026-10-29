@@ -2563,4 +2563,44 @@ SHA-256: {5}
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Tam sayı katı hız sınırı</value></data>
   <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Bu ortak sınır; normalleştirmede tahmini kaynak tepe noktalarını, kompresörde ses düzeyinden önce örnek tepelerini ve True Peak ile son PCM gerçek tepe tahminlerini sınırlar.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Özel</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>Seçimi yenile</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>MÜZİĞİNİZDEN</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>Dinlemeye başla</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>Öne çıkan seçimi çal</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>Bu şarkıyı çal</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>Favoriyi değiştir</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>Geçerli çalma kuyruğuna ekle</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Önceki seçim</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Sonraki seçim</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Son zamanlarda sık dinlenenler</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Farklı türleri keşfet</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>Müziğiniz hazırlanıyor</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Müziğinizle başlayın</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Bir müzik klasörü ekleyin. Dinledikleriniz ve favorileriniz önerilerinizi şekillendirsin.</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>Müzik klasörü ekle</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Müzik kaynaklarına erişilemiyor. Bağlantıyı kontrol edin veya kaynaklarınızı yönetin.</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>Yeniden dene</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>Kitaplığınızı keşfedin</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>Sizin için</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>Son zamanlarda sık dinlenenler</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>Farklı türleri keşfet</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>Tanıdık melodiler ve yeni keşifler, hepsi kitaplığınızdan.</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>Son zamanlarda keyifle dinlediğiniz müziğe dönün.</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>Farklı türlerle gününüze çeşitlilik katın.</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>{0} dinlediğiniz için</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>Sevdiğiniz türden: {0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>Favorilerinizden</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>Son zamanlarda sık dinlediğiniz</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>Kitaplığınızın farklı bir yönünü keşfedin</value></data>
+  <data name="HomeError" xml:space="preserve"><value>Öneriler güncellenemedi. Yeniden deneyin.</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>Müzik çalınamadı. Yeniden deneyin.</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>Başka bir seçime geç</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>Favoriyi değiştir</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>Bu şarkıyı çal</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Önceki seçim</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Sonraki seçim</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Geçerli çalma kuyruğuna ekle</value></data>
 </root>

@@ -107,10 +107,49 @@ internal static class CoverLoadQueue
         }
     }
 
+    /// <summary>返回由调用者独立拥有的封面源，沿用现有列表缩略图尺寸。</summary>
     public static async Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token)
     {
+        var decoded = await EnqueuePixelsAsync(music, token, CoverSize);
+        return decoded is null || token.IsCancellationRequested ? null : await CreateImageSourceAsync(decoded, token);
+    }
+
+    /// <summary>保存自有图片源与封面左侧边缘色，不向控件暴露 URL 或共享可释放的图片源。</summary>
+    public readonly record struct CoverArtwork(ImageSource? Source, Windows.UI.Color EdgeColor);
+
+    /// <summary>复用同一加载、WIC 解码和缓存链路，为大幅轮播提供指定尺寸和边缘色。</summary>
+    public static async Task<CoverArtwork> EnqueueArtworkAsync(Music music, CancellationToken token, int pixelSize)
+    {
+        var decoded = await EnqueuePixelsAsync(music, token, Math.Clamp(pixelSize, 64, 1024));
+        if (decoded is null || token.IsCancellationRequested) return default;
+        var source = await CreateImageSourceAsync(decoded, token);
+        return new(source, ReadEdgeColor(decoded));
+    }
+
+    private static Windows.UI.Color ReadEdgeColor(DecodedCover cover)
+    {
+        long red = 0, green = 0, blue = 0;
+        int count = 0;
+        // 解码像素已在内存中；仅采样左边缘带，不重复打开图片或分配采样数组。
+        for (int y = 0; y < cover.Height; y += Math.Max(1, cover.Height / 16))
+            for (int x = 0; x < Math.Max(1, cover.Width / 8); x += Math.Max(1, cover.Width / 32))
+            {
+                int p = (y * cover.Width + x) * 4;
+                int alpha = cover.Pixels[p + 3];
+                if (alpha < 128) continue;
+                blue += cover.Pixels[p] * 255 / alpha;
+                green += cover.Pixels[p + 1] * 255 / alpha;
+                red += cover.Pixels[p + 2] * 255 / alpha;
+                count++;
+            }
+        return count > 0 ? Windows.UI.Color.FromArgb(255, (byte)(red / count), (byte)(green / count), (byte)(blue / count))
+            : Windows.UI.Color.FromArgb(255, 32, 32, 32);
+    }
+
+    private static async Task<DecodedCover?> EnqueuePixelsAsync(Music music, CancellationToken token, int pixelSize)
+    {
         EnsureInitialized();
-        var cacheKey = CacheKey(music);
+        var cacheKey = string.Concat(CacheKey(music), ":", pixelSize.ToString(System.Globalization.CultureInfo.InvariantCulture));
         PendingCover pending;
         bool isNew = false;
         while (true)
@@ -129,7 +168,7 @@ internal static class CoverLoadQueue
 
             // 共享的是有界的解码像素，而不是 SoftwareBitmapSource。
             // 每个消费者随后创建并拥有自己的 WinRT source，可独立 Dispose。
-            var candidate = new PendingCover(music, cacheKey, CoverSize);
+            var candidate = new PendingCover(music, cacheKey, pixelSize);
 
             if (!_pendingTasks.TryAdd(cacheKey, candidate))
             {
@@ -196,7 +235,7 @@ internal static class CoverLoadQueue
 
             var decoded = await pending.Tcs.Task.WaitAsync(token);
             if (decoded is null || token.IsCancellationRequested) return null;
-            return await CreateImageSourceAsync(decoded, token);
+            return decoded;
         }
         finally
         {
@@ -401,9 +440,10 @@ internal static class CoverLoadQueue
             using var inputStream = memStream.AsRandomAccessStream();
 
             var decoder = await BitmapDecoder.CreateAsync(inputStream);
-            double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
-            uint newW = (uint)coverSize;
-            uint newH = (uint)Math.Max(1, (uint)(newW / aspect));
+            double scale = Math.Min(coverSize / (double)decoder.PixelWidth,
+                2048.0 / Math.Max(decoder.PixelWidth, decoder.PixelHeight));
+            uint newW = (uint)Math.Max(1, decoder.PixelWidth * scale);
+            uint newH = (uint)Math.Max(1, decoder.PixelHeight * scale);
 
             softwareBitmap = await decoder.GetSoftwareBitmapAsync(
                 BitmapPixelFormat.Bgra8,

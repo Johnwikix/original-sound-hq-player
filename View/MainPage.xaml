@@ -29,9 +29,13 @@
                             x:Name="SearchAutoSuggestBox"
                             x:Uid="SearchMusic"
                             QueryIcon="Find"
+                            QuerySubmitted="Search_QuerySubmitted"
                             Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay}" />
                     </NavigationView.AutoSuggestBox>
                     <NavigationView.MenuItems>
+                        <NavigationViewItem Icon="Home" Tag="Home">
+                            <NavigationViewItem.Content><TextBlock x:Uid="HomeNav" /></NavigationViewItem.Content>
+                        </NavigationViewItem>
                         <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
                             <NavigationViewItem.Content>
                                 <TextBlock x:Uid="MusicSources" />

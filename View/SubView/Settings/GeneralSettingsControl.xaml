@@ -164,6 +164,7 @@
                         Width="300"
                         SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
                         SelectedValuePath="Tag">
+                        <ComboBoxItem x:Uid="HomeCombox" Tag="Home" />
                         <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
                         <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
                         <ComboBoxItem x:Uid="PlayListsCombox" Tag="PlayLists" />

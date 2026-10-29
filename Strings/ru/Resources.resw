@@ -2563,4 +2563,44 @@ SHA-256: {5}
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Предел целого кратного частоты</value></data>
   <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Общий потолок используется нормализацией для оценки пиков источника, компрессором для пиков отсчётов до регулировки громкости и True Peak для оценки истинных пиков конечного PCM.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Пользовательский</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>Главная</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>Главная</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>Главная</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>Обновить подборку</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>ИЗ ВАШЕЙ МУЗЫКИ</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>Начать прослушивание</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>Воспроизвести подборку</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>Воспроизвести эту песню</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>Изменить избранное</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>Добавить в текущую очередь воспроизведения</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Предыдущая подборка</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Следующая подборка</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Часто слушаете</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Откройте другие жанры</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>Подготовка вашей музыки</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Начните со своей музыки</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Добавьте папку с музыкой. Прослушивания и избранное помогут подобрать музыку для вас.</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>Добавить папку с музыкой</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Источники музыки недоступны. Проверьте подключение или настройки источников.</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>Повторить</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>Исследуйте медиатеку</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>Для вас</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>Часто слушаете</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>Откройте другие жанры</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>Знакомые мелодии и новые открытия из вашей медиатеки.</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>Вернитесь к музыке, которую недавно слушали.</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>Добавьте разнообразия с другими жанрами.</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>Вы часто слушаете {0}</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>Из любимого жанра: {0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>Из вашего избранного</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>Недавно слушали</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>Откройте другую сторону медиатеки</value></data>
+  <data name="HomeError" xml:space="preserve"><value>Не удалось обновить рекомендации. Повторите попытку.</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>Не удалось воспроизвести музыку. Повторите попытку.</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>Перейти к другой подборке</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>Изменить избранное</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>Воспроизвести эту песню</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Предыдущая подборка</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Следующая подборка</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Добавить в текущую очередь воспроизведения</value></data>
 </root>

@@ -2565,4 +2565,44 @@ SHA-256：{5}
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍采样率上限</value></data>
   <data name="DspPeakCeilingHelp" xml:space="preserve"><value>三项共用此上限：响度标准化限制源峰值估计，压限器限制音量处理前的采样峰值，True Peak 保护最终 PCM 的真峰值估计。</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>首页</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>首页</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>首页</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>换一批</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>从你的音乐中精选</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>开始播放</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>播放精选主题</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>播放这首歌曲</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>切换收藏</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>加入当前播放队列</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>上一个主题</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>下一个主题</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>最近常听</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>换个流派听听</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>正在准备你的音乐</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>从你的音乐开始</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>添加音乐文件夹，探索曲库中的旋律。随着收听和收藏，首页会逐渐了解你的偏好。</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>添加音乐文件夹</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音乐来源暂时不可用。请检查连接，或在音乐来源页面管理你的音乐。</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>重试</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>探索曲库</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>为你推荐</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>最近常听</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>换个流派听听</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>熟悉的旋律与新的发现，都在你的音乐库里。</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>重温最近认真听过的音乐。</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>让不同的流派，为今天带来一点变化。</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>因为你常听 {0}</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>来自你喜欢的流派：{0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>来自你的收藏</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>最近常听的旋律</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>发现曲库中的另一面</value></data>
+  <data name="HomeError" xml:space="preserve"><value>暂时无法更新推荐，请重试。</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>暂时无法播放这首音乐，请重试。</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>切换到另一个主题</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>切换收藏</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>播放这首歌曲</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>上一个主题</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>下一个主题</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>加入当前播放队列</value></data>
 </root>

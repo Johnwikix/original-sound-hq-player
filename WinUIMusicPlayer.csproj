@@ -85,6 +85,7 @@
 	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     <None Include="Libraries\WavPack\x64\wavpackdll.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="wavpackdll.dll" />
     <None Include="Libraries\WavPack\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\WavPack.txt" />
+    <None Update="Libraries\DevWinUI\LICENSE-StoreCarousel.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-StoreCarousel.txt" />
   </ItemGroup>
 
   <!--

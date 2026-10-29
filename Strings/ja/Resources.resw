@@ -2563,4 +2563,44 @@ SHA-256: {5}
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍サンプリング周波数の上限</value></data>
   <data name="DspPeakCeilingHelp" xml:space="preserve"><value>共通の上限です。ラウドネス正規化は音源の推定ピーク、コンプレッサーは音量処理前のサンプルピーク、True Peak は最終 PCM の推定トゥルーピークを制限します。</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>カスタム</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>ホーム</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>ホーム</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>ホーム</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>別のおすすめ</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>あなたのライブラリから</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>再生する</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>特集を再生</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>この曲を再生</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>お気に入りを切り替え</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>現在の再生キューに追加</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>前の特集</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>次の特集</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>最近よく聴く曲</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>別のジャンルを聴く</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>音楽を準備しています</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>あなたの音楽から始めよう</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>音楽フォルダーを追加して、ライブラリを楽しみましょう。再生履歴とお気に入りをもとにおすすめを作成します。</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>音楽フォルダーを追加</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音楽ソースを利用できません。接続を確認するか、音楽ソースのページで管理してください。</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>再試行</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>ライブラリを探索</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>あなたへのおすすめ</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>最近よく聴く曲</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>別のジャンルを聴く</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>お気に入りの旋律も、新しい発見も、あなたのライブラリから。</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>最近じっくり聴いた音楽を、もう一度。</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>いつもと違うジャンルで、今日に少し変化を。</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>{0} をよく聴くあなたへ</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>好きなジャンルから：{0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>お気に入りから</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>最近よく聴く旋律</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>ライブラリの新しい一面を</value></data>
+  <data name="HomeError" xml:space="preserve"><value>おすすめを更新できませんでした。再試行してください。</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>音楽を再生できませんでした。再試行してください。</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>別の特集に切り替え</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>お気に入りを切り替え</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>この曲を再生</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>前の特集</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>次の特集</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>現在の再生キューに追加</value></data>
 </root>

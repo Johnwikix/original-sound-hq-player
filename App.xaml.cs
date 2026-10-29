@@ -143,6 +143,8 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<MusicBrowseViewModel>();
                  services.AddSingleton<DesktopLyricsViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
+                 services.AddSingleton<HomeViewModel>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Recommendations.HomeRecommendationService>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<LlmTranslationService>();

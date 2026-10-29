@@ -1,3 +1,26 @@
+## 2026-10-28 首页封面比例、固定标题与轮播光效
+- `View/HomePage.xaml`：首页标题与换一批固定在滚动区域上方，加载、空库和离线占位保留独立内容区。
+- `View/Controls/FeaturedCarousel*`、`MusicCoverControl.xaml`：主图约 1.22:1，拼贴随宽度保持接近方形的矩形比例；封面显式居中裁切，窄窗保留主图与下方拼贴。
+- `View/Controls/CarouselLighting.cs`：自实现区域环境光、合成线程跟随的悬停聚光和按压扩散光；卸载解除目标与事件并释放光源及动画，重入可恢复。
+- `View/Controls/HomeHeroCard*`、`FeaturedCarousel*`：标题、说明和播放按钮依次滑入、淡入及轻微缩放，图片独立过渡；翻页按钮淡入缩放，隐藏时不拦截指针，关闭系统动画时直接显示文本最终状态。
+- `_tools/HomeUiRegression`：54 项通过，新增封面中心色带像素检查、固定标题几何检查、文本/按钮动画状态与光源生命周期检查；窗口快照验证悬停光照，原生控制器验证扩散动画已挂接，完整合成轨迹仍需交互式窗口确认；x64 构建通过。
+
+## 2026-10-28 首页 Store 轮播外观与交互修正
+- `View/Controls/FeaturedCarousel*`、`HomeHeroCard*`：按 DevWinUI StoreCarousel 实现满幅叠字主图、三图拼贴、圆点分页、悬停翻页与切换动效；窄窗拼贴移至下方，首页不依赖 DevWinUI 控件。
+- `Utils/CoverLoadQueue.cs`、`MusicCoverControl*`：沿用现有原图读取、WIC 与像素缓存，支持轮播大图尺寸及像素边缘取色；消费者独立拥有图片源，极端竖图解码最长边限制为 2048px。
+- `ViewModel/Pages/HomeViewModel.cs`：播放、收藏和历史结算引起的推荐更新延后至换一批或重进首页应用，避免卡片/封面刷新及滚动位置丢失；相同内容复用栏目对象。
+- `View/HomePage.xaml`、`Strings/*/Resources.resw`：横向栏按钮下留出滚动条间距，爱心改为红色，加号提示“加入当前播放队列”；换一批改为无边框主题强调色按钮。
+- `Libraries/DevWinUI/LICENSE-StoreCarousel.txt`、`WinUIMusicPlayer.csproj`：保留 StoreCarousel 布局参考来源与 MIT 许可，并随构建和发布输出。
+- `_tools/HomeUiRegression`：41 项原生检查覆盖实际 WIC/缓存、Store 布局、播放稳定性和滚动条间距；x64 构建与推荐内核回归通过。截图使用合成封面，个人曲库和真实 WebDAV 未做端到端验收。
+
+## 2026-10-28 首页与本地音乐推荐
+- `View/HomePage*`、`ViewModel/Pages/HomeViewModel.cs`：新增一级首页、精选主题、推荐/常听/流派探索栏目、空库拖放导入、加载/离线/失败重试状态；播放显式使用栏目快照，刷新不改正在播放的队列。
+- `View/Controls/FeaturedCarousel*`、`HomeHeroCard*`、`MusicCoverControl*`：自实现轻量轮播、相邻主题预览与窄窗折叠；支持集合替换、方向键、离页重载，封面复用现有队列并取消/释放，不依赖 DevWinUI StoreCarousel。
+- `Services/Recommendations/*`、`MusicDatabaseService.Recommendations.cs`、`Model/Recommendations/*`：本地标签与收藏/有效收听推荐，90 天历史聚合、时间衰减、艺术家/专辑/流派多样性、探索配额和冷启动；缺流派不丢歌，不把未收听当负反馈。
+- `MainPage*`、`SaveSettings.cs`、`GeneralPreferencesState.cs`、`GeneralSettingsControl.xaml`：首页接入导航和默认入口设置；新配置默认首页，旧有效入口及旧配置缺字段时的文件夹默认均保持；首页搜索提交进入音乐库，导航选中不再依赖固定索引。
+- `Strings/*/Resources.resw`：补齐七语言首页文案及辅助功能名称，代码取词使用独立资源键。
+- `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`、`_tools/SettingsPersistenceRegression`：推荐 33 项与真实 WinUI 26 项通过；x64 构建、现有播放导航（含原生 UI）、文件夹扫描和设置回归通过。现有 LifecycleRegression 的旧桩契约缺失，未通过编译；个人曲库、实际音频设备和真实 WebDAV 仍需端到端验收。
+
 ## 2026-10-27 属性窗口标签区重排与标签样式统一
 - `View/SubView/MusicDetailsWindow.xaml`：标题|艺术家一行两列，专辑|专辑艺术家|流派一行三列，作曲|作词|指挥|目录号一行四列，信息区 5 行缩至 3 行；六个可选标签由 TextBox Header 改为与其余字段一致的 12px/70% TextBlock 标签，TextBox 改用 `MusicTag*Input` Uid 仅承载占位符。
 - `Strings/*/Resources.resw`：`MusicTag*.Header` 改名 `MusicTag*.Text`（标签），`MusicTag*.PlaceholderText` 改名 `MusicTag*Input.PlaceholderText`（七语言，值不变）。
@@ -126,7 +149,7 @@
 - `CustomFontStyle.xaml`、`ApplicationFontService`、窗口根节点与播放详情动画文字：程序字体默认 Segoe UI，统一普通文字与 WinUI 排版样式，切换时刷新已打开窗口，保留图标及显式字体。
 - `GeneralSettingsControl`、`LyricsSettingsControl`、`SettingsDialog`、偏好与七种语言资源：外观设置新增程序字体；独立歌词字体默认关闭，关闭时歌词跟随程序字体且下拉框置灰，开启后使用原有选择。
 - `SaveSettings`、设置恢复/快照：分别保存程序字体、歌词字体与开关，保留旧 `GlobalFont` 作为歌词选择；缺失或已卸载字体回退 Segoe UI，桌面歌词继续使用其已有独立字体。
-- `_tools/FontUiRegression`：40 项真实 WinUI 检查覆盖编译绑定、浅/深/跟随系统主题、独立字体保留及多窗口卸载；设置持久化回归、Debug x64 构建与七种语言资源键/CRLF 检查通过。未做完整播放器人工字形及高对比度验收。
+- `_tools/FontUiRegression`：41 项真实 WinUI 检查覆盖编译绑定、浅/深/跟随系统主题、独立字体保留及多窗口卸载；设置持久化回归、Debug x64 构建与七种语言资源键/CRLF 检查通过。未做完整播放器人工字形及高对比度验收。
 
 ## 2026-10-23 修复 Last.fm 真实上报成功后误报存储失败
 - `LastFmApiClient`：兼容真实服务端数字及数字字符串形式的成功数量、拒绝码与错误码；畸形/矛盾响应保留队列并归类响应错误，失败分支释放 JSON 文档。
@@ -165,7 +188,7 @@
 - `Services/LastFm`、`LastFmSettingsViewModel`、常规设置与七种语言资源：支持用户自备应用凭据、浏览器授权/本地解绑、正在播放、达标上报及持久化离线补报；凭据与 Session Key 使用 Windows PasswordVault。
 - `PlaybackCoordinator`、`RemotePlaybackService`、启动/退出协调器：复用实际播放确认与状态，隔离定位、暂停、缓冲、无缝重复和 WebDAV 恢复；保留现有本地统计口径，不修改音频引擎与 IPC。
 - `_tools/LastFmRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：增加网络/磁盘/生命周期回归、真实 WinUI 编译绑定和配置说明。默认关闭，授权成功后启用；解绑或更换应用凭据会清空待补报记录。
-- 验证：40 项 Last.fm 核心、15 项真实 WinUI 检查、84 项导航与 35 项 WebDAV 集成检查通过；七种语言资源键匹配、Debug x64 构建通过（0 错误，仍有项目既有警告）。未使用真实 Last.fm 账号联调，未做真实设备/WebDAV 服务器长时间试听与高对比度人工验收。
+- 验证：41 项 Last.fm 核心、15 项真实 WinUI 检查、84 项导航与 35 项 WebDAV 集成检查通过；七种语言资源键匹配、Debug x64 构建通过（0 错误，仍有项目既有警告）。未使用真实 Last.fm 账号联调，未做真实设备/WebDAV 服务器长时间试听与高对比度人工验收。
 
 ## 2026-10-23 修复首次播放等待解码库冷加载
 - `External/AudioPlayer/Decode/DecoderRuntime.cs`、`PlayerIpcService.cs`：启动时后台加载 FFmpeg 的四个原生库，与主界面初始化并行；解码依赖就绪后开放 IPC，避免已连接后的首次播放承担冷加载；提前监控客户端，启动中退出等待加载收尾且不发布就绪。

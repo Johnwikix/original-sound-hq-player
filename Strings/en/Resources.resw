@@ -2563,4 +2563,44 @@ SHA-256: {5}
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Integer-multiple rate limit</value></data>
   <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Loudness normalization caps estimated source true peaks. The compressor caps sample peaks before volume. True Peak caps estimated final PCM true peaks. All three use this ceiling.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>Home</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>Home</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>Home</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>Refresh picks</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>FROM YOUR MUSIC</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>Start listening</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>Play featured mix</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>Play this song</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>Toggle favorite</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>Add to current playback queue</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Previous featured mix</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Next featured mix</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Recent favorites</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Explore more genres</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>Preparing your music</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Make room for your music</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Add a music folder to explore your library. Your listening and favorites will shape future picks.</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>Add music folder</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Your music sources are unavailable. Check the connection or manage your music sources.</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>Retry</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>Explore your library</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>Made for you</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>Recent favorites</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>Explore more genres</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>Familiar sounds and fresh discoveries, all from your library.</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>Return to music you have spent time with.</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>Bring a little variety to your day with more genres.</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>Because you listen to {0}</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>From a genre you enjoy: {0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>From your favorites</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>A recent favorite</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>Discover more of your library</value></data>
+  <data name="HomeError" xml:space="preserve"><value>Could not update your picks. Please retry.</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>Could not play this music. Please retry.</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>Switch to another featured mix</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>Toggle favorite</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>Play this song</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Previous featured mix</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Next featured mix</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Add to current playback queue</value></data>
 </root>

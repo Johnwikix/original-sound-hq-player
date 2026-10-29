@@ -31,7 +31,10 @@ namespace WinUIMusicPlayer.Model
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? DeviceFriendlyName { get; set; }
         [JsonPropertyName("DefualtEntry")]
+        // 保留旧 JSON 缺少字段时的历史默认；只有真正的新配置使用 CreateForNewUser。
         public string DefaultEntry { get; set; } = "AddFolder";
+        /// <summary>创建首次启动或重置配置，既有配置的反序列化默认保持兼容。</summary>
+        public static SaveSettings CreateForNewUser() => new() { DefaultEntry = "Home" };
         [JsonPropertyName("DefualtPlayList")]
         public string DefaultPlayList { get; set; } = "song";
         public string AppStyle { get; set; } = "TransparentAcrylic";

@@ -765,7 +765,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 var result = await BassPlayerIpc.Shared.AtomicSettingsFile.LoadAsync(path,
-                    SettingsJsonContext.Default.SaveSettings, static () => new(), static () => new(),
+                    SettingsJsonContext.Default.SaveSettings, SaveSettings.CreateForNewUser, SaveSettings.CreateForNewUser,
                     onReset: preserved => _logger.LogWarning("Settings.json 已恢复默认值，损坏文件保留在 {Path}", preserved));
                 _settingsReadFailed = false;
                 _lastSettingsBytes = JsonSerializer.SerializeToUtf8Bytes(result, SettingsJsonContext.Default.SaveSettings);

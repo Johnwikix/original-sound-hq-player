@@ -2563,4 +2563,44 @@ SHA-256: {5}
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Obergrenze für ganzzahlige Vielfache</value></data>
   <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Diese Obergrenze gilt gemeinsam: Lautheitsnormalisierung begrenzt geschätzte Quellspitzen, der Kompressor Sample-Spitzen vor der Lautstärke und True Peak die geschätzten Spitzen des finalen PCM.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Benutzerdefiniert</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>Startseite</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>Startseite</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>Startseite</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>Neue Auswahl</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>AUS DEINER MUSIK</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>Wiedergabe starten</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>Auswahl abspielen</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>Diesen Titel abspielen</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>Favorit umschalten</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>Zur aktuellen Wiedergabewarteschlange hinzufügen</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Vorherige Auswahl</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Nächste Auswahl</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Zuletzt oft gehört</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Weitere Genres entdecken</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>Deine Musik wird vorbereitet</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Platz für deine Musik</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Füge einen Musikordner hinzu. Deine Hörgewohnheiten und Favoriten prägen die Auswahl.</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>Musikordner hinzufügen</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Deine Musikquellen sind nicht verfügbar. Prüfe die Verbindung oder verwalte deine Quellen.</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>Erneut versuchen</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>Deine Sammlung entdecken</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>Für dich</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>Zuletzt oft gehört</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>Weitere Genres entdecken</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>Vertraute Klänge und neue Entdeckungen aus deiner Sammlung.</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>Kehre zu Musik zurück, die du zuletzt gehört hast.</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>Entdecke mit anderen Genres mehr Abwechslung.</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>Weil du {0} hörst</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>Aus einem beliebten Genre: {0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>Aus deinen Favoriten</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>Zuletzt oft gehört</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>Entdecke mehr aus deiner Sammlung</value></data>
+  <data name="HomeError" xml:space="preserve"><value>Die Auswahl konnte nicht aktualisiert werden. Versuche es erneut.</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>Die Musik konnte nicht abgespielt werden. Versuche es erneut.</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>Zu einer anderen Auswahl wechseln</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>Favorit umschalten</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>Diesen Titel abspielen</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Vorherige Auswahl</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Nächste Auswahl</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Zur aktuellen Wiedergabewarteschlange hinzufügen</value></data>
 </root>

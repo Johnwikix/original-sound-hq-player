@@ -191,7 +191,14 @@ namespace WinUIMusicPlayer.View
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
         {
+            if (pageType == typeof(HomePage))
+            {
+                AppData.CurrentPage = typeof(HomePage);
+                ViewModel.AppViewModel.IsBackBtnEnable = false;
+            }
             MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
+            if (MainFrame.Content is PlayListPage playlist)
+                ViewModel.AppViewModel.IsBackBtnEnable = playlist.ViewModel.IsInDetailMode;
             MainFrame.BackStack.Clear();
         }
 
@@ -216,17 +223,20 @@ namespace WinUIMusicPlayer.View
 
         private void NavigateToDefaultPage()
         {
-
+            string entry = StartupEntry.Normalize(ViewModel.AppViewModel.DefaultEntryComboBoxTag);
             foreach (var item in NavigationViewControl.MenuItems)
             {
-                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == ViewModel.AppViewModel.DefaultEntryComboBoxTag)
+                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == entry)
                 {
                     NavigationViewControl.SelectedItem = navigationViewItem;
                     break;
                 }
             }
-            switch (ViewModel.AppViewModel.DefaultEntryComboBoxTag)
+            switch (entry)
             {
+                case "Home":
+                    NavigateTo(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
+                    break;
                 case "AddFolder":
                     NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                     break;
@@ -240,7 +250,7 @@ namespace WinUIMusicPlayer.View
                     NavigateTo(typeof(StatsPage), null, new EntranceNavigationTransitionInfo());
                     break;
                 default:
-                    NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                    NavigateTo(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
                     break;
             }
         }
@@ -273,6 +283,7 @@ namespace WinUIMusicPlayer.View
             {
                 targetType = args.InvokedItemContainer.Tag.ToString() switch
                 {
+                    "Home" => typeof(HomePage),
                     "AddFolder" => typeof(AddFolderPage),
                     "MusicBrowse" => typeof(MusicBrowsePage),
                     "PlayLists" => typeof(PlayListPage),
@@ -291,9 +302,23 @@ namespace WinUIMusicPlayer.View
         {
             if (MainFrame.Content is not MusicBrowsePage)
             {
-                NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
+                foreach (var item in NavigationViewControl.MenuItems)
+                    if (item is NavigationViewItem navigationItem && navigationItem.Tag?.ToString() == "MusicBrowse")
+                    {
+                        NavigationViewControl.SelectedItem = navigationItem;
+                        break;
+                    }
                 NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
             }
+        }
+
+        private void Search_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            if (MainFrame.Content is not HomePage || string.IsNullOrWhiteSpace(args.QueryText)) return;
+            ViewModel.AppViewModel.State.Browse.SourceFilterId = -1;
+            ViewModel.AppViewModel.SearchText = args.QueryText;
+            NavigateToMusicBrowsePage();
+            if (MainFrame.Content is MusicBrowsePage browse) browse.SelectBarItem("song");
         }
 
         public void NavigateToPlayingDetailPage()

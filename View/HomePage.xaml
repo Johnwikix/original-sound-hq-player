@@ -1,0 +1,136 @@
+<Page
+    x:Class="WinUIMusicPlayer.View.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinUIMusicPlayer.View.Controls"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel"
+    xmlns:tools="using:WinUIMusicPlayer.Utils">
+    <Page.Resources>
+        <DataTemplate x:Key="SongTemplate" x:DataType="vm:HomeSong">
+            <StackPanel Width="160" Spacing="6" Margin="0,0,12,24">
+                <Button Padding="0" Width="160" Height="160" CornerRadius="8" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                    Command="{x:Bind DetailsCommand}" CommandParameter="{x:Bind}" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}">
+                    <controls:MusicCoverControl Music="{x:Bind Music}" />
+                </Button>
+                <TextBlock Text="{x:Bind Music.Title, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{x:Bind Music.Author, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{x:Bind Reason}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Reason}" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button x:Uid="HomePlaySong" Command="{x:Bind PlayCommand}" CommandParameter="{x:Bind}" Padding="8">
+                        <FontIcon Glyph="&#xE768;" FontSize="14" />
+                    </Button>
+                    <Button x:Uid="HomeFavorite" Command="{x:Bind Music.UpdateFavouriteCommand}" CommandParameter="{x:Bind Music}" Padding="8">
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(Music.IsFavorite), Mode=OneWay}" Foreground="Red" FontSize="14" />
+                    </Button>
+                    <Button x:Uid="HomeAddToQueue" Command="{x:Bind Music.AddMusicToCurrentPlayListCommand}" CommandParameter="{x:Bind Music}" Padding="8">
+                        <FontIcon Glyph="&#xE710;" FontSize="14" />
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="HorizontalPanel"><ItemsStackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+        <Style x:Key="HomeShelfStyle" TargetType="ListView">
+            <Setter Property="SelectionMode" Value="None" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Enabled" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ScrollViewer.VerticalScrollMode" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemsPanel" Value="{StaticResource HorizontalPanel}" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="HomeTextActionButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" /></VisualState.Setters></VisualState>
+                                    <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" /></VisualState.Setters></VisualState>
+                                    <VisualState x:Name="Disabled"><VisualState.Setters><Setter Target="Root.Opacity" Value="0.4" /></VisualState.Setters></VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+    <Grid RowDefinitions="Auto,*">
+        <Grid x:Name="HomeHeader" Margin="24,12,24,12" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock x:Uid="HomeTitle" FontSize="28" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="1" x:Name="RefreshButton" x:Uid="HomeRefresh" Command="{x:Bind ViewModel.RefreshCommand}"
+                VerticalAlignment="Center" Style="{StaticResource HomeTextActionButtonStyle}"
+                Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasContent), Mode=OneWay}" />
+        </Grid>
+        <ScrollViewer Grid.Row="1" x:Name="ContentScroll" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasContent), Mode=OneWay}" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,12,24,24" Spacing="24">
+                <controls:FeaturedCarousel x:Name="Featured" ItemsSource="{x:Bind ViewModel.Themes, Mode=OneWay}"
+                    ThumbnailItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}" ThumbnailCommand="{x:Bind ViewModel.DetailsCommand}">
+                    <controls:FeaturedCarousel.ItemTemplate>
+                        <DataTemplate x:DataType="vm:HomeTheme"><controls:HomeHeroCard Theme="{x:Bind}" /></DataTemplate>
+                    </controls:FeaturedCarousel.ItemTemplate>
+                    <controls:FeaturedCarousel.ThumbnailTemplate>
+                        <DataTemplate x:DataType="vm:HomeSong">
+                            <controls:MusicCoverControl Music="{x:Bind Music}" DecodePixelSize="400" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Music.Title, Mode=OneWay}" />
+                        </DataTemplate>
+                    </controls:FeaturedCarousel.ThumbnailTemplate>
+                </controls:FeaturedCarousel>
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{x:Bind ViewModel.SongsTitle, Mode=OneWay}" FontSize="22" FontWeight="SemiBold" />
+                    <ListView ItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}" ItemTemplate="{StaticResource SongTemplate}" Style="{StaticResource HomeShelfStyle}" />
+                </StackPanel>
+                <StackPanel Spacing="12" Visibility="{x:Bind ShowCount(ViewModel.Familiar.Count), Mode=OneWay}">
+                    <TextBlock x:Uid="HomeFamiliarTitle" FontSize="22" FontWeight="SemiBold" />
+                    <ListView ItemsSource="{x:Bind ViewModel.Familiar, Mode=OneWay}" ItemTemplate="{StaticResource SongTemplate}" Style="{StaticResource HomeShelfStyle}" />
+                </StackPanel>
+                <StackPanel Spacing="12" Visibility="{x:Bind ShowCount(ViewModel.Discovery.Count), Mode=OneWay}">
+                    <TextBlock x:Uid="HomeDiscoveryTitle" FontSize="22" FontWeight="SemiBold" />
+                    <ListView ItemsSource="{x:Bind ViewModel.Discovery, Mode=OneWay}" ItemTemplate="{StaticResource SongTemplate}" Style="{StaticResource HomeShelfStyle}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="1" x:Name="LoadingPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsLoading), Mode=OneWay}">
+            <ProgressRing Width="32" Height="32" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+            <TextBlock x:Uid="HomeLoading" />
+        </StackPanel>
+        <Grid Grid.Row="1" x:Name="EmptyLibraryGrid" AllowDrop="True" Background="Transparent" DragOver="Empty_DragOver" DragLeave="Empty_DragLeave" Drop="Empty_Drop"
+            Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsEmpty), Mode=OneWay}">
+            <StackPanel MaxWidth="520" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <Border Width="96" Height="96" CornerRadius="28" Background="{ThemeResource SubtleFillColorSecondaryBrush}" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE8D6;" FontSize="44" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </Border>
+                <TextBlock x:Uid="HomeEmptyTitle" Margin="0,12,0,0" FontSize="28" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock x:Uid="HomeEmptySubtitle" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                <Button x:Uid="HomeAddFolder" Margin="0,12,0,0" HorizontalAlignment="Center" Command="{x:Bind ViewModel.AddFolderCommand}" Style="{StaticResource AccentButtonStyle}" />
+                <TextBlock x:Uid="AddFolderPageDragHint" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                <ProgressRing Width="24" Height="24" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsScanning), Mode=OneWay}" />
+            </StackPanel>
+            <Border x:Name="DropOverlay" Visibility="Collapsed" Margin="12" Background="{ThemeResource AccentFillColorTertiaryBrush}" BorderBrush="{ThemeResource AccentFillColorDefaultBrush}" BorderThickness="2" CornerRadius="12" IsHitTestVisible="False">
+                <TextBlock x:Uid="AddFolderPageDropOverlayText" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </Border>
+        </Grid>
+        <StackPanel Grid.Row="1" x:Name="UnavailablePanel" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsUnavailable), Mode=OneWay}">
+            <FontIcon Glyph="&#xE753;" FontSize="44" />
+            <TextBlock x:Uid="HomeUnavailable" TextAlignment="Center" TextWrapping="Wrap" />
+            <Button x:Uid="HomeRetry" Command="{x:Bind ViewModel.RefreshCommand}" HorizontalAlignment="Center" />
+        </StackPanel>
+        <InfoBar Grid.Row="1" IsOpen="{x:Bind HasText(ViewModel.ErrorMessage), Mode=OneWay}" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Severity="Warning" IsClosable="False" VerticalAlignment="Top" Margin="24,8,24,0">
+            <InfoBar.ActionButton><Button x:Uid="HomeRetry" Command="{x:Bind ViewModel.RefreshCommand}" /></InfoBar.ActionButton>
+        </InfoBar>
+    </Grid>
+</Page>
