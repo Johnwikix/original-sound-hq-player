@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
@@ -20,12 +21,24 @@ public sealed partial class MusicCoverControl : UserControl
     /// <summary>标识封面解码尺寸，轮播不使用列表的低分辨率缩略图。</summary>
     public static readonly DependencyProperty DecodePixelSizeProperty = DependencyProperty.Register(
         nameof(DecodePixelSize), typeof(int), typeof(MusicCoverControl), new PropertyMetadata(150, MusicChanged));
+    /// <summary>标识是否使用移植的 StoreCarousel 双层图片过渡，普通缩略图默认关闭。</summary>
+    public static readonly DependencyProperty EnableCarouselTransitionProperty = DependencyProperty.Register(
+        nameof(EnableCarouselTransition), typeof(bool), typeof(MusicCoverControl), new PropertyMetadata(false, TransitionChanged));
+    /// <summary>标识图片是否从右侧滑入。</summary>
+    public static readonly DependencyProperty SlideFromRightProperty = DependencyProperty.Register(
+        nameof(SlideFromRight), typeof(bool), typeof(MusicCoverControl), new PropertyMetadata(true));
     private Music? _observed;
     private CancellationTokenSource? _load;
+    private StoreCarouselImageMotion? _motion;
+    private UISettings? _motionSettings;
     /// <summary>获取或设置封面所属曲目。</summary>
     public Music? Music { get => (Music?)GetValue(MusicProperty); set => SetValue(MusicProperty, value); }
     /// <summary>获取或设置解码尺寸。</summary>
     public int DecodePixelSize { get => (int)GetValue(DecodePixelSizeProperty); set => SetValue(DecodePixelSizeProperty, value); }
+    /// <summary>获取或设置是否启用主轮播图片过渡。</summary>
+    public bool EnableCarouselTransition { get => (bool)GetValue(EnableCarouselTransitionProperty); set => SetValue(EnableCarouselTransitionProperty, value); }
+    /// <summary>获取或设置图片进入方向。</summary>
+    public bool SlideFromRight { get => (bool)GetValue(SlideFromRightProperty); set => SetValue(SlideFromRightProperty, value); }
     /// <summary>获取最近成功加载封面的边缘色。</summary>
     public Windows.UI.Color ArtworkColor { get; private set; }
     /// <summary>在 UI 线程通知展示层更新与封面一致的遮罩和阴影颜色。</summary>
@@ -38,12 +51,47 @@ public sealed partial class MusicCoverControl : UserControl
         Unloaded += OnUnloaded;
     }
     private static void MusicChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((MusicCoverControl)sender).Reload();
-    private void OnLoaded(object sender, RoutedEventArgs args) => Reload();
+    private void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        UpdateMotion();
+        Reload();
+    }
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
         Unsubscribe();
         Cancel();
         SetSource(null);
+        _motion?.Dispose();
+        _motion = null;
+    }
+    private static void TransitionChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((MusicCoverControl)sender).UpdateMotion();
+    private void UpdateMotion()
+    {
+        if (!IsLoaded) return;
+        if (EnableCarouselTransition)
+        {
+            _motionSettings ??= new UISettings();
+            _motion ??= new StoreCarouselImageMotion(CurrentLayer, PreviousLayer);
+            try { _motion.Attach(); }
+            catch (Exception ex)
+            {
+                _motion.Dispose();
+                _motion = null;
+                App.GetLogger<MusicCoverControl>().LogWarning(ex, "轮播图片动画不可用，保留静态封面");
+            }
+        }
+        else
+        {
+            _motion?.Dispose();
+            _motion = null;
+            ClearPrevious();
+        }
+    }
+    private void Cover_SizeChanged(object sender, SizeChangedEventArgs args)
+    {
+        CoverClip.Rect = new Windows.Foundation.Rect(0, 0, args.NewSize.Width, args.NewSize.Height);
+        _motion?.Stop();
+        ClearPrevious();
     }
     private void Unsubscribe()
     {
@@ -108,7 +156,35 @@ public sealed partial class MusicCoverControl : UserControl
     {
         var previous = CoverImage.Source;
         if (ReferenceEquals(previous, source)) return;
+        _motion?.Stop();
+        ClearPrevious();
         CoverImage.Source = source;
-        (previous as IDisposable)?.Dispose();
+        CoverPlaceholder.Visibility = source is null ? Visibility.Visible : Visibility.Collapsed;
+        if (source is not null && _motion is not null && _motionSettings!.AnimationsEnabled && ActualWidth > 0)
+        {
+            // 上一张源转交给下层；最多保留当前/上一张两个自有源，换图或卸载时释放。
+            PreviousImage.Source = previous;
+            PreviousLayer.Opacity = 1;
+            try { _motion.Start(SlideFromRight, ActualWidth); }
+            catch (Exception ex)
+            {
+                _motion.Stop();
+                ClearPrevious();
+                App.GetLogger<MusicCoverControl>().LogWarning(ex, "轮播图片过渡失败，直接显示当前封面");
+            }
+        }
+        else DisposeSource(previous);
+    }
+    private void ClearPrevious()
+    {
+        var source = PreviousImage.Source;
+        PreviousImage.Source = null;
+        PreviousLayer.Opacity = 0;
+        DisposeSource(source);
+    }
+    private static void DisposeSource(ImageSource? source)
+    {
+        try { (source as IDisposable)?.Dispose(); }
+        catch (Exception ex) { App.GetLogger<MusicCoverControl>().LogDebug(ex, "释放首页封面失败"); }
     }
 }

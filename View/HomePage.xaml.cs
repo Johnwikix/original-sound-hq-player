@@ -29,6 +29,8 @@ public sealed partial class HomePage : Page
     public Visibility ShowCount(int count) => count > 0 ? Visibility.Visible : Visibility.Collapsed;
     /// <summary>转换非空消息状态。</summary>
     public bool HasText(string text) => !string.IsNullOrWhiteSpace(text);
+    /// <summary>将通用轮播选项适配为首页主题，主视图保持同一个实例。</summary>
+    public HomeTheme? SelectedTheme(int index, int count) => index >= 0 && index < count ? Featured.SelectedItem as HomeTheme : null;
     private void Page_Loaded(object sender, RoutedEventArgs args)
     {
         Bindings.Initialize();

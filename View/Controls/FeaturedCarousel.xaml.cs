@@ -18,9 +18,9 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     /// <summary>标识主轮播数据源。</summary>
     public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register(
         nameof(ItemsSource), typeof(IList), typeof(FeaturedCarousel), new PropertyMetadata(null, SourceChanged));
-    /// <summary>标识主内容模板。</summary>
-    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.Register(
-        nameof(ItemTemplate), typeof(DataTemplate), typeof(FeaturedCarousel), new PropertyMetadata(null));
+    /// <summary>标识稳定的主内容视图，换项时保留旧图片以执行交叠过渡。</summary>
+    public static readonly DependencyProperty MainContentProperty = DependencyProperty.Register(
+        nameof(MainContent), typeof(UIElement), typeof(FeaturedCarousel), new PropertyMetadata(null));
     /// <summary>标识独立的拼贴数据源。</summary>
     public static readonly DependencyProperty ThumbnailItemsSourceProperty = DependencyProperty.Register(
         nameof(ThumbnailItemsSource), typeof(IList), typeof(FeaturedCarousel), new PropertyMetadata(null, ThumbnailsChanged));
@@ -33,14 +33,14 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private INotifyCollectionChanged? _observed;
     private INotifyCollectionChanged? _thumbnailObserved;
     private int _index;
+    private bool _slideFromRight = true;
     private bool _pointerInside;
     private bool _focusInside;
-    private bool _wide;
     private readonly CarouselLighting _lighting;
     /// <summary>获取或设置主轮播数据，支持整体替换与集合通知。</summary>
     public IList? ItemsSource { get => (IList?)GetValue(ItemsSourceProperty); set => SetValue(ItemsSourceProperty, value); }
-    /// <summary>获取或设置主内容模板。</summary>
-    public DataTemplate? ItemTemplate { get => (DataTemplate?)GetValue(ItemTemplateProperty); set => SetValue(ItemTemplateProperty, value); }
+    /// <summary>获取或设置复用的主内容视图。</summary>
+    public UIElement? MainContent { get => (UIElement?)GetValue(MainContentProperty); set => SetValue(MainContentProperty, value); }
     /// <summary>获取或设置右侧或下方的拼贴数据。</summary>
     public IList? ThumbnailItemsSource { get => (IList?)GetValue(ThumbnailItemsSourceProperty); set => SetValue(ThumbnailItemsSourceProperty, value); }
     /// <summary>获取或设置拼贴模板。</summary>
@@ -71,14 +71,10 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     public Visibility TertiaryVisibility => TertiaryItem is not null ? Visibility.Visible : Visibility.Collapsed;
     /// <summary>获取分页圆点可见性。</summary>
     public Visibility PagerVisibility => CanNavigate ? Visibility.Visible : Visibility.Collapsed;
-    /// <summary>获取多项轮播的翻页按钮可见性；悬停显隐由透明度过渡处理。</summary>
-    public Visibility NavigationVisibility => CanNavigate ? Visibility.Visible : Visibility.Collapsed;
-    /// <summary>获取鼠标或键盘操作时的翻页按钮透明度。</summary>
-    public double NavigationOpacity => IsNavigationInteractive ? 1 : 0;
-    /// <summary>获取翻页按钮显示时的缩放。</summary>
-    public Vector3 NavigationScale => IsNavigationInteractive ? Vector3.One : new Vector3(.9f);
-    /// <summary>获取是否允许指针点击翻页按钮；键盘聚焦会先显示按钮。</summary>
-    public bool IsNavigationInteractive => CanNavigate && (_pointerInside || _focusInside);
+    /// <summary>获取与原控件一致的直接显隐状态，同时保留键盘聚焦入口。</summary>
+    public Visibility NavigationVisibility => CanNavigate && (_pointerInside || _focusInside) ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>获取是否使用原控件的 SlideLeft，即从右侧滑入；反向切换从左侧滑入。</summary>
+    public bool SlideFromRight => _slideFromRight;
     /// <inheritdoc />
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -97,8 +93,13 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     /// <summary>按相对方向循环翻页。</summary>
     public void Move(int direction)
     {
-        if (PageCount == 0) return;
-        _index = (_index + (direction < 0 ? -1 : 1) + PageCount) % PageCount;
+        if (PageCount < 2) return;
+        Select((_index + (direction < 0 ? -1 : 1) + PageCount) % PageCount);
+    }
+    private void Select(int index)
+    {
+        _slideFromRight = index > _index;
+        _index = index;
         NotifySelection();
     }
     private object? ThumbnailAt(int offset)
@@ -112,6 +113,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     {
         var control = (FeaturedCarousel)sender;
         control._index = 0;
+        control._slideFromRight = true;
         control.ObserveCollections();
         control.NotifySelection();
     }
@@ -157,6 +159,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     {
         _index = Math.Clamp(_index, 0, Math.Max(0, PageCount - 1));
         Notify(nameof(PageCount));
+        Notify(nameof(SlideFromRight));
         Notify(nameof(SelectedItem));
         Notify(nameof(SelectedIndex));
         Notify(nameof(CanNavigate));
@@ -176,36 +179,28 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     }
     private void Layout_SizeChanged(object sender, SizeChangedEventArgs args)
     {
-        _wide = args.NewSize.Width >= 960;
         UpdateLayoutMode();
     }
     private void UpdateLayoutMode()
     {
         if (LayoutGrid is null) return;
-        bool hasThumbnails = ThumbnailVisibility == Visibility.Visible;
-        bool split = _wide && hasThumbnails;
+        bool split = ThumbnailVisibility == Visibility.Visible;
         double width = LayoutGrid.ActualWidth;
         double mainWidth = split ? Math.Max(0, width - LayoutGrid.ColumnSpacing) * .6 : width;
         // 主图约 1.22:1；拼贴上图略宽、下图接近方形，随可用宽度等比调整。
         LayoutGrid.RowDefinitions[0].Height = new GridLength(mainWidth / 1.22);
         LayoutGrid.ColumnDefinitions[0].Width = new GridLength(split ? 1.5 : 1, GridUnitType.Star);
-        LayoutGrid.ColumnDefinitions[1].Width = _wide && hasThumbnails ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        Grid.SetColumnSpan(SliderGrid, _wide && hasThumbnails ? 1 : 2);
-        Grid.SetColumnSpan(Pager, _wide && hasThumbnails ? 1 : 2);
-        LayoutGrid.RowDefinitions[2].Height = new GridLength(!_wide && hasThumbnails ? width * .58 : 0);
-        Grid.SetRow(ThumbnailGrid, _wide ? 0 : 2);
-        Grid.SetColumn(ThumbnailGrid, _wide ? 1 : 0);
-        Grid.SetColumnSpan(ThumbnailGrid, _wide ? 1 : 2);
+        LayoutGrid.ColumnDefinitions[1].Width = split ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        Grid.SetColumnSpan(SliderGrid, split ? 1 : 2);
+        Grid.SetColumnSpan(Pager, split ? 1 : 2);
         bool largeTileOnly = SecondaryItem is null;
-        ThumbnailGrid.ColumnDefinitions[0].Width = new GridLength(_wide ? 1 : 1.7, GridUnitType.Star);
-        ThumbnailGrid.RowDefinitions[0].Height = new GridLength(_wide ? 1.35 : 1, GridUnitType.Star);
         Grid.SetColumn(PrimaryThumbnail, 0);
         Grid.SetRow(PrimaryThumbnail, 0);
-        Grid.SetColumnSpan(PrimaryThumbnail, _wide || largeTileOnly ? 2 : 1);
-        Grid.SetRowSpan(PrimaryThumbnail, _wide && !largeTileOnly ? 1 : 2);
-        Grid.SetColumn(SecondaryThumbnail, _wide ? 0 : 1);
-        Grid.SetRow(SecondaryThumbnail, _wide ? 1 : 0);
-        Grid.SetColumnSpan(SecondaryThumbnail, _wide && TertiaryItem is null ? 2 : 1);
+        Grid.SetColumnSpan(PrimaryThumbnail, 2);
+        Grid.SetRowSpan(PrimaryThumbnail, largeTileOnly ? 2 : 1);
+        Grid.SetColumn(SecondaryThumbnail, 0);
+        Grid.SetRow(SecondaryThumbnail, 1);
+        Grid.SetColumnSpan(SecondaryThumbnail, TertiaryItem is null ? 2 : 1);
         Grid.SetColumn(TertiaryThumbnail, 1);
         Grid.SetRow(TertiaryThumbnail, 1);
     }
@@ -213,17 +208,13 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private void NotifyNavigation()
     {
         Notify(nameof(NavigationVisibility));
-        Notify(nameof(NavigationOpacity));
-        Notify(nameof(NavigationScale));
-        Notify(nameof(IsNavigationInteractive));
     }
     private void Previous_Click(object sender, RoutedEventArgs args) => Move(-1);
     private void Next_Click(object sender, RoutedEventArgs args) => Move(1);
     private void Pager_SelectedIndexChanged(PipsPager sender, PipsPagerSelectedIndexChangedEventArgs args)
     {
         if (sender.SelectedPageIndex < 0 || sender.SelectedPageIndex >= PageCount || sender.SelectedPageIndex == _index) return;
-        _index = sender.SelectedPageIndex;
-        NotifySelection();
+        Select(sender.SelectedPageIndex);
     }
     private void Carousel_PointerEntered(object sender, PointerRoutedEventArgs args)
     {

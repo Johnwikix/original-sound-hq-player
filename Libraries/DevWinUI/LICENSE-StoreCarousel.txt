@@ -1,6 +1,10 @@
 StoreCarousel layout reference: DevWinUI 10.8.0, commit 28d9f74fc1ad86d6597b6ad43b6122e52a1b49aa.
 https://github.com/ghost1372/DevWinUI/tree/28d9f74fc1ad86d6597b6ad43b6122e52a1b49aa/dev/DevWinUI/Controls/Win2DAndComposition/StoreCarousel
 Lighting behavior reference: https://github.com/ghost1372/DevWinUI/tree/28d9f74fc1ad86d6597b6ad43b6122e52a1b49aa/dev/DevWinUI/Common/XamlLight
+Text animation port: StoreCarousel.RunTextAnimation (700 ms, TranslateX 100 to 0, Opacity 0 to 1, Scale 0.8 to 1).
+https://github.com/ghost1372/DevWinUI/blob/28d9f74fc1ad86d6597b6ad43b6122e52a1b49aa/dev/DevWinUI/Controls/Win2DAndComposition/StoreCarousel/StoreCarousel.cs#L464
+Image animation port: ImageFrame.InitComposition / StartTransition (SlideLeft, SlideRight, previous image fade).
+https://github.com/ghost1372/DevWinUI/blob/28d9f74fc1ad86d6597b6ad43b6122e52a1b49aa/dev/DevWinUI/Controls/Win2DAndComposition/ImageFrame/ImageFrame.cs#L1891
 
 MIT License
 

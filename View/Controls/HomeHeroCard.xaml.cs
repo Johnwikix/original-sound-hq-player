@@ -2,7 +2,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using System;
 using System.Numerics;
 using Windows.UI;
 using Windows.UI.ViewManagement;
@@ -10,113 +9,94 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View.Controls;
 
-/// <summary>复现 Store 主轮播的满幅图片、左侧渐隐叠字和随封面取色的动作区域。</summary>
+/// <summary>沿用 DevWinUI StoreCarousel 的整组文字动效，图片过渡由封面控件负责。</summary>
 public sealed partial class HomeHeroCard : UserControl
 {
-    private readonly ScaleTransform _imageScale = new();
-    private readonly CompositeTransform _titleTransform = new();
-    private readonly CompositeTransform _descriptionTransform = new();
-    private readonly CompositeTransform _buttonTransform = new();
-    private readonly Storyboard _imageTransition = new();
+    private readonly CompositeTransform _textTransform = new();
     private readonly Storyboard _textTransition = new();
     private readonly UISettings _settings = new();
     /// <summary>标识主题快照。</summary>
     public static readonly DependencyProperty ThemeProperty = DependencyProperty.Register(
         nameof(Theme), typeof(HomeTheme), typeof(HomeHeroCard), new PropertyMetadata(null, ThemeChanged));
+    /// <summary>标识图片是否从右向左滑入。</summary>
+    public static readonly DependencyProperty SlideFromRightProperty = DependencyProperty.Register(
+        nameof(SlideFromRight), typeof(bool), typeof(HomeHeroCard), new PropertyMetadata(true));
     /// <summary>获取或设置当前主题。</summary>
     public HomeTheme? Theme { get => (HomeTheme?)GetValue(ThemeProperty); set => SetValue(ThemeProperty, value); }
-    /// <summary>初始化主轮播展示，不自行读取图片文件。</summary>
+    /// <summary>获取或设置图片切换方向。</summary>
+    public bool SlideFromRight { get => (bool)GetValue(SlideFromRightProperty); set => SetValue(SlideFromRightProperty, value); }
+
+    /// <summary>移植原控件的动画参数，复用 Storyboard 以避免每次换项重新构造动画。</summary>
     public HomeHeroCard()
     {
         InitializeComponent();
         Translation = new Vector3(0, 0, 16);
-        Artwork.RenderTransform = _imageScale;
-        AddTransition(_imageTransition, _imageScale, "ScaleX", 1.04, 1, 0);
-        AddTransition(_imageTransition, _imageScale, "ScaleY", 1.04, 1, 0);
-        AddTransition(_imageTransition, Artwork, "Opacity", .45, 1, 0);
-        AddTextTransition(TitleText, _titleTransform, 0, 1);
-        AddTextTransition(DescriptionText, _descriptionTransform, 60, .8);
-        AddTextTransition(PlayButton, _buttonTransform, 120, 1);
+        ActionPanel.RenderTransform = _textTransform;
+        // DevWinUI 10.8.0 StoreCarousel.RunTextAnimation：整组、无错峰、无附加 easing。
+        AddTransition(_textTransform, "TranslateX", 100, 0);
+        AddTransition(ActionPanel, "Opacity", 0, 1);
+        AddTransition(_textTransform, "ScaleX", .8, 1);
+        AddTransition(_textTransform, "ScaleY", .8, 1);
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        SizeChanged += OnSizeChanged;
     }
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
-        Artwork.ArtworkColorChanged += ArtworkChanged;
+        Artwork.ArtworkColorChanged += UpdateTone;
         UpdateTone(Artwork.ArtworkColor);
         PlayTextTransition();
     }
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
-        Artwork.ArtworkColorChanged -= ArtworkChanged;
-        _imageTransition.Stop();
-        _textTransition.Stop();
-        _imageScale.ScaleX = 1;
-        _imageScale.ScaleY = 1;
-        Artwork.Opacity = 1;
-        ResetText(TitleText, _titleTransform, 1);
-        ResetText(DescriptionText, _descriptionTransform, .8);
-        ResetText(PlayButton, _buttonTransform, 1);
+        Artwork.ArtworkColorChanged -= UpdateTone;
+        ResetText();
     }
-    private void AddTextTransition(FrameworkElement element, CompositeTransform transform, int delay, double opacity)
-    {
-        element.RenderTransform = transform;
-        AddTransition(_textTransition, transform, "TranslateX", 52, 0, delay);
-        AddTransition(_textTransition, transform, "ScaleX", .94, 1, delay);
-        AddTransition(_textTransition, transform, "ScaleY", .94, 1, delay);
-        AddTransition(_textTransition, element, "Opacity", 0, opacity, delay);
-    }
-    private static void AddTransition(Storyboard storyboard, DependencyObject target, string property, double from, double to, int delay)
+    private void AddTransition(DependencyObject target, string property, double from, double to)
     {
         var animation = new DoubleAnimation
         {
             From = from,
             To = to,
-            Duration = TimeSpan.FromMilliseconds(420),
-            BeginTime = TimeSpan.FromMilliseconds(delay),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            Duration = StoreCarouselImageMotion.Duration,
+            EnableDependentAnimation = true
         };
         Storyboard.SetTarget(animation, target);
         Storyboard.SetTargetProperty(animation, property);
-        storyboard.Children.Add(animation);
+        _textTransition.Children.Add(animation);
     }
     private static void ThemeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var card = (HomeHeroCard)sender;
+        // 直接适配可空主题到内部封面；x:Bind 函数的空中间路径会跳过调用。
+        card.Artwork.Music = card.Theme?.Artwork;
         if (card.IsLoaded) card.PlayTextTransition();
     }
-    private static void ResetText(FrameworkElement element, CompositeTransform transform, double opacity)
+    private void ResetText()
     {
-        element.Opacity = opacity;
-        transform.TranslateX = 0;
-        transform.ScaleX = 1;
-        transform.ScaleY = 1;
-    }
-    private static void PrepareText(FrameworkElement element, CompositeTransform transform)
-    {
-        element.Opacity = 0;
-        transform.TranslateX = 52;
-        transform.ScaleX = .94;
-        transform.ScaleY = .94;
+        _textTransition.Stop();
+        ActionPanel.Opacity = 1;
+        _textTransform.TranslateX = 0;
+        _textTransform.ScaleX = 1;
+        _textTransform.ScaleY = 1;
     }
     private void PlayTextTransition()
     {
-        _textTransition.Stop();
-        // 动画和变换按卡片复用；关闭系统动画时直接呈现最终状态。
-        ResetText(TitleText, _titleTransform, 1);
-        ResetText(DescriptionText, _descriptionTransform, .8);
-        ResetText(PlayButton, _buttonTransform, 1);
-        if (!_settings.AnimationsEnabled) return;
-        PrepareText(TitleText, _titleTransform);
-        PrepareText(DescriptionText, _descriptionTransform);
-        PrepareText(PlayButton, _buttonTransform);
-        _textTransition.Begin();
+        ResetText();
+        ActionPanel.Visibility = Theme is null ? Visibility.Collapsed : Visibility.Visible;
+        if (Theme is not null && _settings.AnimationsEnabled) _textTransition.Begin();
     }
-    private void ArtworkChanged(Color color)
+    private void OnSizeChanged(object sender, SizeChangedEventArgs args)
     {
-        UpdateTone(color);
-        _imageTransition.Stop();
-        if (_settings.AnimationsEnabled) _imageTransition.Begin();
+        bool compact = args.NewSize.Width < 360;
+        double margin = compact ? 12 : 40;
+        ActionPanel.Margin = compact ? new Thickness(12) : new Thickness(40, 24, 24, 24);
+        ActionPanel.MaxWidth = System.Math.Min(300, System.Math.Max(0, args.NewSize.Width - margin - (compact ? 12 : 24)));
+        TitleText.FontSize = compact ? 20 : 28;
+        TitleText.MaxLines = compact ? (args.NewSize.Height < 170 ? 1 : 2) : 0;
+        DescriptionText.Visibility = args.NewSize.Height < 260 ? Visibility.Collapsed : Visibility.Visible;
+        PlayButton.MinWidth = System.Math.Min(120, ActionPanel.MaxWidth);
+        PlayButton.MaxWidth = ActionPanel.MaxWidth;
     }
     private void UpdateTone(Color color)
     {

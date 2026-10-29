@@ -20,6 +20,7 @@
     <Compile Include="../../View/HomePage.xaml.cs;../../View/Controls/FeaturedCarousel.xaml.cs;../../View/Controls/HomeHeroCard.xaml.cs;../../View/Controls/MusicCoverControl.xaml.cs" />
     <Compile Include="../../Utils/CoverLoadQueue.cs" />
     <Compile Include="../../View/Controls/CarouselLighting.cs" />
+    <Compile Include="../../View/Controls/StoreCarouselImageMotion.cs" />
     <Page Include="../../View/HomePage.xaml" Link="View/HomePage.xaml" />
     <Page Include="../../View/Controls/FeaturedCarousel.xaml" Link="View/Controls/FeaturedCarousel.xaml" />
     <Page Include="../../View/Controls/HomeHeroCard.xaml" Link="View/Controls/HomeHeroCard.xaml" />

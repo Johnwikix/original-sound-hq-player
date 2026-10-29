@@ -1,3 +1,10 @@
+## 2026-10-29 移植 DevWinUI 轮播原版动效并保持拼贴同排
+- `View/Controls/HomeHeroCard*`：按 DevWinUI 10.8.0 `RunTextAnimation` 移植整组文字/按钮动效：700ms、横移 100→0、透明度 0→1、缩放 0.8→1；移除逐项延迟和自定义 easing。
+- `StoreCarouselImageMotion.cs`、`MusicCoverControl*`：移植 ImageFrame 的整幅 SlideLeft/SlideRight 与旧图淡出，包括首次进入；保留现有封面读取/解码/缓存链路，主视图保持单实例，当前/旧图最多各保留一张，快速切换和卸载释放自有源及动画。
+- `FeaturedCarousel*`、`HomePage*`：翻页按钮还原直接显隐；主图和三图拼贴在窄窗仍然同排、一起缩小，不再换行放大，紧凑文字按可用尺寸收敛；固定首页标题行保持。
+- `Libraries/DevWinUI/LICENSE-StoreCarousel.txt`：补充图片与文字动画的准确源码引用，保留 MIT 许可。
+- `_tools/HomeUiRegression`：58 项通过，覆盖正反滑入与旧图保留、真实合成动画挂接、同封面文字更新、整组 700ms 线性动效、清空释放及窄窗同排；x64 构建通过，独立合成轨迹的交互式验收限制见方案文档。
+
 ## 2026-10-28 首页封面比例、固定标题与轮播光效
 - `View/HomePage.xaml`：首页标题与换一批固定在滚动区域上方，加载、空库和离线占位保留独立内容区。
 - `View/Controls/FeaturedCarousel*`、`MusicCoverControl.xaml`：主图约 1.22:1，拼贴随宽度保持接近方形的矩形比例；封面显式居中裁切，窄窗保留主图与下方拼贴。

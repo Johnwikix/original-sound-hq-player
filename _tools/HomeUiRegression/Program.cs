@@ -297,42 +297,81 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "Store carousel uses interactive dot pagination");
             Check(carousel.ItemsSource!.Count >= 2 && carousel.SelectedItem is HomeTheme, "featured control receives theme snapshots through compiled binding");
             var next = (Button)carousel.FindName("NextButton");
+            ((Button)((HomeHeroCard)page.FindName("HomeHero")).FindName("PlayButton")).Focus(FocusState.Keyboard);
             next.Focus(FocusState.Keyboard);
             await Task.Delay(200);
-            Check(next.Opacity == 1 && next.IsHitTestVisible && next.OpacityTransition is not null && next.ScaleTransition is not null,
-                "keyboard focus reveals arrow actions with fade and scale transitions");
+            Check(next.Visibility == Visibility.Visible && next.OpacityTransition is null && next.ScaleTransition is null,
+                "arrow actions use upstream direct visibility with keyboard access");
             refreshButton.Focus(FocusState.Keyboard);
             await Task.Delay(200);
-            Check(next.Opacity == 0 && !next.IsHitTestVisible, "hidden arrow actions leave no invisible pointer hit area");
+            Check(next.Visibility == Visibility.Collapsed, "hidden arrow actions leave no invisible pointer hit area");
             carousel.Move(1);
             Check(carousel.SelectedIndex == 1, "featured control navigates without an autoplay timer");
             ((PipsPager)carousel.FindName("Pager")).SelectedPageIndex = 0;
             Check(carousel.SelectedIndex == 0, "dot pagination updates the selected carousel content");
-            var source = new ObservableCollection<HomeTheme> { home.Themes[0], home.Themes[0] with { Title = "Same cover, other title" } };
+            var baseTheme = home.Themes[0];
+            var differentArtwork = songs.First(m => !ReferenceEquals(m, baseTheme.Artwork));
+            var source = new ObservableCollection<HomeTheme> { baseTheme, baseTheme with { Artwork = differentArtwork, Title = "Other artwork" } };
             carousel.ItemsSource = source;
+            var stableCard = (HomeHeroCard)page.FindName("HomeHero");
+            var animatedCover = (MusicCoverControl)stableCard.FindName("Artwork");
+            await Wait(() => ReferenceEquals(animatedCover.Music, baseTheme.Artwork) && ((Image)animatedCover.FindName("CoverImage")).Source is not null);
+            var firstImage = ((Image)animatedCover.FindName("CoverImage")).Source;
+            carousel.Move(1);
+            await Wait(() => ReferenceEquals(animatedCover.Music, differentArtwork)
+                && ((Image)animatedCover.FindName("CoverImage")).Source is { } image && !ReferenceEquals(image, firstImage));
+            var secondImage = ((Image)animatedCover.FindName("CoverImage")).Source;
+            Check(ReferenceEquals(stableCard, Descendants<HomeHeroCard>(carousel).Single())
+                && ReferenceEquals(firstImage, ((Image)animatedCover.FindName("PreviousImage")).Source)
+                && carousel.SlideFromRight && animatedCover.SlideFromRight,
+                "forward slide preserves the stable hero and previous owned cover behind the new artwork");
+            var currentLayer = (Grid)animatedCover.FindName("CurrentLayer");
+            var previousLayer = (Grid)animatedCover.FindName("PreviousLayer");
+            Check(ElementCompositionPreview.GetElementVisual(currentLayer).TryGetAnimationController("Offset") is not null
+                && ElementCompositionPreview.GetElementVisual(previousLayer).TryGetAnimationController("Opacity") is not null,
+                "upstream image slide and previous-image fade run on real composition visuals");
+            carousel.Move(-1);
+            await Wait(() => ReferenceEquals(animatedCover.Music, baseTheme.Artwork)
+                && ((Image)animatedCover.FindName("CoverImage")).Source is { } image && !ReferenceEquals(image, secondImage));
+            Check(!carousel.SlideFromRight && !animatedCover.SlideFromRight
+                && ReferenceEquals(secondImage, ((Image)animatedCover.FindName("PreviousImage")).Source),
+                "reverse slide enters from the left while fading the actual previous cover");
+            source[1] = baseTheme with { Title = "Same cover, other title" };
+            var sameArtworkSource = ((Image)animatedCover.FindName("CoverImage")).Source;
             carousel.Move(1);
             await Task.Delay(100);
-            Check(Descendants<TextBlock>(carousel).Any(t => t.Text == "Same cover, other title"), "same artwork does not suppress title and parameter updates");
+            Check(Descendants<TextBlock>(carousel).Any(t => t.Text == "Same cover, other title")
+                && ReferenceEquals(sameArtworkSource, ((Image)animatedCover.FindName("CoverImage")).Source),
+                "same artwork updates text and commands without replacing or decoding the displayed image");
             var movingCard = Descendants<HomeHeroCard>(carousel).First();
             var motionTitle = (TextBlock)movingCard.FindName("TitleText");
             var motionDescription = (TextBlock)movingCard.FindName("DescriptionText");
             var motionButton = (Button)movingCard.FindName("PlayButton");
+            var actionPanel = (StackPanel)movingCard.FindName("ActionPanel");
             movingCard.Theme = movingCard.Theme! with { Title = "Motion title", Description = "Motion description" };
             await Task.Delay(60);
             if (new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
-                Check(motionTitle.Opacity > motionButton.Opacity && motionButton.Opacity < 1,
-                    "title enters ahead of its independently animated play action");
+                Check(actionPanel.Opacity is > 0 and < 1 && motionTitle.Opacity == 1 && motionButton.Opacity == 1
+                    && actionPanel.RenderTransform is CompositeTransform { TranslateX: > 0, ScaleX: < 1 } transform
+                    && Math.Abs(transform.ScaleX - (.8 + .2 * actionPanel.Opacity)) < .04
+                    && Math.Abs(transform.TranslateX - 100 * (1 - actionPanel.Opacity)) < 5,
+                    "upstream action panel moves 100px and scales from 0.8 in sync with its whole-group linear fade");
             movingCard.Theme = movingCard.Theme! with { Title = "Latest title" };
-            await Task.Delay(620);
+            await Task.Delay(820);
             await Capture(page, "home-animation-rest.png");
             await Task.Delay(60);
             Check(motionTitle.Text == "Latest title" && motionTitle.Opacity > .99 && motionDescription.Opacity > .79
-                && motionButton.Opacity > .99 && motionTitle.RenderTransform is CompositeTransform { TranslateX: < .1, ScaleX: > .99 },
-                "rapid same-artwork theme changes finish all text and button transforms without a stale animation");
+                && motionButton.Opacity > .99 && actionPanel.Opacity > .99
+                && actionPanel.RenderTransform is CompositeTransform { TranslateX: < .1, ScaleX: > .99 },
+                "rapid theme changes finish the shared 700ms action-panel animation without a stale transform");
             source.RemoveAt(1);
             Check(carousel.SelectedIndex == 0 && !carousel.CanNavigate, "shrinking observable collection clamps selection");
             source.Clear();
             Check(carousel.SelectedItem is null && carousel.Position == "0 / 0", "empty carousel never indexes the old selection");
+            await Task.Delay(40);
+            Check(((Image)animatedCover.FindName("CoverImage")).Source is null
+                && ((Image)animatedCover.FindName("PreviousImage")).Source is null,
+                "empty selection releases both retained image sources");
             lights[0].Pulse(new Vector2(80, 80));
             window.Content = new Grid();
             await Task.Delay(140);
@@ -348,12 +387,13 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(((FeaturedCarousel)page.FindName("Featured")).ItemsSource!.Count > 0 && home.PlaySongCommand.CanExecute(home.Songs[0]),
                 "reloaded page restarts compiled tracking and commands");
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(500, 740));
-            await Task.Delay(620);
+            await Task.Delay(820);
             var card = Descendants<HomeHeroCard>(page).First();
             Check(((MusicCoverControl)card.FindName("Artwork")).Visibility == Visibility.Visible
-                && Grid.GetRow(collage) == 2 && Grid.GetRowSpan((Button)carousel.FindName("PrimaryThumbnail")) == 2
-                && Math.Abs(((Grid)carousel.FindName("SliderGrid")).ActualWidth - collage.ActualWidth) < .5,
-                "narrow Store layout keeps full artwork and moves the large-left two-right collage below it");
+                && Grid.GetRow(collage) == 0 && Grid.GetColumn(collage) == 1
+                && Grid.GetRowSpan((Button)carousel.FindName("PrimaryThumbnail")) == 1
+                && primary.ActualWidth < 250 && slider.ActualWidth / slider.ActualHeight is > 1.16 and < 1.3,
+                "narrow carousel and collage stay side by side and shrink together without enlarging wrapped tiles");
             await Capture(page, "home-narrow.png");
             Check(!offThread, "view-model state notifications stay on the real WinUI dispatcher");
             var retained = home.Songs;

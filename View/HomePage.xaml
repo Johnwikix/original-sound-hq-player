@@ -81,9 +81,10 @@
             <StackPanel Margin="24,12,24,24" Spacing="24">
                 <controls:FeaturedCarousel x:Name="Featured" ItemsSource="{x:Bind ViewModel.Themes, Mode=OneWay}"
                     ThumbnailItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}" ThumbnailCommand="{x:Bind ViewModel.DetailsCommand}">
-                    <controls:FeaturedCarousel.ItemTemplate>
-                        <DataTemplate x:DataType="vm:HomeTheme"><controls:HomeHeroCard Theme="{x:Bind}" /></DataTemplate>
-                    </controls:FeaturedCarousel.ItemTemplate>
+                    <controls:FeaturedCarousel.MainContent>
+                        <controls:HomeHeroCard x:Name="HomeHero" SlideFromRight="{x:Bind Featured.SlideFromRight, Mode=OneWay}"
+                            Theme="{x:Bind SelectedTheme(Featured.SelectedIndex, Featured.PageCount), Mode=OneWay}" />
+                    </controls:FeaturedCarousel.MainContent>
                     <controls:FeaturedCarousel.ThumbnailTemplate>
                         <DataTemplate x:DataType="vm:HomeSong">
                             <controls:MusicCoverControl Music="{x:Bind Music}" DecodePixelSize="400" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Music.Title, Mode=OneWay}" />

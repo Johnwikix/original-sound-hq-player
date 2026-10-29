@@ -6,7 +6,8 @@
     <Border CornerRadius="8" Background="#FF202020">
         <Border.Shadow><ThemeShadow /></Border.Shadow>
         <Grid x:Name="HeroLayout">
-            <controls:MusicCoverControl x:Name="Artwork" Music="{x:Bind Theme.Artwork, Mode=OneWay}" DecodePixelSize="800" RenderTransformOrigin="0.5,0.5" />
+            <controls:MusicCoverControl x:Name="Artwork" DecodePixelSize="800"
+                EnableCarouselTransition="True" SlideFromRight="{x:Bind SlideFromRight, Mode=OneWay}" />
             <Rectangle IsHitTestVisible="False" RadiusX="8" RadiusY="8">
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -16,11 +17,11 @@
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>
-            <StackPanel x:Name="ActionPanel" Margin="40,24,24,24" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="8">
-                <TextBlock x:Name="TitleText" Text="{x:Bind Theme.Title, Mode=OneWay}" FontSize="28" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap" RenderTransformOrigin="0.5,0.5" />
-                <TextBlock x:Name="DescriptionText" Text="{x:Bind Theme.Description, Mode=OneWay}" MaxWidth="240" FontWeight="SemiBold" Foreground="White" Opacity="0.8" TextWrapping="Wrap" RenderTransformOrigin="0.5,0.5" />
+            <StackPanel x:Name="ActionPanel" Margin="40,24,24,24" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="8" RenderTransformOrigin="0.5,0.5">
+                <TextBlock x:Name="TitleText" Text="{x:Bind Theme.Title, Mode=OneWay}" FontSize="28" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="DescriptionText" Text="{x:Bind Theme.Description, Mode=OneWay}" MaxWidth="240" FontWeight="SemiBold" Foreground="White" Opacity="0.8" TextWrapping="Wrap" />
                 <Button x:Name="PlayButton" x:Uid="HomePlayTheme" Margin="0,8,0,0" MinWidth="120" CornerRadius="8" Foreground="White" BorderThickness="0,0,0,2"
-                    Command="{x:Bind Theme.PlayCommand, Mode=OneWay}" CommandParameter="{x:Bind Theme, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                    Command="{x:Bind Theme.PlayCommand, Mode=OneWay}" CommandParameter="{x:Bind Theme, Mode=OneWay}">
                     <Button.Background><SolidColorBrush x:Name="ActionBrush" Color="#FF303030" /></Button.Background>
                     <Button.BorderBrush><SolidColorBrush x:Name="ActionBorderBrush" Color="#FF505050" /></Button.BorderBrush>
                     <Button.Resources>
@@ -29,7 +30,7 @@
                         <SolidColorBrush x:Key="ButtonBackgroundPointerOver" x:Name="ActionHoverBrush" Color="#FF505050" />
                         <SolidColorBrush x:Key="ButtonBackgroundPressed" x:Name="ActionPressedBrush" Color="#FF202020" />
                     </Button.Resources>
-                    <TextBlock x:Uid="HomePlay" />
+                    <TextBlock x:Uid="HomePlay" TextTrimming="CharacterEllipsis" />
                 </Button>
             </StackPanel>
         </Grid>
