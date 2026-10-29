@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Services.Recommendations;
 public sealed class HomeRecommendationService
 {
     private const int CandidateLimit = 200;
-    private const int PageSize = 12;
+    private const int PageSize = 20;
     private static readonly string[] UnknownNames =
     [
         "未知", "未知艺术家", "未知专辑", "未知流派", "Unknown", "Unknown Artist", "Unknown Album", "Unknown Genre",
@@ -123,7 +123,7 @@ public sealed class HomeRecommendationService
         while (result.Count < count)
         {
             token.ThrowIfCancellationRequested();
-            List<Candidate> candidates = exploration is not null && result.Count is 2 or 7 or 11 ? exploration : pool;
+            List<Candidate> candidates = exploration is not null && result.Count is 2 or 7 or 11 or 15 ? exploration : pool;
             Candidate? best = null;
             for (int relax = 0; relax < 3 && best is null; relax++)
             {

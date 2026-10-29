@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -29,6 +30,7 @@ public sealed partial class MusicCoverControl : UserControl
         nameof(SlideFromRight), typeof(bool), typeof(MusicCoverControl), new PropertyMetadata(true));
     private Music? _observed;
     private CancellationTokenSource? _load;
+    private readonly DispatcherQueue _dispatcher;
     private StoreCarouselImageMotion? _motion;
     private UISettings? _motionSettings;
     /// <summary>获取或设置封面所属曲目。</summary>
@@ -49,6 +51,7 @@ public sealed partial class MusicCoverControl : UserControl
         InitializeComponent();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        _dispatcher = DispatcherQueue;
     }
     private static void MusicChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((MusicCoverControl)sender).Reload();
     private void OnLoaded(object sender, RoutedEventArgs args)
@@ -90,6 +93,8 @@ public sealed partial class MusicCoverControl : UserControl
     private void Cover_SizeChanged(object sender, SizeChangedEventArgs args)
     {
         CoverClip.Rect = new Windows.Foundation.Rect(0, 0, args.NewSize.Width, args.NewSize.Height);
+        // 无封面占位音符随卡片等比缩放；固定 44px 在轮播拼贴大图上几乎不可见，像加载失败。
+        CoverPlaceholder.FontSize = Math.Clamp(Math.Min(args.NewSize.Width, args.NewSize.Height) * .22, 20, 120);
         _motion?.Stop();
         ClearPrevious();
     }
@@ -100,7 +105,11 @@ public sealed partial class MusicCoverControl : UserControl
     }
     private void MetadataChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName is nameof(Music.ImageHash) or nameof(Music.Path)) Reload();
+        if (args.PropertyName is not (nameof(Music.ImageHash) or nameof(Music.Path))) return;
+        // 封面管线（CoverLoadQueue 工作线程）会在此通知里写 ImageHash；在订阅边界切回控件线程，
+        // 否则后台线程直接触碰 FrameworkElement 会抛 RPC_E_WRONG_THREAD (0x8001010E) 并中断整条加载链路。
+        if (_dispatcher.HasThreadAccess) Reload();
+        else _dispatcher.TryEnqueue(Reload);
     }
     private void Reload()
     {

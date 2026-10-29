@@ -101,14 +101,10 @@ public sealed partial class HomeHeroCard : UserControl
     private void UpdateTone(Color color)
     {
         if (color.A == 0) color = Color.FromArgb(255, 32, 32, 32);
-        byte red = (byte)(color.R * .32);
-        byte green = (byte)(color.G * .32);
-        byte blue = (byte)(color.B * .32);
-        ShadeStart.Color = Color.FromArgb(245, red, green, blue);
-        ShadeMiddle.Color = Color.FromArgb(216, red, green, blue);
+        // 遮罩颜色由主题资源决定，不再取封面色（亮封面会让白色叠字失去可读性）；仅播放按钮沿用压暗后的封面色调。
         ActionBrush.Color = Color.FromArgb(255, (byte)(color.R * .5), (byte)(color.G * .5), (byte)(color.B * .5));
         ActionBorderBrush.Color = color;
         ActionHoverBrush.Color = Color.FromArgb(255, (byte)(color.R * .65), (byte)(color.G * .65), (byte)(color.B * .65));
-        ActionPressedBrush.Color = Color.FromArgb(255, red, green, blue);
+        ActionPressedBrush.Color = Color.FromArgb(255, (byte)(color.R * .32), (byte)(color.G * .32), (byte)(color.B * .32));
     }
 }

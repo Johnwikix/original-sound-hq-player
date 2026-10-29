@@ -328,10 +328,13 @@ public sealed class HomeViewModel : ObservableObject
         Familiar = Resolve(result.Familiar, Familiar);
         Discovery = Resolve(result.Discovery, Discovery);
         SongsTitle = ToolUtils.GetString(result.IsColdStart ? "HomeExplore" : "HomeForYou");
-        var themes = new List<HomeTheme>(3);
+        var themes = new List<HomeTheme>(5);
         AddTheme(themes, SongsTitle, ToolUtils.GetString("HomeFeaturedDescription"), Songs);
         AddTheme(themes, ToolUtils.GetString("HomeFamiliar"), ToolUtils.GetString("HomeFamiliarDescription"), Familiar);
         AddTheme(themes, ToolUtils.GetString("HomeDiscovery"), ToolUtils.GetString("HomeDiscoveryDescription"), Discovery);
+        // 第 4/5 页复用「精选」「常听」的下一位封面：标题沿用栏目名、从该曲起播同栏目队列，凑满 Store 走马灯的 5 张。
+        AddTheme(themes, SongsTitle, ToolUtils.GetString("HomeFeaturedDescription"), Songs);
+        AddTheme(themes, ToolUtils.GetString("HomeFamiliar"), ToolUtils.GetString("HomeFamiliarDescription"), Familiar);
         bool sameThemes = themes.Count == Themes.Count;
         for (int i = 0; sameThemes && i < themes.Count; i++) sameThemes = themes[i] == Themes[i];
         if (!sameThemes) Themes = themes;
@@ -369,7 +372,18 @@ public sealed class HomeViewModel : ObservableObject
     }
     private void AddTheme(List<HomeTheme> themes, string title, string description, List<HomeSong> songs)
     {
-        if (songs.Count > 0) themes.Add(new(title, description, songs[0].Music, songs[0].Queue, PlayThemeCommand));
+        // 各栏目榜首可能重复（同一首高热度曲），跳过已用作封面的曲目保证每页封面不同。
+        foreach (var song in songs)
+        {
+            if (UsesArtwork(themes, song.Music)) continue;
+            themes.Add(new(title, description, song.Music, song.Queue, PlayThemeCommand));
+            return;
+        }
+    }
+    private static bool UsesArtwork(List<HomeTheme> themes, Music music)
+    {
+        foreach (var theme in themes) if (ReferenceEquals(theme.Artwork, music)) return true;
+        return false;
     }
     private async Task PlayAsync(Music? selected, IReadOnlyList<Music>? songs)
     {

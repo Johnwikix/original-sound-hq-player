@@ -1,3 +1,12 @@
+## 2026-10-29 首页轮播 5 张自动滚动与封面加载线程修复
+- `View/Controls/MusicCoverControl.xaml.cs`：修复封面管线工作线程写 `ImageHash` 时 `PropertyChanged` 同步回调 UI 抛 RPC_E_WRONG_THREAD (0x8001010E)、导致首页封面整链路加载失败的问题；`MetadataChanged` 在订阅边界封送回控件线程执行。无封面占位音符随卡片尺寸等比缩放，轮播拼贴大卡不再是空灰块配小图标。
+- `View/Controls/FeaturedCarousel.xaml.cs`：补齐 DevWinUI 原版 `AutoShuffle`/`ShuffleDuration` 走马灯：默认 5 秒自动翻页，悬停暂停并保留剩余时间（一次性尾段恢复），手动翻页、换源或卸载时停表，属性可关。
+- `ViewModel/Pages/HomeViewModel.cs`：轮播主题最多 5 张（精选/常听/探索 + 精选、常听各再取一位，从该曲起播同栏目队列），自动跳过已用作封面的曲目避免重复封面页。
+- `View/Controls/HomeHeroCard.xaml(.cs)`：遮罩对齐原版形状（左 40% 宽、50% 不透明、0.28→0.4 线性淡出）后，颜色改为跟应用主题整套适配：浅色主题浅色遮罩 + 主题深色文字、深色主题深色遮罩 + 白色文字，卡片底色同步跟随，不再取封面边缘色（亮封面下叠字不可读）；播放按钮沿用压暗封面色调。
+- `Services/Recommendations/HomeRecommendationService.cs`：三栏各 12→20 首，探索位注入点扩至第 15 位。
+- `_tools/HomeUiRegression`：78 项通过，新增后台写 ImageHash 不再同步进 UI、五张主题去重、自动轮播/悬停暂停、大卡无封面占位、遮罩主题中性等回归。
+- `_tools/HomeRecommendationRegression`：栏目数量断言 12→20，33 项通过（含 10 万曲目 148ms 规模测试）。
+
 ## 2026-10-29 修复全局字体刷新覆盖窗口主题
 - `ApplicationFontService.cs`：在 `XamlRoot.Content` 刷新字体资源，避免 WinUIEx 把内层 WindowContent 恢复的 Default 写回外层，覆盖启动时保存的浅/深主题；保留内层继承状态。
 - `_tools/FontUiRegression`：改用真实 WindowContent 包装层，修复前复现仅调用一次 SetAppTheme 后 Light 被 Loaded 改为 Default；修复后 207 项原生检查通过，覆盖浅/深/跟随系统、Mica/亚克力、即时换字体及重新挂接。

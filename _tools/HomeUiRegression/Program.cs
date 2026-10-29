@@ -133,7 +133,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Wait(() => home.HasContent && !home.IsLoading);
             Check(((ScrollViewer)page.FindName("ContentScroll")).Visibility == Visibility.Visible && !home.IsEmpty,
                 "first imported batch replaces empty state before overall scanning completes");
-            Check(home.Familiar.Count == 12 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
+            Check(home.Familiar.Count == 20 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
                 "real SQLite history and canonical music objects reach the shipping page");
             Check(!home.PlaySongCommand.CanExecute(home.Songs[0]), "play remains guarded until engine and lifecycle are ready");
             Check(Descendants<ListView>(page).SelectMany(list => Descendants<Button>(list))
@@ -146,15 +146,21 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var initialSongs = home.Songs;
             var initialThemes = home.Themes;
             var carousel = (FeaturedCarousel)page.FindName("Featured");
+            carousel.AutoShuffle = false; // 手动导航断言需要确定时序，自动轮播单独验证。
             CarouselLighting[] lights = [Field<CarouselLighting>(carousel, "_lighting")];
             Check(lights.All(l => l.IsAttached), "hero and collage share lighting within the two non-ambient light limit");
+            var lightShade = (GradientStop)((HomeHeroCard)page.FindName("HomeHero")).FindName("ShadeStart");
+            var lightTitle = (TextBlock)((HomeHeroCard)page.FindName("HomeHero")).FindName("TitleText");
+            Check(lightShade.Color.A == 128 && lightShade.Color.R > 200 && lightShade.Color.R == lightShade.Color.G && lightShade.Color.G == lightShade.Color.B
+                && lightTitle.Foreground is SolidColorBrush lightFg && lightFg.Color.R < 100,
+                "light theme pairs a light scrim with dark hero text");
             var slider = (Grid)carousel.FindName("SliderGrid");
             var primary = (Button)carousel.FindName("PrimaryThumbnail");
             var secondary = (Button)carousel.FindName("SecondaryThumbnail");
             Check(slider.ActualWidth / slider.ActualHeight is > 1.16 and < 1.3
                 && primary.ActualWidth / primary.ActualHeight is > 1.2 and < 1.65
                 && secondary.ActualWidth / secondary.ActualHeight is > .8 and < 1.15,
-                "main and collage artwork use near-square rectangular proportions");
+                $"main and collage artwork use near-square rectangular proportions (slider {slider.ActualWidth:F0}x{slider.ActualHeight:F0}, primary {primary.ActualWidth:F0}x{primary.ActualHeight:F0}, secondary {secondary.ActualWidth:F0}x{secondary.ActualHeight:F0})");
             var shelf = Descendants<ListView>(page).First();
             var shelfScroll = Descendants<ScrollViewer>(shelf).First();
             shelfScroll.ChangeView(140, null, null, true);
@@ -276,6 +282,42 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                     "cover cropping preserves the center strip rather than anchoring at either edge");
             }
             finally { pageGrid.Children.Remove(centerCover); }
+            // CoverLoadQueue 工作线程写 ImageHash 曾在 PropertyChanged 里同步触碰 UI 抛 0x8001010E，导致首页封面整链路失败。
+            WinUIMusicPlayer.Utils.ToolUtils.PrepareArtwork(97);
+            var marshalCover = new MusicCoverControl
+            {
+                Width = 60, Height = 60, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+                Music = new Music { Id = 97, ImageHash = "fixture-marshal", Path = "missing-marshal.flac" }
+            };
+            Grid.SetRow(marshalCover, 1);
+            pageGrid.Children.Add(marshalCover);
+            try
+            {
+                await Wait(() => marshalCover.IsLoaded);
+                var marshalMusic = marshalCover.Music!;
+                var loadBefore = Field<CancellationTokenSource>(marshalCover, "_load");
+                await Task.Run(() => marshalMusic.ImageHash = "fixture-marshal-2");
+                Check(marshalMusic.ImageHash == "fixture-marshal-2",
+                    "background ImageHash writes no longer marshal into the UI thread synchronously");
+                await Wait(() => !ReferenceEquals(Field<CancellationTokenSource>(marshalCover, "_load"), loadBefore));
+            }
+            finally { pageGrid.Children.Remove(marshalCover); }
+            // 无封面时占位音符随卡片尺寸等比放大；固定 44px 在拼贴大卡上几乎不可见，像加载失败。
+            var bareCover = new MusicCoverControl
+            {
+                Width = 380, Height = 260, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+                Music = new Music { Id = 96, ImageHash = "fixture-bare", Path = "missing-bare.flac" }
+            };
+            Grid.SetRow(bareCover, 1);
+            pageGrid.Children.Add(bareCover);
+            try
+            {
+                var barePlaceholder = (FontIcon)bareCover.FindName("CoverPlaceholder");
+                await Wait(() => bareCover.ActualWidth > 300 && barePlaceholder.FontSize > 50);
+                Check(barePlaceholder.Visibility == Visibility.Visible && ((Image)bareCover.FindName("CoverImage")).Source is null,
+                    "large collage tiles show a proportional no-artwork placeholder instead of a blank slab");
+            }
+            finally { pageGrid.Children.Remove(bareCover); }
             WinUIMusicPlayer.Utils.ToolUtils.PrepareArtwork(99, 64, 4096);
             var portrait = new Music { Id = 99, ImageHash = "fixture-portrait", Path = "missing-portrait.flac" };
             var portraitArtwork = await WinUIMusicPlayer.Utils.CoverLoadQueue.EnqueueArtworkAsync(portrait, default, 800);
@@ -287,6 +329,9 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             page.RequestedTheme = ElementTheme.Dark;
             page.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 32, 32, 32));
             await Task.Delay(80);
+            var darkShade = (GradientStop)((HomeHeroCard)page.FindName("HomeHero")).FindName("ShadeStart");
+            Check(darkShade.Color.A == 128 && darkShade.Color.R == darkShade.Color.G && darkShade.Color.G == darkShade.Color.B,
+                "hero shade stays a fixed-strength theme neutral instead of following artwork colors");
             await Capture(page, "home-dark.png");
             var unlitFrame = await WindowCapture.CaptureAsync(window, "home-window-rest.png");
             var hover = Field<Microsoft.UI.Composition.SpotLight>(lights[0], "_light");
@@ -340,6 +385,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "wide Store layout has one large thumbnail above two smaller thumbnails");
             Check(((PipsPager)carousel.FindName("Pager")).NumberOfPages == home.Themes.Count,
                 "Store carousel uses interactive dot pagination");
+            Check(home.Themes.Count == 5 && home.Themes.Select(t => t.Artwork).Distinct().Count() == 5,
+                "three shelves fill five distinct featured pages");
             Check(carousel.ItemsSource!.Count >= 2 && carousel.SelectedItem is HomeTheme, "featured control receives theme snapshots through compiled binding");
             var next = (Button)carousel.FindName("NextButton");
             ((Button)((HomeHeroCard)page.FindName("HomeHero")).FindName("PlayButton")).Focus(FocusState.Keyboard);
@@ -351,12 +398,27 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Task.Delay(200);
             Check(next.Visibility == Visibility.Collapsed, "hidden arrow actions leave no invisible pointer hit area");
             carousel.Move(1);
-            Check(carousel.SelectedIndex == 1, "featured control navigates without an autoplay timer");
+            Check(carousel.SelectedIndex == 1, "featured control navigates synchronously with autoplay disabled");
             ((PipsPager)carousel.FindName("Pager")).SelectedPageIndex = 0;
             Check(carousel.SelectedIndex == 0, "dot pagination updates the selected carousel content");
+            carousel.ShuffleDuration = TimeSpan.FromMilliseconds(150);
+            carousel.AutoShuffle = true;
+            await Wait(() => carousel.SelectedIndex != 0);
+            int autoAdvanced = carousel.SelectedIndex;
+            Check(autoAdvanced > 0, "store autoplay advances the featured pages automatically");
+            typeof(FeaturedCarousel).GetMethod("Carousel_PointerEntered", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(carousel, [null, null]);
+            await Task.Delay(500);
+            Check(carousel.SelectedIndex == autoAdvanced, "hover pauses autoplay like the upstream store carousel");
+            typeof(FeaturedCarousel).GetMethod("Carousel_PointerExited", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(carousel, [null, null]);
+            await Wait(() => carousel.SelectedIndex != autoAdvanced);
+            carousel.AutoShuffle = false;
             var baseTheme = home.Themes[0];
             var differentArtwork = songs.First(m => !ReferenceEquals(m, baseTheme.Artwork));
             var source = new ObservableCollection<HomeTheme> { baseTheme, baseTheme with { Artwork = differentArtwork, Title = "Other artwork" } };
+            // 自动轮播可能停在任意页；先归零再换源，避免 PipsPager 因 NumberOfPages 收缩 clamp 出非零选中页。
+            ((PipsPager)carousel.FindName("Pager")).SelectedPageIndex = 0;
             carousel.ItemsSource = source;
             var stableCard = (HomeHeroCard)page.FindName("HomeHero");
             var animatedCover = (MusicCoverControl)stableCard.FindName("Artwork");

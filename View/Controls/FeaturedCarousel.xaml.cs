@@ -1,3 +1,4 @@
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -30,8 +31,18 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     /// <summary>标识拼贴点击命令。</summary>
     public static readonly DependencyProperty ThumbnailCommandProperty = DependencyProperty.Register(
         nameof(ThumbnailCommand), typeof(ICommand), typeof(FeaturedCarousel), new PropertyMetadata(null));
+    /// <summary>标识是否自动轮播，沿用原版 StoreCarousel.AutoShuffle 默认开启。</summary>
+    public static readonly DependencyProperty AutoShuffleProperty = DependencyProperty.Register(
+        nameof(AutoShuffle), typeof(bool), typeof(FeaturedCarousel), new PropertyMetadata(true, ShuffleSettingChanged));
+    /// <summary>标识自动轮播间隔，沿用原版 StoreCarousel.ShuffleDuration 默认 5 秒。</summary>
+    public static readonly DependencyProperty ShuffleDurationProperty = DependencyProperty.Register(
+        nameof(ShuffleDuration), typeof(TimeSpan), typeof(FeaturedCarousel),
+        new PropertyMetadata(TimeSpan.FromSeconds(5), ShuffleSettingChanged));
     private INotifyCollectionChanged? _observed;
     private INotifyCollectionChanged? _thumbnailObserved;
+    private readonly DispatcherQueueTimer _shuffleTimer;
+    private DateTime _shuffleStartedUtc;
+    private TimeSpan _shufflePausedRemaining;
     private int _index;
     private bool _slideFromRight = true;
     private bool _pointerInside;
@@ -47,6 +58,10 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     public DataTemplate? ThumbnailTemplate { get => (DataTemplate?)GetValue(ThumbnailTemplateProperty); set => SetValue(ThumbnailTemplateProperty, value); }
     /// <summary>获取或设置拼贴点击命令。</summary>
     public ICommand? ThumbnailCommand { get => (ICommand?)GetValue(ThumbnailCommandProperty); set => SetValue(ThumbnailCommandProperty, value); }
+    /// <summary>获取或设置是否自动轮播。</summary>
+    public bool AutoShuffle { get => (bool)GetValue(AutoShuffleProperty); set => SetValue(AutoShuffleProperty, value); }
+    /// <summary>获取或设置自动轮播间隔。</summary>
+    public TimeSpan ShuffleDuration { get => (TimeSpan)GetValue(ShuffleDurationProperty); set => SetValue(ShuffleDurationProperty, value); }
     /// <summary>获取当前主轮播项。</summary>
     public object? SelectedItem => ItemsSource is { Count: > 0 } items ? items[_index] : null;
     /// <summary>获取当前页索引。</summary>
@@ -78,7 +93,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     /// <inheritdoc />
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>初始化 Store 布局，不启动后台计时器。</summary>
+    /// <summary>初始化 Store 布局并准备自动轮播计时器，实际启停跟随加载状态。</summary>
     public FeaturedCarousel()
     {
         InitializeComponent();
@@ -89,6 +104,8 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         TertiaryThumbnail.Translation = new Vector3(0, 0, 12);
         // Composition 的非环境光数量受限，整组封面复用一盏聚光处理悬停和按压。
         _lighting = new CarouselLighting(LayoutGrid);
+        _shuffleTimer = DispatcherQueue.CreateTimer();
+        _shuffleTimer.Tick += (sender, args) => Move(1);
     }
     /// <summary>按相对方向循环翻页。</summary>
     public void Move(int direction)
@@ -135,6 +152,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         UnobserveCollections();
         _pointerInside = false;
         _focusInside = false;
+        _shuffleTimer.Stop();
         _lighting.Detach();
     }
     private void UnobserveCollections()
@@ -166,6 +184,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         Notify(nameof(Position));
         Notify(nameof(PagerVisibility));
         NotifyNavigation();
+        RestartShuffle();
     }
     private void NotifyThumbnails()
     {
@@ -219,11 +238,19 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private void Carousel_PointerEntered(object sender, PointerRoutedEventArgs args)
     {
         _pointerInside = true;
+        // 原版 OnSliderPointerEntered：悬停期间暂停自动轮播并保留剩余时间。
+        if (_shuffleTimer.IsRunning)
+        {
+            var remaining = _shuffleTimer.Interval - (DateTime.UtcNow - _shuffleStartedUtc);
+            _shufflePausedRemaining = remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining;
+            _shuffleTimer.Stop();
+        }
         NotifyNavigation();
     }
     private void Carousel_PointerExited(object sender, PointerRoutedEventArgs args)
     {
         _pointerInside = false;
+        ResumeShuffle();
         NotifyNavigation();
     }
     private void Carousel_GotFocus(object sender, RoutedEventArgs args)
@@ -237,6 +264,44 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         while (focused is not null && !ReferenceEquals(focused, this)) focused = VisualTreeHelper.GetParent(focused);
         _focusInside = focused is not null;
         NotifyNavigation();
+    }
+    private static void ShuffleSettingChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        var control = (FeaturedCarousel)sender;
+        control.RestartShuffle();
+    }
+    private bool ShouldShuffle => AutoShuffle && !_pointerInside && IsLoaded && PageCount > 1;
+    /// <summary>对齐原版 StartTransition：每次换项或设置变化都重置完整间隔；悬停、卸载或不足两页时完全停住。</summary>
+    private void RestartShuffle()
+    {
+        _shufflePausedRemaining = TimeSpan.Zero;
+        if (!ShouldShuffle)
+        {
+            _shuffleTimer.Stop();
+            return;
+        }
+        var interval = ShuffleDuration > TimeSpan.Zero ? ShuffleDuration : TimeSpan.FromSeconds(5);
+        _shuffleTimer.Stop();
+        _shuffleTimer.IsRepeating = true;
+        _shuffleTimer.Interval = interval;
+        _shuffleStartedUtc = DateTime.UtcNow;
+        _shuffleTimer.Start();
+    }
+    /// <summary>以暂停时剩余的间隔单次触发，随后由换项重启回到完整间隔，等价原版 PausableDispatcherTimer。</summary>
+    private void ResumeShuffle()
+    {
+        var remaining = _shufflePausedRemaining;
+        _shufflePausedRemaining = TimeSpan.Zero;
+        if (remaining <= TimeSpan.Zero || !ShouldShuffle)
+        {
+            RestartShuffle();
+            return;
+        }
+        _shuffleTimer.Stop();
+        _shuffleTimer.IsRepeating = false;
+        _shuffleTimer.Interval = remaining;
+        _shuffleStartedUtc = DateTime.UtcNow;
+        _shuffleTimer.Start();
     }
     private void Carousel_KeyDown(object sender, KeyRoutedEventArgs args)
     {

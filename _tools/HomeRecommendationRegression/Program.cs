@@ -18,8 +18,8 @@ RecommendationTrack Track(int id, string artist = "", string genre = "", string 
 var library = new List<RecommendationTrack>();
 for (int i = 1; i <= 80; i++) library.Add(Track(i, "Artist " + i % 20, i <= 60 ? "Pop" : "Jazz", "Album " + i % 25));
 var cold = service.Build(library, [], now, 0, default);
-Check(cold.IsColdStart && cold.Songs.Count == 12 && cold.Familiar.Count == 0, "cold start fills a useful shelf without pretending to have history");
-Check(cold.Songs.Select(x => x.MusicId).Distinct().Count() == 12, "recommendations never repeat a song");
+Check(cold.IsColdStart && cold.Songs.Count == 20 && cold.Familiar.Count == 0, "cold start fills a useful shelf without pretending to have history");
+Check(cold.Songs.Select(x => x.MusicId).Distinct().Count() == 20, "recommendations never repeat a song");
 Check(cold.Songs.Select(x => library[x.MusicId - 1].Genre).Distinct().Count() == 2, "minority genres survive a dominant genre");
 Check(cold.Songs.GroupBy(x => library[x.MusicId - 1].Artists[0]).All(g => g.Count() <= 2), "available artists respect the two-song quota");
 Check(cold.Songs.GroupBy(x => (library[x.MusicId - 1].AlbumArtist, library[x.MusicId - 1].Album)).All(g => g.Count() == 1), "available albums are spread across the shelf without merging namesakes");
@@ -35,7 +35,7 @@ var unknownNamedArtist = service.Build([Track(1, "Unknown Mortal Orchestra", "Ro
 Check(unknownNamedArtist.Songs.Any(song => song.Reason == RecommendationReason.Artist && song.Detail == "Unknown Mortal Orchestra"),
     "real artists starting with Unknown remain preference features");
 var sparse = Enumerable.Range(1, 24).Select(i => Track(i)).ToArray();
-Check(service.Build(sparse, [], now, 0, default).Songs.Count == 12, "missing artist, album and genre never discard songs");
+Check(service.Build(sparse, [], now, 0, default).Songs.Count == 20, "missing artist, album and genre never discard songs");
 Check(service.Build(Enumerable.Range(1, 30).Select(i => Track(i, "Artist " + i, "Pop")).ToArray(), [], now, 0, default).Discovery.Count == 0,
     "single-genre library does not claim to offer another genre");
 Check(service.Build([Track(1)], [], now, 0, default).Songs.Count == 1, "one-song library relaxes quotas without manufacturing duplicates");
@@ -87,7 +87,7 @@ foreach (int size in new[] { 10000, 100000 })
     long allocated = GC.GetAllocatedBytesForCurrentThread();
     var watch = Stopwatch.StartNew();
     var result = service.Build(large, [], now, 0, default);
-    Check(result.Songs.Count == 12, "bounded candidate selection for " + size + " songs");
+    Check(result.Songs.Count == 20, "bounded candidate selection for " + size + " songs");
     Console.WriteLine($"MEASURE: synthetic {size} tracks, {watch.Elapsed.TotalMilliseconds:F1} ms, {(GC.GetAllocatedBytesForCurrentThread() - allocated) / 1048576.0:F2} MiB allocated; input creation excluded.");
 }
 Console.WriteLine($"PASS: {checks} checks.");
