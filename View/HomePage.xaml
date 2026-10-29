@@ -6,19 +6,56 @@
     xmlns:vm="using:WinUIMusicPlayer.ViewModel"
     xmlns:tools="using:WinUIMusicPlayer.Utils">
     <Page.Resources>
+        <Style x:Key="HomeCoverPlayButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="CoverRoot" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                            <!-- 与任务栏封面一致：遮罩绘制在图片上方，图标不参与命中。 -->
+                            <Border x:Name="PlayOverlay" Background="#90000000" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"
+                                IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                                <FontIcon Glyph="&#xE768;" FontSize="28" Foreground="White" />
+                            </Border>
+                            <Border x:Name="KeyboardPlayOverlay" Background="#90000000" CornerRadius="{TemplateBinding CornerRadius}" Opacity="0"
+                                IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                                <FontIcon Glyph="&#xE768;" FontSize="28" Foreground="White" />
+                            </Border>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="PlayOverlay.Opacity" Value="1" /></VisualState.Setters></VisualState>
+                                    <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="PlayOverlay.Opacity" Value="1" /><Setter Target="PlayOverlay.Background" Value="#A0000000" /></VisualState.Setters></VisualState>
+                                    <VisualState x:Name="Disabled"><VisualState.Setters><Setter Target="CoverRoot.Opacity" Value="0.45" /></VisualState.Setters></VisualState>
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="FocusStates">
+                                    <VisualState x:Name="Unfocused" />
+                                    <VisualState x:Name="PointerFocused" />
+                                    <VisualState x:Name="Focused"><VisualState.Setters><Setter Target="KeyboardPlayOverlay.Opacity" Value="1" /></VisualState.Setters></VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <DataTemplate x:Key="SongTemplate" x:DataType="vm:HomeSong">
             <StackPanel Width="160" Spacing="6" Margin="0,0,12,24">
-                <Button Padding="0" Width="160" Height="160" CornerRadius="8" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                    Command="{x:Bind DetailsCommand}" CommandParameter="{x:Bind}" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}">
+                <Button x:Uid="HomePlaySong" Width="160" Height="160" Style="{StaticResource HomeCoverPlayButtonStyle}"
+                    Command="{x:Bind PlayCommand}" CommandParameter="{x:Bind}" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}">
                     <controls:MusicCoverControl Music="{x:Bind Music}" />
                 </Button>
                 <TextBlock Text="{x:Bind Music.Title, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                 <TextBlock Text="{x:Bind Music.Author, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
                 <TextBlock Text="{x:Bind Reason}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Reason}" />
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Button x:Uid="HomePlaySong" Command="{x:Bind PlayCommand}" CommandParameter="{x:Bind}" Padding="8">
-                        <FontIcon Glyph="&#xE768;" FontSize="14" />
-                    </Button>
                     <Button x:Uid="HomeFavorite" Command="{x:Bind Music.UpdateFavouriteCommand}" CommandParameter="{x:Bind Music}" Padding="8">
                         <FontIcon Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(Music.IsFavorite), Mode=OneWay}" Foreground="Red" FontSize="14" />
                     </Button>

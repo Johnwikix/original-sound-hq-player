@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.ViewModel;
 
 /// <summary>展示规范 Music 引用和推荐理由，所有操作转发到首页命令。</summary>
 public sealed record HomeSong(Music Music, string Reason, IReadOnlyList<Music> Queue,
-    IAsyncRelayCommand<HomeSong> PlayCommand, IRelayCommand<HomeSong> DetailsCommand);
+    IAsyncRelayCommand<HomeSong> PlayCommand);
 
 /// <summary>保存精选轮播的主题和固定播放快照。</summary>
 public sealed record HomeTheme(string Title, string Description, Music Artwork, IReadOnlyList<Music> Queue,
@@ -73,14 +73,10 @@ public sealed class HomeViewModel : ObservableObject
     public IAsyncRelayCommand<HomeSong> PlaySongCommand { get; }
     /// <summary>获取播放精选主题的命令。</summary>
     public IAsyncRelayCommand<HomeTheme> PlayThemeCommand { get; }
-    /// <summary>获取打开现有属性窗口的转发命令。</summary>
-    public IRelayCommand<HomeSong> DetailsCommand { get; }
     /// <summary>获取复用现有导入流程的命令。</summary>
     public IAsyncRelayCommand AddFolderCommand => _folders.AddFolderCommand;
     /// <summary>获取扫描状态，供空库反馈使用。</summary>
     public bool IsScanning => _folders.IsScanning;
-    /// <summary>在 UI 线程请求视图打开已有曲目属性窗口。</summary>
-    public event Action<Music>? DetailsRequested;
 
     /// <summary>初始化依赖，不订阅事件或启动工作。</summary>
     public HomeViewModel(AppViewModel app, MusicDatabaseService database, PlaybackStatsService statistics,
@@ -100,11 +96,6 @@ public sealed class HomeViewModel : ObservableObject
             song => song is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         PlayThemeCommand = new AsyncRelayCommand<HomeTheme>(theme => PlayAsync(theme?.Artwork, theme?.Queue),
             theme => theme is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
-        DetailsCommand = new RelayCommand<HomeSong>(song =>
-        {
-            if (song is not null && _active && _app.CanPublishState && _app.FindById(song.Music.Id) is { } music)
-                DetailsRequested?.Invoke(music);
-        });
     }
 
     private bool CanPlay => _active && !_stopped && _app.CanStartPlayback;
@@ -164,7 +155,6 @@ public sealed class HomeViewModel : ObservableObject
             _folders.PropertyChanged -= FoldersChanged;
             _remote.SourceAvailabilityChanged -= SourceChanged;
         }
-        DetailsRequested = null;
         await _refreshTask;
         _snapshot = [];
         _history.Clear();
@@ -366,7 +356,7 @@ public sealed class HomeViewModel : ObservableObject
             };
             string reason = ToolUtils.GetString(key);
             if (song.Detail.Length > 0) reason = string.Format(reason, song.Detail);
-            result.Add(new(music, reason, queue, PlaySongCommand, DetailsCommand));
+            result.Add(new(music, reason, queue, PlaySongCommand));
         }
         if (result.Count == current.Count)
         {

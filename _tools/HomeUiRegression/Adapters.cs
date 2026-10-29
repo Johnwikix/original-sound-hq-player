@@ -173,12 +173,3 @@ namespace WinUIMusicPlayer.ViewModel
         public Task DropFoldersAsync(IReadOnlyList<Windows.Storage.IStorageItem> items) => Task.CompletedTask;
     }
 }
-namespace WinUIMusicPlayer.View.SubView
-{
-    public sealed class MusicDetailsWindow
-    {
-        public static int LastId;
-        public MusicDetailsWindow(Music music) => LastId = music.Id;
-        public void Activate() { }
-    }
-}

@@ -136,6 +136,9 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(home.Familiar.Count == 12 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
                 "real SQLite history and canonical music objects reach the shipping page");
             Check(!home.PlaySongCommand.CanExecute(home.Songs[0]), "play remains guarded until engine and lifecycle are ready");
+            Check(Descendants<ListView>(page).SelectMany(list => Descendants<Button>(list))
+                .Where(b => ReferenceEquals(b.Command, home.PlaySongCommand)).All(b => !b.IsEnabled),
+                "whole-cover play buttons stay disabled until playback is ready");
             app.State.Lifecycle.TransitionTo(AppPhase.Initializing);
             app.State.Lifecycle.TransitionTo(AppPhase.Ready);
             app.IsPlaybackEngineReady = true;
@@ -167,8 +170,6 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Wait(() => playback.LastId == selected.Music.Id);
             Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(selected.Queue.Select(m => m.Id)),
                 "native button invocation plays the explicit shelf queue");
-            bool openedDetails = false;
-            home.DetailsRequested += _ => openedDetails = true;
             foreach (string name in new[] { "PrimaryThumbnail", "SecondaryThumbnail", "TertiaryThumbnail" })
             {
                 var tile = (Button)carousel.FindName(name);
@@ -177,7 +178,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 var tilePeer = new ButtonAutomationPeer(tile);
                 ((IInvokeProvider)tilePeer.GetPattern(PatternInterface.Invoke)).Invoke();
                 await Wait(() => playback.LastId == song.Music.Id);
-                Check(!openedDetails && app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(song.Queue.Select(m => m.Id)),
+                Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(song.Queue.Select(m => m.Id)),
                     name + " starts its song in the recommendation queue without opening music properties");
             }
             await Task.Delay(450);
@@ -185,6 +186,36 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 && Math.Abs(shelfOffset - shelfScroll.HorizontalOffset) < .5
                 && ReferenceEquals(sourceBeforePlay, ((Image)coverBeforePlay.FindName("CoverImage")).Source),
                 "playback selection and history settlement preserve shelf objects, cover sources and horizontal scroll position");
+            foreach (var list in Descendants<ListView>(page))
+            {
+                var covers = Descendants<Button>(list).Where(b => ReferenceEquals(b.Command, home.PlaySongCommand)).ToArray();
+                if (covers.Length == 0) continue;
+                Check(covers.Length == Descendants<MusicCoverControl>(list).Count()
+                    && covers.All(b => b.ActualWidth == 160 && b.ActualHeight == 160
+                        && b.Content is MusicCoverControl
+                        && b.Parent is StackPanel card && card.Children.OfType<StackPanel>().Single().Children.Count == 2),
+                    "shelf exposes one full-cover play action per song and only favorite/queue footer actions");
+                var cover = covers[0];
+                var song = (HomeSong)cover.CommandParameter;
+                playback.LastId = 0;
+                ((IInvokeProvider)new ButtonAutomationPeer(cover).GetPattern(PatternInterface.Invoke)).Invoke();
+                await Wait(() => playback.LastId == song.Music.Id);
+                Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(song.Queue.Select(m => m.Id)),
+                    "native shelf cover click plays its own recommendation, familiar or discovery queue");
+            }
+            var playOverlay = Descendants<Border>(button).Single(b => b.Name == "PlayOverlay");
+            var keyboardOverlay = Descendants<Border>(button).Single(b => b.Name == "KeyboardPlayOverlay");
+            Check(playOverlay.Opacity == 0 && keyboardOverlay.Opacity == 0,
+                "normal cover keeps its artwork unobstructed");
+            VisualStateManager.GoToState(button, "PointerOver", false);
+            Check(playOverlay.Opacity == 1 && !playOverlay.IsHitTestVisible
+                && Descendants<FontIcon>(playOverlay).Single().Glyph == "\uE768",
+                "hover dims the cover and reveals a centered play icon without blocking the button");
+            await Capture(button, "home-cover-hover.png");
+            VisualStateManager.GoToState(button, "Normal", false);
+            button.Focus(FocusState.Keyboard);
+            await Task.Delay(60);
+            Check(keyboardOverlay.Opacity == 1, "keyboard focus exposes the same cover play affordance");
             var favorite = Descendants<Button>(shelf).First(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.UpdateFavouriteCommand));
             Check(Descendants<FontIcon>(favorite).Single().Foreground is SolidColorBrush heart && heart.Color == Microsoft.UI.Colors.Red,
                 "favorite heart follows the existing red icon convention");
@@ -195,7 +226,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "refresh action has no border and uses a theme foreground");
             foreach (var list in Descendants<ListView>(page))
             {
-                var actions = Descendants<Button>(list).Where(b => ReferenceEquals(b.Command, home.PlaySongCommand)).ToArray();
+                var actions = Descendants<Button>(list).Where(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.UpdateFavouriteCommand)
+                    || ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.AddToPlayListCommand)).ToArray();
                 if (actions.Length == 0) continue;
                 double bottom = actions.Max(b => b.TransformToVisual(list).TransformPoint(new Windows.Foundation.Point(0, b.ActualHeight)).Y);
                 var bar = Descendants<Microsoft.UI.Xaml.Controls.Primitives.ScrollBar>(list)

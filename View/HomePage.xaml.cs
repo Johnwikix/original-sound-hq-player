@@ -6,13 +6,11 @@ using System;
 using System.Collections.Generic;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
-using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View;
 
-/// <summary>显示首页并转发拖放和现有属性窗口交互，状态和播放均由 ViewModel 管理。</summary>
+/// <summary>显示首页并转发拖放交互，状态和播放均由 ViewModel 管理。</summary>
 public sealed partial class HomePage : Page
 {
     /// <summary>获取稳定的首页 ViewModel。</summary>
@@ -35,17 +33,14 @@ public sealed partial class HomePage : Page
     {
         Bindings.Initialize();
         Bindings.Update();
-        ViewModel.DetailsRequested += OpenDetails;
         ViewModel.Activate(DispatcherQueue);
     }
     private void Page_Unloaded(object sender, RoutedEventArgs args)
     {
-        ViewModel.DetailsRequested -= OpenDetails;
         ViewModel.Deactivate();
         DropOverlay.Visibility = Visibility.Collapsed;
         Bindings.StopTracking();
     }
-    private void OpenDetails(Music music) => new MusicDetailsWindow(music).Activate();
     private void Empty_DragOver(object sender, DragEventArgs args)
     {
         bool accept = !ViewModel.IsScanning && args.DataView.Contains(StandardDataFormats.StorageItems);
