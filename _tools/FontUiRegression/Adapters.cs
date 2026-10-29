@@ -2,6 +2,11 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
+        public static string AppTheme { get; set; } = "Default";
+        public static string AppStyle { get; set; } = "TransparentAcrylic";
+        public static bool IsUpdateBackDrop { get; set; }
+        public static float CustomAcrylicOpacity { get; set; } = 0.5f;
+        public static uint CustomColorArgb { get; set; } = 0xFF808080;
         public static Microsoft.UI.Xaml.ElementTheme ElementTheme { get; set; }
         public static string ArtistSplitSymbols => ";";
         public static bool AutoHideDesktopLyricsFloatingOnPlayingDetail { get; set; } = false;

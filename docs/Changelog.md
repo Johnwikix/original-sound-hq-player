@@ -1,3 +1,8 @@
+## 2026-10-29 修复全局字体刷新覆盖窗口主题
+- `ApplicationFontService.cs`：在 `XamlRoot.Content` 刷新字体资源，避免 WinUIEx 把内层 WindowContent 恢复的 Default 写回外层，覆盖启动时保存的浅/深主题；保留内层继承状态。
+- `_tools/FontUiRegression`：改用真实 WindowContent 包装层，修复前复现仅调用一次 SetAppTheme 后 Light 被 Loaded 改为 Default；修复后 207 项原生检查通过，覆盖浅/深/跟随系统、Mica/亚克力、即时换字体及重新挂接。
+- 清理此前追加启动主题恢复的替代方案；完整播放器关闭重启待验证。
+
 ## 2026-10-29 首页歌曲封面统一播放入口
 - `View/HomePage.xaml`：推荐、常听、流派探索的整张封面改为播放按钮；参考任务栏封面增加悬停压暗与居中播放图标，键盘聚焦同样显示，移除下方重复播放按钮，保留收藏和加入队列。
 - `ViewModel/Pages/HomeViewModel.cs`、`View/HomePage.xaml.cs`：移除首页不再使用的属性命令、事件和窗口转发，播放继续复用栏目快照与现有可用条件。

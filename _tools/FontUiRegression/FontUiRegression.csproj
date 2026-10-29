@@ -17,6 +17,7 @@
     <Compile Include="../../DesktopLyrics/DesktopLyricsViewModel.cs;../../DesktopLyrics/DesktopLyricsStyle.cs;../../State/DesktopLyricsState.cs;../../Model/DesktopLyricsMode.cs;../../Model/SaveDesktopLyricsState.cs;../../Services/AppLifecycle.cs" />
     <Page Include="../../Style/CustomFontStyle.xaml" Link="CustomFontStyle.xaml" />
     <Compile Include="../../Helper/DialogHelper.cs;../../Services/ApplicationFontService.cs;../../Utils/ApplicationFont.cs;../../Model/FontInfo.cs;../../Model/EffectComboBoxItem.cs" />
+    <Compile Include="../../Helper/ThemeStyleHelper.cs;../../Helper/CustomAcrylicSystemBackdrop.cs;../../Helper/CustomMicaSystemBackdrop.cs" />
     <Compile Include="../../State/*PreferencesState.cs;../../State/PreferencesState.cs" />
     <Compile Include="../../Model/SaveSettings.cs;../../Model/SaveSettings.Audio.cs;../../Model/LyricsEasingJsonConverters.cs;../../Helper/SettingsJsonContext.cs" />
     <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
@@ -26,5 +27,6 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="WinUIEx" Version="2.9.3" />
   </ItemGroup>
 </Project>

@@ -37,16 +37,18 @@ public sealed class ApplicationFontService : IDisposable
 
     private static void RefreshResources(FrameworkElement root)
     {
-        // WinUI 不会因替换字典值重新计算已解析的 ThemeResource。同一 UI 调用内刷新并恢复
-        // 原主题（包括 Default），沿用系统模板，不逐个遍历或覆盖控件的本地字体及图标字体。
-        ElementTheme requested = root.RequestedTheme;
+        // WinUIEx 的 WindowContent 会把 RequestedTheme 写回外层窗口根节点。
+        // 在内层切换后恢复 Default 会覆盖窗口的显式明暗主题；因此只在实际 XAML 根节点
+        // 刷新 ThemeResource，保留窗口主题以及内层的继承状态。
+        FrameworkElement themeRoot = root.XamlRoot?.Content as FrameworkElement ?? root;
+        ElementTheme requested = themeRoot.RequestedTheme;
         try
         {
-            root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+            themeRoot.RequestedTheme = themeRoot.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
         }
         finally
         {
-            root.RequestedTheme = requested;
+            themeRoot.RequestedTheme = requested;
         }
     }
 

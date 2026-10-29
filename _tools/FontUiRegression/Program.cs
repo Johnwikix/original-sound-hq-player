@@ -84,6 +84,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
             window.Activate();
             await Task.Delay(100);
+            await ThemeStartupRegression.RunAsync(service, segoe, arial, Check);
             string iconFont = icon.FontFamily.Source;
             Check(!settings.Toggle.IsOn && !settings.LyricsCombo.IsEnabled, "Default lyrics selector must be disabled.");
             Check(ReferenceEquals(settings.LyricsCombo.SelectedItem, consolas), "Disabled selection lost the saved lyrics font.");
@@ -152,7 +153,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             service.Dispose();
             service.Apply(segoe.FontFamily);
             Check(((FontFamily)Resources["ContentControlThemeFontFamily"]).Source == "Consolas", "Disposed service accepted a late font change.");
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_checks} checks; real compiled settings bindings, live plain/styled/control fonts in Light/Dark/Default, icon and explicit-font preservation, independent ordinary/desktop lyrics, production desktop style updates in both modes, cleanup, serialization and cached ContentDialog title/content fonts.");
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_checks} checks; real WinUIEx WindowContent wrapper preserves Light/Dark/Default on font registration, live changes and reattachment with Mica/Acrylic; new page theme/foreground, compiled font bindings, icon/explicit-font preservation, independent ordinary/desktop lyrics, cleanup, serialization and cached ContentDialog fonts.");
         }
         catch (Exception ex)
         {
