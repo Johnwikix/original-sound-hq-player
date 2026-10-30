@@ -2609,4 +2609,24 @@ SHA-256: {5}
   <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Canciones siguientes</value></data>
   <data name="HomeNoPlaylists" xml:space="preserve"><value>Aún no hay listas de reproducción</value></data>
   <data name="HomePlaylistAddFailed" xml:space="preserve"><value>No se pudo añadir la canción a la lista. Inténtalo de nuevo.</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>Información de la canción</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>Propiedades de audio</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>Canales</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>Formato</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>Abrir propiedades de la canción</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>Abrir ubicación del archivo</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>Abrir ubicación del archivo</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>Recuperar la metainformación del archivo</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>Recuperar la metainformación del archivo</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>Guardar la letra lrc en el dispositivo local</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Guardar la letra lrc en el dispositivo local</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>Emparejar letras en línea</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Emparejar letras en línea</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>Emparejar portada en línea</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>Emparejar portada en línea</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>Guardar en disco local</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>Guardar en disco local</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Editar portada</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Editar portada</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Información del archivo</value></data>
 </root>

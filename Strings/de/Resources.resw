@@ -2609,4 +2609,24 @@ SHA-256: {5}
   <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Nächste Titel</value></data>
   <data name="HomeNoPlaylists" xml:space="preserve"><value>Noch keine Wiedergabelisten</value></data>
   <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Der Titel konnte nicht zur Wiedergabeliste hinzugefügt werden. Bitte erneut versuchen.</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>Titelinformationen</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>Audioeigenschaften</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>Kanäle</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>Format</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>Titeleigenschaften öffnen</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>Dateispeicherort öffnen</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>Dateispeicherort öffnen</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>Metadaten aus Datei neu einlesen</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>Metadaten aus Datei neu einlesen</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>Songtext als .lrc lokal speichern</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Songtext als .lrc lokal speichern</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>Online-Songtext-Abgleich</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Online-Songtext-Abgleich</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>Online-Cover-Abgleich</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>Online-Cover-Abgleich</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>Lokal speichern</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>Lokal speichern</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Cover bearbeiten</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Cover bearbeiten</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Dateiinformationen</value></data>
 </root>

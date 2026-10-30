@@ -2609,4 +2609,24 @@ SHA-256: {5}
   <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Sonraki şarkılar</value></data>
   <data name="HomeNoPlaylists" xml:space="preserve"><value>Henüz çalma listesi yok</value></data>
   <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Şarkı çalma listesine eklenemedi. Lütfen tekrar deneyin.</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>Şarkı bilgileri</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>Ses özellikleri</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>Kanallar</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>Biçim</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>Şarkı özelliklerini aç</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>Dosya konumunu aç</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>Dosya konumunu aç</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>Kapağı çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>Kapağı çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>Yerel diske kaydet</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>Yerel diske kaydet</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Kapağı düzenle</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Kapağı düzenle</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Dosya bilgileri</value></data>
 </root>

@@ -2609,4 +2609,24 @@ SHA-256: {5}
   <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Следующие композиции</value></data>
   <data name="HomeNoPlaylists" xml:space="preserve"><value>Плейлистов пока нет</value></data>
   <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Не удалось добавить композицию в плейлист. Повторите попытку.</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>Информация о композиции</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>Свойства аудио</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>Каналы</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>Формат</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>Открыть свойства композиции</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>Открыть расположение файла</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>Открыть расположение файла</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>Искать обложку онлайн</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>Искать обложку онлайн</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>Сохранить локально</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>Сохранить локально</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Редактировать обложку</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Редактировать обложку</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Информация о файле</value></data>
 </root>

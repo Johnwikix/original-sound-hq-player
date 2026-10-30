@@ -49,6 +49,15 @@ namespace WinUIMusicPlayer.Utils
         private static readonly Dictionary<string, string> Text = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "home-resources.resw"))
             .Root!.Elements("data").ToDictionary(x => x.Attribute("name")!.Value, x => x.Element("value")!.Value);
         public static string GetString(string key) => Text.TryGetValue(key, out var value) ? value : throw new Exception("Missing resource " + key);
+        public static async Task<Microsoft.UI.Xaml.Media.Imaging.BitmapImage?> ConvertByteArrayToBitmapImage(byte[] bytes, int maxSize = 0)
+        {
+            using var stream = new MemoryStream(bytes, false);
+            var image = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage { DecodePixelWidth = maxSize };
+            await image.SetSourceAsync(System.IO.WindowsRuntimeStreamExtensions.AsRandomAccessStream(stream));
+            return image;
+        }
+        public static Task<(Music, string)> GetMusicInfo(Windows.Storage.StorageFile file)
+            => Task.FromResult((new Music { Path = file.Path }, "[00:01.000]Embedded fixture"));
         public static int RawActive;
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<int, byte[]> Artwork = new();
         public static void PrepareArtwork(int id, int width = 256, int height = 256)
@@ -96,6 +105,9 @@ namespace WinUIMusicPlayer.Utils
     }
     public static class BindUtils
     {
+        public static double BoolToOpacityReConverter(bool value) => value ? 0 : 1;
+        public static double BoolToOpacityConverter(bool value) => value ? 1 : 0;
+        public static bool BoolToBoolReConverter(bool value) => !value;
         public static Visibility BoolToVisibilityConverter(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
         public static string FavouriteGlyphConverter(bool value) => value ? "\uEB52" : "\uEB51";
     }
@@ -131,7 +143,13 @@ namespace WinUIMusicPlayer.Services
         }
         public int QueriesStarted;
         public Task WhenInitialized { get { QueriesStarted++; return _initialized; } set => _initialized = value; }
-        public MusicDatabaseService(SQLiteAsyncConnection database) => _dbConnection = database;
+        public MusicDatabaseService(SQLiteAsyncConnection database)
+        {
+            _dbConnection = database;
+            Lyrics = new(database, new());
+        }
+        public WinUIMusicPlayer.Services.Lyrics.LyricsRepository Lyrics { get; }
+        public SQLiteAsyncConnection GetDbConnection() => _dbConnection;
     }
     public sealed class PlaybackStatsService
     {
@@ -175,12 +193,14 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> FavoriteSongs { get; } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; } = [];
         public BulkObservableCollection<Music> SequentialPlayingList { get; set; } = [];
+        public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); }
         public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
         public bool IsInitialized => State.Lifecycle.IsReady;
         public bool CanPublishState => State.Lifecycle.Phase != Services.AppPhase.Stopping;
         public bool CanStartPlayback => IsInitialized && IsPlaybackEngineReady;
         public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public Visibility LibraryEmptyVisibility { get; set; } = Visibility.Collapsed;
+        public void NotifySongsSourceChanged() => SongsSourceChanged?.Invoke();
         public event Action? SongsSourceChanged;
         public Music? FindById(int id) => SongsSource.Find(m => m.Id == id);
         public void Replace(List<Music> songs)

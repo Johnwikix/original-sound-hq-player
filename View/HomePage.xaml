@@ -7,18 +7,23 @@
     xmlns:tools="using:WinUIMusicPlayer.Utils">
     <Page.Resources>
         <DataTemplate x:Key="SongTemplate" x:DataType="vm:HomeSong">
-            <ContentControl Background="Transparent" Width="160" Margin="0,0,12,4" Tag="{x:Bind}" IsTabStop="True"
+            <controls:HomeSongItem x:Uid="HomeSongOpen" Background="Transparent" Width="160" Margin="0,0,12,4" Tag="{x:Bind}" IsTabStop="True"
                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                 AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
                 PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
-                GotFocus="Song_GotFocus" LostFocus="Song_LostFocus">
+                Invoked="Song_Invoked" LostFocus="Song_LostFocus">
                 <StackPanel Spacing="8">
                     <controls:MusicCoverControl Music="{x:Bind Music}" Width="160" Height="160" />
                     <TextBlock Text="{x:Bind Music.Title, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
-            </ContentControl>
+            </controls:HomeSongItem>
         </DataTemplate>
     </Page.Resources>
+    <Grid KeyDown="Home_KeyDown">
+    <ContentControl x:Name="BrowseRoot" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+        Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
+        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.IsInDetailMode), Mode=OneWay}">
+        <ContentControl.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></ContentControl.OpacityTransition>
     <Grid RowDefinitions="Auto,*">
         <Grid x:Name="HomeHeader" Margin="24,12,24,12" ColumnDefinitions="*,Auto" ColumnSpacing="12">
             <TextBlock x:Uid="HomeTitle" FontSize="28" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
@@ -37,16 +42,24 @@
                         </controls:FeaturedCarousel.MainContent>
                         <controls:FeaturedCarousel.PrimaryThumbnailTemplate>
                             <DataTemplate x:DataType="vm:HomeSong">
-                                <controls:HomeCarouselTile Song="{x:Bind}" IsPrimary="True" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}" IsTabStop="True" Tag="{x:Bind}"
+                                <controls:HomeSongItem x:Uid="HomeSongOpen" Tag="{x:Bind}" IsTabStop="True"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
                                     PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
-                                    GotFocus="Song_GotFocus" LostFocus="Song_LostFocus" />
+                                    Invoked="Song_Invoked" LostFocus="Song_LostFocus">
+                                    <controls:HomeCarouselTile Song="{x:Bind}" IsPrimary="True" Tag="{x:Bind}" IsTabStop="False" />
+                                </controls:HomeSongItem>
                             </DataTemplate>
                         </controls:FeaturedCarousel.PrimaryThumbnailTemplate>
                         <controls:FeaturedCarousel.ThumbnailTemplate>
                             <DataTemplate x:DataType="vm:HomeSong">
-                                <controls:HomeCarouselTile Song="{x:Bind}" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}" IsTabStop="True" Tag="{x:Bind}"
+                                <controls:HomeSongItem x:Uid="HomeSongOpen" Tag="{x:Bind}" IsTabStop="True"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
                                     PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
-                                    GotFocus="Song_GotFocus" LostFocus="Song_LostFocus" />
+                                    Invoked="Song_Invoked" LostFocus="Song_LostFocus">
+                                    <controls:HomeCarouselTile Song="{x:Bind}" Tag="{x:Bind}" IsTabStop="False" />
+                                </controls:HomeSongItem>
                             </DataTemplate>
                         </controls:FeaturedCarousel.ThumbnailTemplate>
                     </controls:FeaturedCarousel>
@@ -65,7 +78,7 @@
                 </StackPanel>
                 <Canvas x:Name="PreviewLayer" SizeChanged="PreviewLayer_SizeChanged">
                     <controls:HomeSongPreview x:Name="SongPreview" Visibility="Collapsed" Song="{x:Bind ViewModel.PreviewSong, Mode=OneWay}" ViewModel="{x:Bind ViewModel}"
-                        BringIntoViewRequested="Preview_BringIntoViewRequested" MenuStateChanged="Preview_MenuStateChanged"
+                        BringIntoViewRequested="Preview_BringIntoViewRequested" MenuStateChanged="Preview_MenuStateChanged" Tapped="Preview_Tapped"
                         CloseAnimationCompleted="Preview_CloseAnimationCompleted"
                         PointerEntered="Preview_PointerEntered" PointerExited="Preview_PointerExited"
                         LostFocus="Song_LostFocus" KeyDown="Preview_KeyDown" />
@@ -100,5 +113,13 @@
         <InfoBar Grid.Row="1" IsOpen="{x:Bind HasText(ViewModel.ErrorMessage), Mode=OneWay}" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Severity="Warning" IsClosable="False" VerticalAlignment="Top" Margin="24,8,24,0">
             <InfoBar.ActionButton><Button x:Uid="HomeRetry" Style="{StaticResource MenuButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}" /></InfoBar.ActionButton>
         </InfoBar>
+    </Grid>
+    </ContentControl>
+    <controls:HomeMusicDetailControl x:Name="DetailView" Song="{x:Bind ViewModel.DetailSong, Mode=OneWay}" ViewModel="{x:Bind ViewModel}" Editor="{x:Bind ViewModel.DetailEditor, Mode=OneWay}"
+        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasDetails), Mode=OneWay}"
+        Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
+        IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}">
+        <controls:HomeMusicDetailControl.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></controls:HomeMusicDetailControl.OpacityTransition>
+    </controls:HomeMusicDetailControl>
     </Grid>
 </Page>

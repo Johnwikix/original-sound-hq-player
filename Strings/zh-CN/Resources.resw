@@ -2611,4 +2611,24 @@ SHA-256：{5}
   <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>下一组歌曲</value></data>
   <data name="HomeNoPlaylists" xml:space="preserve"><value>暂无播放列表</value></data>
   <data name="HomePlaylistAddFailed" xml:space="preserve"><value>添加到播放列表失败，请重试。</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>歌曲信息</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>音频属性</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>声道</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>格式</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>打开歌曲属性</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>打开文件位置</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>打开文件位置</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>在线匹配歌词</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>在线匹配歌词</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>在线匹配封面</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>在线匹配封面</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>保存到本地</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>保存到本地</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>编辑封面</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>编辑封面</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>文件信息</value></data>
 </root>

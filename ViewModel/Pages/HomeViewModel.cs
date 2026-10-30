@@ -39,6 +39,8 @@ public sealed class HomeViewModel : ObservableObject
     private readonly AddFolderViewModel _folders;
     private readonly WebDavLibraryService _remote;
     private readonly ILogger<HomeViewModel> _logger;
+    private readonly IMusicDetailsEditorFactory _editors;
+    private Task _editorTasks = Task.CompletedTask;
     private DispatcherQueue? _dispatcher;
     private CancellationTokenSource? _operation;
     private Task _refreshTask = Task.CompletedTask;
@@ -64,10 +66,75 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>显示当前栏目中的曲目，拒绝已经被刷新替换的卡片。</summary>
     public void ShowPreview(HomeSong song)
     {
-        if (_active && !_stopped && (Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) PreviewSong = song;
+        if (_active && !_stopped && !HasDetails && (Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) PreviewSong = song;
     }
     /// <summary>关闭详情，释放视图对封面的消费。</summary>
     public void DismissPreview() => PreviewSong = null;
+    /// <summary>获取页内属性面板的曲目；反向动画完成后才释放。</summary>
+    public HomeSong? DetailSong
+    {
+        get;
+        private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(HasDetails)); }
+    }
+    /// <summary>获取属性面板拥有的标签与歌词编辑会话。</summary>
+    public MusicDetailsEditorViewModel? DetailEditor { get; private set => SetProperty(ref field, value); }
+    /// <summary>获取属性控件是否仍持有曲目，包含返回过渡期间。</summary>
+    public bool HasDetails => DetailSong is not null;
+    /// <summary>获取当前是否处于歌曲属性界面。</summary>
+    public bool IsInDetailMode { get; private set => SetProperty(ref field, value); }
+    /// <summary>打开当前推荐中的规范曲目，不改变播放状态或栏目快照。</summary>
+    public bool OpenDetails(HomeSong song)
+    {
+        if (!_active || _stopped || !_app.CanPublishState || HasDetails || !(Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) return false;
+        MusicDetailsEditorViewModel? editor = null;
+        try
+        {
+            editor = _editors.Create(song.Music);
+            editor.Start();
+        }
+        catch (Exception ex)
+        {
+            if (editor is not null) RetireEditor(editor);
+            _logger.LogError(ex, "打开首页歌曲编辑器失败");
+            ErrorMessage = ToolUtils.GetString("Error") + " " + ex.Message;
+            return false;
+        }
+        DetailEditor = editor;
+        DetailSong = song;
+        IsInDetailMode = true;
+        DismissPreview();
+        _app.IsBackBtnEnable = true;
+        return true;
+    }
+    /// <summary>切回首页布局，在反向动画期间保留曲目与封面。</summary>
+    public void BeginCloseDetails()
+    {
+        if (!IsInDetailMode) return;
+        DetailEditor?.BeginClose();
+        IsInDetailMode = false;
+        _app.IsBackBtnEnable = false;
+    }
+    /// <summary>在反向动画完成或无法启动时释放属性视图。</summary>
+    public void CompleteCloseDetails()
+    {
+        if (IsInDetailMode) return;
+        DetailSong = null;
+        var editor = DetailEditor;
+        DetailEditor = null;
+        if (editor is not null) RetireEditor(editor);
+    }
+    private void RetireEditor(MusicDetailsEditorViewModel editor)
+        => _editorTasks = Task.WhenAll(_editorTasks, StopEditorAsync(editor));
+    private async Task StopEditorAsync(MusicDetailsEditorViewModel editor)
+    {
+        try { await editor.StopAsync(); }
+        catch (Exception ex) { _logger.LogError(ex, "结束首页歌曲编辑会话失败"); }
+    }
+    private void ClearDetails()
+    {
+        BeginCloseDetails();
+        CompleteCloseDetails();
+    }
     /// <summary>获取首页主栏目标题。</summary>
     public string SongsTitle { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("HomeExplore");
     /// <summary>获取加载状态。</summary>
@@ -100,7 +167,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>初始化依赖，不订阅事件或启动工作。</summary>
     public HomeViewModel(AppViewModel app, MusicDatabaseService database, PlaybackStatsService statistics,
         HomeRecommendationService recommendations, PlaybackCoordinator playback, AddFolderViewModel folders,
-        WebDavLibraryService remote, ILogger<HomeViewModel> logger)
+        WebDavLibraryService remote, ILogger<HomeViewModel> logger, IMusicDetailsEditorFactory editors)
     {
         _app = app;
         _database = database;
@@ -110,6 +177,7 @@ public sealed class HomeViewModel : ObservableObject
         _folders = folders;
         _remote = remote;
         _logger = logger;
+        _editors = editors;
         RefreshCommand = new RelayCommand(() => { _batch++; RequestRefresh(invalidateSnapshot: true); }, () => !_stopped);
         PlaySongCommand = new AsyncRelayCommand<HomeSong>(song => PlayAsync(song?.Music, song?.Queue),
             song => song is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
@@ -154,6 +222,7 @@ public sealed class HomeViewModel : ObservableObject
     public void Deactivate()
     {
         DismissPreview();
+        ClearDetails();
         _active = false;
         _revision++;
         _operation?.Cancel();
@@ -163,7 +232,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>退出时解除订阅并等待真实在途查询和计算完成。</summary>
     public async Task StopAsync()
     {
-        if (_stopped) { await Task.WhenAll(_refreshTask, _playlistTask); return; }
+        if (_stopped) { await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks); return; }
         _stopped = true;
         Deactivate();
         if (_started)
@@ -178,7 +247,7 @@ public sealed class HomeViewModel : ObservableObject
             _folders.PropertyChanged -= FoldersChanged;
             _remote.SourceAvailabilityChanged -= SourceChanged;
         }
-        await Task.WhenAll(_refreshTask, _playlistTask);
+        await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks);
         _snapshot = [];
         _history.Clear();
         PlaylistMenuItems.Clear();
@@ -187,7 +256,7 @@ public sealed class HomeViewModel : ObservableObject
     private void PreparePlaylistMenu()
     {
         PlaylistMenuItems.Clear();
-        if (!_active || _stopped || PreviewSong is not { Music: var music }) return;
+        if (!_active || _stopped || (DetailSong ?? PreviewSong) is not { Music: var music }) return;
         foreach (var playlist in _app.AllPlayList)
             PlaylistMenuItems.Add(new MenuModel { Title = playlist.Name,
                 Tag = new HomePlaylistTarget(playlist.Id, music.Id), Command = AddToPlaylistCommand });
@@ -227,7 +296,16 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>复用文件夹导入与扫描互斥规则。</summary>
     public Task DropFoldersAsync(IReadOnlyList<Windows.Storage.IStorageItem> folders) => _folders.DropFoldersAsync(folders);
 
-    private void LibraryChanged() => RequestRefresh(invalidateSnapshot: true);
+    private void LibraryChanged()
+    {
+        ValidateDetails();
+        RequestRefresh(invalidateSnapshot: true);
+    }
+    private void ValidateDetails()
+    {
+        if (DetailSong is { Music: var music } &&
+            (!ReferenceEquals(_app.FindById(music.Id), music) || !music.IsPlayable)) ClearDetails();
+    }
     private void FavoritesChanged(object? sender, NotifyCollectionChangedEventArgs e) => InvalidateForNextVisit();
     private void InvalidateForNextVisit()
     {
@@ -390,6 +468,7 @@ public sealed class HomeViewModel : ObservableObject
     private void Publish(HomeRecommendation result)
     {
         DismissPreview();
+        ValidateDetails();
         Songs = Resolve(result.Songs, Songs);
         Familiar = Resolve(result.Familiar, Familiar);
         Discovery = Resolve(result.Discovery, Discovery);

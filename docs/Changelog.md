@@ -1,3 +1,17 @@
+## 2026-10-30 首页属性编辑与导航样式对齐
+- `HomeMusicDetailControl*`：移除整页不透明底色及重复返回箭头，使用窗口背景与主导航返回；保留现有卡片/方形封面布局，补齐与 MusicDetailsWindow 对应的标签编辑、歌词偏移、原文/翻译/注音、读取/刷新/导出/旧版恢复、封面操作、文件信息及两种保存入口。
+- `MusicDetailsEditorViewModel.cs`、`MusicDetailsEditorFactory.cs`、`HomeViewModel.cs`：复用 MusicMetadataEditorViewModel、LyricsEditorViewModel 和现有保存/文件写入队列；编辑草稿独立，保存期间有新输入时保留编辑器，保存失败可重试，导航立即取消活动并在动画后释放图片，退出等待真实在途任务。
+- `LyricsEditorViewModel.cs`：提供已接受操作的等待边界，避免被拒绝的重复命令覆盖 ExecutionTask 后使编辑会话过早结束；未改变歌词解析与保存规则。
+- `HomePage*`、`App.xaml.cs`、`Strings/*/Resources.resw`：接入编辑器生命周期与保存后共享动画返回，编辑依赖延迟到打开属性时创建；移除旧返回文案，补齐七语言工具提示和辅助功能名称。
+- `_tools/HomeUiRegression`：173 项原生回归通过，新增透明背景像素、真实编译双向编辑、SQLite 保存/失败/冲突、歌词和封面导出、远程限制、加载重试、重复命令守卫和取消等待检查；42 项文件元数据检查与既有歌词 UI 回归通过。此前的 x64 Debug 构建、七语言和 CRLF 检查通过；最后一轮 SDK/RID 还原构建按用户要求停止，最终验收由用户自行完成。网络提供方、选择器和曲库通知使用适配边界，未使用个人曲库或真实音频设备进行人工验收。
+
+## 2026-10-30 首页歌曲属性控件与共享封面导航
+- `HomeMusicDetailControl*`：新增页内歌曲属性界面，展示方形封面、艺术家/专辑、推荐理由、标签、音频参数和路径；复用播放、收藏、入队及歌单菜单，错误反馈直接显示在详情中，支持窄窗堆叠。
+- `HomeSongItem.cs`、`HomePage*`、`MainPage.xaml.cs`：三栏及三张拼贴点击、Enter/空格或辅助技术 Invoke 进入属性；悬停预览空白处也可进入。封面正向使用 Connected Animation、返回使用 Direct 配置，接入详情返回键、Escape 和全局返回入口。
+- `HomeViewModel.cs`：集中管理属性曲目与返回状态；过渡完成再释放封面，隐藏浏览区禁用输入并暂停轮播，返回恢复滚动和对应焦点；曲目移除、离页及过期回调安全收尾，正常刷新保留规范曲目与原栏目播放快照。
+- `Style/BtnStyle.xaml`、`HomeSongPreview.xaml`：提取共享 HomeSongActionButtonStyle，预览和属性界面保持相同的紧凑按钮外观及动画。`Strings/*/Resources.resw` 补齐七语言栏目、返回和辅助功能文案。
+- `_tools/HomeUiRegression`：149 项原生回归通过，覆盖真实双向 Connected Animation、原生 Invoke/命令、菜单与失败反馈、快速返回/卸载取消、窄窗布局、封面释放与滚动恢复；x64 Debug 构建和七语言资源/CRLF 检查通过。未进行个人曲库及真实鼠标/触摸设备的人工验收。
+
 ## 2026-10-30 修正首页滚动跳跃、详情宽度与操作按钮
 - `RecommendationShelf*`：使用 ScrollView + ItemsRepeater 保留虚拟化，禁用栏目滚轮和手势平移；删除手动滚轮位移转发，由页面原生垂直滚动。按钮连点累加目标，外部焦点滚入后从实际位置继续翻页。
 - `HomePage*`：详情浮层移入页面滚动祖先，按可见视口定位；禁止详情按钮重复 BringIntoView，滚动收起时聚焦视口，键盘展开等待原卡片滚入稳定，避免页面被拉回。

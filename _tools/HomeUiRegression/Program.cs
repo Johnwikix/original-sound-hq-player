@@ -57,6 +57,18 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         for (int i = 0; i < 200; i++) { if (condition()) return; await Task.Delay(25); }
         throw new TimeoutException("UI condition did not become true");
     }
+    private static async Task CloseFlyout(MenuFlyout flyout)
+    {
+        var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnClosed(object? sender, object args) => closed.TrySetResult();
+        flyout.Closed += OnClosed;
+        try
+        {
+            flyout.Hide();
+            await closed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally { flyout.Closed -= OnClosed; }
+    }
     private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
     {
         if (root is T match) yield return match;
@@ -105,7 +117,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var playback = new PlaybackCoordinator(app, statistics);
             var remote = new WebDavLibraryService();
             var data = new MusicDatabaseService(database);
-            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance);
+            await database.CreateTableAsync<Music>();
+            await database.CreateTableAsync<MusicLyrics>();
+            await database.CreateTableAsync<PendingMetadataWrite>();
+            await data.Lyrics.InitializeAsync(path);
+            var editorFactory = new FixtureEditorFactory(data, app);
+            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory);
             using var services = new ServiceCollection().AddSingleton(home).BuildServiceProvider();
             App.Services = services;
             window = new Window();
@@ -130,7 +147,11 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var songs = Enumerable.Range(1, 40).Select(i => new Music { Id = i, Title = "Song " + i, Author = "Artist " + i,
                 Album = "Album " + i, Genre = i % 3 == 0 ? "Jazz" : "Pop", Year = 2000 + i % 20,
                 ImageHash = "fixture-" + i, Path = Path.Combine(AppContext.BaseDirectory, "track-" + i + ".flac") }).ToList();
-            foreach (var song in songs) WinUIMusicPlayer.Utils.ToolUtils.PrepareArtwork(song.Id);
+            foreach (var song in songs)
+            {
+                WinUIMusicPlayer.Utils.ToolUtils.PrepareArtwork(song.Id);
+                await database.InsertAsync(song);
+            }
             bool offThread = false;
             home.PropertyChanged += (_, _) => offThread |= !DispatcherQueue.GetForCurrentThread().HasThreadAccess;
             app.Replace(songs);
@@ -210,8 +231,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 var cards = Descendants<ContentControl>(list).Where(item => item.Tag is HomeSong).ToArray();
                 Check(cards.Length > 0 && !Descendants<Button>(list).Any(),
                     "shelf cards have no Button wrappers, cover play actions or footer buttons");
-                Check(cards.All(item => FrameworkElementAutomationPeer.CreatePeerForElement(item)?.GetPattern(PatternInterface.Invoke) is null),
-                    "song cards expose no native Invoke action");
+                Check(cards.All(item => FrameworkElementAutomationPeer.CreatePeerForElement(item)?.GetPattern(PatternInterface.Invoke) is IInvokeProvider),
+                    "song cards expose an accessible detail Invoke action without Button wrappers");
                 Check(cards.All(item => item.Content is StackPanel panel && panel.Children.Count == 2
                     && panel.Children[0] is MusicCoverControl && panel.Children[1] is TextBlock),
                     "normal song cards contain only artwork and title");
@@ -222,26 +243,92 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 Check(Descendants<HomeCarouselTile>(tile).Single().Song is not null && !Descendants<Button>(tile).Any(),
                     name + " preserves artwork and title without an invokable cover button");
             }
-            Check(playback.LastId == 0, "loading and navigating inert cards never starts playback");
+            Check(playback.LastId == 0, "loading and focusing song cards never starts playback");
             ((ScrollViewer)page.FindName("ContentScroll")).ChangeView(null, 520, null, true);
             shelfScroll.ScrollTo(0, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
             await Task.Delay(150);
             var cardSource = Descendants<ContentControl>(shelf).First(item => item.Tag is HomeSong);
             var selected = (HomeSong)cardSource.Tag;
-            Check(cardSource.Focus(FocusState.Keyboard), "inert shelf card remains keyboard focusable");
-            await Wait(() => ((HomeSongPreview)page.FindName("SongPreview")).Visibility == Visibility.Visible);
-            Check(FocusManager.GetFocusedElement(page.XamlRoot) is Button { Name: "PlayButton" },
-                "keyboard focus opens the shared details and moves focus to the explicit play action");
-            double scrollAfterFocus = Math.Min(contentScroll.ScrollableHeight, contentScroll.VerticalOffset + 30);
-            contentScroll.ChangeView(null, scrollAfterFocus, null, true);
-            await Task.Delay(250);
-            Check(home.PreviewSong is null && Math.Abs(contentScroll.VerticalOffset - scrollAfterFocus) < 1,
-                "scrolling closes keyboard-focused details without bringing the source card back into view");
+            Check(cardSource.Focus(FocusState.Keyboard), "song card remains keyboard focusable");
+            await Task.Delay(230);
+            Check(home.PreviewSong is null, "keyboard focus leaves Enter available for full song properties instead of moving to preview playback");
+            double detailEntryOffset = contentScroll.VerticalOffset;
+            var details = (HomeMusicDetailControl)page.FindName("DetailView");
+            carousel.AutoShuffle = true;
+            app.IsPlaybackEngineReady = false;
+            ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(cardSource).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitionPending"));
+            Check(ReferenceEquals(home.DetailSong, selected) && ReferenceEquals(details.Song?.Music, selected.Music)
+                && app.IsBackBtnEnable && playback.LastId == 0
+                && ReferenceEquals(FocusManager.GetFocusedElement(page.XamlRoot), details.FindName("HeaderFocus"))
+                && ((ScrollViewer)details.FindName("DetailScroll")).VerticalOffset == 0,
+                "card Invoke focuses the fixed properties heading without playback or input scroll while the audio engine is not ready");
+            app.IsPlaybackEngineReady = true;
+            Check(Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation") is not null,
+                "forward transition successfully starts a native connected cover animation");
+            await Wait(() => !Field<bool>(page, "_detailTransitioning"));
+            Check(!((ContentControl)page.FindName("BrowseRoot")).IsEnabled && !carousel.AutoShuffle,
+                "property view disables hidden browse inputs and pauses autoplay while preserving the loaded shelves");
+            Check(!home.OpenDetails(home.Songs.First(item => !ReferenceEquals(item, selected))) && ReferenceEquals(home.DetailSong, selected),
+                "repeated detail entry cannot replace the song during a live transition");
+            bool detailFavoriteBefore = selected.Music.IsFavorite;
+            ((IInvokeProvider)new ButtonAutomationPeer((Button)details.FindName("FavoriteButton")).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => selected.Music.IsFavorite != detailFavoriteBefore);
+            Check(ReferenceEquals(((Button)details.FindName("QueueButton")).CommandParameter, selected.Music),
+                "full properties favorite and queue actions share the canonical track");
+            string originalAuthor = selected.Music.Author;
+            selected.Music.Author = "Updated canonical artist";
+            await Task.Delay(30);
+            Check(Descendants<TextBlock>(details).Any(item => item.Text == "Updated canonical artist"),
+                "property labels track the shared Music notifications rather than a copied metadata model");
+            selected.Music.Author = originalAuthor;
+            Check(details.Duration(TimeSpan.FromHours(27) + TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(3)) == "27:02:03"
+                && details.Number(0) == "—", "property formatting preserves long durations and distinguishes unknown numeric tags");
+            var detailPlayButton = (Button)details.FindName("PlayButton");
+            ((IInvokeProvider)new ButtonAutomationPeer(detailPlayButton).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => playback.LastId == selected.Music.Id);
+            Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(selected.Queue.Select(m => m.Id)),
+                "full properties play action uses the original source shelf queue");
+            var detailPlaylist = (MenuFlyout)((Button)details.FindName("PlaylistButton")).Flyout;
+            detailPlaylist.ShowAt((Button)details.FindName("PlaylistButton"));
+            await Task.Delay(80);
+            Check(detailPlaylist.Items.Count == 1 && !detailPlaylist.Items[0].IsEnabled,
+                "full properties playlist menu resolves the detail song while preview is closed");
+            await CloseFlyout(detailPlaylist);
+            app.AllPlayList.Add(new PlayList { Id = 42, Name = "Properties playlist" });
+            detailPlaylist.ShowAt((Button)details.FindName("PlaylistButton"));
+            await Task.Delay(80);
+            Check(detailPlaylist.Items[0] is MenuFlyoutItem { CommandParameter: HomePlaylistTarget { PlaylistId: 42 } detailTarget }
+                && detailTarget.MusicId == selected.Music.Id,
+                "full properties playlist menu captures the correct song without depending on hover state");
+            await CloseFlyout(detailPlaylist);
+            data.FailPlaylistAdd = true;
+            await home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(42, selected.Music.Id));
+            Check(((InfoBar)details.FindName("ErrorInfo")).IsOpen,
+                "playlist failures remain visible inside the properties view while browse is hidden");
+            data.FailPlaylistAdd = false;
+            await home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(42, selected.Music.Id));
+            app.AllPlayList.Clear();
+            await database.ExecuteAsync("DELETE FROM PlayListMusic WHERE PlayListId = 42");
+            await Capture(page, "home-song-properties.png");
+            page.CollapseDetail(); // 与 MainPage.HandleBackNavigation 使用同一返回入口。
+            await Wait(() => !home.IsInDetailMode && !Field<bool>(page, "_detailTransitionPending"));
+            Check(Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation")?.Configuration
+                is Microsoft.UI.Xaml.Media.Animation.DirectConnectedAnimationConfiguration && home.HasDetails,
+                "back starts the native direct animation and retains the source cover until completion");
+            await Wait(() => !home.HasDetails);
+            await Task.Delay(150);
+            Check(Math.Abs(contentScroll.VerticalOffset - detailEntryOffset) < 1 && !app.IsBackBtnEnable
+                && ReferenceEquals(FocusManager.GetFocusedElement(page.XamlRoot), cardSource) && carousel.AutoShuffle,
+                "return restores the original card focus and vertical position without reopening hover preview");
+            Check(((Image)((MusicCoverControl)details.FindName("Artwork")).FindName("CoverImage")).Source is null,
+                "completing back releases the full properties cover consumer");
+            carousel.AutoShuffle = false;
+            playback.LastId = 0;
             ((Button)page.FindName("RefreshButton")).Focus(FocusState.Programmatic);
-            home.DismissPreview();
             var preview = (HomeSongPreview)page.FindName("SongPreview");
             var previewSource = (FrameworkElement)cardSource;
-            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, false]);
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource]);
             await Wait(() => home.PreviewSong is not null && preview.Visibility == Visibility.Visible);
             await Task.Delay(300);
             Check(ReferenceEquals(home.PreviewSong, selected) && ReferenceEquals(preview.Song, selected)
@@ -256,6 +343,21 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(ElementCompositionPreview.GetElementVisual(preview).Clip is Microsoft.UI.Composition.InsetClip,
                 "detail reveal uses a native composition clip outside the scrolling list");
             await Capture(page, "home-detail.png");
+            double previewEntryOffset = contentScroll.VerticalOffset;
+            typeof(HomePage).GetMethod("OpenSongDetails", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page,
+                [previewSource, selected, (MusicCoverControl)preview.FindName("Artwork"), false]);
+            await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitionPending"));
+            Check(home.PreviewSong is null && Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation") is not null,
+                "opening from the hover artwork hands off a native connected snapshot and dismisses preview");
+            await Wait(() => !Field<bool>(page, "_detailTransitioning"));
+            page.CollapseDetail();
+            await Wait(() => !home.HasDetails);
+            await Task.Delay(180);
+            Check(Math.Abs(contentScroll.VerticalOffset - previewEntryOffset) < 1 && ReferenceEquals(FocusManager.GetFocusedElement(page.XamlRoot), page.FindName("RefreshButton")),
+                "pointer entry restores a fixed header focus target without bringing a partially visible card into view");
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource]);
+            await Wait(() => home.PreviewSong is not null);
+            await Task.Delay(260);
             var favorite = Descendants<Button>(preview).First(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.UpdateFavouriteCommand));
             Check(Descendants<FontIcon>(favorite).Single().Foreground is SolidColorBrush heart && heart.Color == Microsoft.UI.Colors.Red,
                 "favorite heart follows the existing red icon convention");
@@ -349,7 +451,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 var tileHost = (ContentPresenter)carousel.FindName(name);
                 var tile = Descendants<HomeCarouselTile>(tileHost).Single();
                 var tileSong = tile.Song!;
-                typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [tile, false]);
+                typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [tile]);
                 await Wait(() => ReferenceEquals(home.PreviewSong, tileSong) && preview.Visibility == Visibility.Visible);
                 Check(preview.ActualWidth >= tile.ActualWidth + 40,
                     name + " detail expands wider than its original tile");
@@ -363,9 +465,20 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                     name + " plays only through its detail button with the original recommendation queue");
                 home.DismissPreview();
             }
+            foreach (string name in new[] { "PrimaryThumbnail", "SecondaryThumbnail", "TertiaryThumbnail" })
+            {
+                var host = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName(name)).Single();
+                ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(host).GetPattern(PatternInterface.Invoke)).Invoke();
+                await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitionPending"));
+                Check(ReferenceEquals(home.DetailSong, host.Tag) && Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation") is not null,
+                    name + " opens properties through its accessible card host and a real connected animation");
+                page.CollapseDetail();
+                await Wait(() => !home.HasDetails);
+                Check(!Field<bool>(page, "_detailTransitioning"), name + " permits back during the forward animation without a stuck snapshot");
+            }
             ((ScrollViewer)page.FindName("ContentScroll")).ChangeView(null, 520, null, true);
             await Task.Delay(150);
-            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, false]);
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource]);
             await Wait(() => ReferenceEquals(home.PreviewSong, selected));
             await Task.Delay(260);
             Check(ReferenceEquals(queueButton.CommandParameter, selected.Music), "detail queue command receives the canonical song");
@@ -378,7 +491,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Wait(() => home.PreviewSong is null);
             Check(preview.Visibility == Visibility.Collapsed && exitStarted.ElapsedMilliseconds >= 180,
                 "native batch completion hides the preview only after the 200ms exit rather than a synchronous clear");
-            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, false]);
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource]);
             await Wait(() => home.PreviewSong is not null);
             await Task.Delay(260);
             typeof(HomePage).GetMethod("BeginPreviewClose", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, null);
@@ -389,7 +502,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "reentering a closing card cancels its completion callback and restores the panel");
             var adjacent = Descendants<ContentControl>(shelf).First(item => item.Tag is HomeSong other && !ReferenceEquals(other, selected));
             var adjacentSong = (HomeSong)adjacent.Tag;
-            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [adjacent, false]);
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [adjacent]);
             await Task.Delay(70);
             Check(ReferenceEquals(home.PreviewSong, selected) && preview.Visibility == Visibility.Visible,
                 "moving directly to an adjacent card preserves the old preview during its exit");
@@ -519,6 +632,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(portraitHeight <= 2048, "large carousel decoding bounds extreme portrait artwork allocations");
             await Capture(page, "home-populated.png");
             page.RequestedTheme = ElementTheme.Dark;
+            page.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 32, 32, 32));
             page.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 32, 32, 32));
             await Task.Delay(80);
             var darkShade = (GradientStop)((HomeHeroCard)page.FindName("HomeHero")).FindName("ShadeStart");
@@ -694,11 +808,16 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(((Image)animatedCover.FindName("CoverImage")).Source is null
                 && ((Image)animatedCover.FindName("PreviousImage")).Source is null,
                 "empty selection releases both retained image sources");
+            var unloadHost = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
+            ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(unloadHost).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => home.IsInDetailMode);
             lights[0].Pulse(new Vector2(80, 80));
             window.Content = new Grid();
             await Task.Delay(140);
             Check(WinUIMusicPlayer.Utils.ToolUtils.RawActive == 0 && !home.PlaySongCommand.CanExecute(selected),
                 "unloading cancels cover consumption and disables page playback");
+            Check(!home.HasDetails && !app.IsBackBtnEnable && Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation") is null,
+                "unloading during detail entry cancels native animation and clears navigation state before a late callback");
             Check(lights.All(l => !l.IsAttached), "unloading releases native lights and an in-flight press animation");
             Check(imageShadows.All(shadow => !shadow.IsAttached), "unloading releases all live image surfaces and effect brushes");
             window.Content = page;
@@ -709,6 +828,199 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Task.Delay(400);
             Check(((FeaturedCarousel)page.FindName("Featured")).ItemsSource!.Count > 0 && home.PlaySongCommand.CanExecute(home.Songs[0]),
                 "reloaded page restarts compiled tracking and commands");
+            // Exercise the actual page fields and production editor state machines against SQLite.
+            var editCard = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
+            var editMusic = ((HomeSong)editCard.Tag).Music;
+            async Task<MusicDetailsEditorViewModel> OpenEditorAsync()
+            {
+                ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(editCard).GetPattern(PatternInterface.Invoke)).Invoke();
+                await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitioning")
+                    && home.DetailEditor is { IsLoading: false } current && current.Lyrics.CanSave);
+                return home.DetailEditor!;
+            }
+            var editSession = await OpenEditorAsync();
+            Check(((Grid)details.FindName("DetailRoot")).Background is SolidColorBrush { Color.A: 0 }
+                && !Descendants<FontIcon>(details).Any(icon => icon.Glyph == "\uE72B"),
+                "properties root stays transparent and has no duplicate back arrow");
+            var parentColor = Microsoft.UI.ColorHelper.FromArgb(255, 22, 75, 120);
+            page.Background = new SolidColorBrush(parentColor);
+            await Task.Delay(80);
+            var transparentFrame = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
+            await transparentFrame.RenderAsync(page);
+            var transparentPixels = (await transparentFrame.GetPixelsAsync()).ToArray();
+            int transparentSample = ((int)(20 * transparentFrame.PixelHeight / page.ActualHeight) * transparentFrame.PixelWidth
+                + (int)((page.ActualWidth - 40) * transparentFrame.PixelWidth / page.ActualWidth)) * 4;
+            Check(transparentPixels[transparentSample] == parentColor.B && transparentPixels[transparentSample + 1] == parentColor.G
+                && transparentPixels[transparentSample + 2] == parentColor.R,
+                "rendered blank area shows the parent backdrop color instead of an opaque property page rectangle");
+            page.Background = new SolidColorBrush(page.ActualTheme == ElementTheme.Dark
+                ? Microsoft.UI.ColorHelper.FromArgb(255, 32, 32, 32) : Microsoft.UI.ColorHelper.FromArgb(255, 243, 243, 243));
+            var titleInput = (TextBox)details.FindName("TitleInput");
+            var composerInput = (TextBox)details.FindName("ComposerInput");
+            var originalInput = (TextBox)details.FindName("OriginalLyricsInput");
+            var translationInput = (TextBox)details.FindName("TranslationLyricsInput");
+            var pronunciationInput = (TextBox)details.FindName("PronunciationLyricsInput");
+            string canonicalTitle = editMusic.Title;
+            titleInput.Text = "Edited properties title";
+            composerInput.Text = "Edited composer";
+            originalInput.Text = "[00:01.000]Original from property control";
+            translationInput.Text = "[00:01.000]Translation from property control";
+            pronunciationInput.Text = "[00:01.000]Pronunciation from property control";
+            await Task.Delay(30);
+            Check(editSession.Metadata.Draft.Title == titleInput.Text && editSession.Metadata.Draft.Composer == composerInput.Text
+                && editSession.Lyrics.OriginalText == originalInput.Text && editSession.Lyrics.TranslationText == translationInput.Text
+                && editSession.Lyrics.PronunciationText == pronunciationInput.Text && editMusic.Title == canonicalTitle,
+                "compiled two-way fields edit independent metadata and all three lyric drafts without mutating the canonical song");
+            ((ScrollViewer)details.FindName("DetailScroll")).ChangeView(null, double.MaxValue, null, true);
+            await Task.Delay(100);
+            await Capture(page, "home-song-editor-lyrics.png");
+            data.FailEditorSave = true;
+            await editSession.SaveDatabaseCommand.ExecuteAsync(null);
+            Check(home.IsInDetailMode && editMusic.Title == canonicalTitle && editSession.Lyrics.Error.Length > 0
+                && await database.ExecuteScalarAsync<string>("SELECT Title FROM Music WHERE Id=?", editMusic.Id) == canonicalTitle,
+                "save failure preserves the draft and canonical database values and keeps the property editor open");
+            data.FailEditorSave = false;
+            var editingGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            data.EditorSaveGate = editingGate.Task;
+            int editingSaves = data.EditorSavesStarted;
+            var editingSave = editSession.SaveDatabaseCommand.ExecuteAsync(null);
+            await Wait(() => data.EditorSavesStarted > editingSaves);
+            titleInput.Text = "Newer draft while saving";
+            originalInput.Text = "[00:01.000]Newer original while saving";
+            editingGate.SetResult();
+            await editingSave;
+            data.EditorSaveGate = Task.CompletedTask;
+            Check(home.IsInDetailMode && editMusic.Title == "Edited properties title" && editSession.Metadata.Draft.Title == "Newer draft while saving"
+                && editSession.Lyrics.OriginalText.Contains("Newer original"),
+                "a committed snapshot publishes correctly while newer metadata and lyric edits keep the editor open");
+            ((IInvokeProvider)new ButtonAutomationPeer((Button)details.FindName("SaveDatabaseButton")).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => !home.HasDetails);
+            var storedLyrics = await data.Lyrics.GetAsync(editMusic.Id);
+            Check(editMusic.Title == "Newer draft while saving" && editMusic.Composer == "Edited composer"
+                && storedLyrics.Document.Original.Content.Contains("Newer original")
+                && storedLyrics.Document.TranslationLrc!.Contains("Translation from property control")
+                && storedLyrics.Document.PronunciationLrc!.Contains("Pronunciation from property control"),
+                "saving from the native button commits tags and original/translation/pronunciation together and returns through navigation");
+            await editSession.StopAsync();
+            Check(editSession.CoverPreview is null && !editSession.SaveDatabaseCommand.CanExecute(null),
+                "closed editor releases staged cover and disables retained commands");
+            int retiredSaveCount = data.EditorSavesStarted;
+            await editSession.SaveDatabaseCommand.ExecuteAsync(null);
+            await editSession.SaveFileCommand.ExecuteAsync(null);
+            await editSession.LoadCommand.ExecuteAsync(null);
+            Check(data.EditorSavesStarted == retiredSaveCount && !editSession.IsLoading,
+                "retained command execution guards reject saves and loads after the editor stops");
+            editSession = await OpenEditorAsync();
+            Check(editSession.Metadata.Draft.Title == editMusic.Title && editSession.Lyrics.OriginalText.Contains("Newer original"),
+                "reopening properties reloads the committed metadata and lyric version");
+            foreach (var exportPath in new[] { Path.ChangeExtension(editMusic.Path, ".lrc"),
+                Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Translated.lrc"),
+                Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Pronunciation.lrc") })
+                if (File.Exists(exportPath)) File.Delete(exportPath);
+            var exportButton = Descendants<Button>(details).First(button => ReferenceEquals(button.Command, editSession.Lyrics.ExportCommand));
+            ((IInvokeProvider)new ButtonAutomationPeer(exportButton).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => File.Exists(Path.ChangeExtension(editMusic.Path, ".lrc")));
+            Check(File.ReadAllText(Path.ChangeExtension(editMusic.Path, ".lrc")).Contains("Newer original")
+                && File.Exists(Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Translated.lrc"))
+                && File.Exists(Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Pronunciation.lrc")),
+                "the shared lyrics export action writes original, translation and pronunciation sidecars");
+            await Wait(() => !editSession.Lyrics.IsBusy);
+            var unchangedCover = editSession.CoverPreview;
+            await editSession.ChooseCoverCommand.ExecuteAsync(null);
+            Check(ReferenceEquals(unchangedCover, editSession.CoverPreview), "cancelling the cover picker preserves the staged cover");
+            await editSession.FindCoverCommand.ExecuteAsync(null);
+            Check(editSession.CoverPreview is not null && ReferenceEquals(((Image)details.FindName("CoverPreviewImage")).Source, editSession.CoverPreview),
+                "cover source operations update the actual staged image without replacing the canonical cover");
+            await editSession.ExportCoverCommand.ExecuteAsync(null);
+            Check(new FileInfo(Path.Combine(AppContext.BaseDirectory, "exported-cover.bmp")).Length > 100,
+                "the cover export action uses the current staged image bytes");
+            ((TextBox)details.FindName("AlbumInput")).Text = "Queued album edit";
+            await editSession.SaveFileCommand.ExecuteAsync(null);
+            await Wait(() => !home.HasDetails);
+            var pendingEdit = await database.FindAsync<PendingMetadataWrite>(editMusic.Path);
+            Check(pendingEdit is { Cover.Length: > 0, Album: "Queued album edit" }
+                && pendingEdit.Lyrics.Contains("Newer original") && pendingEdit.TranslationLrc!.Contains("Translation from property control")
+                && pendingEdit.PronunciationLrc!.Contains("Pronunciation from property control"),
+                "file-save command queues the same cover, metadata and three lyric fields as the property window");
+            await editSession.StopAsync();
+            editSession = await OpenEditorAsync();
+            ((TextBox)details.FindName("TitleInput")).Text = "Unsaved draft to discard";
+            ((TextBox)details.FindName("OriginalLyricsInput")).Text = "[00:03.000]Unsaved lyrics";
+            page.CollapseDetail();
+            await Wait(() => !home.HasDetails);
+            await editSession.StopAsync();
+            editSession = await OpenEditorAsync();
+            Check(editSession.Metadata.Draft.Title == editMusic.Title && !editSession.Lyrics.OriginalText.Contains("Unsaved"),
+                "navigation back discards unsaved drafts before another editor opens");
+            var abandonedEditor = editSession;
+            var abandonedGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            data.EditorSaveGate = abandonedGate.Task;
+            int abandonedSaves = data.EditorSavesStarted;
+            ((TextBox)details.FindName("TitleInput")).Text = "Cancelled before commit";
+            var abandonedSave = abandonedEditor.SaveDatabaseCommand.ExecuteAsync(null);
+            await Wait(() => data.EditorSavesStarted > abandonedSaves);
+            await abandonedEditor.SaveDatabaseCommand.ExecuteAsync(null); // A rejected duplicate must not replace the accepted task used by stop.
+            page.CollapseDetail();
+            await Wait(() => !home.HasDetails);
+            var abandonedStop = abandonedEditor.StopAsync();
+            Check(!abandonedStop.IsCompleted, "editor stop waits for a real in-flight save boundary after navigation cancels it");
+            abandonedGate.SetResult();
+            await Task.WhenAll(abandonedStop, abandonedSave);
+            data.EditorSaveGate = Task.CompletedTask;
+            Check(editMusic.Title != "Cancelled before commit" &&
+                await database.ExecuteScalarAsync<string>("SELECT Title FROM Music WHERE Id=?", editMusic.Id) != "Cancelled before commit",
+                "cancellation before commit cannot publish an abandoned draft");
+            int originalSourceId = editMusic.SourceId;
+            editMusic.SourceId = 1;
+            editSession = await OpenEditorAsync();
+            Check(((TextBox)details.FindName("TitleInput")).IsReadOnly && !((NumberBox)details.FindName("YearInput")).IsEnabled
+                && !editSession.SaveFileCommand.CanExecute(null) && !editSession.ChooseCoverCommand.CanExecute(null)
+                && !editSession.Lyrics.ExportCommand.CanExecute(null) && editSession.SaveDatabaseCommand.CanExecute(null),
+                "remote properties keep file tags read-only while retaining local database lyrics editing");
+            int remoteSavesBefore = data.EditorSavesStarted;
+            await editSession.SaveFileCommand.ExecuteAsync(null);
+            await editSession.ChooseCoverCommand.ExecuteAsync(null);
+            await editSession.ReadEmbeddedCommand.ExecuteAsync(null);
+            Check(data.EditorSavesStarted == remoteSavesBefore && editSession.Lyrics.Error.Length == 0,
+                "direct command execution cannot bypass remote file-write and embedded-read guards");
+            ((TextBox)details.FindName("OriginalLyricsInput")).Text = "[00:04.000]Remote database lyrics";
+            await editSession.SaveDatabaseCommand.ExecuteAsync(null);
+            await Wait(() => !home.HasDetails);
+            Check((await data.Lyrics.GetAsync(editMusic.Id)).Document.Original.Content.Contains("Remote database lyrics"),
+                "remote lyric edits persist through the shared local database path");
+            await editSession.StopAsync();
+            editMusic.SourceId = originalSourceId;
+            await database.ExecuteAsync("UPDATE MusicLyricsV2 SET SchemaVersion=99 WHERE MusicId=?", editMusic.Id);
+            ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(editCard).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => home.IsInDetailMode && home.DetailEditor is { IsLoading: false, LoadFailed: true });
+            editSession = home.DetailEditor!;
+            Check(((InfoBar)details.FindName("EditorErrorInfo")).IsOpen && editSession.LoadCommand.CanExecute(null)
+                && !editSession.SaveDatabaseCommand.CanExecute(null),
+                "initial lyrics-load failure offers a visible retry without enabling an uninitialized save");
+            await database.ExecuteAsync("UPDATE MusicLyricsV2 SET SchemaVersion=2 WHERE MusicId=?", editMusic.Id);
+            await editSession.LoadCommand.ExecuteAsync(null);
+            Check(!editSession.LoadFailed && editSession.Lyrics.CanSave && editSession.Lyrics.OriginalText.Contains("Remote database lyrics"),
+                "load retry restores the real persisted lyric version and editable controls");
+            page.CollapseDetail();
+            await Wait(() => !home.HasDetails);
+            await editSession.StopAsync();
+            var coverDrainGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            editorFactory.CoverGate = coverDrainGate.Task;
+            int coverReadsBefore = editorFactory.CoverReads;
+            ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(editCard).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => home.IsInDetailMode && editorFactory.CoverReads > coverReadsBefore);
+            var closingCoverEditor = home.DetailEditor!;
+            await closingCoverEditor.LoadCommand.ExecuteAsync(null);
+            page.CollapseDetail();
+            await Wait(() => !home.HasDetails);
+            var drainingCover = closingCoverEditor.StopAsync();
+            Check(!drainingCover.IsCompleted && !((ProgressRing)details.FindName("ActivityIndicator")).IsActive,
+                "editor close stops its hidden activity indicator while waiting for a cover operation that cannot be cancelled");
+            coverDrainGate.SetResult();
+            await drainingCover;
+            editorFactory.CoverGate = Task.CompletedTask;
+            Check(closingCoverEditor.CoverPreview is null && home.DetailEditor is null,
+                "late cover results cannot reattach an image after navigation has released the editor");
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(500, 740));
             await Task.Delay(820);
             var card = Descendants<HomeHeroCard>(page).First();
@@ -719,7 +1031,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "narrow carousel and collage stay side by side and shrink together without enlarging wrapped tiles");
             await Capture(page, "home-narrow.png");
             var narrowTile = Descendants<HomeCarouselTile>(primary).Single();
-            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [narrowTile, false]);
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [narrowTile]);
             await Wait(() => preview.Visibility == Visibility.Visible && ReferenceEquals(home.PreviewSong, narrowTile.Song));
             await Task.Delay(260);
             var previewPoint = preview.TransformToVisual(contentScroll).TransformPoint(new Windows.Foundation.Point());
@@ -729,6 +1041,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "wider details still fit the visible viewport in a 500-pixel narrow window");
             await Capture(page, "home-narrow-detail.png");
             home.DismissPreview();
+            var narrowHost = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
+            ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(narrowHost).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitioning"));
+            Check(Grid.GetRow((StackPanel)details.FindName("HeroText")) == 1 && ((Border)details.FindName("CoverHost")).ActualWidth == 200,
+                "full song properties stack the square cover and text in a 500-pixel window");
+            await Capture(page, "home-song-properties-narrow.png");
             Check(!offThread, "view-model state notifications stay on the real WinUI dispatcher");
             var retained = home.Songs;
             data.WhenInitialized = Task.FromException(new IOException("fixture database failure"));
@@ -738,6 +1056,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(ReferenceEquals(retained, home.Songs) && home.HasContent, "failed history refresh retains the usable previous snapshot");
             app.Replace([]);
             await Wait(() => home.IsEmpty);
+            Check(!home.HasDetails && !app.IsBackBtnEnable && details.Visibility == Visibility.Collapsed,
+                "removing the displayed track closes properties even if recommendation refresh has failed");
             Check(home.ErrorMessage.Length == 0 && !home.HasContent, "clearing the library releases shelves and clears an irrelevant recommendation error");
             data.WhenInitialized = Task.CompletedTask;
             app.Replace(songs);

@@ -371,6 +371,11 @@ namespace WinUIMusicPlayer.View
 
         public void HandleBackNavigation()
         {
+            if (MainFrame.Content is HomePage homePage && homePage.ViewModel.IsInDetailMode)
+            {
+                homePage.CollapseDetail();
+                return;
+            }
             if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
             {
                 playListPage.CollapseDetail();

@@ -26,6 +26,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     private long _draftVersion;
     private bool _loaded;
     private bool _disposed;
+    private Task _operationTask = Task.CompletedTask;
 
     public string OriginalText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
     public string TranslationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
@@ -273,9 +274,16 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         PronunciationText = document.PronunciationLrc ?? "";
     }
 
-    private async Task RunAsync(Func<CancellationToken, Task> action)
+    /// <summary>等待已经接受的真实操作；被守卫拒绝的重复命令不会替换此任务。</summary>
+    public Task WhenIdleAsync() => _operationTask;
+
+    private Task RunAsync(Func<CancellationToken, Task> action)
     {
-        if (_disposed || IsBusy) return;
+        if (_disposed || IsBusy) return Task.CompletedTask;
+        return _operationTask = RunCoreAsync(action);
+    }
+    private async Task RunCoreAsync(Func<CancellationToken, Task> action)
+    {
         IsBusy = true;
         Error = "";
         Status = "";

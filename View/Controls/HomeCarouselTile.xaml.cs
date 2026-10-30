@@ -6,7 +6,7 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View.Controls;
 
-/// <summary>显示带左侧或底部叠字的专辑拼贴；点击不执行操作，详情交互由页面转发。</summary>
+/// <summary>显示带左侧或底部叠字的专辑拼贴；点击与键盘请求由宿主转发到歌曲详情。</summary>
 public sealed partial class HomeCarouselTile : UserControl
 {
     /// <summary>标识拼贴曲目。</summary>
