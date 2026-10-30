@@ -19,7 +19,16 @@
     <Compile Include="../../ViewModel/Pages/HomeViewModel.cs;../../Services/AppLifecycle.cs;../../Model/Music.cs;../../Model/BulkObservableCollection.cs;../../State/LibraryState.cs;../../Utils/ArtistHelper.cs" />
     <Compile Include="../../View/HomePage.xaml.cs;../../View/Controls/FeaturedCarousel.xaml.cs;../../View/Controls/HomeHeroCard.xaml.cs;../../View/Controls/MusicCoverControl.xaml.cs" />
     <Compile Include="../../Utils/CoverLoadQueue.cs" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+    <Compile Include="../../View/Controls/CarouselArtworkShadow.cs;../../View/Controls/HomeCarouselTile.xaml.cs;../../View/Controls/RecommendationShelf.xaml.cs;../../View/Controls/HomeSongPreview.xaml.cs" />
+    <Page Include="../../View/Controls/HomeCarouselTile.xaml" Link="View/Controls/HomeCarouselTile.xaml" />
+    <Page Include="../../View/Controls/RecommendationShelf.xaml" Link="View/Controls/RecommendationShelf.xaml" />
+    <Page Include="../../View/Controls/HomeSongPreview.xaml" Link="View/Controls/HomeSongPreview.xaml" />
     <Compile Include="../../View/Controls/CarouselLighting.cs" />
+    <Compile Include="../../View/Controls/CarouselCountdown.cs;../../Extensions/MenuFlyoutExtensions.cs;../../Model/MenuModel.cs;../../Model/PlayListMusic.cs" />
+    <Compile Include="../../Helper/Animations/FluentAnimation.cs;../../Helper/Animations/VisualTreeHelperExtensions.cs;../../Helper/Animations/Composition*.cs;../../Helper/Animations/Animation.cs;../../Helper/Animations/Properties.cs;../../Helper/Animations/ZoomHelper.cs" />
+    <PackageReference Include="ZLinq" Version="1.5.6" />
+    <Page Include="../../Style/BtnStyle.xaml" Link="Style/BtnStyle.xaml" />
     <Compile Include="../../View/Controls/StoreCarouselImageMotion.cs" />
     <Page Include="../../View/HomePage.xaml" Link="View/HomePage.xaml" />
     <Page Include="../../View/Controls/FeaturedCarousel.xaml" Link="View/Controls/FeaturedCarousel.xaml" />

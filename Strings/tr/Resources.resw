@@ -2603,4 +2603,10 @@ SHA-256: {5}
   <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Önceki seçim</value></data>
   <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Sonraki seçim</value></data>
   <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Geçerli çalma kuyruğuna ekle</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>Önceki şarkılar</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Önceki şarkılar</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>Sonraki şarkılar</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Sonraki şarkılar</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>Henüz çalma listesi yok</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Şarkı çalma listesine eklenemedi. Lütfen tekrar deneyin.</value></data>
 </root>

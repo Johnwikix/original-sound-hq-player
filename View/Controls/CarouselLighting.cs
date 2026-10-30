@@ -14,6 +14,7 @@ namespace WinUIMusicPlayer.View.Controls;
 internal sealed class CarouselLighting : IDisposable
 {
     private readonly FrameworkElement _target;
+    private readonly FrameworkElement[] _surfaces;
     private readonly UISettings _settings = new();
     private readonly PointerEventHandler _movedHandler;
     private readonly PointerEventHandler _pressedHandler;
@@ -29,9 +30,10 @@ internal sealed class CarouselLighting : IDisposable
     internal bool IsAttached => _ambient is not null;
 
     /// <summary>保存轮播和事件委托；光源延至 Loaded 后显式创建。</summary>
-    internal CarouselLighting(FrameworkElement target)
+    internal CarouselLighting(FrameworkElement target, params FrameworkElement[] surfaces)
     {
         _target = target;
+        _surfaces = surfaces.Length > 0 ? surfaces : [target];
         _movedHandler = PointerMoved;
         _pressedHandler = PointerPressed;
     }
@@ -47,23 +49,30 @@ internal sealed class CarouselLighting : IDisposable
             _ambient = compositor.CreateAmbientLight();
             _ambient.Color = Colors.White;
             _ambient.Intensity = 1;
-            _ambient.Targets.Add(visual);
             _light = compositor.CreateSpotLight();
             _light.CoordinateSpace = visual;
             _light.InnerConeColor = Colors.FloralWhite;
             _light.OuterConeColor = Colors.FloralWhite;
-            _light.InnerConeAngleInDegrees = 35;
-            _light.OuterConeAngleInDegrees = 65;
+            _light.InnerConeAngleInDegrees = 20;
+            _light.OuterConeAngleInDegrees = 50;
+            // 光从左上方斜射，照射点与指针相交；避免正面圆斑照亮整组文字和按钮。
+            _light.Direction = new Vector3(-.35f, .5f, -1);
             _light.InnerConeIntensity = 0;
             _light.OuterConeIntensity = 0;
             _light.ConstantAttenuation = 1;
             _light.LinearAttenuation = .25f;
             _light.QuadraticAttenuation = .6f;
-            _light.Targets.Add(visual);
+            // 图片区域接受灯光，导航材质保持自身的半透明效果，不随指针聚光变亮。
+            foreach (var surface in _surfaces)
+            {
+                var surfaceVisual = ElementCompositionPreview.GetElementVisual(surface);
+                _ambient.Targets.Add(surfaceVisual);
+                _light.Targets.Add(surfaceVisual);
+            }
 
             // 所有封面共用一盏聚光，避免多卡片占满非环境光槽位。
             // 指针位置由合成线程提供，移动时不重建动画或委托。
-            _pointerExpression = compositor.CreateExpressionAnimation("Vector3(pointer.Position.X, pointer.Position.Y, 120)");
+            _pointerExpression = compositor.CreateExpressionAnimation("Vector3(pointer.Position.X + 70, pointer.Position.Y - 100, 200)");
             _pointerExpression.SetReferenceParameter("pointer", ElementCompositionPreview.GetPointerPositionPropertySet(_target));
             _hoverFade = compositor.CreateScalarKeyFrameAnimation();
             _hoverFade.Duration = TimeSpan.FromMilliseconds(160);
@@ -99,9 +108,9 @@ internal sealed class CarouselLighting : IDisposable
         else
         {
             _light.StopAnimation(nameof(SpotLight.Offset));
-            _light.Offset = new Vector3(position, 120);
+            _light.Offset = new Vector3(position.X + 70, position.Y - 100, 200);
         }
-        if (!_trackingPointer || !trackPointer) FadeHover(.6f);
+        if (!_trackingPointer || !trackPointer) FadeHover(.35f);
         _trackingPointer = trackPointer;
     }
 
@@ -138,8 +147,8 @@ internal sealed class CarouselLighting : IDisposable
         _light.Offset = new Vector3(position, 12);
         _rippleOffset.InsertKeyFrame(0, new Vector3(position, 12));
         _rippleOffset.InsertKeyFrame(.8f, new Vector3(position, (float)Math.Max(_target.ActualWidth, _target.ActualHeight) * 1.8f));
-        _rippleOffset.InsertKeyFrame(1, new Vector3(position, 120));
-        _rippleFade.InsertKeyFrame(1, _pointerInside ? .6f : 0);
+        _rippleOffset.InsertKeyFrame(1, new Vector3(position.X + 70, position.Y - 100, 200));
+        _rippleFade.InsertKeyFrame(1, _pointerInside ? .35f : 0);
         _light.StartAnimation(nameof(SpotLight.Offset), _rippleOffset);
         _light.StartAnimation(nameof(SpotLight.InnerConeIntensity), _rippleFade);
     }

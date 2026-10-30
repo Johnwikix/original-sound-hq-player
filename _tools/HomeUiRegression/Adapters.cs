@@ -19,11 +19,23 @@ namespace WinUIMusicPlayer
     {
         public static IServiceProvider Services { get; set; } = null!;
         public static Window MainWindow { get; set; } = null!;
-        public static ILogger<T> GetLogger<T>() => NullLogger<T>.Instance;
+        public static ILogger<T> GetLogger<T>() => FixtureLogger<T>.Instance;
+    }
+}
+internal sealed class FixtureLogger<T> : ILogger<T>
+{
+    internal static FixtureLogger<T> Instance { get; } = new();
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel level) => level >= LogLevel.Warning;
+    public void Log<TState>(LogLevel level, EventId id, TState state, Exception? error, Func<TState, Exception?, string> formatter)
+    {
+        if (IsEnabled(level)) File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "native-diagnostics.log"), formatter(state, error) + Environment.NewLine + error + Environment.NewLine);
     }
 }
 namespace WinUIMusicPlayer.Model
 {
+    public sealed class PlayList { public int Id { get; set; } public string Name { get; set; } = ""; }
+
     public static class AppSettings
     {
         public static string[] ArtistSplitters { get; } = [";", "/"];
@@ -105,6 +117,18 @@ namespace WinUIMusicPlayer.Services
     {
         private readonly SQLiteAsyncConnection _dbConnection;
         private Task _initialized = Task.CompletedTask;
+        public Task PlaylistGate { get; set; } = Task.CompletedTask;
+        public bool FailPlaylistAdd { get; set; }
+        public int PlaylistAddsStarted;
+        public async Task AddMusicToPlayList(int playlistId, int musicId)
+        {
+            PlaylistAddsStarted++;
+            await PlaylistGate;
+            if (FailPlaylistAdd) throw new IOException("fixture playlist failure");
+            if (await _dbConnection.Table<PlayListMusic>().Where(item => item.PlayListId == playlistId && item.MusicId == musicId).FirstOrDefaultAsync() is not null) return;
+            var last = await _dbConnection.Table<PlayListMusic>().Where(item => item.PlayListId == playlistId).OrderByDescending(item => item.Order).FirstOrDefaultAsync();
+            await _dbConnection.InsertAsync(new PlayListMusic { PlayListId = playlistId, MusicId = musicId, Order = (last?.Order ?? 0) + 1 });
+        }
         public int QueriesStarted;
         public Task WhenInitialized { get { QueriesStarted++; return _initialized; } set => _initialized = value; }
         public MusicDatabaseService(SQLiteAsyncConnection database) => _dbConnection = database;
@@ -149,6 +173,7 @@ namespace WinUIMusicPlayer.ViewModel
         public FixtureState State { get; } = new();
         public List<Music> SongsSource => State.Library.Songs;
         public BulkObservableCollection<Music> FavoriteSongs { get; } = [];
+        public BulkObservableCollection<PlayList> AllPlayList { get; } = [];
         public BulkObservableCollection<Music> SequentialPlayingList { get; set; } = [];
         public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
         public bool IsInitialized => State.Lifecycle.IsReady;

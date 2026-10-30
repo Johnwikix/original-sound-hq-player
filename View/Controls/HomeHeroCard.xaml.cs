@@ -2,7 +2,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using System.Numerics;
 using Windows.UI;
 using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.ViewModel;
@@ -15,6 +14,7 @@ public sealed partial class HomeHeroCard : UserControl
     private readonly CompositeTransform _textTransform = new();
     private readonly Storyboard _textTransition = new();
     private readonly UISettings _settings = new();
+    private readonly CarouselArtworkShadow _shadow;
     /// <summary>标识主题快照。</summary>
     public static readonly DependencyProperty ThemeProperty = DependencyProperty.Register(
         nameof(Theme), typeof(HomeTheme), typeof(HomeHeroCard), new PropertyMetadata(null, ThemeChanged));
@@ -30,7 +30,7 @@ public sealed partial class HomeHeroCard : UserControl
     public HomeHeroCard()
     {
         InitializeComponent();
-        Translation = new Vector3(0, 0, 16);
+        _shadow = new CarouselArtworkShadow(Artwork, ShadowHost);
         ActionPanel.RenderTransform = _textTransform;
         // DevWinUI 10.8.0 StoreCarousel.RunTextAnimation：整组、无错峰、无附加 easing。
         AddTransition(_textTransform, "TranslateX", 100, 0);
@@ -43,12 +43,14 @@ public sealed partial class HomeHeroCard : UserControl
     }
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
+        _shadow.Attach();
         Artwork.ArtworkColorChanged += UpdateTone;
         UpdateTone(Artwork.ArtworkColor);
         PlayTextTransition();
     }
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
+        _shadow.Dispose();
         Artwork.ArtworkColorChanged -= UpdateTone;
         ResetText();
     }

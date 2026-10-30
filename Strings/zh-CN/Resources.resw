@@ -2605,4 +2605,10 @@ SHA-256：{5}
   <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>上一个主题</value></data>
   <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>下一个主题</value></data>
   <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>加入当前播放队列</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>上一组歌曲</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>上一组歌曲</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>下一组歌曲</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>下一组歌曲</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>暂无播放列表</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>添加到播放列表失败，请重试。</value></data>
 </root>

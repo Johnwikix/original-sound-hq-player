@@ -2603,4 +2603,10 @@ SHA-256: {5}
   <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>前の特集</value></data>
   <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>次の特集</value></data>
   <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>現在の再生キューに追加</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>前の曲へ</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>前の曲へ</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>次の曲へ</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>次の曲へ</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>プレイリストがありません</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>曲をプレイリストに追加できませんでした。もう一度お試しください。</value></data>
 </root>

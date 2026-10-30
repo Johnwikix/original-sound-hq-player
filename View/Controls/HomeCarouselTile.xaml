@@ -1,0 +1,22 @@
+<UserControl
+    x:Class="WinUIMusicPlayer.View.Controls.HomeCarouselTile"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinUIMusicPlayer.View.Controls">
+    <Grid>
+        <Grid CornerRadius="8" RequestedTheme="Dark">
+            <controls:MusicCoverControl x:Name="Artwork" DecodePixelSize="400" />
+            <Border IsHitTestVisible="False" CornerRadius="8">
+                <Border.Background>
+                    <LinearGradientBrush x:Name="Shade" StartPoint="0,0" EndPoint="0.25,1">
+                        <GradientStop x:Name="ShadeStart" Offset="0.2" Color="#00000000" />
+                        <GradientStop x:Name="ShadeEnd" Offset="1" Color="#B8000000" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+            <TextBlock x:Name="TitleText" Text="{x:Bind Song.Music.Title, Mode=OneWay}" Foreground="White"
+                Margin="16" VerticalAlignment="Bottom" FontWeight="SemiBold" FontSize="16"
+                TextWrapping="WrapWholeWords" MaxLines="2" TextTrimming="CharacterEllipsis" IsHitTestVisible="False" />
+        </Grid>
+    </Grid>
+</UserControl>

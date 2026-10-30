@@ -2,46 +2,81 @@
 <UserControl
     x:Class="WinUIMusicPlayer.View.Controls.FeaturedCarousel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUIMusicPlayer.View.Controls"
+    xmlns:animations="using:WinUIMusicPlayer.Helper.Animations">
+    <UserControl.Resources>
+        <AcrylicBrush x:Key="NavigationMaterial" TintColor="#303030" TintOpacity="0.65" TintLuminosityOpacity="0.65" FallbackColor="#FF414141" />
+        <AcrylicBrush x:Key="NavigationHoverMaterial" TintColor="#404040" TintOpacity="0.7" TintLuminosityOpacity="0.7" FallbackColor="#FF515151" />
+        <AcrylicBrush x:Key="NavigationPressedMaterial" TintColor="#202020" TintOpacity="0.75" TintLuminosityOpacity="0.65" FallbackColor="#FF303030" />
+        <Style x:Key="NavigationButtonStyle" TargetType="Button" BasedOn="{StaticResource MenuButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource NavigationMaterial}" />
+            <Setter Property="Foreground" Value="#C5FFFFFF" />
+            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="NavRoot" Background="{TemplateBinding Background}" CornerRadius="16"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates" animations:FluentAnimation.PointerOver="NavRoot" animations:FluentAnimation.Pressed="NavRoot">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver"><VisualState.Setters><Setter Target="NavRoot.Background" Value="{StaticResource NavigationHoverMaterial}" /></VisualState.Setters></VisualState>
+                                    <VisualState x:Name="Pressed"><VisualState.Setters><Setter Target="NavRoot.Background" Value="{StaticResource NavigationPressedMaterial}" /></VisualState.Setters></VisualState>
+                                    <VisualState x:Name="Disabled"><VisualState.Setters><Setter Target="NavRoot.Opacity" Value="0.4" /></VisualState.Setters></VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter Content="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
     <Grid x:Name="LayoutGrid" ColumnDefinitions="1.5*,*" RowDefinitions="400,24" ColumnSpacing="15" RowSpacing="15"
           KeyDown="Carousel_KeyDown" SizeChanged="Layout_SizeChanged" PointerEntered="Carousel_PointerEntered" PointerExited="Carousel_PointerExited"
           GotFocus="Carousel_GotFocus" LostFocus="Carousel_LostFocus">
         <Grid x:Name="SliderGrid" Background="Transparent">
             <ContentPresenter x:Name="Presenter" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                 Content="{x:Bind MainContent, Mode=OneWay}" />
-            <Button x:Name="PreviousButton" x:Uid="HomePrevious" Width="32" Height="32" Padding="0" CornerRadius="16" BorderThickness="0"
-                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-10,0,0,0" Foreground="White" Background="#CC202020"
-                Visibility="{x:Bind NavigationVisibility, Mode=OneWay}" Click="Previous_Click">
+            <Button x:Name="PreviousButton" x:Uid="HomePrevious" Width="32" Height="32" Padding="0" CornerRadius="16" Style="{StaticResource NavigationButtonStyle}"
+                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-10,0,0,0"
+                Visibility="{x:Bind NavigationVisibility, Mode=OneWay}" Opacity="{x:Bind NavigationOpacity, Mode=OneWay}"
+                IsHitTestVisible="{x:Bind NavigationActive, Mode=OneWay}" IsTabStop="{x:Bind NavigationActive, Mode=OneWay}" Click="Previous_Click">
+                <Button.OpacityTransition><ScalarTransition Duration="0:0:0.2" /></Button.OpacityTransition>
                 <FontIcon Glyph="&#xE76B;" FontSize="12" />
             </Button>
-            <Button x:Name="NextButton" x:Uid="HomeNext" Width="32" Height="32" Padding="0" CornerRadius="16" BorderThickness="0"
-                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-10,0" Foreground="White" Background="#CC202020"
-                Visibility="{x:Bind NavigationVisibility, Mode=OneWay}" Click="Next_Click">
+            <Button x:Name="NextButton" x:Uid="HomeNext" Width="32" Height="32" Padding="0" CornerRadius="16" Style="{StaticResource NavigationButtonStyle}"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-10,0"
+                Visibility="{x:Bind NavigationVisibility, Mode=OneWay}" Opacity="{x:Bind NavigationOpacity, Mode=OneWay}"
+                IsHitTestVisible="{x:Bind NavigationActive, Mode=OneWay}" IsTabStop="{x:Bind NavigationActive, Mode=OneWay}" Click="Next_Click">
+                <Button.OpacityTransition><ScalarTransition Duration="0:0:0.2" /></Button.OpacityTransition>
                 <FontIcon Glyph="&#xE76C;" FontSize="12" />
             </Button>
+            <local:CarouselCountdown x:Name="Countdown" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10"
+                Visibility="{x:Bind CountdownVisibility, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
         </Grid>
         <PipsPager x:Name="Pager" Grid.Row="1" HorizontalAlignment="Center" Margin="0,-10,0,0"
             NumberOfPages="{x:Bind PageCount, Mode=OneWay}" SelectedPageIndex="{x:Bind SelectedIndex, Mode=OneWay}"
             SelectedIndexChanged="Pager_SelectedIndexChanged" Visibility="{x:Bind PagerVisibility, Mode=OneWay}" />
         <Grid x:Name="ThumbnailGrid" Grid.Column="1" ColumnDefinitions="*,*" RowDefinitions="1.35*,*" ColumnSpacing="15" RowSpacing="15"
             Visibility="{x:Bind ThumbnailVisibility, Mode=OneWay}">
-            <Button x:Name="PrimaryThumbnail" Grid.ColumnSpan="2" Padding="0" CornerRadius="8" BorderThickness="0"
-                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Command="{x:Bind ThumbnailCommand, Mode=OneWay}"
-                CommandParameter="{x:Bind PrimaryItem, Mode=OneWay}" Content="{x:Bind PrimaryItem, Mode=OneWay}" ContentTemplate="{x:Bind ThumbnailTemplate, Mode=OneWay}">
-                <Button.Shadow><ThemeShadow /></Button.Shadow>
-            </Button>
-            <Button x:Name="SecondaryThumbnail" Grid.Row="1" Padding="0" CornerRadius="8" BorderThickness="0"
-                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Command="{x:Bind ThumbnailCommand, Mode=OneWay}"
-                CommandParameter="{x:Bind SecondaryItem, Mode=OneWay}" Content="{x:Bind SecondaryItem, Mode=OneWay}" ContentTemplate="{x:Bind ThumbnailTemplate, Mode=OneWay}"
+            <Grid x:Name="PrimaryShadowHost" Grid.ColumnSpan="2" IsHitTestVisible="False" />
+            <Grid x:Name="SecondaryShadowHost" Grid.Row="1" IsHitTestVisible="False" Visibility="{x:Bind SecondaryVisibility, Mode=OneWay}" />
+            <Grid x:Name="TertiaryShadowHost" Grid.Row="1" Grid.Column="1" IsHitTestVisible="False" Visibility="{x:Bind TertiaryVisibility, Mode=OneWay}" />
+            <ContentPresenter x:Name="PrimaryThumbnail" Grid.ColumnSpan="2"
+                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Content="{x:Bind PrimaryItem, Mode=OneWay}" ContentTemplate="{x:Bind ResolvePrimaryTemplate(PrimaryThumbnailTemplate, ThumbnailTemplate), Mode=OneWay}">
+            </ContentPresenter>
+            <ContentPresenter x:Name="SecondaryThumbnail" Grid.Row="1"
+                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Content="{x:Bind SecondaryItem, Mode=OneWay}" ContentTemplate="{x:Bind ThumbnailTemplate, Mode=OneWay}"
                 Visibility="{x:Bind SecondaryVisibility, Mode=OneWay}">
-                <Button.Shadow><ThemeShadow /></Button.Shadow>
-            </Button>
-            <Button x:Name="TertiaryThumbnail" Grid.Row="1" Grid.Column="1" Padding="0" CornerRadius="8" BorderThickness="0"
-                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Command="{x:Bind ThumbnailCommand, Mode=OneWay}"
-                CommandParameter="{x:Bind TertiaryItem, Mode=OneWay}" Content="{x:Bind TertiaryItem, Mode=OneWay}" ContentTemplate="{x:Bind ThumbnailTemplate, Mode=OneWay}"
+            </ContentPresenter>
+            <ContentPresenter x:Name="TertiaryThumbnail" Grid.Row="1" Grid.Column="1"
+                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Content="{x:Bind TertiaryItem, Mode=OneWay}" ContentTemplate="{x:Bind ThumbnailTemplate, Mode=OneWay}"
                 Visibility="{x:Bind TertiaryVisibility, Mode=OneWay}">
-                <Button.Shadow><ThemeShadow /></Button.Shadow>
-            </Button>
+            </ContentPresenter>
         </Grid>
     </Grid>
 </UserControl>

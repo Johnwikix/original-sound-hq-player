@@ -2603,4 +2603,10 @@ SHA-256: {5}
   <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Selección anterior</value></data>
   <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Siguiente selección</value></data>
   <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Añadir a la cola de reproducción actual</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>Canciones anteriores</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Canciones anteriores</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>Canciones siguientes</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Canciones siguientes</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>Aún no hay listas de reproducción</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>No se pudo añadir la canción a la lista. Inténtalo de nuevo.</value></data>
 </root>

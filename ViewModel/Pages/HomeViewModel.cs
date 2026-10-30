@@ -25,6 +25,9 @@ public sealed record HomeSong(Music Music, string Reason, IReadOnlyList<Music> Q
 public sealed record HomeTheme(string Title, string Description, Music Artwork, IReadOnlyList<Music> Queue,
     IAsyncRelayCommand<HomeTheme> PlayCommand);
 
+/// <summary>保存打开歌单菜单时的曲目和歌单标识，避免面板换项影响在途操作。</summary>
+public sealed record HomePlaylistTarget(int PlaylistId, int MusicId);
+
 /// <summary>拥有首页快照、命令和显式生命周期；后台计算不持有视图或可变曲库。</summary>
 public sealed class HomeViewModel : ObservableObject
 {
@@ -39,6 +42,7 @@ public sealed class HomeViewModel : ObservableObject
     private DispatcherQueue? _dispatcher;
     private CancellationTokenSource? _operation;
     private Task _refreshTask = Task.CompletedTask;
+    private Task _playlistTask = Task.CompletedTask;
     private bool _started, _active, _stopped, _running, _deferredRefresh, _dirty = true, _historyDirty = true;
     private long _revision, _snapshotVersion = -1;
     private int _batch;
@@ -55,6 +59,15 @@ public sealed class HomeViewModel : ObservableObject
     public List<HomeSong> Familiar { get; private set => SetProperty(ref field, value); } = [];
     /// <summary>获取有真实流派标签的探索栏目。</summary>
     public List<HomeSong> Discovery { get; private set => SetProperty(ref field, value); } = [];
+    /// <summary>获取覆盖层正在展示的规范曲目；刷新或离页时清空。</summary>
+    public HomeSong? PreviewSong { get; private set => SetProperty(ref field, value); }
+    /// <summary>显示当前栏目中的曲目，拒绝已经被刷新替换的卡片。</summary>
+    public void ShowPreview(HomeSong song)
+    {
+        if (_active && !_stopped && (Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) PreviewSong = song;
+    }
+    /// <summary>关闭详情，释放视图对封面的消费。</summary>
+    public void DismissPreview() => PreviewSong = null;
     /// <summary>获取首页主栏目标题。</summary>
     public string SongsTitle { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("HomeExplore");
     /// <summary>获取加载状态。</summary>
@@ -73,6 +86,12 @@ public sealed class HomeViewModel : ObservableObject
     public IAsyncRelayCommand<HomeSong> PlaySongCommand { get; }
     /// <summary>获取播放精选主题的命令。</summary>
     public IAsyncRelayCommand<HomeTheme> PlayThemeCommand { get; }
+    /// <summary>获取歌单菜单项，打开菜单时根据当前规范曲目与歌单重新准备。</summary>
+    public List<MenuModel> PlaylistMenuItems { get; } = [];
+    /// <summary>获取歌单菜单的准备命令。</summary>
+    public IRelayCommand PreparePlaylistMenuCommand { get; }
+    /// <summary>获取写入指定歌单的命令，参数保存打开菜单时的曲目标识。</summary>
+    public IAsyncRelayCommand<HomePlaylistTarget> AddToPlaylistCommand { get; }
     /// <summary>获取复用现有导入流程的命令。</summary>
     public IAsyncRelayCommand AddFolderCommand => _folders.AddFolderCommand;
     /// <summary>获取扫描状态，供空库反馈使用。</summary>
@@ -96,6 +115,9 @@ public sealed class HomeViewModel : ObservableObject
             song => song is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         PlayThemeCommand = new AsyncRelayCommand<HomeTheme>(theme => PlayAsync(theme?.Artwork, theme?.Queue),
             theme => theme is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
+        PreparePlaylistMenuCommand = new RelayCommand(PreparePlaylistMenu);
+        AddToPlaylistCommand = new AsyncRelayCommand<HomePlaylistTarget>(QueuePlaylistAdd, CanAddToPlaylist,
+            AsyncRelayCommandOptions.AllowConcurrentExecutions);
     }
 
     private bool CanPlay => _active && !_stopped && _app.CanStartPlayback;
@@ -131,6 +153,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>停止页面消费并取消本次计算；下次激活可以恢复。</summary>
     public void Deactivate()
     {
+        DismissPreview();
         _active = false;
         _revision++;
         _operation?.Cancel();
@@ -140,7 +163,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>退出时解除订阅并等待真实在途查询和计算完成。</summary>
     public async Task StopAsync()
     {
-        if (_stopped) { await _refreshTask; return; }
+        if (_stopped) { await Task.WhenAll(_refreshTask, _playlistTask); return; }
         _stopped = true;
         Deactivate();
         if (_started)
@@ -155,9 +178,50 @@ public sealed class HomeViewModel : ObservableObject
             _folders.PropertyChanged -= FoldersChanged;
             _remote.SourceAvailabilityChanged -= SourceChanged;
         }
-        await _refreshTask;
+        await Task.WhenAll(_refreshTask, _playlistTask);
         _snapshot = [];
         _history.Clear();
+        PlaylistMenuItems.Clear();
+    }
+
+    private void PreparePlaylistMenu()
+    {
+        PlaylistMenuItems.Clear();
+        if (!_active || _stopped || PreviewSong is not { Music: var music }) return;
+        foreach (var playlist in _app.AllPlayList)
+            PlaylistMenuItems.Add(new MenuModel { Title = playlist.Name,
+                Tag = new HomePlaylistTarget(playlist.Id, music.Id), Command = AddToPlaylistCommand });
+        if (PlaylistMenuItems.Count == 0)
+            PlaylistMenuItems.Add(new MenuModel { Title = ToolUtils.GetString("HomeNoPlaylists"), IsEnabled = false });
+    }
+    private bool PlaylistExists(int playlistId)
+    {
+        foreach (var playlist in _app.AllPlayList) if (playlist.Id == playlistId) return true;
+        return false;
+    }
+    private bool CanAddToPlaylist(HomePlaylistTarget? target) => _active && !_stopped && _app.CanPublishState
+        && target is not null && _app.FindById(target.MusicId) is not null && PlaylistExists(target.PlaylistId);
+    private Task QueuePlaylistAdd(HomePlaylistTarget? target)
+    {
+        if (!CanAddToPlaylist(target)) return Task.CompletedTask;
+        // 菜单参数为不可变标识；串行写入保留每次点击，避免重复查询/插入并发竞争。
+        _playlistTask = AddToPlaylistAfterAsync(_playlistTask, target!);
+        return _playlistTask;
+    }
+    private async Task AddToPlaylistAfterAsync(Task previous, HomePlaylistTarget target)
+    {
+        await previous;
+        if (_app.FindById(target.MusicId) is null || !PlaylistExists(target.PlaylistId)) return;
+        try
+        {
+            await _database.AddMusicToPlayList(target.PlaylistId, target.MusicId);
+            if (_active && !_stopped && ErrorMessage == ToolUtils.GetString("HomePlaylistAddFailed")) ErrorMessage = "";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "添加首页歌曲 {MusicId} 到歌单 {PlaylistId} 失败", target.MusicId, target.PlaylistId);
+            if (_active && !_stopped) ErrorMessage = ToolUtils.GetString("HomePlaylistAddFailed");
+        }
     }
 
     /// <summary>复用文件夹导入与扫描互斥规则。</summary>
@@ -213,6 +277,7 @@ public sealed class HomeViewModel : ObservableObject
     {
         PlaySongCommand.NotifyCanExecuteChanged();
         PlayThemeCommand.NotifyCanExecuteChanged();
+        AddToPlaylistCommand.NotifyCanExecuteChanged();
         RefreshCommand.NotifyCanExecuteChanged();
     }
     private void RequestRefresh(bool invalidateSnapshot = false)
@@ -324,6 +389,7 @@ public sealed class HomeViewModel : ObservableObject
 
     private void Publish(HomeRecommendation result)
     {
+        DismissPreview();
         Songs = Resolve(result.Songs, Songs);
         Familiar = Resolve(result.Familiar, Familiar);
         Discovery = Resolve(result.Discovery, Discovery);

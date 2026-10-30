@@ -2603,4 +2603,10 @@ SHA-256: {5}
   <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Предыдущая подборка</value></data>
   <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Следующая подборка</value></data>
   <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Добавить в текущую очередь воспроизведения</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>Предыдущие композиции</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Предыдущие композиции</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>Следующие композиции</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Следующие композиции</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>Плейлистов пока нет</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Не удалось добавить композицию в плейлист. Повторите попытку.</value></data>
 </root>

@@ -1,3 +1,31 @@
+## 2026-10-30 修正首页滚动跳跃、详情宽度与操作按钮
+- `RecommendationShelf*`：使用 ScrollView + ItemsRepeater 保留虚拟化，禁用栏目滚轮和手势平移；删除手动滚轮位移转发，由页面原生垂直滚动。按钮连点累加目标，外部焦点滚入后从实际位置继续翻页。
+- `HomePage*`：详情浮层移入页面滚动祖先，按可见视口定位；禁止详情按钮重复 BringIntoView，滚动收起时聚焦视口，键盘展开等待原卡片滚入稳定，避免页面被拉回。
+- `HomeSongPreview*`：详情按原封面加宽 48px、至少 360px，窄窗约束在视口；四个操作按钮改用基于 MenuButtonStyle 的独立样式，恢复主题背景/描边、增大内边距并改为 6px 紧凑排列。
+- `_tools/HomeUiRegression`：125 项原生回归通过，覆盖宽窄详情、按钮外观和动画、焦点滚动、虚拟化与快速分页；x64 Debug 构建、资源及 CRLF 检查通过。真实滚轮终验因 Computer Use 应用授权超时未执行，触摸板硬件行为尚待设备验收。
+
+## 2026-10-30 首页卡片统一详情操作与歌单菜单
+- `CarouselArtworkShadow.cs`：图片彩色阴影收窄为 8px 模糊、4px 下移与 12px 渐隐边界，外缘归零，避免依赖大 margin 才能遮住硬裁切；按反馈移除按钮动态投影尝试，未引入长阴影着色器依赖。
+- `HomePage*`、`FeaturedCarousel*`、`HomeCarouselTile*`、`RecommendationShelf*`：移除三栏及三张拼贴的 Button 包装、整卡播放和悬停播放遮罩；拼贴保持原比例和叠字，按实际封面尺寸展开共享动画详情，播放仅由详情按钮触发。
+- `HomeSongPreview*`、`HomeViewModel.cs`：新增添加到播放列表的 MenuFlyout；菜单打开时保留详情，固定曲目/歌单标识，串行处理连续添加并观察失败，退出等待已接受的写入完成。
+- 首页操作按钮复用 `MenuButtonStyle`；轮播箭头在继承相同按压/悬停动画的同时保留亚克力外观与淡出。`Strings/*/Resources.resw` 补齐七语言空歌单与写入失败文案。
+- `_tools/HomeUiRegression`：116 项原生回归通过，覆盖无 Invoke 卡片、三张拼贴详情、真实菜单和按钮动画、紧凑阴影及卸载、歌单快照/连续写入/失败重试/退出等待；x64 Debug 构建、七语言资源和 CRLF 检查通过。歌单目录与写入边界使用适配桩及真实 SQLite，未用个人曲库做端到端验收。
+
+## 2026-10-30 补齐卡片退出、轮播箭头淡出与倒计时圆盘
+- `HomeSongPreview*`、`HomePage*`：退出采用 200ms 缩回、裁切和淡出，等待 CompositionScopedBatch 实际完成再清空封面；移向相邻卡片先退出旧卡，重入取消过期完成回调，Escape 同样收起。
+- `FeaturedCarousel*`、`CarouselLighting.cs`：箭头采用半透明亚克力、细描边和 200ms 原生透明度过渡；仅键盘焦点保持显示，修复鼠标点击后移出仍常驻；导航材质不参与封面聚光。
+- `CarouselCountdown.cs`：左下角增加 20px 扇形倒计时圆盘，与自动轮播共用剩余时间，悬停/键盘聚焦暂停、移出续跑、手动换页重置、关闭自动轮播或卸载时停止。
+- `_tools/HomeUiRegression`：99 项原生回归通过，新增退出完成/重入/相邻卡交接、鼠标焦点移出、亚克力及倒计时暂停续跑；x64 Debug 构建和七语言资源/CRLF 静态检查通过。完整实鼠标滚轮输入与视觉轨迹终验仍未执行。
+
+## 2026-10-30 首页轮播图片投影与悬浮详情
+- `View/Controls/CarouselArtworkShadow.cs`、`CarouselLighting.cs`：以实时图片表面重建彩色模糊投影，独立宿主保留模糊边缘；增加斜向指针光照，卸载释放表面、光源和效果资源。
+- `FeaturedCarousel*`、`HomeHeroCard*`、`HomeCarouselTile*`：保留既有专辑封面比例与窄窗同排；三张拼贴增加标题，大卡左侧居中、小卡底部叠字；修复循环首尾翻页的动画方向。
+- `RecommendationShelf*`、`HomePage*`：三栏隐藏横向滚动条，改用有边界禁用状态的圆形左右按钮；滚轮在内层默认处理前截获，只滚动页面，仍支持原生触摸平移。
+- `HomeSongPreview*`、`HomeViewModel.cs`：共享详情覆盖层从原封面展开，艺术家、专辑、推荐理由和播放/收藏/入队命令移入面板，外部只显示封面与歌名；支持悬停容错、键盘聚焦/Escape、滚动/刷新/离页收起。
+- `Strings/*/Resources.resw`：补齐七语言栏目分页按钮的辅助功能名称与提示。
+- `_tools/HomeUiRegression`：88 项原生回归通过，覆盖详情命令、双向分页与边界、专辑比例、真实合成光源、图片阴影资源和卸载重入；主项目 x64 Debug 构建通过。Computer Use 被用户 Escape 停止，真实滚轮输入与完整动画轨迹的人工验收未完成。
+- `docs/HomeRecommendationsPlan.md`：记录本机 Store 22609.1401.8.0 XBF 证据与实现边界；光源角度、模糊量和详情动画时序为项目调校值，未声称恢复 Store 原生实现。
+
 ## 2026-10-29 首页轮播 5 张自动滚动与封面加载线程修复
 - `View/Controls/MusicCoverControl.xaml.cs`：修复封面管线工作线程写 `ImageHash` 时 `PropertyChanged` 同步回调 UI 抛 RPC_E_WRONG_THREAD (0x8001010E)、导致首页封面整链路加载失败的问题；`MetadataChanged` 在订阅边界封送回控件线程执行。无封面占位音符随卡片尺寸等比缩放，轮播拼贴大卡不再是空灰块配小图标。
 - `View/Controls/FeaturedCarousel.xaml.cs`：补齐 DevWinUI 原版 `AutoShuffle`/`ShuffleDuration` 走马灯：默认 5 秒自动翻页，悬停暂停并保留剩余时间（一次性尾段恢复），手动翻页、换源或卸载时停表，属性可关。

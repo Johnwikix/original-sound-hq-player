@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
 using SQLite;
@@ -90,7 +91,10 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         HomeViewModel? home = null;
         try
         {
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "native-diagnostics.log"), "");
             Resources.MergedDictionaries.Add(new XamlControlsResources());
+            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Style/BtnStyle.xaml") });
+            await database.CreateTableAsync<PlayListMusic>();
             await database.ExecuteAsync("CREATE TABLE PlaybackHistory (MusicId INTEGER, StartedAt INTEGER, TotalDurationMs REAL, DurationPlayedMs REAL)");
             await database.ExecuteAsync("INSERT INTO PlaybackHistory VALUES (1,?,100000,90000)", DateTime.UtcNow.AddDays(-2).Ticks);
             for (int i = 2; i <= 20; i++)
@@ -136,9 +140,6 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(home.Familiar.Count == 20 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
                 "real SQLite history and canonical music objects reach the shipping page");
             Check(!home.PlaySongCommand.CanExecute(home.Songs[0]), "play remains guarded until engine and lifecycle are ready");
-            Check(Descendants<ListView>(page).SelectMany(list => Descendants<Button>(list))
-                .Where(b => ReferenceEquals(b.Command, home.PlaySongCommand)).All(b => !b.IsEnabled),
-                "whole-cover play buttons stay disabled until playback is ready");
             app.State.Lifecycle.TransitionTo(AppPhase.Initializing);
             app.State.Lifecycle.TransitionTo(AppPhase.Ready);
             app.IsPlaybackEngineReady = true;
@@ -147,6 +148,40 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var initialThemes = home.Themes;
             var carousel = (FeaturedCarousel)page.FindName("Featured");
             carousel.AutoShuffle = false; // 手动导航断言需要确定时序，自动轮播单独验证。
+            if (Environment.GetCommandLineArgs().Contains("--interactive"))
+            {
+                window.Title = "Home Carousel interaction fixture";
+                window.AppWindow.Move(new Windows.Graphics.PointInt32(80, 80));
+                void SaveState()
+                {
+                    var content = (ScrollViewer)page.FindName("ContentScroll");
+                    var offsets = Descendants<RecommendationShelf>(page).Select(item => new
+                    {
+                        item.Name,
+                        Offset = Descendants<ScrollView>(item).First().HorizontalOffset
+                    });
+                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "interactive-state.json"),
+                        System.Text.Json.JsonSerializer.Serialize(new { Vertical = content.VerticalOffset, Shelves = offsets,
+                            Preview = home.PreviewSong?.Music.Title }));
+                }
+                foreach (var scrolling in Descendants<ScrollViewer>(page)) scrolling.ViewChanged += (_, _) => SaveState();
+                foreach (var scrolling in Descendants<ScrollView>(page)) scrolling.ViewChanged += (_, _) => SaveState();
+                home.PropertyChanged += (_, _) => SaveState();
+                SaveState();
+                var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                window.Closed += (_, _) => closed.TrySetResult();
+                await closed.Task;
+                window = null;
+                return;
+            }
+            var imageShadows = Field<CarouselArtworkShadow[]>(carousel, "_thumbnailShadows")
+                .Append(Field<CarouselArtworkShadow>((HomeHeroCard)page.FindName("HomeHero"), "_shadow")).ToArray();
+            Check(imageShadows.Length == 4 && imageShadows.All(shadow => shadow.IsAttached),
+                "all four artwork shadows attach outside the rounded card clips");
+            Check(imageShadows.All(shadow => Field<Microsoft.UI.Composition.SpriteVisual>(shadow, "_visual").Offset.X == -12
+                && Field<Microsoft.UI.Composition.CompositionLinearGradientBrush>(shadow, "_horizontalMask").ColorStops[0].Color.A == 0
+                && Field<Microsoft.UI.Composition.CompositionLinearGradientBrush>(shadow, "_verticalMask").ColorStops[3].Color.A == 0),
+                "compact artwork shadows fade fully transparent within a twelve-pixel gutter");
             CarouselLighting[] lights = [Field<CarouselLighting>(carousel, "_lighting")];
             Check(lights.All(l => l.IsAttached), "hero and collage share lighting within the two non-ambient light limit");
             var lightShade = (GradientStop)((HomeHeroCard)page.FindName("HomeHero")).FindName("ShadeStart");
@@ -155,93 +190,250 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 && lightTitle.Foreground is SolidColorBrush lightFg && lightFg.Color.R < 100,
                 "light theme pairs a light scrim with dark hero text");
             var slider = (Grid)carousel.FindName("SliderGrid");
-            var primary = (Button)carousel.FindName("PrimaryThumbnail");
-            var secondary = (Button)carousel.FindName("SecondaryThumbnail");
+            var primary = (ContentPresenter)carousel.FindName("PrimaryThumbnail");
+            var secondary = (ContentPresenter)carousel.FindName("SecondaryThumbnail");
             Check(slider.ActualWidth / slider.ActualHeight is > 1.16 and < 1.3
                 && primary.ActualWidth / primary.ActualHeight is > 1.2 and < 1.65
                 && secondary.ActualWidth / secondary.ActualHeight is > .8 and < 1.15,
                 $"main and collage artwork use near-square rectangular proportions (slider {slider.ActualWidth:F0}x{slider.ActualHeight:F0}, primary {primary.ActualWidth:F0}x{primary.ActualHeight:F0}, secondary {secondary.ActualWidth:F0}x{secondary.ActualHeight:F0})");
-            var shelf = Descendants<ListView>(page).First();
-            var shelfScroll = Descendants<ScrollViewer>(shelf).First();
-            shelfScroll.ChangeView(140, null, null, true);
+            var contentScroll = (ScrollViewer)page.FindName("ContentScroll");
+            contentScroll.ChangeView(null, 520, null, true);
+            await Task.Delay(180);
+            var shelf = (ItemsRepeater)((RecommendationShelf)page.FindName("SongsShelf")).FindName("Items");
+            var shelfScroll = Descendants<ScrollView>((RecommendationShelf)page.FindName("SongsShelf")).First();
+            shelfScroll.ScrollTo(140, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
             await Task.Delay(100);
-            double shelfOffset = shelfScroll.HorizontalOffset;
-            var coverBeforePlay = Descendants<MusicCoverControl>(shelf).First();
-            var sourceBeforePlay = ((Image)coverBeforePlay.FindName("CoverImage")).Source;
-            var button = Descendants<Button>(shelf).First(b => ReferenceEquals(b.Command, home.PlaySongCommand));
-            Check(button.IsEnabled && button.CommandParameter is HomeSong, "shipping template binds live commands and parameters");
-            var selected = (HomeSong)button.CommandParameter;
-            var peer = new ButtonAutomationPeer(button);
-            ((IInvokeProvider)peer.GetPattern(PatternInterface.Invoke)).Invoke();
-            await Wait(() => playback.LastId == selected.Music.Id);
-            Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(selected.Queue.Select(m => m.Id)),
-                "native button invocation plays the explicit shelf queue");
+            foreach (var list in Descendants<RecommendationShelf>(page).Select(item => (ItemsRepeater)item.FindName("Items")))
+            {
+                list.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
+                await Wait(() => Descendants<ContentControl>(list).Any(item => item.Tag is HomeSong));
+                var cards = Descendants<ContentControl>(list).Where(item => item.Tag is HomeSong).ToArray();
+                Check(cards.Length > 0 && !Descendants<Button>(list).Any(),
+                    "shelf cards have no Button wrappers, cover play actions or footer buttons");
+                Check(cards.All(item => FrameworkElementAutomationPeer.CreatePeerForElement(item)?.GetPattern(PatternInterface.Invoke) is null),
+                    "song cards expose no native Invoke action");
+                Check(cards.All(item => item.Content is StackPanel panel && panel.Children.Count == 2
+                    && panel.Children[0] is MusicCoverControl && panel.Children[1] is TextBlock),
+                    "normal song cards contain only artwork and title");
+            }
             foreach (string name in new[] { "PrimaryThumbnail", "SecondaryThumbnail", "TertiaryThumbnail" })
             {
-                var tile = (Button)carousel.FindName(name);
-                var song = (HomeSong)tile.CommandParameter;
-                playback.LastId = 0;
-                var tilePeer = new ButtonAutomationPeer(tile);
-                ((IInvokeProvider)tilePeer.GetPattern(PatternInterface.Invoke)).Invoke();
-                await Wait(() => playback.LastId == song.Music.Id);
-                Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(song.Queue.Select(m => m.Id)),
-                    name + " starts its song in the recommendation queue without opening music properties");
+                var tile = (ContentPresenter)carousel.FindName(name);
+                Check(Descendants<HomeCarouselTile>(tile).Single().Song is not null && !Descendants<Button>(tile).Any(),
+                    name + " preserves artwork and title without an invokable cover button");
             }
-            await Task.Delay(450);
-            Check(ReferenceEquals(initialSongs, home.Songs) && ReferenceEquals(initialThemes, home.Themes)
-                && Math.Abs(shelfOffset - shelfScroll.HorizontalOffset) < .5
-                && ReferenceEquals(sourceBeforePlay, ((Image)coverBeforePlay.FindName("CoverImage")).Source),
-                "playback selection and history settlement preserve shelf objects, cover sources and horizontal scroll position");
-            foreach (var list in Descendants<ListView>(page))
-            {
-                var covers = Descendants<Button>(list).Where(b => ReferenceEquals(b.Command, home.PlaySongCommand)).ToArray();
-                if (covers.Length == 0) continue;
-                Check(covers.Length == Descendants<MusicCoverControl>(list).Count()
-                    && covers.All(b => b.ActualWidth == 160 && b.ActualHeight == 160
-                        && b.Content is MusicCoverControl
-                        && b.Parent is StackPanel card && card.Children.OfType<StackPanel>().Single().Children.Count == 2),
-                    "shelf exposes one full-cover play action per song and only favorite/queue footer actions");
-                var cover = covers[0];
-                var song = (HomeSong)cover.CommandParameter;
-                playback.LastId = 0;
-                ((IInvokeProvider)new ButtonAutomationPeer(cover).GetPattern(PatternInterface.Invoke)).Invoke();
-                await Wait(() => playback.LastId == song.Music.Id);
-                Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(song.Queue.Select(m => m.Id)),
-                    "native shelf cover click plays its own recommendation, familiar or discovery queue");
-            }
-            var playOverlay = Descendants<Border>(button).Single(b => b.Name == "PlayOverlay");
-            var keyboardOverlay = Descendants<Border>(button).Single(b => b.Name == "KeyboardPlayOverlay");
-            Check(playOverlay.Opacity == 0 && keyboardOverlay.Opacity == 0,
-                "normal cover keeps its artwork unobstructed");
-            VisualStateManager.GoToState(button, "PointerOver", false);
-            Check(playOverlay.Opacity == 1 && !playOverlay.IsHitTestVisible
-                && Descendants<FontIcon>(playOverlay).Single().Glyph == "\uE768",
-                "hover dims the cover and reveals a centered play icon without blocking the button");
-            await Capture(button, "home-cover-hover.png");
-            VisualStateManager.GoToState(button, "Normal", false);
-            button.Focus(FocusState.Keyboard);
-            await Task.Delay(60);
-            Check(keyboardOverlay.Opacity == 1, "keyboard focus exposes the same cover play affordance");
-            var favorite = Descendants<Button>(shelf).First(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.UpdateFavouriteCommand));
+            Check(playback.LastId == 0, "loading and navigating inert cards never starts playback");
+            ((ScrollViewer)page.FindName("ContentScroll")).ChangeView(null, 520, null, true);
+            shelfScroll.ScrollTo(0, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+            await Task.Delay(150);
+            var cardSource = Descendants<ContentControl>(shelf).First(item => item.Tag is HomeSong);
+            var selected = (HomeSong)cardSource.Tag;
+            Check(cardSource.Focus(FocusState.Keyboard), "inert shelf card remains keyboard focusable");
+            await Wait(() => ((HomeSongPreview)page.FindName("SongPreview")).Visibility == Visibility.Visible);
+            Check(FocusManager.GetFocusedElement(page.XamlRoot) is Button { Name: "PlayButton" },
+                "keyboard focus opens the shared details and moves focus to the explicit play action");
+            double scrollAfterFocus = Math.Min(contentScroll.ScrollableHeight, contentScroll.VerticalOffset + 30);
+            contentScroll.ChangeView(null, scrollAfterFocus, null, true);
+            await Task.Delay(250);
+            Check(home.PreviewSong is null && Math.Abs(contentScroll.VerticalOffset - scrollAfterFocus) < 1,
+                "scrolling closes keyboard-focused details without bringing the source card back into view");
+            ((Button)page.FindName("RefreshButton")).Focus(FocusState.Programmatic);
+            home.DismissPreview();
+            var preview = (HomeSongPreview)page.FindName("SongPreview");
+            var previewSource = (FrameworkElement)cardSource;
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, false]);
+            await Wait(() => home.PreviewSong is not null && preview.Visibility == Visibility.Visible);
+            await Task.Delay(300);
+            Check(ReferenceEquals(home.PreviewSong, selected) && ReferenceEquals(preview.Song, selected)
+                && Descendants<TextBlock>(preview).Any(t => t.Text == selected.Music.Author)
+                && Descendants<TextBlock>(preview).Any(t => t.Text == selected.Music.Album),
+                "shared detail overlay binds the canonical song, artist and album after hover delay");
+            var overlayParent = (Canvas)page.FindName("PreviewLayer");
+            Check(ReferenceEquals(preview.Parent, overlayParent) && Canvas.GetLeft(preview) >= 0 && Canvas.GetTop(preview) >= 0
+                && Canvas.GetLeft(preview) + preview.ActualWidth <= overlayParent.ActualWidth
+                && Canvas.GetTop(preview) + preview.ActualHeight <= overlayParent.ActualHeight,
+                "detail overlay stays inside the page without changing shelf layout");
+            Check(ElementCompositionPreview.GetElementVisual(preview).Clip is Microsoft.UI.Composition.InsetClip,
+                "detail reveal uses a native composition clip outside the scrolling list");
+            await Capture(page, "home-detail.png");
+            var favorite = Descendants<Button>(preview).First(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.UpdateFavouriteCommand));
             Check(Descendants<FontIcon>(favorite).Single().Foreground is SolidColorBrush heart && heart.Color == Microsoft.UI.Colors.Red,
                 "favorite heart follows the existing red icon convention");
-            var queueButton = Descendants<Button>(shelf).First(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.AddToPlayListCommand));
+            var queueButton = Descendants<Button>(preview).First(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.AddToPlayListCommand));
             Check(ToolTipService.GetToolTip(queueButton)?.ToString() == "Add to current playback queue", "queue plus button explains its purpose on hover");
             var refreshButton = (Button)page.FindName("RefreshButton");
-            Check(refreshButton.BorderThickness == new Thickness(0) && refreshButton.Foreground is SolidColorBrush,
-                "refresh action has no border and uses a theme foreground");
-            foreach (var list in Descendants<ListView>(page))
+            Check(ReferenceEquals(refreshButton.Style, Resources["MenuButtonStyle"]), "refresh action reuses the production animated MenuButtonStyle");
+            Check(Descendants<Button>(preview).All(item => ReferenceEquals(item.Style.BasedOn, Resources["MenuButtonStyle"])
+                    && item.Padding.Left == 12 && item.Padding.Top == 10 && item.BorderThickness.Left == 1),
+                "all four detail actions derive menu animations with padded bordered button surfaces");
+            var actions = (StackPanel)preview.FindName("Actions");
+            Check(actions.Orientation == Orientation.Horizontal && actions.Spacing == 6
+                && actions.ActualWidth < 220 && Descendants<Button>(preview).All(item => item.ActualWidth >= 44),
+                "detail actions retain compact six-pixel gaps and at least 44-pixel hit targets independent of panel width");
+            var animationRoot = Descendants<Grid>(favorite).First(item => item.Name == "Root");
+            VisualStateManager.GoToState(favorite, "Normal", false);
+            await Task.Delay(20);
+            VisualStateManager.GoToState(favorite, "PointerOver", false);
+            await Task.Delay(20);
+            VisualStateManager.GoToState(favorite, "Pressed", false);
+            await Task.Delay(30);
+            Check(ElementCompositionPreview.GetElementVisual(animationRoot).TryGetAnimationController("Scale") is not null,
+                "detail action press runs the actual MenuButtonStyle composition scale animation");
+            VisualStateManager.GoToState(favorite, "Normal", true);
+            bool oldFavorite = selected.Music.IsFavorite;
+            ((IInvokeProvider)new ButtonAutomationPeer(favorite).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => selected.Music.IsFavorite != oldFavorite);
+            Check(Descendants<FontIcon>(favorite).Single().Glyph == WinUIMusicPlayer.Utils.BindUtils.FavouriteGlyphConverter(selected.Music.IsFavorite),
+                "detail favorite command updates the canonical song and compiled icon binding");
+            var detailPlay = (Button)preview.FindName("PlayButton");
+            playback.LastId = 0;
+            ((IInvokeProvider)new ButtonAutomationPeer(detailPlay).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => playback.LastId == selected.Music.Id);
+            Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(selected.Queue.Select(m => m.Id)),
+                "detail play preserves the explicit source shelf queue");
+            var playlistButton = (Button)preview.FindName("PlaylistButton");
+            var playlistMenu = (MenuFlyout)playlistButton.Flyout;
+            playlistMenu.ShowAt(playlistButton);
+            await Wait(() => preview.IsPlaylistMenuOpen);
+            Check(playlistMenu.Items.Count == 1 && !playlistMenu.Items[0].IsEnabled,
+                "empty playlist menu displays one disabled localized placeholder");
+            playlistMenu.Hide();
+            await Wait(() => !preview.IsPlaylistMenuOpen);
+            app.AllPlayList.Add(new PlayList { Id = 1, Name = "First playlist" });
+            app.AllPlayList.Add(new PlayList { Id = 2, Name = "Second playlist" });
+            playlistMenu.ShowAt(playlistButton);
+            await Wait(() => preview.IsPlaylistMenuOpen && playlistMenu.Items.Count == 2);
+            typeof(HomePage).GetMethod("Song_PointerExited", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, null]);
+            typeof(HomePage).GetMethod("Preview_PointerExited", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [null, null]);
+            await Task.Delay(400);
+            Check(ReferenceEquals(home.PreviewSong, selected) && preview.Visibility == Visibility.Visible,
+                "moving into the playlist flyout pins its owning detail panel");
+            var firstMenuItem = (MenuFlyoutItem)playlistMenu.Items[0];
+            Check(firstMenuItem.CommandParameter is HomePlaylistTarget { PlaylistId: 1 } target && target.MusicId == selected.Music.Id,
+                "playlist menu captures the source song and destination identifiers");
+            home.ShowPreview(home.Songs.First(song => !ReferenceEquals(song, selected)));
+            ((IInvokeProvider)new MenuFlyoutItemAutomationPeer(firstMenuItem).GetPattern(PatternInterface.Invoke)).Invoke();
+            await Wait(() => data.PlaylistAddsStarted > 0);
+            await Wait(() => !home.AddToPlaylistCommand.IsRunning);
+            Check(await database.ExecuteScalarAsync<int>("SELECT MusicId FROM PlayListMusic LIMIT 1") == selected.Music.Id,
+                "native menu invocation writes the captured song even if the preview selection changes");
+            playlistMenu.Hide();
+            await Wait(() => !preview.IsPlaylistMenuOpen);
+            home.ShowPreview(selected);
+            typeof(HomePage).GetMethod("Preview_PointerEntered", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [null, null]);
+            var playlistGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            data.PlaylistGate = playlistGate.Task;
+            int addsBefore = data.PlaylistAddsStarted;
+            var firstWrite = home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(1, selected.Music.Id));
+            var secondWrite = home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(2, selected.Music.Id));
+            await Task.Delay(40);
+            Check(data.PlaylistAddsStarted == addsBefore + 1 && !secondWrite.IsCompleted,
+                "rapid additions are queued without overlapping database writes or dropping a target playlist");
+            playlistGate.SetResult();
+            await Task.WhenAll(firstWrite, secondWrite);
+            data.PlaylistGate = Task.CompletedTask;
+            Check(await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM PlayListMusic WHERE MusicId = ?", selected.Music.Id) == 2,
+                "queued additions preserve both playlist destinations and avoid duplicate membership");
+            data.FailPlaylistAdd = true;
+            await home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(2, selected.Music.Id));
+            Check(home.ErrorMessage == WinUIMusicPlayer.Utils.ToolUtils.GetString("HomePlaylistAddFailed"),
+                "playlist failure is observed and published as localized page feedback");
+            data.FailPlaylistAdd = false;
+            await home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(2, selected.Music.Id));
+            Check(home.ErrorMessage.Length == 0, "retry clears the playlist error after a successful write");
+            home.DismissPreview();
+            ((ScrollViewer)page.FindName("ContentScroll")).ChangeView(null, 0, null, true);
+            await Task.Delay(150);
+            foreach (string name in new[] { "PrimaryThumbnail", "SecondaryThumbnail", "TertiaryThumbnail" })
             {
-                var actions = Descendants<Button>(list).Where(b => ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.UpdateFavouriteCommand)
-                    || ReferenceEquals(b.Command, WinUIMusicPlayer.Services.MusicCommands.AddToPlayListCommand)).ToArray();
-                if (actions.Length == 0) continue;
-                double bottom = actions.Max(b => b.TransformToVisual(list).TransformPoint(new Windows.Foundation.Point(0, b.ActualHeight)).Y);
-                var bar = Descendants<Microsoft.UI.Xaml.Controls.Primitives.ScrollBar>(list)
-                    .FirstOrDefault(b => b.Orientation == Orientation.Horizontal && b.ActualHeight > 0);
-                if (bar is null) continue;
-                Check(bottom + 8 <= bar.TransformToVisual(list).TransformPoint(new Windows.Foundation.Point()).Y,
-                    "horizontal scrollbar stays below shelf actions with reserved spacing");
+                var tileHost = (ContentPresenter)carousel.FindName(name);
+                var tile = Descendants<HomeCarouselTile>(tileHost).Single();
+                var tileSong = tile.Song!;
+                typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [tile, false]);
+                await Wait(() => ReferenceEquals(home.PreviewSong, tileSong) && preview.Visibility == Visibility.Visible);
+                Check(preview.ActualWidth >= tile.ActualWidth + 40,
+                    name + " detail expands wider than its original tile");
+                Check(ReferenceEquals(preview.Song, tileSong)
+                    && Math.Abs(((Grid)preview.FindName("CoverHost")).Height / (preview.Width - 2) - tile.ActualHeight / tile.ActualWidth) < .02,
+                    name + " opens shared details from its own artwork bounds while preserving its aspect ratio");
+                playback.LastId = 0;
+                ((IInvokeProvider)new ButtonAutomationPeer((Button)preview.FindName("PlayButton")).GetPattern(PatternInterface.Invoke)).Invoke();
+                await Wait(() => playback.LastId == tileSong.Music.Id);
+                Check(app.SequentialPlayingList.Select(m => m.Id).SequenceEqual(tileSong.Queue.Select(m => m.Id)),
+                    name + " plays only through its detail button with the original recommendation queue");
+                home.DismissPreview();
             }
+            ((ScrollViewer)page.FindName("ContentScroll")).ChangeView(null, 520, null, true);
+            await Task.Delay(150);
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, false]);
+            await Wait(() => ReferenceEquals(home.PreviewSong, selected));
+            await Task.Delay(260);
+            Check(ReferenceEquals(queueButton.CommandParameter, selected.Music), "detail queue command receives the canonical song");
+            var exitStarted = System.Diagnostics.Stopwatch.StartNew();
+            typeof(HomePage).GetMethod("BeginPreviewClose", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, null);
+            Check(ReferenceEquals(home.PreviewSong, selected) && preview.Visibility == Visibility.Visible
+                && ElementCompositionPreview.GetElementVisual(preview).TryGetAnimationController("Scale") is not null
+                && ElementCompositionPreview.GetElementVisual(preview).Clip!.TryGetAnimationController("BottomInset") is not null,
+                "exit keeps artwork alive while shrinking and retracting details on native composition animations");
+            await Wait(() => home.PreviewSong is null);
+            Check(preview.Visibility == Visibility.Collapsed && exitStarted.ElapsedMilliseconds >= 180,
+                "native batch completion hides the preview only after the 200ms exit rather than a synchronous clear");
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [previewSource, false]);
+            await Wait(() => home.PreviewSong is not null);
+            await Task.Delay(260);
+            typeof(HomePage).GetMethod("BeginPreviewClose", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, null);
+            await Task.Delay(60);
+            typeof(HomePage).GetMethod("Preview_PointerEntered", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [null, null]);
+            await Task.Delay(260);
+            Check(ReferenceEquals(home.PreviewSong, selected) && preview.Visibility == Visibility.Visible,
+                "reentering a closing card cancels its completion callback and restores the panel");
+            var adjacent = Descendants<ContentControl>(shelf).First(item => item.Tag is HomeSong other && !ReferenceEquals(other, selected));
+            var adjacentSong = (HomeSong)adjacent.Tag;
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [adjacent, false]);
+            await Task.Delay(70);
+            Check(ReferenceEquals(home.PreviewSong, selected) && preview.Visibility == Visibility.Visible,
+                "moving directly to an adjacent card preserves the old preview during its exit");
+            await Wait(() => ReferenceEquals(home.PreviewSong, adjacentSong));
+            Check(ReferenceEquals(preview.Song, adjacentSong), "adjacent card enters after the previous exit completes");
+            var pagedShelf = (RecommendationShelf)page.FindName("SongsShelf");
+            Check(shelfScroll.HorizontalScrollBarVisibility == ScrollingScrollBarVisibility.Hidden,
+                "shelf hides its scrollbar and exposes boundary-aware circular paging buttons");
+            Check(shelfScroll.HorizontalScrollMode == ScrollingScrollMode.Disabled
+                && shelfScroll.VerticalScrollMode == ScrollingScrollMode.Disabled
+                && shelfScroll.IgnoredInputKinds.HasFlag(ScrollingInputKinds.MouseWheel),
+                "shelves disable native pan gestures and ignore both wheel axes without manually changing page offsets");
+            Check(Descendants<Canvas>((ScrollViewer)page.FindName("ContentScroll")).Contains(overlayParent),
+                "detail overlay shares the page scroll ancestor so wheel input over details can bubble natively");
+            double beforePaging = shelfScroll.HorizontalOffset;
+            pagedShelf.Move(1);
+            await Wait(() => shelfScroll.HorizontalOffset > beforePaging + 100);
+            Check(home.PreviewSong is null && preview.Visibility == Visibility.Collapsed,
+                "paging dismisses the overlay before its source card moves");
+            pagedShelf.Move(1);
+            pagedShelf.Move(1);
+            pagedShelf.Move(1);
+            await Wait(() => !((Button)pagedShelf.FindName("NextButton")).IsEnabled);
+            Check(!((Button)pagedShelf.FindName("NextButton")).IsEnabled,
+                "rapid next requests accumulate to the last page and disable the boundary button");
+            pagedShelf.Move(-1);
+            await Wait(() => shelfScroll.HorizontalOffset < shelfScroll.ScrollableWidth - 100);
+            Check(((Button)pagedShelf.FindName("NextButton")).IsEnabled,
+                "backward paging re-enables the next button");
+            shelfScroll.ScrollTo(172, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+            await Wait(() => Math.Abs(shelfScroll.HorizontalOffset - 172) < 1);
+            double expectedNext = 172 + Math.Floor(shelfScroll.ViewportWidth / 172) * 172;
+            pagedShelf.Move(1);
+            await Wait(() => Math.Abs(shelfScroll.HorizontalOffset - expectedNext) < 1);
+            Check(Math.Abs(shelfScroll.HorizontalOffset - expectedNext) < 1,
+                "paging after a native focus or external scroll starts at the current offset instead of an obsolete button target");
+            shelfScroll.ScrollTo(0, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+            home.ShowPreview(selected);
+            home.DismissPreview();
+            Check(((Image)((MusicCoverControl)preview.FindName("Artwork")).FindName("CoverImage")).Source is null,
+                "closing details releases the independently owned cover source");
+            ((Button)page.FindName("RefreshButton")).Focus(FocusState.Programmatic);
+            ((ScrollViewer)page.FindName("ContentScroll")).ChangeView(null, 0, null, true);
+            await Task.Delay(120);
             var artwork = await WinUIMusicPlayer.Utils.CoverLoadQueue.EnqueueArtworkAsync(songs[0], default, 800);
             var regular = await WinUIMusicPlayer.Utils.CoverLoadQueue.EnqueueAsync(songs[0], default);
             Check(artwork.Source is Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource && regular is Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource
@@ -339,10 +531,10 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var ambient = Field<Microsoft.UI.Composition.AmbientLight>(lights[0], "_ambient");
             lights[0].ShowHover(new Vector2((float)slider.ActualWidth * .7f, (float)slider.ActualHeight * .4f), false);
             await Task.Delay(220);
-            Check(ambient.Targets.Count == 1 && hover.Targets.Count == 1 && ripple.Targets.Count == 1
+            Check(ambient.Targets.Count == 4 && hover.Targets.Count == 4 && ripple.Targets.Count == 4
                 && hover.CoordinateSpace == ElementCompositionPreview.GetElementVisual((Grid)carousel.FindName("LayoutGrid"))
-                && Math.Abs(hover.Offset.X - slider.ActualWidth * .7) < .1,
-                "lighting targets and pointer offsets remain inside their carousel region");
+                && Math.Abs(hover.Offset.X - slider.ActualWidth * .7 - 70) < .1 && hover.Direction.Y > 0 && hover.Direction.X < 0,
+                "directional hover light intersects the pointer from above and stays scoped to the carousel");
             await Capture(page, "home-hover.png");
             var litFrame = await WindowCapture.CaptureAsync(window, "home-window-hover.png");
             Check(ChangedPixels(unlitFrame, litFrame) > 100, "actual window rendering shows the composition hover light rather than only allocating light objects");
@@ -380,8 +572,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "listening updates during an in-flight refresh stay deferred without another immediate query");
             Check(ReferenceEquals(queueBefore, app.SequentialPlayingList), "refresh does not rewrite an already selected playback queue");
             var collage = (Grid)carousel.FindName("ThumbnailGrid");
-            Check(Grid.GetColumn(collage) == 1 && Grid.GetColumnSpan((Button)carousel.FindName("PrimaryThumbnail")) == 2
-                && Grid.GetRow((Button)carousel.FindName("SecondaryThumbnail")) == 1,
+            Check(Grid.GetColumn(collage) == 1 && Grid.GetColumnSpan((ContentPresenter)carousel.FindName("PrimaryThumbnail")) == 2
+                && Grid.GetRow((ContentPresenter)carousel.FindName("SecondaryThumbnail")) == 1,
                 "wide Store layout has one large thumbnail above two smaller thumbnails");
             Check(((PipsPager)carousel.FindName("Pager")).NumberOfPages == home.Themes.Count,
                 "Store carousel uses interactive dot pagination");
@@ -392,11 +584,34 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             ((Button)((HomeHeroCard)page.FindName("HomeHero")).FindName("PlayButton")).Focus(FocusState.Keyboard);
             next.Focus(FocusState.Keyboard);
             await Task.Delay(200);
-            Check(next.Visibility == Visibility.Visible && next.OpacityTransition is null && next.ScaleTransition is null,
-                "arrow actions use upstream direct visibility with keyboard access");
+            Check(next.Visibility == Visibility.Visible && next.Opacity > .99 && next.OpacityTransition is not null && next.Background is AcrylicBrush,
+                "arrow actions use acrylic material and native opacity transitions with keyboard access");
             refreshButton.Focus(FocusState.Keyboard);
             await Task.Delay(200);
-            Check(next.Visibility == Visibility.Collapsed, "hidden arrow actions leave no invisible pointer hit area");
+            Check(next.Opacity < .01 && !next.IsHitTestVisible && !next.IsTabStop, "faded arrow actions leave no invisible pointer hit or tab area");
+            next.Focus(FocusState.Pointer);
+            typeof(FeaturedCarousel).GetMethod("Carousel_PointerExited", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(carousel, [null, null]);
+            await Task.Delay(240);
+            Check(next.Opacity < .01 && !next.IsHitTestVisible, "pointer focus from an arrow click cannot keep navigation visible after mouse exit");
+            refreshButton.Focus(FocusState.Programmatic);
+            var countdown = (CarouselCountdown)carousel.FindName("Countdown");
+            carousel.ShuffleDuration = TimeSpan.FromMilliseconds(800);
+            carousel.AutoShuffle = true;
+            await Task.Delay(220);
+            Check(countdown.Visibility == Visibility.Visible && countdown.Remaining is > .4 and < .95,
+                "lower-left countdown pie animates its remaining autoplay fraction");
+            typeof(FeaturedCarousel).GetMethod("Carousel_PointerEntered", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(carousel, [null, null]);
+            double pausedFraction = countdown.Remaining;
+            await Task.Delay(250);
+            Check(Math.Abs(pausedFraction - countdown.Remaining) < .01,
+                "hover pauses both countdown drawing and the automatic page timer");
+            typeof(FeaturedCarousel).GetMethod("Carousel_PointerExited", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(carousel, [null, null]);
+            await Task.Delay(100);
+            Check(countdown.Remaining < pausedFraction - .05,
+                "leaving resumes the same remaining countdown instead of starting a fresh full disc");
+            carousel.AutoShuffle = false;
+            Check(countdown.Visibility == Visibility.Collapsed, "disabled autoplay hides and stops its countdown");
+            ((PipsPager)carousel.FindName("Pager")).SelectedPageIndex = 0;
             carousel.Move(1);
             Check(carousel.SelectedIndex == 1, "featured control navigates synchronously with autoplay disabled");
             ((PipsPager)carousel.FindName("Pager")).SelectedPageIndex = 0;
@@ -485,6 +700,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(WinUIMusicPlayer.Utils.ToolUtils.RawActive == 0 && !home.PlaySongCommand.CanExecute(selected),
                 "unloading cancels cover consumption and disables page playback");
             Check(lights.All(l => !l.IsAttached), "unloading releases native lights and an in-flight press animation");
+            Check(imageShadows.All(shadow => !shadow.IsAttached), "unloading releases all live image surfaces and effect brushes");
             window.Content = page;
             await Task.Delay(400);
             Check(home.HasContent, "same-day page reentry restores recommendations after deferred listening updates");
@@ -498,10 +714,21 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var card = Descendants<HomeHeroCard>(page).First();
             Check(((MusicCoverControl)card.FindName("Artwork")).Visibility == Visibility.Visible
                 && Grid.GetRow(collage) == 0 && Grid.GetColumn(collage) == 1
-                && Grid.GetRowSpan((Button)carousel.FindName("PrimaryThumbnail")) == 1
+                && Grid.GetRowSpan((ContentPresenter)carousel.FindName("PrimaryThumbnail")) == 1
                 && primary.ActualWidth < 250 && slider.ActualWidth / slider.ActualHeight is > 1.16 and < 1.3,
                 "narrow carousel and collage stay side by side and shrink together without enlarging wrapped tiles");
             await Capture(page, "home-narrow.png");
+            var narrowTile = Descendants<HomeCarouselTile>(primary).Single();
+            typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page, [narrowTile, false]);
+            await Wait(() => preview.Visibility == Visibility.Visible && ReferenceEquals(home.PreviewSong, narrowTile.Song));
+            await Task.Delay(260);
+            var previewPoint = preview.TransformToVisual(contentScroll).TransformPoint(new Windows.Foundation.Point());
+            Check(previewPoint.X >= 11 && previewPoint.Y >= 11
+                && previewPoint.X + preview.ActualWidth <= contentScroll.ViewportWidth - 11
+                && previewPoint.Y + preview.ActualHeight <= contentScroll.ViewportHeight - 11,
+                "wider details still fit the visible viewport in a 500-pixel narrow window");
+            await Capture(page, "home-narrow-detail.png");
+            home.DismissPreview();
             Check(!offThread, "view-model state notifications stay on the real WinUI dispatcher");
             var retained = home.Songs;
             data.WhenInitialized = Task.FromException(new IOException("fixture database failure"));
@@ -521,6 +748,10 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             remote.Notify(1, true);
             await Wait(() => home.IsUnavailable);
             Check(!home.IsEmpty && !home.HasContent, "unavailable music sources remain distinct from an empty library");
+            var exitPlaylistGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            data.PlaylistGate = exitPlaylistGate.Task;
+            var exitMusic = songs.First(song => song.Id != selected.Music.Id);
+            var exitPlaylistWrite = home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(2, exitMusic.Id));
             using var blockingConnection = new SQLiteConnection(path);
             blockingConnection.Execute("BEGIN EXCLUSIVE");
             try
@@ -534,9 +765,19 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 var stopping = home.StopAsync();
                 Check(!stopping.IsCompleted, "stop waits for the actual SQLite query rather than only cancelling its await");
                 blockingConnection.Execute("ROLLBACK");
+                await Task.Delay(60);
+                Check(!stopping.IsCompleted && !exitPlaylistWrite.IsCompleted,
+                    "exit waits for in-flight playlist writes as well as recommendation queries");
+                exitPlaylistGate.SetResult();
                 await stopping;
+                Check(await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM PlayListMusic WHERE PlayListId = 2 AND MusicId = ?", exitMusic.Id) == 1,
+                    "the accepted playlist addition completes before the page dependencies are released");
             }
-            finally { if (blockingConnection.IsInTransaction) blockingConnection.Execute("ROLLBACK"); }
+            finally
+            {
+                if (blockingConnection.IsInTransaction) blockingConnection.Execute("ROLLBACK");
+                exitPlaylistGate.TrySetResult();
+            }
             int countAfterStop = home.Songs.Count;
             await Task.Run(statistics.Notify);
             await Task.Delay(180);

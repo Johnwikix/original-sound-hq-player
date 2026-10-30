@@ -7,9 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 
 namespace WinUIMusicPlayer.View.Controls;
 
@@ -28,9 +26,9 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     /// <summary>标识拼贴模板。</summary>
     public static readonly DependencyProperty ThumbnailTemplateProperty = DependencyProperty.Register(
         nameof(ThumbnailTemplate), typeof(DataTemplate), typeof(FeaturedCarousel), new PropertyMetadata(null));
-    /// <summary>标识拼贴点击命令。</summary>
-    public static readonly DependencyProperty ThumbnailCommandProperty = DependencyProperty.Register(
-        nameof(ThumbnailCommand), typeof(ICommand), typeof(FeaturedCarousel), new PropertyMetadata(null));
+    /// <summary>标识第一张大拼贴的独立模板，未设置时沿用通用模板。</summary>
+    public static readonly DependencyProperty PrimaryThumbnailTemplateProperty = DependencyProperty.Register(
+        nameof(PrimaryThumbnailTemplate), typeof(DataTemplate), typeof(FeaturedCarousel), new PropertyMetadata(null));
     /// <summary>标识是否自动轮播，沿用原版 StoreCarousel.AutoShuffle 默认开启。</summary>
     public static readonly DependencyProperty AutoShuffleProperty = DependencyProperty.Register(
         nameof(AutoShuffle), typeof(bool), typeof(FeaturedCarousel), new PropertyMetadata(true, ShuffleSettingChanged));
@@ -43,11 +41,13 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private readonly DispatcherQueueTimer _shuffleTimer;
     private DateTime _shuffleStartedUtc;
     private TimeSpan _shufflePausedRemaining;
+    private double _countdownFraction = 1;
     private int _index;
     private bool _slideFromRight = true;
     private bool _pointerInside;
     private bool _focusInside;
     private readonly CarouselLighting _lighting;
+    private readonly CarouselArtworkShadow[] _thumbnailShadows;
     /// <summary>获取或设置主轮播数据，支持整体替换与集合通知。</summary>
     public IList? ItemsSource { get => (IList?)GetValue(ItemsSourceProperty); set => SetValue(ItemsSourceProperty, value); }
     /// <summary>获取或设置复用的主内容视图。</summary>
@@ -56,8 +56,10 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     public IList? ThumbnailItemsSource { get => (IList?)GetValue(ThumbnailItemsSourceProperty); set => SetValue(ThumbnailItemsSourceProperty, value); }
     /// <summary>获取或设置拼贴模板。</summary>
     public DataTemplate? ThumbnailTemplate { get => (DataTemplate?)GetValue(ThumbnailTemplateProperty); set => SetValue(ThumbnailTemplateProperty, value); }
-    /// <summary>获取或设置拼贴点击命令。</summary>
-    public ICommand? ThumbnailCommand { get => (ICommand?)GetValue(ThumbnailCommandProperty); set => SetValue(ThumbnailCommandProperty, value); }
+    /// <summary>获取或设置第一张大拼贴模板。</summary>
+    public DataTemplate? PrimaryThumbnailTemplate { get => (DataTemplate?)GetValue(PrimaryThumbnailTemplateProperty); set => SetValue(PrimaryThumbnailTemplateProperty, value); }
+    /// <summary>选择大拼贴模板并保留原调用方兼容性。</summary>
+    public DataTemplate? ResolvePrimaryTemplate(DataTemplate? primary, DataTemplate? fallback) => primary ?? fallback;
     /// <summary>获取或设置是否自动轮播。</summary>
     public bool AutoShuffle { get => (bool)GetValue(AutoShuffleProperty); set => SetValue(AutoShuffleProperty, value); }
     /// <summary>获取或设置自动轮播间隔。</summary>
@@ -86,8 +88,14 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     public Visibility TertiaryVisibility => TertiaryItem is not null ? Visibility.Visible : Visibility.Collapsed;
     /// <summary>获取分页圆点可见性。</summary>
     public Visibility PagerVisibility => CanNavigate ? Visibility.Visible : Visibility.Collapsed;
-    /// <summary>获取与原控件一致的直接显隐状态，同时保留键盘聚焦入口。</summary>
-    public Visibility NavigationVisibility => CanNavigate && (_pointerInside || _focusInside) ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>获取箭头容器可见性；有多页时保留容器以完成淡出。</summary>
+    public Visibility NavigationVisibility => CanNavigate ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>获取箭头是否接受输入，鼠标焦点不会使箭头在移出后常驻。</summary>
+    public bool NavigationActive => IsLoaded && CanNavigate && (_pointerInside || _focusInside);
+    /// <summary>获取箭头目标透明度，由 XAML 原生过渡完成淡入淡出。</summary>
+    public double NavigationOpacity => NavigationActive ? 1 : 0;
+    /// <summary>获取自动轮播倒计时圆盘的可见性。</summary>
+    public Visibility CountdownVisibility => IsLoaded && AutoShuffle && CanNavigate ? Visibility.Visible : Visibility.Collapsed;
     /// <summary>获取是否使用原控件的 SlideLeft，即从右侧滑入；反向切换从左侧滑入。</summary>
     public bool SlideFromRight => _slideFromRight;
     /// <inheritdoc />
@@ -99,11 +107,9 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         InitializeComponent();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-        PrimaryThumbnail.Translation = new Vector3(0, 0, 12);
-        SecondaryThumbnail.Translation = new Vector3(0, 0, 12);
-        TertiaryThumbnail.Translation = new Vector3(0, 0, 12);
         // Composition 的非环境光数量受限，整组封面复用一盏聚光处理悬停和按压。
-        _lighting = new CarouselLighting(LayoutGrid);
+        _lighting = new CarouselLighting(LayoutGrid, Presenter, PrimaryThumbnail, SecondaryThumbnail, TertiaryThumbnail);
+        _thumbnailShadows = [new(PrimaryThumbnail, PrimaryShadowHost), new(SecondaryThumbnail, SecondaryShadowHost), new(TertiaryThumbnail, TertiaryShadowHost)];
         _shuffleTimer = DispatcherQueue.CreateTimer();
         _shuffleTimer.Tick += (sender, args) => Move(1);
     }
@@ -111,11 +117,11 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     public void Move(int direction)
     {
         if (PageCount < 2) return;
-        Select((_index + (direction < 0 ? -1 : 1) + PageCount) % PageCount);
+        Select((_index + (direction < 0 ? -1 : 1) + PageCount) % PageCount, direction > 0);
     }
-    private void Select(int index)
+    private void Select(int index, bool? fromRight = null)
     {
-        _slideFromRight = index > _index;
+        _slideFromRight = fromRight ?? index > _index;
         _index = index;
         NotifySelection();
     }
@@ -146,6 +152,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         NotifySelection();
         NotifyThumbnails();
         _lighting.Attach();
+        foreach (var shadow in _thumbnailShadows) shadow.Attach();
     }
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
@@ -153,7 +160,11 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         _pointerInside = false;
         _focusInside = false;
         _shuffleTimer.Stop();
+        Countdown.StopAt(0);
+        NotifyNavigation();
+        Notify(nameof(CountdownVisibility));
         _lighting.Detach();
+        foreach (var shadow in _thumbnailShadows) shadow.Dispose();
     }
     private void UnobserveCollections()
     {
@@ -217,9 +228,11 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         Grid.SetRow(PrimaryThumbnail, 0);
         Grid.SetColumnSpan(PrimaryThumbnail, 2);
         Grid.SetRowSpan(PrimaryThumbnail, largeTileOnly ? 2 : 1);
+        Grid.SetRowSpan(PrimaryShadowHost, largeTileOnly ? 2 : 1);
         Grid.SetColumn(SecondaryThumbnail, 0);
         Grid.SetRow(SecondaryThumbnail, 1);
         Grid.SetColumnSpan(SecondaryThumbnail, TertiaryItem is null ? 2 : 1);
+        Grid.SetColumnSpan(SecondaryShadowHost, TertiaryItem is null ? 2 : 1);
         Grid.SetColumn(TertiaryThumbnail, 1);
         Grid.SetRow(TertiaryThumbnail, 1);
     }
@@ -227,6 +240,8 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private void NotifyNavigation()
     {
         Notify(nameof(NavigationVisibility));
+        Notify(nameof(NavigationActive));
+        Notify(nameof(NavigationOpacity));
     }
     private void Previous_Click(object sender, RoutedEventArgs args) => Move(-1);
     private void Next_Click(object sender, RoutedEventArgs args) => Move(1);
@@ -238,43 +253,59 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private void Carousel_PointerEntered(object sender, PointerRoutedEventArgs args)
     {
         _pointerInside = true;
-        // 原版 OnSliderPointerEntered：悬停期间暂停自动轮播并保留剩余时间。
+        PauseShuffle();
+        NotifyNavigation();
+    }
+    private void PauseShuffle()
+    {
         if (_shuffleTimer.IsRunning)
         {
             var remaining = _shuffleTimer.Interval - (DateTime.UtcNow - _shuffleStartedUtc);
             _shufflePausedRemaining = remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining;
+            _countdownFraction *= Math.Clamp(_shufflePausedRemaining.TotalMilliseconds / _shuffleTimer.Interval.TotalMilliseconds, 0, 1);
             _shuffleTimer.Stop();
+            Countdown.StopAt(_countdownFraction);
         }
-        NotifyNavigation();
     }
     private void Carousel_PointerExited(object sender, PointerRoutedEventArgs args)
     {
         _pointerInside = false;
+        _focusInside = KeyboardFocusInside();
         ResumeShuffle();
         NotifyNavigation();
     }
     private void Carousel_GotFocus(object sender, RoutedEventArgs args)
     {
-        _focusInside = true;
+        _focusInside = KeyboardFocusInside();
+        if (_focusInside) PauseShuffle();
         NotifyNavigation();
     }
     private void Carousel_LostFocus(object sender, RoutedEventArgs args)
     {
-        DependencyObject? focused = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
-        while (focused is not null && !ReferenceEquals(focused, this)) focused = VisualTreeHelper.GetParent(focused);
-        _focusInside = focused is not null;
+        _focusInside = KeyboardFocusInside();
+        if (!_focusInside) ResumeShuffle();
         NotifyNavigation();
+    }
+    private bool KeyboardFocusInside()
+    {
+        if (XamlRoot is null || FocusManager.GetFocusedElement(XamlRoot) is not Control { FocusState: FocusState.Keyboard } control) return false;
+        DependencyObject? focused = control;
+        while (focused is not null && !ReferenceEquals(focused, this)) focused = VisualTreeHelper.GetParent(focused);
+        return focused is not null;
     }
     private static void ShuffleSettingChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (FeaturedCarousel)sender;
         control.RestartShuffle();
     }
-    private bool ShouldShuffle => AutoShuffle && !_pointerInside && IsLoaded && PageCount > 1;
+    private bool ShouldShuffle => AutoShuffle && !_pointerInside && !_focusInside && IsLoaded && PageCount > 1;
     /// <summary>对齐原版 StartTransition：每次换项或设置变化都重置完整间隔；悬停、卸载或不足两页时完全停住。</summary>
     private void RestartShuffle()
     {
         _shufflePausedRemaining = TimeSpan.Zero;
+        _countdownFraction = 1;
+        Countdown.StopAt(1);
+        Notify(nameof(CountdownVisibility));
         if (!ShouldShuffle)
         {
             _shuffleTimer.Stop();
@@ -286,13 +317,15 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         _shuffleTimer.Interval = interval;
         _shuffleStartedUtc = DateTime.UtcNow;
         _shuffleTimer.Start();
+        Countdown.Run(1, interval);
     }
     /// <summary>以暂停时剩余的间隔单次触发，随后由换项重启回到完整间隔，等价原版 PausableDispatcherTimer。</summary>
     private void ResumeShuffle()
     {
+        if (!ShouldShuffle) return;
         var remaining = _shufflePausedRemaining;
         _shufflePausedRemaining = TimeSpan.Zero;
-        if (remaining <= TimeSpan.Zero || !ShouldShuffle)
+        if (remaining <= TimeSpan.Zero)
         {
             RestartShuffle();
             return;
@@ -302,6 +335,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         _shuffleTimer.Interval = remaining;
         _shuffleStartedUtc = DateTime.UtcNow;
         _shuffleTimer.Start();
+        Countdown.Run(_countdownFraction, remaining);
     }
     private void Carousel_KeyDown(object sender, KeyRoutedEventArgs args)
     {

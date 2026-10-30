@@ -1,0 +1,31 @@
+<UserControl
+    x:Class="WinUIMusicPlayer.View.Controls.RecommendationShelf"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUIMusicPlayer.View.Controls">
+    <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <ContentPresenter Content="{x:Bind Header, Mode=OneWay}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
+                <Button x:Name="PreviousButton" x:Uid="HomeShelfPrevious" Width="32" Height="32" Padding="0" CornerRadius="16" Style="{StaticResource MenuButtonStyle}"
+                    BorderThickness="0" Background="{ThemeResource SubtleFillColorSecondaryBrush}" IsEnabled="False" Click="Previous_Click">
+                    <Path Data="M 6,0 L 6,8 L 0,4 Z" Fill="{Binding Foreground, ElementName=PreviousButton}" />
+                </Button>
+                <Button x:Name="NextButton" x:Uid="HomeShelfNext" Width="32" Height="32" Padding="0" CornerRadius="16" Style="{StaticResource MenuButtonStyle}"
+                    BorderThickness="0" Background="{ThemeResource SubtleFillColorSecondaryBrush}" IsEnabled="False" Click="Next_Click">
+                    <Path Data="M 0,0 L 0,8 L 6,4 Z" Fill="{Binding Foreground, ElementName=NextButton}" />
+                </Button>
+            </StackPanel>
+        </Grid>
+        <ScrollView x:Name="ShelfScroll" Grid.Row="1" IsTabStop="False"
+            ContentOrientation="Horizontal" HorizontalScrollMode="Disabled" VerticalScrollMode="Disabled"
+            HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"
+            IgnoredInputKinds="MouseWheel" ZoomMode="Disabled"
+            ViewChanged="Scroll_ViewChanged" ScrollCompleted="Scroll_Completed"
+            ExtentChanged="Scroll_ExtentChanged" SizeChanged="Scroll_SizeChanged">
+            <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ItemTemplate="{x:Bind ItemTemplate, Mode=OneWay}">
+                <ItemsRepeater.Layout><StackLayout Orientation="Horizontal" /></ItemsRepeater.Layout>
+            </ItemsRepeater>
+        </ScrollView>
+    </Grid>
+</UserControl>
