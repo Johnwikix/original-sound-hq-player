@@ -828,6 +828,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Task.Delay(400);
             Check(((FeaturedCarousel)page.FindName("Featured")).ItemsSource!.Count > 0 && home.PlaySongCommand.CanExecute(home.Songs[0]),
                 "reloaded page restarts compiled tracking and commands");
+            await EditorCoverChecks.RunAsync(data, app, Check);
             // Exercise the actual page fields and production editor state machines against SQLite.
             var editCard = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
             var editMusic = ((HomeSong)editCard.Tag).Music;

@@ -15,7 +15,7 @@ public interface IMusicDetailsEditorFactory
 /// <summary>隔离属性编辑器的文件选择、封面来源及全库通知边界。</summary>
 public interface IMusicDetailsEditorHost
 {
-    /// <summary>读取当前封面，取消后仍等待实际读取结束。</summary>
+    /// <summary>读取当前封面；null 或空数组表示无图，取消后仍等待实际读取结束。</summary>
     Task<byte[]?> ReadCoverAsync(Music music, CancellationToken token);
     /// <summary>查找网络封面。</summary>
     Task<byte[]?> FindCoverAsync(Music music, CancellationToken token);

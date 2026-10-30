@@ -91,3 +91,29 @@ namespace WinUIMusicPlayer.Services.Lyrics
         Task<string?> TranslateManuallyAsync(Music music, LyricsDocument document, CancellationToken token);
     }
 }
+
+namespace WinUIMusicPlayer.Services
+{
+    /// <summary>提供真实编辑器工厂需要的通知边界，不访问系统通知或曲库投影。</summary>
+    public sealed class LibraryProjectionService
+    {
+        /// <summary>隔离全库投影刷新。</summary>
+        public void RequestRefresh() { }
+    }
+    /// <summary>隔离本回归不触发的系统通知。</summary>
+    public sealed class NotificationService
+    {
+        /// <summary>隔离系统通知。</summary>
+        public void SendNotification(string title, string message) { }
+    }
+}
+namespace WinUIMusicPlayer.WebService
+{
+    /// <summary>为实际 EditorHost 提供可控异步封面来源，保留取消与收尾时序。</summary>
+    public sealed class LrcService
+    {
+        internal Func<CancellationToken, Task<byte[]?>> Handler { get; set; } = _ => Task.FromResult<byte[]?>(null);
+        /// <summary>把实际工厂传入的令牌交给异步测试来源。</summary>
+        public Task<byte[]?> GetMixedCoverImageAsync(Music music, CancellationToken token = default) => Handler(token);
+    }
+}

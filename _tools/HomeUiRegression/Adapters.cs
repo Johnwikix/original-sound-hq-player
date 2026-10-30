@@ -51,11 +51,19 @@ namespace WinUIMusicPlayer.Utils
         public static string GetString(string key) => Text.TryGetValue(key, out var value) ? value : throw new Exception("Missing resource " + key);
         public static async Task<Microsoft.UI.Xaml.Media.Imaging.BitmapImage?> ConvertByteArrayToBitmapImage(byte[] bytes, int maxSize = 0)
         {
-            using var stream = new MemoryStream(bytes, false);
-            var image = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage { DecodePixelWidth = maxSize };
-            await image.SetSourceAsync(System.IO.WindowsRuntimeStreamExtensions.AsRandomAccessStream(stream));
-            return image;
+            if (bytes.Length == 0) return null;
+            try
+            {
+                using var stream = new MemoryStream(bytes, false);
+                var image = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage { DecodePixelWidth = maxSize };
+                await image.SetSourceAsync(System.IO.WindowsRuntimeStreamExtensions.AsRandomAccessStream(stream));
+                return image;
+            }
+            catch (Exception) { return null; }
         }
+        public static void OpenFileInExplorer(string path) { }
+        internal static Music? EditorCoverTarget;
+        internal static Func<CancellationToken, Task<byte[]?>>? EditorCoverRead;
         public static Task<(Music, string)> GetMusicInfo(Windows.Storage.StorageFile file)
             => Task.FromResult((new Music { Path = file.Path }, "[00:01.000]Embedded fixture"));
         public static int RawActive;
@@ -96,10 +104,15 @@ namespace WinUIMusicPlayer.Utils
                     bytes[p + 2] = (byte)(x < 85 ? 220 : 20);
                 }
         }
-        public static async Task<byte[]?> GetRawImage(Music music, bool unused, CancellationToken token)
+        public static async Task<byte[]?> GetRawImage(Music music, bool isManual = false, CancellationToken token = default)
         {
             Interlocked.Increment(ref RawActive);
-            try { await Task.Delay(60, token); return Artwork.GetValueOrDefault(music.Id); }
+            try
+            {
+                if (ReferenceEquals(music, EditorCoverTarget) && EditorCoverRead is { } read) return await read(token);
+                await Task.Delay(60, token);
+                return Artwork.GetValueOrDefault(music.Id) ?? [];
+            }
             finally { Interlocked.Decrement(ref RawActive); }
         }
     }

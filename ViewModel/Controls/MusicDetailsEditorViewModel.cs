@@ -136,7 +136,8 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
             _closed.Token.ThrowIfCancellationRequested();
             if (tags is { } loaded && Metadata.ApplyLoaded(loaded)) _host.MetadataChanged();
             var bytes = await _host.ReadCoverAsync(Music, _closed.Token);
-            await ApplyCoverAsync(bytes);
+            // 初始无图是正常状态；主动获取或选择空文件仍由 ApplyCoverAsync 报错。
+            if (bytes is { Length: > 0 }) await ApplyCoverAsync(bytes);
         }
         catch (OperationCanceledException) when (_stopped) { }
         catch (Exception ex) { if (!_stopped) LoadFailed = true; ReportError(ex); }

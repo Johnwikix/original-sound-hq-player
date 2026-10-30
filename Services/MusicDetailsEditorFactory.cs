@@ -30,13 +30,13 @@ public sealed class MusicDetailsEditorFactory(IServiceProvider services) : IMusi
     {
         public async Task<byte[]?> ReadCoverAsync(Music music, CancellationToken token)
         {
-            var bytes = await Task.Run(() => ToolUtils.GetRawImage(music, true), token);
+            var bytes = await Task.Run(() => ToolUtils.GetRawImage(music, true, token), token);
             token.ThrowIfCancellationRequested();
             return bytes;
         }
         public async Task<byte[]?> FindCoverAsync(Music music, CancellationToken token)
         {
-            var bytes = await services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music);
+            var bytes = await services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music, token);
             token.ThrowIfCancellationRequested();
             return bytes;
         }
