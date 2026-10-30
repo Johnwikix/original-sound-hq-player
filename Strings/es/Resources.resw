@@ -2644,4 +2644,6 @@ SHA-256: {5}
   <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Recuperar la metainformación del archivo</value></data>
   <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Emparejar letras en línea</value></data>
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Guardar la letra lrc en el dispositivo local</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Localizar pista actual</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Localizar pista actual</value></data>
 </root>

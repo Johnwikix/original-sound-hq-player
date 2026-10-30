@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
@@ -31,23 +30,19 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public WebDavSourcesViewModel RemoteSources => App.Services.GetRequiredService<WebDavSourcesViewModel>();
 
-        public SelectorBarItem SelectedPage
+        public string SelectedPageTag
         {
             get => field;
             set
             {
-                if (value is null) return;
-                if (SetProperty(ref field, value))
-                {
-                    OnSelectionChanged();
-                }
+                if (value is not ("song" or "album" or "artist" or "folder" or "favourite")) return;
+                if (SetProperty(ref field, value)) NavigateSelectedPage();
             }
-        }
+        } = string.Empty;
         public int PreviousSelectedIndex { get; set; } = 0;
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
-        private MusicBrowsePage MusicBrowsePage { get; set; }
-        private MainPage MainPage { get; set; }
+        private readonly LibraryNavigationService _navigation;
         private readonly PlaybackCoordinator _coordinator;
         private readonly CoverPresentationService _covers;
         private bool _disposed;
@@ -59,13 +54,13 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel AppViewModel { get; }
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
-        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger, PlaybackCommands playback, PlaybackCoordinator coordinator, CoverPresentationService covers)
+        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger, PlaybackCommands playback, PlaybackCoordinator coordinator, CoverPresentationService covers, LibraryNavigationService navigation)
         {
+            _navigation = navigation;
             _covers = covers;
             Playback = playback;
             _coordinator = coordinator;
             coordinator.TrackStarted += OnTrackStarted;
-            coordinator.SelectionChanged += OnPlaybackSelectionChanged;
             this.AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             UsbDeviceService = usbDeviceService;
@@ -101,16 +96,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public Task UpdatePlayBar(Music music, CancellationToken token = default) => _covers.UpdatePlayBar(music, token);
         public void ThemeChangedUpdateCover() => _covers.ThemeChangedUpdateCover();
-
-        public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
-        {
-            MusicBrowsePage = musicBrowsePage;
-        }
-
-        public void SetMainPage(MainPage mainPage)
-        {
-            MainPage = mainPage;
-        }
 
         // 空音乐库占位交互：复用 AddFolderViewModel 的渐进上架流程——文件夹行先出现、
         // 歌曲按批次出现在当前页（首批到达时占位自动让位），不再借用顶部 ProgressRing；
@@ -148,7 +133,6 @@ namespace WinUIMusicPlayer.ViewModel
             _disposed = true;
             if (_addFolderVm is not null) _addFolderVm.PropertyChanged -= FolderScanChanged;
             _coordinator.TrackStarted -= OnTrackStarted;
-            _coordinator.SelectionChanged -= OnPlaybackSelectionChanged;
         }
 
         [RelayCommand]
@@ -209,73 +193,59 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnAlbumCoverImage()
         {
-            (MainPage ?? App.Services.GetRequiredService<MainPage>()).NavigateToPlayingDetailPage();
+            _navigation.ShowPlayingDetail();
         }
         [RelayCommand]
-        private void OnEqualizerButton()
-        {
-            var mainPage = MainPage ?? App.Services.GetRequiredService<MainPage>();
-            _ = mainPage.EqualizerDialog.ShowThemedAsync(mainPage.XamlRoot);
-        }        
-        
+        private async Task OnEqualizerButton() => await _navigation.ShowEqualizerAsync();
 
-        private void OnSelectionChanged()
+        public void NavigateSelectedPage()
         {
-            int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
+            int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPageTag);
 
             // 各 tab 的 detail 状态(CurrentXxxObj)在切换时保留,切回时由
             // ReceiveNavigation/RefreshFromAppState 按 PageType 恢复;退出详情
             // 由各页返回按钮(CollapseDetail)显式清空。
 
             AppData.CurrentPage = typeof(SongListPage);
-            switch (SelectedPage.Name)
+            switch (SelectedPageTag)
             {
-                case "Song":
+                case "song":
                     AppViewModel.PageType = "song";
                     AppData.CurrentPage = typeof(SongListPage);
                     break;
-                case "Album":
+                case "album":
                     AppData.CurrentPage = typeof(AlbumPage);
                     AppViewModel.PageType = AppViewModel.CurrentAlbumObj is { } a && !string.IsNullOrEmpty(a.Album)
                         ? "album" : "albumBrowse";
                     break;
-                case "Artist":
+                case "artist":
                     AppData.CurrentPage = typeof(ArtistPage);
                     AppViewModel.PageType = AppViewModel.CurrentArtistObj is { } ar && !string.IsNullOrEmpty(ar.Author)
                         ? "artist" : "artistBrowse";
                     break;
-                case "Folder":
+                case "folder":
                     AppData.CurrentPage = typeof(FolderBrowsePage);
                     AppViewModel.PageType = AppViewModel.CurrentFolderObj is { } f && !string.IsNullOrEmpty(f.LastLevelFolderPath)
                         ? "folder" : "folderBrowse";
                     break;
-                case "Favourite":
+                case "favourite":
                     AppViewModel.PageType = "favourite";
                     AppData.CurrentPage = typeof(FavouritePlayListPage);
                     break;
             }
             AppViewModel.RefreshDataSource();
             var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            MusicBrowsePage?.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            _navigation.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
         public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
             => _coordinator.PlayAsync(music);
 
-        private void OnPlaybackSelectionChanged()
-        {
-            if (_disposed) return;
-            MusicBrowsePage?.UpdateViewList(refreshDetails: false);
-            MainPage?.UpdateCurrentPlayList();
-        }
-
         private void OnTrackStarted(Music music, CancellationToken token)
         {
             if (_disposed) return;
-            MusicBrowsePage?.UpdateViewList();
             _ = UpdatePlayBar(music, token);
-            MainPage?.UpdateCurrentPlayList();
         }
 
         /// <summary>
@@ -327,62 +297,25 @@ namespace WinUIMusicPlayer.ViewModel
             SelectBarAlbum(album);
         }
 
-        public void SelectBarArtist(string artist) => _ = SelectBarArtistCore(artist);
+        public void SelectBarArtist(string artist) => _ = _navigation.SelectArtistAsync(artist);
 
-        private async Task SelectBarArtistCore(string artist)
-        {
-            if (string.IsNullOrWhiteSpace(artist)) return;
-            var names = ArtistHelper.GetArtistNames(artist);
-            if (names.Length > 1)
-            {
-                var mainPage = MainPage ?? App.Services.GetRequiredService<MainPage>();
-                var xamlRoot = mainPage.XamlRoot ?? MusicBrowsePage?.XamlRoot;
-                if (xamlRoot is null) return;
-                artist = await DialogHelper.ShowArtistPickerAsync(xamlRoot, names) ?? string.Empty;
-                if (artist.Length == 0) return;
-            }
-            MainPage?.NavigateToMusicBrowsePage();
-            MusicBrowsePage.SelectBarArtist(artist);
-        }
+        public void SelectBarAlbum(string album) => _navigation.SelectAlbum(album);
 
-        public void SelectBarAlbum(string Album)
-        {
-            MainPage?.NavigateToMusicBrowsePage();
-            MusicBrowsePage.SelectBarAlbum(Album);
-        }
-
-        public async Task<bool> AreUSureDeleteFromDisk()
-        {
-            return await MusicBrowsePage.AreUSureDeleteFromDisk();
-        }
+        public Task<bool> AreUSureDeleteFromDisk() => _navigation.ConfirmDeleteFromDiskAsync();
 
         public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
-        {
-            MusicBrowsePage.NavigatePage(pageType, parameter, navigationTransitionInfo);
-        }
+            => _navigation.NavigatePage(pageType, parameter, navigationTransitionInfo);
 
-        public void BackButton()
-        {
-            MusicBrowsePage?.BackButton();
-        }
+        public void BackButton() => _navigation.Back();
 
-        public void UpdateViewList()
+        private static int GetSelectorBarItemIndex(string tag) => tag switch
         {
-            MusicBrowsePage?.UpdateViewList();
-        }
-
-        private int GetSelectorBarItemIndex(SelectorBarItem item)
-        {
-            if (item is null) return -1;
-            return item.Name switch
-            {
-                "Song" => 0,
-                "Album" => 1,
-                "Artist" => 2,
-                "Folder" => 3,
-                "Favourite" => 4,
-                _ => -1
-            };
-        }
+            "song" => 0,
+            "album" => 1,
+            "artist" => 2,
+            "folder" => 3,
+            "favourite" => 4,
+            _ => -1
+        };
     }
 }

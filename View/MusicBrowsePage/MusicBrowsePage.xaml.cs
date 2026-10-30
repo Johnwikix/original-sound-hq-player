@@ -39,7 +39,6 @@ namespace WinUIMusicPlayer.View
         {
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
-            ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
             Focus(FocusState.Programmatic);
             Loaded += OnPageLoaded;
@@ -100,7 +99,8 @@ namespace WinUIMusicPlayer.View
             }
             if (ContentFrame.Content is null)
             {
-                SelectBarItem(ViewModel.AppViewModel.DefaultPlayListComboBoxTag);
+                SelectBarItem(string.IsNullOrEmpty(ViewModel.SelectedPageTag)
+                    ? ViewModel.AppViewModel.DefaultPlayListComboBoxTag : ViewModel.SelectedPageTag);
             }
             Loaded -= OnPageLoaded;
         }
@@ -110,62 +110,33 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(pageType, parameter, navigationTransitionInfo);
         }
 
-        public Task<bool> AreUSureDeleteFromDisk()
-        {
-            return DialogHelper.ShowConfirmAsync(this.XamlRoot, "AreUSureDeleteFromDisk");
-        }
-
         private bool _syncingSelectorBar;
 
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
-            if (_syncingSelectorBar || sender.SelectedItem is not SelectorBarItem item || item == ViewModel.SelectedPage)
-            {
-                return;
-            }
-            ViewModel.SelectedPage = item;
+            if (_syncingSelectorBar || sender.SelectedItem is not SelectorBarItem item) return;
+            ViewModel.SelectedPageTag = item.Tag?.ToString() ?? string.Empty;
+        }
+
+        public SelectorBarItem? SelectorItem(string tag)
+        {
+            foreach (var item in selectPage.Items)
+                if (item.Tag?.ToString() == tag) return item;
+            return null;
         }
 
         public void SelectBarItem(string name)
         {
-            foreach (var item in selectPage.Items)
-            {
-                if (item is SelectorBarItem selectorBarItem && selectorBarItem.Tag.ToString() == name)
-                {
-                    ViewModel.SelectedPage = selectorBarItem;
-                    if (!IsLoaded)
-                    {
-                        var target = selectorBarItem;
-                        Loaded += OnSelectorBarSyncLoaded;
-                        void OnSelectorBarSyncLoaded(object sender, RoutedEventArgs e)
-                        {
-                            Loaded -= OnSelectorBarSyncLoaded;
-                            if (ViewModel.SelectedPage != target) return;
-                            ForceSelectorBarSelection(target);
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-
-        private void ForceSelectorBarSelection(SelectorBarItem target)
-        {
-            SelectorBarItem? other = null;
-            foreach (var item in selectPage.Items)
-            {
-                if (item is SelectorBarItem sbi && sbi != target)
-                {
-                    other = sbi;
-                    break;
-                }
-            }
-            if (other is null) return;
+            if (SelectorItem(name) is not { } item) return;
             _syncingSelectorBar = true;
-            selectPage.SelectedItem = other;
-            selectPage.SelectedItem = target;
-            _syncingSelectorBar = false;
-            selectPage.UpdateLayout();
+            try
+            {
+                selectPage.SelectedItem = item;
+                ViewModel.SelectedPageTag = name;
+                // 新视图可能沿用同一个页签，此时不会触发属性变更通知。
+                if (ContentFrame.Content is null) ViewModel.NavigateSelectedPage();
+            }
+            finally { _syncingSelectorBar = false; }
         }
 
         // USB 设备选择由 ComboBox SelectedItem 双向绑定 UsbDeviceService.SelectedDevice 完成，
@@ -261,36 +232,5 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void UpdateViewList(bool refreshDetails = true)
-        {
-            if (ContentFrame.Content is SongListPage songListPage)
-            {
-                songListPage?.UpdateMusicListView();
-            }
-            if (ContentFrame.Content is AlbumPage albumPage && albumPage.ViewModel.IsInDetailMode)
-            {
-                if (refreshDetails) albumPage.RefreshDetailView();
-                albumPage.DetailView?.UpdateMusicListView();
-            }
-            if (ContentFrame.Content is ArtistPage artistPage && artistPage.ViewModel.IsInDetailMode)
-            {
-                if (refreshDetails) artistPage.RefreshDetailView();
-                artistPage.DetailView?.UpdateMusicListView();
-            }
-            if (ContentFrame.Content is FolderBrowsePage folderPage && folderPage.ViewModel.IsInDetailMode)
-            {
-                if (refreshDetails) folderPage.RefreshDetailView();
-                folderPage.DetailView?.UpdateMusicListView();
-            }
-            if (ContentFrame.Content is FavouritePlayListPage favouritePlayListPage)
-            {
-                favouritePlayListPage?.UpdateMusicListView();
-            }
-            if (ContentFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
-            {
-                if (refreshDetails) playListPage.RefreshDetailView();
-                playListPage.DetailView?.UpdateMusicListView();
-            }
-        }
     }
 }

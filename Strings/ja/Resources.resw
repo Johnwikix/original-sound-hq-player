@@ -2644,4 +2644,6 @@ SHA-256: {5}
   <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>ファイルからメタ情報を再取得する</value></data>
   <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>オンラインで歌詞を照合</value></data>
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>歌詞lrcをローカルに保存する</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>再生中の曲を表示</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>再生中の曲を表示</value></data>
 </root>

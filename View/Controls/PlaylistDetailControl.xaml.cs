@@ -15,9 +15,8 @@ namespace WinUIMusicPlayer.View.Controls
     public sealed partial class PlaylistDetailControl : UserControl
     {
         public PlaylistDetailViewModel ViewModel { get; }
-        private readonly ScrollerHelper _scrollHelper;
+        private readonly ListViewCentering _centering;
         private readonly PlayListMusicItem?[] _selectedBuffer = new PlayListMusicItem?[256];
-        private PlayListMusicItem? _pendingScroll;
 
         public static readonly DependencyProperty PlaySourceTagProperty =
             DependencyProperty.Register(
@@ -36,42 +35,25 @@ namespace WinUIMusicPlayer.View.Controls
         {
             ViewModel = App.Services.GetRequiredService<PlaylistDetailViewModel>();
             this.InitializeComponent();
-            _scrollHelper = new ScrollerHelper(DispatcherQueue);
-            _scrollHelper.Tick += OnScrollTick;
+            _centering = new ListViewCentering(MusicListView);
             this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            ViewModel.SetView(this);
+            ViewModel.Activate();
             ViewModel.RefreshFromAppState();
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            ViewModel.SetView(null);
+            _centering.Cancel();
+            ViewModel.Dispose();
         }
 
-        public void OnScrollToMusic(PlayListMusicItem selectedMusic)
-        {
-            _pendingScroll = selectedMusic;
-            _scrollHelper.Trigger();
-        }
-
-        private void OnScrollTick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
-        {
-            if (_pendingScroll is { } m)
-            {
-                MusicListView.ScrollIntoView(m);
-                _pendingScroll = null;
-            }
-        }
-
-        public void UpdateMusicListView()
-        {
-            ViewModel.UpdateMusicListView();
-        }
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
+            => await _centering.LocateAsync(ViewModel.LocateCurrentTrack());
 
         private void MusicListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {

@@ -507,15 +507,17 @@
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTip"
+                            Closed="CurrentPlayListTeachingTip_Closed"
                             IsLightDismissEnabled="True"
                             Target="{x:Bind CurrentPlayListButton}">
                             <TeachingTip.Content>
-                                <Grid Width="290">
+                                <Grid Width="290" RowDefinitions="Auto,*">
                                     <ListView
                                         x:Name="CurrentPlayListView"
+                                        Grid.Row="1"
                                         Width="290"
                                         MaxHeight="400"
-                                        Margin="0,24,0,0"
+                                        Margin="0,4,0,0"
                                         DoubleTapped="CurrentPlayListView_DoubleTapped"
                                         ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                         <ListView.ItemTemplate>
@@ -530,6 +532,14 @@
                                         </ListView.ItemTemplate>
                                     </ListView>
 
+                                    <Button
+                                        x:Name="LocateCurrentTrackButton"
+                                        x:Uid="LocateCurrentTrackButton"
+                                        HorizontalAlignment="Left"
+                                        Click="LocateCurrentTrackButton_Click"
+                                        IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.CurrentPlayingList.Count, ViewModel.State.Queue.Version), Mode=OneWay}">
+                                        <FontIcon FontSize="16" Glyph="&#xE81D;" />
+                                    </Button>
                                     <Button
                                         x:Name="CloseButton"
                                         Width="24"

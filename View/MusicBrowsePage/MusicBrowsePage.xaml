@@ -31,7 +31,7 @@
                 <SelectorBar
                     x:Name="selectPage"
                     VerticalAlignment="Center"
-                    SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=OneWay}"
+                    SelectedItem="{x:Bind SelectorItem(ViewModel.SelectedPageTag), Mode=OneWay}"
                     SelectionChanged="SelectPage_SelectionChanged">
                     <SelectorBarItem
                         x:Name="Song"

@@ -14,6 +14,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -33,6 +34,8 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayingDetailPage : Page, IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
+        public MainViewModel QueueViewModel { get; }
+        private readonly ListViewCentering _queueCentering;
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
         private bool _isPortraitLayout;
@@ -44,8 +47,10 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             ViewModel = viewModel;
+            QueueViewModel = App.Services.GetRequiredService<MainViewModel>();
             this.InitializeComponent();
             DataContext = this;
+            _queueCentering = new ListViewCentering(CurrentPlayListViewPlayingDetail);
             Loaded += PlayingDetailPage_Loaded;
             _logger = App.GetLogger<PlayingDetailPage>();
         }
@@ -383,17 +388,19 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)
         {
             CurrentPlayListTeachingTipPlayingDetail.IsOpen = true;
-            UpdateCurrentPlayList();
         }
-        private void UpdateCurrentPlayList()
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
         {
-            int index = ViewModel.AppViewModel.GetCurrentIndex();
+            if (!CurrentPlayListTeachingTipPlayingDetail.IsOpen) return;
+            int index = QueueViewModel.LocateCurrentTrack();
+            if (index < 0 || index >= CurrentPlayListViewPlayingDetail.Items.Count) return;
             CurrentPlayListViewPlayingDetail.SelectedIndex = index;
-            if (index < 0) return;
-            if (CurrentPlayListViewPlayingDetail.ContainerFromIndex(index) is FrameworkElement container)
-                container.StartBringIntoView();
-            else CurrentPlayListViewPlayingDetail.ScrollIntoView(ViewModel.AppViewModel.CurrentPlayingList[index]);
+            await _queueCentering.LocateIndexAsync(index);
         }
+
+        private void CurrentPlayListTeachingTipPlayingDetail_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
+            => _queueCentering.Cancel();
+
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListViewPlayingDetail.SelectedIndex);

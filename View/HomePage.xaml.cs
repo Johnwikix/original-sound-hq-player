@@ -47,6 +47,7 @@ public sealed partial class HomePage : Page
     {
         ViewModel = App.Services.GetRequiredService<HomeViewModel>();
         InitializeComponent();
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         _openPreviewTimer = DispatcherQueue.CreateTimer();
         _openPreviewTimer.IsRepeating = false;
         _openPreviewTimer.Tick += OpenPreview_Tick;

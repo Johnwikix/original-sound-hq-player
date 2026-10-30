@@ -2644,4 +2644,6 @@ SHA-256: {5}
   <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Retrieve metadata from the file</value></data>
   <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Match lyrics online</value></data>
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Save the lyrics LRC to local</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Locate current track</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Locate current track</value></data>
 </root>

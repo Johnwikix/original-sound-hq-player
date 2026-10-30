@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -32,7 +33,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private readonly ApplicationTasks _tasks;
         private readonly ILogger<PlaylistDetailViewModel> _logger;
 
-        private PlaylistDetailControl? _view;
         private bool _active;
 
         private readonly HashSet<string> _seenAlbums = new(StringComparer.Ordinal);
@@ -114,10 +114,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             }
         }
 
-        public void SetView(PlaylistDetailControl? view)
+        public void Activate()
         {
-            if (view is null) { Dispose(); return; }
-            _view = view;
             if (_active) return;
             _active = true;
             AppViewModel.PropertyChanged += OnAppVmPropertyChanged;
@@ -167,7 +165,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             {
                 Songs = AppViewModel.PlayListSongs;
             }
-            UpdateMusicListView();
         }
 
         private void RefreshTitlesOnly()
@@ -192,29 +189,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             }
         }
 
-        public void UpdateMusicListView()
+        public bool CanLocateCurrentTrack(Music? current, int itemCount)
+            => itemCount > 0 && CurrentTrackLookup.Find(Songs, current) is not null;
+
+        public PlayListMusicItem? LocateCurrentTrack()
         {
-            try
-            {
-                if (AppViewModel.SelectedPlaybackMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
-                {
-                    var plm = AppViewModel.PlayListSongs;
-                    for (int i = 0; i < plm.Count; i++)
-                    {
-                        if (plm[i].Music.Id == m.Id)
-                        {
-                            SelectedMusic = plm[i];
-                            _view?.OnScrollToMusic(plm[i]);
-                            return;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdateMusicListView 滚动音乐失败: {Message}", ex.Message);
-            }
+            var target = CurrentTrackLookup.Find(Songs, AppViewModel.SelectedPlaybackMusic);
+            if (target is not null) SelectedMusic = target;
+            return target;
         }
 
         public void AuthorTextBlock_Tapped(string artist)
@@ -502,7 +484,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void Dispose()
         {
-            _view = null;
             if (!_active) return;
             _active = false;
             AppViewModel.PropertyChanged -= OnAppVmPropertyChanged;

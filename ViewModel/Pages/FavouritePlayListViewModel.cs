@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -26,7 +27,6 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel AppViewModel { get; }
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
-        private FavouritePlayListPage currentPage { get; set; }
         private ILogger<FavouritePlayListViewModel> _logger;
         public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FavouritePlayListViewModel> logger)
         {
@@ -76,32 +76,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void SetCurrentPage(FavouritePlayListPage page)
+        public bool CanLocateCurrentTrack(Music? current, int itemCount)
+            => itemCount > 0 && CurrentTrackLookup.Find(AppViewModel.FavoriteSongs, current) is not null;
+
+        public Music? LocateCurrentTrack()
         {
-            currentPage = page;
+            var target = CurrentTrackLookup.Find(AppViewModel.FavoriteSongs, AppViewModel.SelectedPlaybackMusic);
+            if (target is not null) SelectedMusic = target;
+            return target;
         }
 
         public void ReceiveNavigation()
         {
-            UpdateMusicListView();
             AppViewModel.IsBackBtnEnable = false;
-        }
-
-        public void UpdateMusicListView()
-        {
-            try
-            {
-                if (AppViewModel.SelectedPlaybackMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
-                {
-                    SelectedMusic = m;
-                    currentPage?.OnScrollToMusic(m);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"UpdateMusicListView 滚动音乐失败: {ex.Message}");
-            }
         }
 
         public async Task DragItems()

@@ -14,6 +14,7 @@ using Windows.Foundation;
 using Windows.Graphics;
 using WinUIEx;
 using WinUIMusicPlayer.DesktopLyrics;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -46,6 +47,9 @@ namespace WinUIMusicPlayer.View
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
 
+        private readonly ListViewCentering _queueCentering;
+        internal MusicBrowsePage? CurrentLibraryPage => MainFrame.Content as MusicBrowsePage;
+
         public bool IsPlayingDetailVisible => PlayingFrame.Visibility == Visibility.Visible;
         //private ToolTip _progressToolTip = new();
         public MainPage(MainViewModel viewModel)
@@ -56,7 +60,7 @@ namespace WinUIMusicPlayer.View
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
-            ViewModel.MusicBrowseVM.SetMainPage(this);
+            _queueCentering = new ListViewCentering(CurrentPlayListView);
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
         }
@@ -86,6 +90,7 @@ namespace WinUIMusicPlayer.View
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
         {
+            _queueCentering.Cancel();
             try
             {
                 if (App.MainWindow is { } mw)
@@ -513,7 +518,6 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
         {
             CurrentPlayListTeachingTip.IsOpen = true;
-            UpdateCurrentPlayList();
         }
 
         private void CurrentPlayListTeachingTipCloseButton_Click(object sender, RoutedEventArgs e)
@@ -521,15 +525,17 @@ namespace WinUIMusicPlayer.View
             CurrentPlayListTeachingTip.IsOpen = false;
         }
 
-        public void UpdateCurrentPlayList()
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
         {
-            int index = ViewModel.AppViewModel.GetSelectedPlaybackIndex();
+            if (!CurrentPlayListTeachingTip.IsOpen) return;
+            int index = ViewModel.LocateCurrentTrack();
+            if (index < 0 || index >= CurrentPlayListView.Items.Count) return;
             CurrentPlayListView.SelectedIndex = index;
-            if (index < 0) return;
-            if (CurrentPlayListView.ContainerFromIndex(index) is FrameworkElement container)
-                container.StartBringIntoView();
-            else CurrentPlayListView.ScrollIntoView(ViewModel.AppViewModel.CurrentPlayingList[index]);
+            await _queueCentering.LocateIndexAsync(index);
         }
+
+        private void CurrentPlayListTeachingTip_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
+            => _queueCentering.Cancel();
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {

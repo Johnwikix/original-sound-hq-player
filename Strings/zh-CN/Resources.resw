@@ -2646,4 +2646,6 @@ SHA-256：{5}
   <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
   <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>在线匹配歌词</value></data>
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>定位当前播放歌曲</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>定位当前播放歌曲</value></data>
 </root>

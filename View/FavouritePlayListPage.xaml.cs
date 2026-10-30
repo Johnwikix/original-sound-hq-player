@@ -1,11 +1,9 @@
-using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -22,20 +20,18 @@ namespace WinUIMusicPlayer.View
     public sealed partial class FavouritePlayListPage : Page, INavigatable
     {
         public FavouritePlayListViewModel ViewModel { get; }
-        private readonly ScrollerHelper _scrollHelper;
+        private readonly ListViewCentering _centering;
         private readonly Music?[] _selectedBuffer = new Music?[256];
-        private Music? _pendingScroll;
 
         public FavouritePlayListPage()
         {
             this.InitializeComponent();
             ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
-            ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
-            _scrollHelper = new ScrollerHelper(DispatcherQueue);
-            _scrollHelper.Tick += OnScrollTick;
+            _centering = new ListViewCentering(MusicListView);
+            Unloaded += OnUnloaded;
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
@@ -43,20 +39,16 @@ namespace WinUIMusicPlayer.View
             await ViewModel.DragItems();
         }
 
-        public void OnScrollToMusic(Music selectedMusic)
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            _pendingScroll = selectedMusic;
-            _scrollHelper.Trigger();
+            _centering.Cancel();
+            base.OnNavigatedFrom(e);
         }
 
-        private void OnScrollTick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
-        {
-            if (_pendingScroll is { } m)
-            {
-                MusicListView.ScrollIntoView(m);
-                _pendingScroll = null;
-            }
-        }
+        private void OnUnloaded(object sender, RoutedEventArgs e) => _centering.Cancel();
+
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
+            => await _centering.LocateAsync(ViewModel.LocateCurrentTrack());
 
         public void ReceiveNavigationParameter(object parameter)
         {
@@ -67,11 +59,6 @@ namespace WinUIMusicPlayer.View
         {
             base.OnNavigatedTo(e);
             ViewModel.ReceiveNavigation();
-        }
-
-        public void UpdateMusicListView()
-        {
-            ViewModel.UpdateMusicListView();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)

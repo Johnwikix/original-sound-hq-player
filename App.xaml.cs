@@ -129,6 +129,8 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AudioConversionViewModel>();
                  services.AddHostedService<MetadataWriteService>();
                  services.AddTransient<INavigationService, NavigationService>();
+                 services.AddSingleton(sp => new LibraryNavigationService(
+                     () => sp.GetRequiredService<MainPage>(), sp.GetRequiredService<ILogger<LibraryNavigationService>>()));
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();

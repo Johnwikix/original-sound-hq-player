@@ -1,13 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.State;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using WinUIMusicPlayer.ViewModel;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 namespace WinUIMusicPlayer.Services;
 
@@ -111,7 +109,6 @@ public sealed class LibraryBrowseCoordinator(AppState state, LibraryQueries quer
         {
             return;
         }
-        App.Services.GetRequiredService<MusicBrowseViewModel>()?.UpdateViewList();
     }
 
     public Task RefreshPlayListSongMapping() => projections.RefreshPlayListSongMapping(state.LibraryViews.PlayListSongs);

@@ -2644,4 +2644,6 @@ SHA-256: {5}
   <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
   <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Найти текущую композицию</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Найти текущую композицию</value></data>
 </root>

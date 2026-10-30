@@ -1,3 +1,11 @@
+## 2026-10-30 手动居中定位与浏览页面引用清理
+- 歌曲、收藏、专辑/艺术家/文件夹详情、歌单详情和当前播放队列：取消进入页面与切歌时的自动定位，新增手动定位当前歌曲按钮，按当前筛选结果定位并居中显示，离页取消未完成定位。
+- `MusicBrowseViewModel`、歌曲/收藏与详情 ViewModel：移除对子页面与 SelectorBarItem 的长期引用，详情订阅使用成对 Activate/Dispose，页签保存字符串标识，导航经不缓存子页面的边界转发；保留 Frame 与官方动画。
+- `HomePage.xaml.cs`：显式使用 `NavigationCacheMode.Disabled`；其他页面的缓存策略保持现状。
+- 播放队列按实际条目索引定位，支持同一首歌重复入队和待播放选择；定位期间更换数据源、离页或重复请求会取消旧操作。
+- `Strings/*/Resources.resw`：补齐七语言定位按钮提示与无障碍名称。
+- 验证：主项目 x64 Debug 构建 0 错误；独立 WinUI/lvt 后台回归 93 项通过，非首尾样本居中偏差 0 DIP，前台违规 0；七语言资源、XML、CRLF 检查通过。范围与盲区见 `_tools/ManualLocationUiRegression/README.md`。
+
 ## 2026-10-30 收紧首页歌词间距与平铺标签字段
 - `HomeMusicDetailControl.xaml`：歌词工具栏和状态/错误提示改用同一 StackPanel，移除空提示行前后的固定 RowSpacing，提示折叠时不再留出额外间距。
 - `HomeMusicDetailControl*`：移除“创作与发行”折叠容器及上方分隔线，作曲、作词、指挥和目录编号按两行直接展示，保持默认输入框和原有编辑绑定。

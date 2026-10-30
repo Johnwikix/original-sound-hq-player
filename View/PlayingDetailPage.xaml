@@ -512,14 +512,16 @@
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTipPlayingDetail"
+                            Closed="CurrentPlayListTeachingTipPlayingDetail_Closed"
                             IsLightDismissEnabled="True"
                             Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                             <TeachingTip.Content>
-                                <Grid Width="290" Margin="0">
+                                <Grid Width="290" Margin="0" RowDefinitions="Auto,*">
                                     <ListView
                                         x:Name="CurrentPlayListViewPlayingDetail"
+                                        Grid.Row="1"
                                         MaxHeight="400"
-                                        Margin="0,24,0,0"
+                                        Margin="0,4,0,0"
                                         DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
                                         ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                         <ListView.ItemTemplate>
@@ -532,6 +534,14 @@
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
+                                    <Button
+                                        x:Name="LocateCurrentTrackButton"
+                                        x:Uid="LocateCurrentTrackButton"
+                                        HorizontalAlignment="Left"
+                                        Click="LocateCurrentTrackButton_Click"
+                                        IsEnabled="{x:Bind QueueViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.CurrentPlayingList.Count, QueueViewModel.State.Queue.Version), Mode=OneWay}">
+                                        <FontIcon FontSize="16" Glyph="&#xE81D;" />
+                                    </Button>
                                     <Button
                                         x:Name="CurrentPlayListTeachingTipCloseButton"
                                         Width="24"

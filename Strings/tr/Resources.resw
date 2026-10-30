@@ -2644,4 +2644,6 @@ SHA-256: {5}
   <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
   <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Çalan parçayı bul</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Çalan parçayı bul</value></data>
 </root>
