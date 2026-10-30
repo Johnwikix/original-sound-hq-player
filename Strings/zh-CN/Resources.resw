@@ -2631,4 +2631,19 @@ SHA-256：{5}
   <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>编辑封面</value></data>
   <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>编辑封面</value></data>
   <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>文件信息</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>创作与发行</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>封面选项</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>封面选项</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>歌词操作</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>歌词操作</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>歌词</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>恢复旧 LRC</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>恢复旧 KRC</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>打开文件位置</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>在线匹配封面</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>编辑封面</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>保存到本地</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>在线匹配歌词</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
 </root>

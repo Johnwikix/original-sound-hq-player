@@ -277,11 +277,11 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(ReferenceEquals(((Button)details.FindName("QueueButton")).CommandParameter, selected.Music),
                 "full properties favorite and queue actions share the canonical track");
             string originalAuthor = selected.Music.Author;
-            selected.Music.Author = "Updated canonical artist";
+            home.DetailEditor!.Metadata.Draft.Author = "Updated draft artist";
             await Task.Delay(30);
-            Check(Descendants<TextBlock>(details).Any(item => item.Text == "Updated canonical artist"),
-                "property labels track the shared Music notifications rather than a copied metadata model");
-            selected.Music.Author = originalAuthor;
+            Check(Descendants<TextBlock>(details).Any(item => item.Text == "Updated draft artist"),
+                "the identity rail follows the current editable artist draft");
+            home.DetailEditor!.Metadata.Draft.Author = originalAuthor;
             Check(details.Duration(TimeSpan.FromHours(27) + TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(3)) == "27:02:03"
                 && details.Number(0) == "—", "property formatting preserves long durations and distinguishes unknown numeric tags");
             var detailPlayButton = (Button)details.FindName("PlayButton");
@@ -856,6 +856,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             page.Background = new SolidColorBrush(page.ActualTheme == ElementTheme.Dark
                 ? Microsoft.UI.ColorHelper.FromArgb(255, 32, 32, 32) : Microsoft.UI.ColorHelper.FromArgb(255, 243, 243, 243));
             var titleInput = (TextBox)details.FindName("TitleInput");
+            ((Expander)details.FindName("CreditsSection")).IsExpanded = true;
             var composerInput = (TextBox)details.FindName("ComposerInput");
             var originalInput = (TextBox)details.FindName("OriginalLyricsInput");
             var translationInput = (TextBox)details.FindName("TranslationLyricsInput");
@@ -871,7 +872,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 && editSession.Lyrics.OriginalText == originalInput.Text && editSession.Lyrics.TranslationText == translationInput.Text
                 && editSession.Lyrics.PronunciationText == pronunciationInput.Text && editMusic.Title == canonicalTitle,
                 "compiled two-way fields edit independent metadata and all three lyric drafts without mutating the canonical song");
-            ((ScrollViewer)details.FindName("DetailScroll")).ChangeView(null, double.MaxValue, null, true);
+            ((Pivot)details.FindName("WorkspaceTabs")).SelectedIndex = 1;
             await Task.Delay(100);
             await Capture(page, "home-song-editor-lyrics.png");
             data.FailEditorSave = true;
@@ -917,8 +918,13 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Translated.lrc"),
                 Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Pronunciation.lrc") })
                 if (File.Exists(exportPath)) File.Delete(exportPath);
-            var exportButton = Descendants<Button>(details).First(button => ReferenceEquals(button.Command, editSession.Lyrics.ExportCommand));
-            ((IInvokeProvider)new ButtonAutomationPeer(exportButton).GetPattern(PatternInterface.Invoke)).Invoke();
+            ((Pivot)details.FindName("WorkspaceTabs")).SelectedIndex = 1;
+            var toolsButton = (Button)details.FindName("LyricsToolsButton");
+            var toolsMenu = (MenuFlyout)toolsButton.Flyout;
+            toolsMenu.ShowAt(toolsButton);
+            await Wait(() => toolsMenu.Items.OfType<MenuFlyoutItem>().Any(item => ReferenceEquals(item.Command, editSession.Lyrics.ExportCommand)));
+            var exportItem = toolsMenu.Items.OfType<MenuFlyoutItem>().First(item => ReferenceEquals(item.Command, editSession.Lyrics.ExportCommand));
+            ((IInvokeProvider)new MenuFlyoutItemAutomationPeer(exportItem).GetPattern(PatternInterface.Invoke)).Invoke();
             await Wait(() => File.Exists(Path.ChangeExtension(editMusic.Path, ".lrc")));
             Check(File.ReadAllText(Path.ChangeExtension(editMusic.Path, ".lrc")).Contains("Newer original")
                 && File.Exists(Path.Combine(Path.GetDirectoryName(editMusic.Path)!, Path.GetFileNameWithoutExtension(editMusic.Path) + "_Translated.lrc"))
@@ -1044,8 +1050,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var narrowHost = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
             ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(narrowHost).GetPattern(PatternInterface.Invoke)).Invoke();
             await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitioning"));
-            Check(Grid.GetRow((StackPanel)details.FindName("HeroText")) == 1 && ((Border)details.FindName("CoverHost")).ActualWidth == 200,
-                "full song properties stack the square cover and text in a 500-pixel window");
+            Check(Grid.GetRow((StackPanel)details.FindName("HeroText")) == 0 && ((Border)details.FindName("CoverHost")).ActualWidth == 112,
+                "compact song properties use a square cover and identity ribbon above the editing workspace");
             await Capture(page, "home-song-properties-narrow.png");
             Check(!offThread, "view-model state notifications stay on the real WinUI dispatcher");
             var retained = home.Songs;

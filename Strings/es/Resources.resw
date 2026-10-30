@@ -2629,4 +2629,19 @@ SHA-256: {5}
   <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Editar portada</value></data>
   <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Editar portada</value></data>
   <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Información del archivo</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Créditos y publicación</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Opciones de portada</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Opciones de portada</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Herramientas de letras</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Herramientas de letras</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Letras</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Restaurar LRC anterior</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Restaurar KRC anterior</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Abrir ubicación del archivo</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Emparejar portada en línea</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Editar portada</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Guardar en disco local</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Recuperar la metainformación del archivo</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Emparejar letras en línea</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Guardar la letra lrc en el dispositivo local</value></data>
 </root>

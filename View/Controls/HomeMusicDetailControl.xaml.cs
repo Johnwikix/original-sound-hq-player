@@ -49,7 +49,12 @@ public sealed partial class HomeMusicDetailControl : UserControl
             control.QueueButton.CommandParameter = null;
             control.CoverPreviewImage.Source = null;
         }
+        control.WorkspaceTabs.SelectedIndex = 0;
+        control.LyricsTabs.SelectedIndex = 0;
+        control.CreditsSection.IsExpanded = false;
+        control.IdentityScroll.ChangeView(null, 0, null, true);
         control.DetailScroll.ChangeView(null, 0, null, true);
+        control.FileScroll.ChangeView(null, 0, null, true);
     }
     private static void EditorChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
@@ -64,16 +69,57 @@ public sealed partial class HomeMusicDetailControl : UserControl
     private void OnUnloaded(object sender, RoutedEventArgs args) => DismissMenus();
     private void OnSizeChanged(object sender, SizeChangedEventArgs args)
     {
-        bool compact = ActualWidth < 760;
-        CoverHost.Width = CoverHost.Height = compact ? 200 : 256;
-        Grid.SetRow(HeroText, compact ? 1 : 0);
-        Grid.SetColumn(HeroText, compact ? 0 : 1);
-        Grid.SetColumnSpan(HeroText, compact ? 2 : 1);
+        // 矮窗口优先保留侧栏，避免封面占去编辑区的垂直空间；极窄时才继续堆叠。
+        bool shortWindow = args.NewSize.Height < 640;
+        bool stacked = args.NewSize.Width < 960 && (!shortWindow || args.NewSize.Width < 760);
+        bool compact = args.NewSize.Width < 960 || shortWindow;
+        double gutter = compact ? 24 : 32;
+        double coverSize = stacked ? 112 : compact ? 200 : 240;
+        double columnGap = compact ? 24 : 36;
+        DetailRoot.Padding = new Thickness(gutter, compact ? 12 : 16, gutter, compact ? 16 : 20);
+        HeaderBar.Margin = new Thickness(0, 0, 0, compact ? 12 : 20);
+        HeroLayout.RowSpacing = stacked ? 12 : 0;
+        HeroLayout.ColumnDefinitions[0].Width = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(coverSize);
+        HeroLayout.ColumnDefinitions[1].Width = new GridLength(stacked ? 0 : columnGap);
+        HeroLayout.ColumnDefinitions[2].Width = stacked ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        HeroLayout.RowDefinitions[0].Height = stacked ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        HeroLayout.RowDefinitions[1].Height = stacked ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        Grid.SetColumnSpan(IdentityScroll, stacked ? 3 : 1);
+        IdentityScroll.VerticalScrollBarVisibility = stacked ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Hidden;
+        ArtworkRegion.Width = ArtworkRegion.Height = coverSize;
+        CoverHost.Width = CoverHost.Height = coverSize;
+        IdentityLayout.ColumnDefinitions[0].Width = new GridLength(coverSize);
+        Grid.SetColumnSpan(ArtworkRegion, stacked ? 1 : 2);
+        Grid.SetRow(HeroText, stacked ? 0 : 1);
+        Grid.SetColumn(HeroText, stacked ? 1 : 0);
+        Grid.SetColumnSpan(HeroText, stacked ? 1 : 2);
+        HeroText.Margin = stacked ? new Thickness(20, 0, 0, 0) : new Thickness(0, 20, 0, 0);
+        SongTitleText.FontSize = compact ? 22 : 26;
+        SongTitleText.MaxLines = stacked ? 1 : compact ? 2 : 3;
+        SongAlbumText.Visibility = stacked ? Visibility.Collapsed : Visibility.Visible;
+        RecommendationText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        Grid.SetRow(WorkspaceViewport, stacked ? 1 : 0);
+        Grid.SetColumn(WorkspaceViewport, stacked ? 0 : 2);
+        Grid.SetColumnSpan(WorkspaceViewport, stacked ? 3 : 1);
+        FooterBar.ColumnDefinitions[0].Width = HeroLayout.ColumnDefinitions[0].Width;
+        FooterBar.ColumnDefinitions[1].Width = HeroLayout.ColumnDefinitions[1].Width;
+        FooterBar.ColumnDefinitions[2].Width = HeroLayout.ColumnDefinitions[2].Width;
+        Grid.SetColumn(FooterButtons, stacked ? 0 : 2);
+        Grid.SetColumnSpan(FooterButtons, stacked ? 3 : 1);
+    }
+    /// <summary>按剩余视口约束页签，避免长表单或歌词撑出固定保存区。</summary>
+    private void PivotViewport_SizeChanged(object sender, SizeChangedEventArgs args)
+    {
+        if (sender is not Grid viewport || viewport.Children.Count != 1 || viewport.Children[0] is not Pivot tabs) return;
+        tabs.MaxWidth = Math.Max(0, args.NewSize.Width);
+        tabs.MaxHeight = Math.Max(0, args.NewSize.Height);
     }
     /// <summary>收起详情关联的独立菜单。</summary>
     public void DismissMenus()
     {
         PlaylistMenu.Hide();
+        CoverMenu.Hide();
+        LyricsToolsMenu.Hide();
         ConfirmFlyout.Hide();
     }
     /// <summary>聚焦固定标题，避免禁用的播放按钮使焦点自动滚入下面的输入区。</summary>

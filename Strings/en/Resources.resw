@@ -2629,4 +2629,19 @@ SHA-256: {5}
   <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Edit Cover</value></data>
   <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Edit Cover</value></data>
   <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>File information</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Credits and release</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Artwork options</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Artwork options</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Lyrics tools</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Lyrics tools</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Lyrics</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Restore legacy LRC</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Restore legacy KRC</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Open file location</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Match Cover Online</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Edit Cover</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Save to Local</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Retrieve metadata from the file</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Match lyrics online</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Save the lyrics LRC to local</value></data>
 </root>

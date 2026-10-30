@@ -2629,4 +2629,19 @@ SHA-256: {5}
   <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Cover bearbeiten</value></data>
   <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Cover bearbeiten</value></data>
   <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Dateiinformationen</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Mitwirkende und Veröffentlichung</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Coveroptionen</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Coveroptionen</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Liedtextaktionen</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Liedtextaktionen</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Liedtext</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Alte LRC wiederherstellen</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Alte KRC wiederherstellen</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Dateispeicherort öffnen</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Online-Cover-Abgleich</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Cover bearbeiten</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Lokal speichern</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Metadaten aus Datei neu einlesen</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Online-Songtext-Abgleich</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Songtext als .lrc lokal speichern</value></data>
 </root>

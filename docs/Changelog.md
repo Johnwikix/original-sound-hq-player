@@ -1,3 +1,14 @@
+## 2026-10-30 首页属性小窗口布局与编辑区对齐
+- `HomeMusicDetailControl.xaml`：标签与歌词输入恢复系统默认 TextBox 外观；统一根布局留白，移除内外层 PivotItem 的累积边距，并让页签标题、歌词工具栏、编辑框及保存区共用对齐边界。
+- `HomeMusicDetailControl.xaml.cs`：矮窗在宽度足够时使用紧凑侧栏，极窄窗保留封面标题横排；页签按剩余视口约束尺寸，表单滚动与固定保存区分别占用空间，减少最小窗口下的裁切。
+- 按用户要求，本次未构建、运行回归或进行 UI 自动化验证。
+
+## 2026-10-30 首页属性编辑视觉重设计
+- `HomeMusicDetailControl.xaml`：改为左侧封面与歌曲信息、右侧歌曲/歌词/文件三个工作区；移除纵向大表单卡片，常用标签采用轻量下划线输入，创作与发行字段折叠收纳，歌词编辑区随可用高度展开。
+- 封面操作和歌词辅助操作分别收进各自工具菜单，文件参数与路径使用只读信息布局；保存区固定在底部，以强调色突出数据库保存，继续使用已有悬停/按压动画。
+- `HomeMusicDetailControl.xaml.cs`：窄窗切为 112px 方形封面与紧凑标题区，切换曲目时复位工作区、滚动与折叠状态，并收起新增菜单；草稿、保存命令和 Connected Animation 数据入口继续复用。
+- `Strings/*/Resources.resw`、`_tools/HomeUiRegression/Program.cs`：补齐七语言工作区/菜单标签，并同步既有夹具的控件定位。按用户要求，本次未构建、运行回归或进行 UI 自动化验证，交由用户验收。
+
 ## 2026-10-30 首页属性编辑与导航样式对齐
 - `HomeMusicDetailControl*`：移除整页不透明底色及重复返回箭头，使用窗口背景与主导航返回；保留现有卡片/方形封面布局，补齐与 MusicDetailsWindow 对应的标签编辑、歌词偏移、原文/翻译/注音、读取/刷新/导出/旧版恢复、封面操作、文件信息及两种保存入口。
 - `MusicDetailsEditorViewModel.cs`、`MusicDetailsEditorFactory.cs`、`HomeViewModel.cs`：复用 MusicMetadataEditorViewModel、LyricsEditorViewModel 和现有保存/文件写入队列；编辑草稿独立，保存期间有新输入时保留编辑器，保存失败可重试，导航立即取消活动并在动画后释放图片，退出等待真实在途任务。

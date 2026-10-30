@@ -2629,4 +2629,19 @@ SHA-256: {5}
   <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Kapağı düzenle</value></data>
   <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Kapağı düzenle</value></data>
   <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Dosya bilgileri</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Katkıda bulunanlar ve yayın</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Kapak seçenekleri</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Kapak seçenekleri</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Şarkı sözü işlemleri</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Şarkı sözü işlemleri</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Şarkı sözleri</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Eski LRC dosyasını geri yükle</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Eski KRC dosyasını geri yükle</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Dosya konumunu aç</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Kapağı çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Kapağı düzenle</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Yerel diske kaydet</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
 </root>

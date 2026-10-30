@@ -2629,4 +2629,19 @@ SHA-256: {5}
   <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Редактировать обложку</value></data>
   <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Редактировать обложку</value></data>
   <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Информация о файле</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Авторы и выпуск</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Действия с обложкой</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Действия с обложкой</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Действия с текстом</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Действия с текстом</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Текст</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Восстановить старый LRC</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Восстановить старый KRC</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Открыть расположение файла</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Искать обложку онлайн</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Редактировать обложку</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Сохранить локально</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
 </root>
