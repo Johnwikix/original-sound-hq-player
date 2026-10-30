@@ -51,7 +51,6 @@ public sealed partial class HomeMusicDetailControl : UserControl
         }
         control.WorkspaceTabs.SelectedIndex = 0;
         control.LyricsTabs.SelectedIndex = 0;
-        control.CreditsSection.IsExpanded = false;
         control.IdentityScroll.ChangeView(null, 0, null, true);
         control.DetailScroll.ChangeView(null, 0, null, true);
         control.FileScroll.ChangeView(null, 0, null, true);

@@ -1,3 +1,9 @@
+## 2026-10-30 收紧首页歌词间距与平铺标签字段
+- `HomeMusicDetailControl.xaml`：歌词工具栏和状态/错误提示改用同一 StackPanel，移除空提示行前后的固定 RowSpacing，提示折叠时不再留出额外间距。
+- `HomeMusicDetailControl*`：移除“创作与发行”折叠容器及上方分隔线，作曲、作词、指挥和目录编号按两行直接展示，保持默认输入框和原有编辑绑定。
+- `_tools/HomeUiRegression/Program.cs`：移除已删除折叠容器的定位，等待原生页签动画稳定后采集标签和歌词截图。
+- 验证：主项目 x64 Debug 构建通过（0 错误），184 项原生首页回归通过；已检查标签平铺与歌词收紧间距的实际渲染截图，XAML/CRLF 检查通过。
+
 ## 2026-10-30 修复首页属性封面取消与无图误报
 - `MusicDetailsEditorFactory.cs`：初始封面读取和在线匹配透传编辑会话的取消令牌，返回页面时取消可取消的下游 I/O，继续等待实际任务与不可取消边界收尾。
 - `MusicDetailsEditorViewModel.cs`、`IMusicDetailsEditorFactory.cs`：初始读取的 null/空数组视为正常无图；非空坏图、主动查找无结果和选择空文件仍保留错误提示。

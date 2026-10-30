@@ -196,72 +196,66 @@
                         IsEnabled="{x:Bind Editor.CanEditTags, Mode=OneWay}" Value="{x:Bind Editor.Metadata.Draft.TrackNumber, Mode=TwoWay}" />
                 </StackPanel>
                             </Grid>
-                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Margin="0,4,0,0" />
-                            <Expander x:Name="CreditsSection" x:Uid="HomeDetailsCredits" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                IsExpanded="False" Background="Transparent" BorderThickness="0" Padding="0">
-                                <StackPanel Spacing="20" Margin="0,12,0,8">
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
-                            <StackPanel Spacing="4">
-                    <TextBlock x:Uid="MusicTagComposer" Style="{StaticResource PropertyCaption}" />
-                    <TextBox x:Name="ComposerInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="4">
-                    <TextBlock x:Uid="MusicTagLyricist" Style="{StaticResource PropertyCaption}" />
-                    <TextBox x:Name="LyricistInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                        </Grid>
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
-                            <StackPanel Spacing="4">
-                    <TextBlock x:Uid="MusicTagConductor" Style="{StaticResource PropertyCaption}" />
-                    <TextBox x:Name="ConductorInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="4">
-                    <TextBlock x:Uid="MusicTagCatalogNumber" Style="{StaticResource PropertyCaption}" />
-                    <TextBox x:Name="CatalogNumberInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                        </Grid>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Uid="MusicTagComposer" Style="{StaticResource PropertyCaption}" />
+                                    <TextBox x:Name="ComposerInput"
+                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
+                                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
-                            </Expander>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock x:Uid="MusicTagLyricist" Style="{StaticResource PropertyCaption}" />
+                                    <TextBox x:Name="LyricistInput"
+                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
+                                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Uid="MusicTagConductor" Style="{StaticResource PropertyCaption}" />
+                                    <TextBox x:Name="ConductorInput"
+                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
+                                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock x:Uid="MusicTagCatalogNumber" Style="{StaticResource PropertyCaption}" />
+                                    <TextBox x:Name="CatalogNumberInput"
+                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(Editor.IsLoading), Mode=OneWay}"
+                                        IsReadOnly="{x:Bind Song.Music.IsRemote, Mode=OneWay}" Text="{x:Bind Editor.Metadata.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </ScrollViewer>
                 </PivotItem>
                 <PivotItem Margin="0">
                     <PivotItem.Header><TextBlock x:Uid="HomeDetailsLyricsTab" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
-                    <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12" Padding="0,8,0,0">
-                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                            <TextBlock x:Uid="LyricsTimeOffsetTag" Style="{StaticResource PropertyCaption}" VerticalAlignment="Center" />
-                            <NumberBox x:Name="OffsetInput" Grid.Column="1" Width="124" Minimum="-10000" Maximum="10000" SmallChange="100" LargeChange="1000"
-                                SpinButtonPlacementMode="Compact" Value="{x:Bind Song.Music.LyricsOffsetMs, Mode=TwoWay}" />
-                            <Button x:Name="LyricsToolsButton" x:Uid="HomeDetailsLyricsTools" Grid.Column="2" Width="36" Height="36" MinWidth="36" MinHeight="36" Padding="8"
-                                Style="{StaticResource HomeSongActionButtonStyle}">
-                                <FontIcon Glyph="&#xE712;" FontSize="16" />
-                                <Button.Flyout><MenuFlyout x:Name="LyricsToolsMenu">
-                                    <MenuFlyoutItem x:Uid="HomeDetailsReadEmbedded" Command="{x:Bind Editor.ReadEmbeddedCommand, Mode=OneWay}" />
-                                    <MenuFlyoutItem x:Uid="HomeDetailsRefreshLyrics" Command="{x:Bind Editor.Lyrics.RefreshCommand, Mode=OneWay}" />
-                                    <MenuFlyoutItem x:Uid="HomeDetailsExportLyrics" Command="{x:Bind Editor.Lyrics.ExportCommand, Mode=OneWay}" />
-                                    <MenuFlyoutSeparator Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(Editor.Lyrics.HasLegacy), Mode=OneWay}" />
-                                    <MenuFlyoutItem x:Uid="HomeDetailsRestoreLrc" Command="{x:Bind Editor.Lyrics.RestoreLegacyCommand, Mode=OneWay}" CommandParameter="Lrc"
-                                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(Editor.Lyrics.HasLegacy), Mode=OneWay}" />
-                                    <MenuFlyoutItem x:Uid="HomeDetailsRestoreKrc" Command="{x:Bind Editor.Lyrics.RestoreLegacyCommand, Mode=OneWay}" CommandParameter="Krc"
-                                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(Editor.Lyrics.HasLegacy), Mode=OneWay}" />
-                                </MenuFlyout></Button.Flyout>
-                            </Button>
-                        </Grid>
-                        <StackPanel Grid.Row="1" Spacing="4">
+                    <Grid RowDefinitions="Auto,*" Padding="0,8,0,0">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                <TextBlock x:Uid="LyricsTimeOffsetTag" Style="{StaticResource PropertyCaption}" VerticalAlignment="Center" />
+                                <NumberBox x:Name="OffsetInput" Grid.Column="1" Width="124" Minimum="-10000" Maximum="10000" SmallChange="100" LargeChange="1000"
+                                    SpinButtonPlacementMode="Compact" Value="{x:Bind Song.Music.LyricsOffsetMs, Mode=TwoWay}" />
+                                <Button x:Name="LyricsToolsButton" x:Uid="HomeDetailsLyricsTools" Grid.Column="2" Width="36" Height="36" MinWidth="36" MinHeight="36" Padding="8"
+                                    Style="{StaticResource HomeSongActionButtonStyle}">
+                                    <FontIcon Glyph="&#xE712;" FontSize="16" />
+                                    <Button.Flyout><MenuFlyout x:Name="LyricsToolsMenu">
+                                        <MenuFlyoutItem x:Uid="HomeDetailsReadEmbedded" Command="{x:Bind Editor.ReadEmbeddedCommand, Mode=OneWay}" />
+                                        <MenuFlyoutItem x:Uid="HomeDetailsRefreshLyrics" Command="{x:Bind Editor.Lyrics.RefreshCommand, Mode=OneWay}" />
+                                        <MenuFlyoutItem x:Uid="HomeDetailsExportLyrics" Command="{x:Bind Editor.Lyrics.ExportCommand, Mode=OneWay}" />
+                                        <MenuFlyoutSeparator Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(Editor.Lyrics.HasLegacy), Mode=OneWay}" />
+                                        <MenuFlyoutItem x:Uid="HomeDetailsRestoreLrc" Command="{x:Bind Editor.Lyrics.RestoreLegacyCommand, Mode=OneWay}" CommandParameter="Lrc"
+                                            Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(Editor.Lyrics.HasLegacy), Mode=OneWay}" />
+                                        <MenuFlyoutItem x:Uid="HomeDetailsRestoreKrc" Command="{x:Bind Editor.Lyrics.RestoreLegacyCommand, Mode=OneWay}" CommandParameter="Krc"
+                                            Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(Editor.Lyrics.HasLegacy), Mode=OneWay}" />
+                                    </MenuFlyout></Button.Flyout>
+                                </Button>
+                            </Grid>
                             <TextBlock Text="{x:Bind Editor.Lyrics.Status, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                 Visibility="{x:Bind TextVisibility(Editor.Lyrics.Status), Mode=OneWay}" />
                             <TextBlock Text="{x:Bind Editor.Lyrics.Error, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                 Visibility="{x:Bind TextVisibility(Editor.Lyrics.Error), Mode=OneWay}" />
                         </StackPanel>
-                        <Grid x:Name="LyricsViewport" Grid.Row="2" MinWidth="0" MinHeight="0" SizeChanged="PivotViewport_SizeChanged">
+                        <Grid x:Name="LyricsViewport" Grid.Row="1" MinWidth="0" MinHeight="0" SizeChanged="PivotViewport_SizeChanged">
                         <Pivot x:Name="LyricsTabs" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                             <PivotItem Margin="0">
                                 <PivotItem.Header><TextBlock x:Uid="LyricsOriginalTab" FontSize="13" /></PivotItem.Header>

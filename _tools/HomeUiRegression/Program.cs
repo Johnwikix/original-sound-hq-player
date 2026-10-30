@@ -857,7 +857,6 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             page.Background = new SolidColorBrush(page.ActualTheme == ElementTheme.Dark
                 ? Microsoft.UI.ColorHelper.FromArgb(255, 32, 32, 32) : Microsoft.UI.ColorHelper.FromArgb(255, 243, 243, 243));
             var titleInput = (TextBox)details.FindName("TitleInput");
-            ((Expander)details.FindName("CreditsSection")).IsExpanded = true;
             var composerInput = (TextBox)details.FindName("ComposerInput");
             var originalInput = (TextBox)details.FindName("OriginalLyricsInput");
             var translationInput = (TextBox)details.FindName("TranslationLyricsInput");
@@ -873,8 +872,10 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 && editSession.Lyrics.OriginalText == originalInput.Text && editSession.Lyrics.TranslationText == translationInput.Text
                 && editSession.Lyrics.PronunciationText == pronunciationInput.Text && editMusic.Title == canonicalTitle,
                 "compiled two-way fields edit independent metadata and all three lyric drafts without mutating the canonical song");
+            await Task.Delay(450); // Wait for the native Pivot reveal before taking visual evidence.
+            await Capture(page, "home-song-editor-tags.png");
             ((Pivot)details.FindName("WorkspaceTabs")).SelectedIndex = 1;
-            await Task.Delay(100);
+            await Task.Delay(450);
             await Capture(page, "home-song-editor-lyrics.png");
             data.FailEditorSave = true;
             await editSession.SaveDatabaseCommand.ExecuteAsync(null);
