@@ -89,6 +89,7 @@ internal sealed partial class HomePolishWindow : Window
             if (args.PropertyName == nameof(HomeViewModel.IsInDetailMode) && _home.IsInDetailMode)
                 DispatcherQueue.TryEnqueue(() =>
                 {
+                    _handoffNativeCompleted = false;
                     _handoffSourceAlive = _home.PreviewSong is not null;
                     _watchedHandoff = (Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?)typeof(HomePage)
                         .GetField("_detailAnimation", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_page);
@@ -101,6 +102,7 @@ internal sealed partial class HomePolishWindow : Window
         _root.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         Add(buttons, "ReproCarousel", CheckCarousel);
+        Add(buttons, "RoundTrip", CheckCoverRoundTrips);
         Add(buttons, "Preview", ShowPreview);
         Add(buttons, "OpenFromPreview", OpenFromPreview);
         Add(buttons, "VerifyDetails", CheckDetails);
@@ -220,7 +222,7 @@ internal sealed partial class HomePolishWindow : Window
         _page.RequestedTheme = ElementTheme.Light;
         await Task.Delay(100);
         foreach (var cover in Descendants<MusicCoverControl>((RecommendationShelf)_page.FindName("SongsShelf")))
-            Check(ElementCompositionPreview.GetElementVisual(cover).Clip is Microsoft.UI.Composition.CompositionGeometricClip,
+            Check(ElementCompositionPreview.GetElementVisual((FrameworkElement?)cover.FindName("CoverPresentation") ?? cover).Clip is Microsoft.UI.Composition.CompositionGeometricClip,
                 "recommendation artwork has an explicit rounded composition clip");
         await WindowCapture.CaptureAsync(this, "home-polish-carousel.png");
         if (failures.Count > 0) throw new InvalidOperationException(string.Join("; ", failures));

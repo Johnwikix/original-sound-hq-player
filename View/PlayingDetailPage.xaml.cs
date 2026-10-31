@@ -49,6 +49,7 @@ namespace WinUIMusicPlayer.View
             ViewModel = viewModel;
             QueueViewModel = App.Services.GetRequiredService<MainViewModel>();
             this.InitializeComponent();
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             DataContext = this;
             _queueCentering = new ListViewCentering(CurrentPlayListViewPlayingDetail);
             Loaded += PlayingDetailPage_Loaded;

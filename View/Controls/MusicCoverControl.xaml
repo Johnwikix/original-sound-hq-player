@@ -11,8 +11,7 @@
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Background="{ThemeResource CoverPlaceholderBrush}" SizeChanged="Cover_SizeChanged">
-        <Grid.Clip><RectangleGeometry x:Name="CoverClip" /></Grid.Clip>
+    <Grid x:Name="CoverPresentation" Background="{ThemeResource CoverPlaceholderBrush}" SizeChanged="Cover_SizeChanged">
         <Grid x:Name="PreviousLayer" Opacity="0" Background="{ThemeResource CoverPlaceholderBrush}">
             <FontIcon x:Name="PreviousPlaceholder" Glyph="&#xE93C;" FontSize="44" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed" />
             <Image x:Name="PreviousImage" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />

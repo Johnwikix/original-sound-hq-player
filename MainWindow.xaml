@@ -26,7 +26,7 @@
             IsHitTestVisible="False"
             Opacity="0.8"
             Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(WindowBackground.HasImage), Mode=OneWay}" />
-        <Frame x:Name="ShellFrame" />
+        <Frame CacheSize="0" x:Name="ShellFrame" />
         <!--  托盘随主窗口显式创建；命令可用性由生命周期控制。  -->
         <Grid x:Name="TrayHost" />
     </Grid>

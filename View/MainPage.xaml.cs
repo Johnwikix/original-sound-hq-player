@@ -55,6 +55,7 @@ namespace WinUIMusicPlayer.View
         public MainPage(MainViewModel viewModel)
         {
             InitializeComponent();
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             ViewModel = viewModel;
             DataContext = this;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
@@ -386,9 +387,8 @@ namespace WinUIMusicPlayer.View
                 playListPage.CollapseDetail();
                 return;
             }
-            // 返回键/全局热键在任意主页面都会进入这里。MusicBrowsePage 离开视觉树后，
-            // 其 ContentFrame.Content 仍持有缓存页且 IsInDetailMode 为恢复详情态而刻意保留，
-            // 继续下发会在已脱离视觉树的页面上触发 ConnectedAnimation 并抛异常。
+            // 返回键/全局热键在任意主页面都会进入这里；只让当前曲库页处理，
+            // 避免单例 ViewModel 保留的详情状态影响其他主页面。
             if (MainFrame.Content is MusicBrowsePage)
             {
                 App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();

@@ -12,7 +12,7 @@
             <SelectorBarItem Tag="folder" Text="Folders" />
             <SelectorBarItem Tag="favourite" Text="Favorites" />
         </SelectorBar>
-        <Frame x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False" />
+        <Frame CacheSize="0" x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False" />
         <Grid x:Name="DropOverlay" Visibility="Collapsed" />
     </Grid>
 </Page>

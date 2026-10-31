@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SongListViewModel>();
             DataContext = this;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            this.NavigationCacheMode = NavigationCacheMode.Disabled;
             _centering = new ListViewCentering(MusicListView);
             Unloaded += OnUnloaded;
         }

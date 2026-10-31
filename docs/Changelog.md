@@ -1,3 +1,9 @@
+## 2026-10-31 修复点击后圆角丢失并试用禁用导航缓存
+- MusicCoverControl：圆角裁切移到私有内容层，避免官方连接动画清除根 Visual.Clip 后封面永久变方；保留进入和返回动画。
+- MainWindow.xaml、MainPage.xaml、MusicBrowsePage.xaml：全部四个 Frame 显式设置 CacheSize=0；曲库、歌曲、收藏、专辑、艺术家和文件夹页改为 NavigationCacheMode.Disabled，主壳与播放详情也显式 Disabled。
+- 本轮页面返回会重建，ViewModel 中的页签、排序、筛选状态保留，纯视图滚动位置回到顶部；播放详情仍由 DI 单例持有，不将导航缓存禁用等同于销毁单例。
+- 验证：点击中间两首歌往返后圆角保留，54 项首页/lvt 检查、105 项列表导航检查及完整首页回归通过；独立无 UIA 回收实验确认离页页面可回收，但短场景 Private Bytes 未下降。详细数据与限制见 _tools/ManualLocationUiRegression/NavigationCacheReport.md。
+
 ## 2026-10-31 首页动画、悬浮定位与第二批离页清理
 - `FloatingCommandStyle.xaml` 与列表/详情/播放队列：定位按钮改为列表右下角 44px 自定义圆形悬浮按钮，保留原命令、手动居中和无障碍名称。
 - `MusicCoverControl`、`StoreCarouselImageMotion`：缺图占位与正常封面共用进入动画，明暗主题使用实心占位色；封面统一 8px 合成裁切，动画完成释放上一张图片。

@@ -29,7 +29,7 @@ namespace WinUIMusicPlayer.View
             ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            this.NavigationCacheMode = NavigationCacheMode.Disabled;
             _centering = new ListViewCentering(MusicListView);
             Unloaded += OnUnloaded;
         }

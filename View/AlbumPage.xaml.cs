@@ -26,7 +26,7 @@ namespace WinUIMusicPlayer.View
             Unloaded += PageUnloaded;
             _coverAnimation = new ConnectedAnimationScope(this, "AlbumCover");
             DataContext = this;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            this.NavigationCacheMode = NavigationCacheMode.Disabled;
         }
 
         public void ReceiveNavigationParameter(object parameter)

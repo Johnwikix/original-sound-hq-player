@@ -155,7 +155,7 @@ namespace WinUIMusicPlayer.View
 {
     public sealed class MainPage : Page
     {
-        public Frame ShellFrame { get; } = new() { IsNavigationStackEnabled = false };
+        public Frame ShellFrame { get; } = new() { IsNavigationStackEnabled = false, CacheSize = 0 };
         public MusicBrowsePage? CurrentLibraryPage => ShellFrame.Content as MusicBrowsePage;
         public ContentDialog EqualizerDialog { get; } = new();
         public MainPage() => Content = ShellFrame;

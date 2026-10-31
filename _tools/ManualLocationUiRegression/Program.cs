@@ -56,7 +56,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     }
 }
 
-internal sealed class TestWindow : Window
+internal sealed partial class TestWindow : Window
 {
     private readonly MainPage _shell = new();
     private readonly AppViewModel _app = new();
@@ -70,8 +70,6 @@ internal sealed class TestWindow : Window
     private nint _hwnd;
     private bool _busy;
     private string _status = "starting";
-    private double _savedOffset;
-    private double _savedAnchorTop;
     private SongListPage? _songPage;
     private FavouritePlayListPage? _favoritePage;
     public TestWindow()
@@ -109,6 +107,13 @@ internal sealed class TestWindow : Window
             _shell.NavigateToMusicBrowsePage();
             await Wait(() => _shell.CurrentLibraryPage?.IsLoaded == true);
             await Task.Delay(400);
+            if (Environment.GetEnvironmentVariable("FRAME_CACHE_MEMORY") == "1")
+            {
+                await CheckNavigationCacheMemory();
+                await Task.Delay(100);
+                Close();
+                return;
+            }
             _songPage = InnerFrame.Content as SongListPage;
             Check(_songPage is not null, "initial browser defaults to the actual songs page");
             Check(Selector.SelectedItem?.Tag?.ToString() == "song", "selector visually selects initial string tag");
@@ -216,8 +221,6 @@ internal sealed class TestWindow : Window
 
         Check(ReferenceEquals(list.SelectedItem, _app.ListSongs[810]), "selection uses current projection instance by ID");
         CheckCentered(list, _app.ListSongs[810], "songs virtualized target");
-        _savedOffset = Find<ScrollViewer>(list).VerticalOffset;
-        _savedAnchorTop = ((FrameworkElement)list.ContainerFromItem(_app.ListSongs[810])).TransformToVisual(list).TransformPoint(new Point()).Y;
         await Capture("songs-centered.png");
     }
     private async Task PrepareFavorites()
@@ -259,6 +262,7 @@ internal sealed class TestWindow : Window
     }
     private async Task CheckLifecycle()
     {
+        var previousSong = _songPage;
         for (int i = 0; i < 5; i++)
         {
             _shell.CurrentLibraryPage!.SelectBarItem("song");
@@ -267,28 +271,27 @@ internal sealed class TestWindow : Window
             await Task.Delay(120);
         }
         await Task.Delay(600);
+        _favoritePage = (FavouritePlayListPage)InnerFrame.Content;
         var scrolling = (ListViewCentering)typeof(FavouritePlayListPage).GetField("_centering", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_favoritePage)!;
         var pending = scrolling.LocateAsync(_app.FavoriteSongs[^20]);
         _shell.CurrentLibraryPage!.SelectBarItem("song");
         Check(!await pending, "unloading cancels an in-flight virtualized location");
         await Task.Delay(300);
-        Check(ReferenceEquals(InnerFrame.Content, _songPage), "Frame retains the enabled songs page instance");
-        var returnedList = Songs(_songPage);
-        var returnedRow = returnedList.ContainerFromItem(_app.ListSongs[810]) as FrameworkElement;
-        double returnedTop = returnedRow?.TransformToVisual(returnedList).TransformPoint(new Point()).Y ?? double.NaN;
-        _measurements.Add(new { Label = "cached return anchor", ErrorDip = Math.Abs(_savedAnchorTop - returnedTop), BeforeOffset = _savedOffset, AfterOffset = Find<ScrollViewer>(returnedList).VerticalOffset });
-        Check(returnedRow is not null && Math.Abs(_savedAnchorTop - returnedTop) < 1.5,
-            $"return to cached page preserves visible anchor (offset {_savedOffset}->{Find<ScrollViewer>(returnedList).VerticalOffset}, top {_savedAnchorTop}->{returnedTop})");
+        _songPage = (SongListPage)InnerFrame.Content;
+        Check(!ReferenceEquals(_songPage, previousSong), "disabled navigation caching creates a fresh songs page");
+        Check(_songPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
+            "new song page explicitly disables navigation caching");
+        Check(Find<ScrollViewer>(Songs(_songPage)).VerticalOffset < 1, "fresh page starts at the top without an implicit track jump");
         Check(typeof(SongListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null
             && typeof(FavouritePlayListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null,
-            "singletons need no view location subscriptions during cached page reentry");
+            "singletons need no view location subscriptions during rebuilt page reentry");
         _app.SelectedPlaybackMusic = new Music { Id = 700 };
     }
     private async Task VerifyReentry()
     {
         await Task.Delay(400);
-        Check(ReferenceEquals(Songs(_songPage!).SelectedItem, _app.ListSongs[699]), "manual button still selects after rapid cached page reentry");
-        CheckCentered(Songs(_songPage!), _app.ListSongs[699], "cached reentry manual target");
+        Check(ReferenceEquals(Songs(_songPage!).SelectedItem, _app.ListSongs[699]), "manual button still selects after rapid uncached page reentry");
+        CheckCentered(Songs(_songPage!), _app.ListSongs[699], "uncached reentry manual target");
     }
     private async Task CheckNavigation()
     {
@@ -306,7 +309,9 @@ internal sealed class TestWindow : Window
         await Task.Delay(150);
         vm.SelectBarAlbum("Album");
         await Task.Delay(150);
-        Check(ReferenceEquals(browser, _shell.CurrentLibraryPage), "cross-link reuses the cached outer browser");
+        Check(!ReferenceEquals(browser, _shell.CurrentLibraryPage), "cross-link recreates the uncached outer browser");
+        Check(_shell.CurrentLibraryPage!.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
+            "outer browser explicitly disables navigation caching");
         Check(InnerFrame.Content is AlbumPage && vm.SelectedPageTag == "album", "album cross-link resolves shell without VM page field");
         vm.SelectBarArtist("Artist");
         await Task.Delay(150);
@@ -330,7 +335,8 @@ internal sealed class TestWindow : Window
         var browser = _shell.CurrentLibraryPage!;
         browser.SelectBarItem("song");
         await Task.Delay(250);
-        var list = Songs(_songPage!);
+        _songPage = (SongListPage)InnerFrame.Content;
+        var list = Songs(_songPage);
         var centering = new ListViewCentering(list);
         Check(!await centering.LocateAsync(null), "null request is ignored");
         Check(!await centering.LocateAsync(new Music { Id = -1 }), "absent item request is ignored");

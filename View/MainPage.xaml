@@ -63,7 +63,7 @@
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
                     </NavigationView.MenuItems>
-                    <Frame x:Name="MainFrame" Background="Transparent" />
+                    <Frame CacheSize="0" x:Name="MainFrame" Background="Transparent" />
                 </NavigationView>
             </Grid>
             <Grid
@@ -578,7 +578,7 @@
                 </Grid>
             </Grid>
         </Grid>
-        <Frame x:Name="PlayingFrame" Visibility="Collapsed" />
+        <Frame CacheSize="0" x:Name="PlayingFrame" Visibility="Collapsed" />
         <Grid
             x:Name="AppTitleBar"
             Height="40"

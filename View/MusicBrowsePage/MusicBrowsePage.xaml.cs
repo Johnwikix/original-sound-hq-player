@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             Focus(FocusState.Programmatic);
             Loaded += OnPageLoaded;
-            NavigationCacheMode = NavigationCacheMode.Required;
+            NavigationCacheMode = NavigationCacheMode.Disabled;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -159,7 +159,7 @@ namespace WinUIMusicPlayer.View
 
         private void EmptyLibraryGrid_Unloaded(object sender, RoutedEventArgs e)
         {
-            // 页面会缓存，卸载时清理瞬时拖放反馈。
+            // 卸载时清理瞬时拖放反馈。
             DropOverlay.Visibility = Visibility.Collapsed;
         }
 

@@ -106,7 +106,6 @@ public sealed partial class MusicCoverControl : UserControl
     }
     private void Cover_SizeChanged(object sender, SizeChangedEventArgs args)
     {
-        CoverClip.Rect = new Windows.Foundation.Rect(0, 0, args.NewSize.Width, args.NewSize.Height);
         // 无封面占位音符随卡片等比缩放；固定 44px 在轮播拼贴大图上几乎不可见，像加载失败。
         UpdateRoundedClip();
         CoverPlaceholder.FontSize = PreviousPlaceholder.FontSize = Math.Clamp(Math.Min(args.NewSize.Width, args.NewSize.Height) * .22, 20, 120);
@@ -223,7 +222,9 @@ public sealed partial class MusicCoverControl : UserControl
         if (!IsLoaded) return;
         if (_coverVisual is null)
         {
-            _coverVisual = ElementCompositionPreview.GetElementVisual(this);
+            // 连接动画会接管并清除源/目标元素的根 Visual.Clip。
+            // 裁切挂在私有内容层，动画仍以整个控件为快照边界。
+            _coverVisual = ElementCompositionPreview.GetElementVisual(CoverPresentation);
             _roundedGeometry = _coverVisual.Compositor.CreateRoundedRectangleGeometry();
             _roundedClip = _coverVisual.Compositor.CreateGeometricClip(_roundedGeometry);
             _coverVisual.Clip = _roundedClip;

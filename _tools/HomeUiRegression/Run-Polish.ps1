@@ -58,7 +58,7 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    $actions = if ($Baseline) { @('ReproCarousel','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','Preview','VerifyDetails','Secondary','Stress','Collect','Stress','Collect','Stress','Collect') }
+    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','Stress','Collect','Stress','Collect','Stress','Collect') }
     foreach ($action in $actions) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence
@@ -75,7 +75,8 @@ try {
     }
     Invoke-Button 'Exit' 
     if (-not $process.WaitForExit(10000)) { throw 'Fixture did not exit' }
-    Write-Output "PASS: $($state.Checks.Count) checks, $script:index lvt button invocations, no foreground activation. Results: $output"
+    if ($Baseline) { Write-Output "BASELINE: $($state.Failures) observed failures, $($state.Checks.Count) successful checks. Results: $output" }
+    else { Write-Output "PASS: $($state.Checks.Count) checks, $script:index lvt button invocations, no foreground activation. Results: $output" }
 } finally {
     if (-not $process.HasExited) { Stop-Process -Id $process.Id }
 }

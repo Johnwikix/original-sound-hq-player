@@ -130,7 +130,7 @@
             Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
             Severity="Informational" />
         <Grid Grid.Row="2">
-            <Frame
+            <Frame CacheSize="0"
                 x:Name="ContentFrame"
                 Margin="6,6,0,0"
                 IsNavigationStackEnabled="False"
