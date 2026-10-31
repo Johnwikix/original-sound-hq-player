@@ -25,7 +25,6 @@ public sealed partial class HomeSongPreview : UserControl
     private Vector3KeyFrameAnimation? _scale;
     private Vector3KeyFrameAnimation? _translation;
     private ScalarKeyFrameAnimation? _reveal;
-    private ScalarKeyFrameAnimation? _fade;
     private InsetClip? _clip;
     private Visual? _visual;
     private CompositionScopedBatch? _closingBatch;
@@ -145,20 +144,17 @@ public sealed partial class HomeSongPreview : UserControl
         _closingBatch.Completed += ClosingCompleted;
         _scale!.Duration = TimeSpan.FromMilliseconds(200);
         _translation!.Duration = _scale.Duration;
-        _fade!.Duration = _scale.Duration;
         _reveal!.Duration = _scale.Duration;
         _scale.InsertExpressionKeyFrame(0, "this.StartingValue");
         _scale.InsertKeyFrame(1, new Vector3(_originScale, _originScale, 1));
         _translation.InsertExpressionKeyFrame(0, "this.StartingValue");
         _translation.InsertKeyFrame(1, _originTranslation);
-        _fade.InsertKeyFrame(0, 1);
-        _fade.InsertKeyFrame(.65f, 1);
-        _fade.InsertKeyFrame(1, 0);
         _reveal.InsertExpressionKeyFrame(0, "this.StartingValue");
         _reveal.InsertKeyFrame(1, (float)Math.Max(0, ActualHeight - CoverHost.ActualHeight));
+        // 封面保持不透明地缩回；整层淡出会让实心背景与下方缩略图重复混合，产生末段明暗脉冲。
+        // 正文仍由原有 BottomInset 裁切收起，完成后再隐藏整个面板。
         _visual.StartAnimation("Scale", _scale);
         _visual.StartAnimation("Translation", _translation);
-        _visual.StartAnimation("Opacity", _fade);
         _clip.StartAnimation("BottomInset", _reveal);
         _closingBatch.End();
     }
@@ -216,7 +212,6 @@ public sealed partial class HomeSongPreview : UserControl
         _scale = compositor.CreateVector3KeyFrameAnimation();
         _translation = compositor.CreateVector3KeyFrameAnimation();
         _reveal = compositor.CreateScalarKeyFrameAnimation();
-        _fade = compositor.CreateScalarKeyFrameAnimation();
         _clip = compositor.CreateInsetClip();
         _visual.Clip = _clip;
         // .NET 10+：复用动画对象，悬停移动不创建逐帧任务或闭包。
@@ -235,12 +230,10 @@ public sealed partial class HomeSongPreview : UserControl
         _scale?.Dispose();
         _translation?.Dispose();
         _reveal?.Dispose();
-        _fade?.Dispose();
         _clip?.Dispose();
         _scale = null;
         _translation = null;
         _reveal = null;
-        _fade = null;
         _clip = null;
         _visual = null;
     }

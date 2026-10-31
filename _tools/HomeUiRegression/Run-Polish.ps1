@@ -58,7 +58,7 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','Universal','DetailsTiming','CarouselEdges','CoverCancel','HoverExit','HoverWheel','CoverCycles','Stress','Collect','Stress','Collect','Stress','Collect') }
+    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','Universal','DetailsTiming','CarouselEdges','CoverCancel','HoverExit','HoverFrames','HoverWheel','CoverCycles','Stress','Collect','Stress','Collect','Stress','Collect') }
     if ($OnlyActions) { $actions = $OnlyActions }
     foreach ($action in $actions) {
         Invoke-Button $action

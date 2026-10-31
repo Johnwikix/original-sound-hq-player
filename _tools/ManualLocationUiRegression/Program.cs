@@ -201,8 +201,9 @@ internal sealed partial class TestWindow : Window
         Check(Math.Abs(list.ActualWidth - position.X - button.ActualWidth - 16) < 1.5
             && Math.Abs(list.ActualHeight - position.Y - button.ActualHeight - 16) < 1.5,
             label + " overlays the list lower-right corner with a 16-DIP inset");
-        Check(ReferenceEquals(VisualTreeHelper.GetParent(button), VisualTreeHelper.GetParent(list)),
-            label + " shares the list grid instead of consuming a toolbar row");
+        Check(VisualTreeHelper.GetParent(button) is Border surface
+            && ReferenceEquals(VisualTreeHelper.GetParent(surface), VisualTreeHelper.GetParent(list)),
+            label + " uses a hit-test surface in the same list grid without consuming a toolbar row");
         Check(button.UseSystemFocusVisuals, label + " keeps native keyboard focus visuals");
         Check(button.Background is SolidColorBrush brush && brush.Color.A == 255, label + " has an opaque themed floating surface");
     }
@@ -210,6 +211,14 @@ internal sealed partial class TestWindow : Window
     {
         var page = _songPage!;
         CheckFloatingButton(page, "songs");
+        var disabled = Locate(page);
+        Check(!disabled.IsEnabled, "the absent playing track leaves the actual floating button disabled");
+        var point = disabled.TransformToVisual(_root).TransformPoint(new Point(22, 22));
+        var hit = VisualTreeHelper.FindElementsInHostCoordinates(point, _root, false).FirstOrDefault();
+        bool inList = false;
+        for (DependencyObject? current = hit; current is not null; current = VisualTreeHelper.GetParent(current))
+            if (ReferenceEquals(current, Songs(page))) inList = true;
+        Check(hit is not null && !inList, "disabled locate surface blocks native hit testing from reaching the ListView (hit=" + hit?.GetType().Name + ")");
         var list = Songs(page);
         var scroller = Find<ScrollViewer>(list);
         double before = scroller.VerticalOffset;

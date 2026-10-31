@@ -2,6 +2,43 @@
 
 日期：2026-10-31。最终实现保留 Frame 与既有跨页动画；本功能不导航 Frame，不修改当前自编译 CsWinRT 或播放器协议。
 
+## 2026-10-31 补充：退出过程明暗脉冲与定位禁用命中
+
+用户确认上轮处理后悬浮退出仍会闪烁。本轮复现表明，上轮的“关闭后 Visibility/Opacity”断言没有覆盖动画结束前的封面颜色变化；保留该检查作为清理验证，新增真实合成帧回归，不能再以关闭后透明作为无闪烁的证据。
+
+### 悬浮封面：单变量对照与修复
+
+在不激活、离屏显示的独立 WinUI 窗口，用 PrintWindow 捕获真实合成内容，保存退出全过程及关闭后四帧；未使用 RTB 代表合成动画。夹具仅通过 [AnimationController](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.composition.animationcontroller?view=windows-app-sdk-1.8) 把当前退出动画实例的 PlaybackRate 设为 0.2，以放慢取样；产品的 200ms 时长和曲线没有改动。
+
+- 保持原实现：末段封面颜色先偏亮再偏暗，最终还原；原生图片布局确认缩略图 160×160，预览封面与 Image 都是 358×358，没有出现大图未填满或自然像素尺寸未缩放。
+- 只移除阴影的诊断对照：对应末段像素与原实现相同，未消除明暗脉冲。
+- 只取消整层 Opacity 淡出的诊断对照：保留缩放、位移、裁切后，封面中部末段相邻帧平均 RGB 变化从数个色阶降至约 0.21/255。诊断用临时开关已从夹具移除，原始帧仍在 artifacts。
+
+由此锁定的是**整层透明度交接**，不是动画结束后的最终状态。该层包含实心背景并覆盖底部缩略图，退出时同时混合这些重叠内容会产生可见明暗变化。最终移除 _fade 动画及其资源，让封面保持不透明地缩回；正文沿原来的 BottomInset 裁切收起，完成后 Hide 保持透明终态。展开外观、阴影、布局、位移和缩放终点保持原样。
+
+新增断言统计封面中部、最后四张关闭前帧及第一张关闭后帧的相邻变化，阈值为平均 RGB 1.5/255。本次失败基线峰值 **5.285/255**，产品修复后最终专项峰值 **0.309/255**；关闭交接帧为 **0.179/255**，之后三帧变化均为 0。这些数值用于固定场景的视觉回归，不是性能收益或所有图片、设备的通用保证。
+
+证据：
+
+- `artifacts/song-details/hover-pixels-before.log` 明确失败于像素脉冲断言；`artifacts/home-polish-batch2/hover-pixels-before/hover-frames.json` 与逐帧 PNG。
+- 阴影对照：`artifacts/home-polish-batch2/hover-no-shadow-before/`；只去掉淡出的对照：`artifacts/home-polish-batch2/hover-opaque-before/`。
+- 最终：`artifacts/home-polish-batch2/hover-flash-fixed/hover-frames.json`、`hover-frame-*.png`、`hover-layout.json` 与 `result.json`；日志 `artifacts/song-details/hover-flash-fixed.log`。
+
+### 禁用定位按钮：命中链与修复
+
+失败基线在实际歌曲页把播放歌曲设为空，保留真正的禁用按钮，在其中心点调用原生命中测试（includeAllElements=false）。第一命中是下层 `ListViewItemPresenter`，证据为 `artifacts/song-details/locate-hit-before.log` 与 `locate-hit-before.json`。
+
+六个入口现在都有独立的启用 Border 命中面，尺寸 44×44、外边距 16、圆角 22、背景 Transparent，与列表同级且在其上方；按钮放在里面并把本地 Margin 设为 0，保留原按钮的 IsEnabled 绑定、模板、命令/Click、焦点、资源与无障碍名称。四个原先位于 Grid.Row=1 的入口把 Row 移到命中面上。禁用子按钮后，命中落在 Border，事件路由不会进入它下面的 ListView；没有用“永远启用按钮、在点击时忽略”替代禁用语义，也没有扩大到周围 16px 留白。
+
+实际歌曲/最爱页的原生定位、位置和交互回归共 **159 项、13 次 lvt Invoke、前台违规 0**；启用后仍能点击实际按钮并居中。日志 `artifacts/song-details/locate-hit-fixed.log`，结果快照 `locate-hit-fixed.json`。分组/歌单详情和两个队列入口通过同一命中面静态核对及主项目构建，本轮没有逐一在生产窗口做鼠标操作。
+
+### 构建、资源与验证范围
+
+- 主项目 x64 Debug：0 错误、517 个警告，`artifacts/song-details/hover-locate-main.log`。
+- 首页/详情原生专项：**165 项、21 次 lvt Invoke、三轮诊断 GC、前台违规 0**；包含原有滚动退出、详情双向动画和对象回收检查。没有把该专项混称为此前存在旧失败的 184 项全量首页回归。
+- 所有修改统一 CRLF；XML 与七语言资源静态检查，没有新增 GetString 键、改播放器、操作用户缓存或数据库。
+- 实际合成帧检查采用夹具固定封面、Light 主题、当前 DPI 和本机 GPU，并有意放慢当前动画实例；未对所有主题、DPI、真实图片或生产窗口进行逐帧录屏。按钮穿透用原生命中链验证，lvt 使用 UIA Invoke 驱动测试操作，没有向前台发送物理鼠标/滚轮输入。
+
 ## 2026-10-31 追加：封面生命周期与双向交接时序
 
 本轮使用 diagnose、winui-design、lvt 技能，读取用户指定的 `C:\Users\90684\Documents\OriginalSoundPlayer\Logs\WinUIMusicPlayer-20261031.log`，在现有独立原生夹具中复现后修改生产实现。没有启动或操作用户正在使用的生产窗口，没有更改 Carousel 的尺寸、位置、圆角或材质。

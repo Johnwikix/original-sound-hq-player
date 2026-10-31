@@ -173,14 +173,15 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Button
-            x:Name="LocateCurrentTrackButton"
-            x:Uid="LocateCurrentTrackButton"
-            Style="{StaticResource FloatingLocateButtonStyle}"
-            Grid.Row="1"
-            Click="LocateCurrentTrackButton_Click"
-            IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.Songs.Count), Mode=OneWay}">
-            <FontIcon FontSize="16" Glyph="&#xE81D;" />
-        </Button>
+        <Border Style="{StaticResource FloatingLocateSurfaceStyle}" Grid.Row="1">
+            <Button Margin="0"
+                x:Name="LocateCurrentTrackButton"
+                x:Uid="LocateCurrentTrackButton"
+                Style="{StaticResource FloatingLocateButtonStyle}"
+                Click="LocateCurrentTrackButton_Click"
+                IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.Songs.Count), Mode=OneWay}">
+                <FontIcon FontSize="16" Glyph="&#xE81D;" />
+            </Button>
+        </Border>
     </Grid>
 </UserControl>

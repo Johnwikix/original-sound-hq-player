@@ -116,6 +116,7 @@ internal sealed partial class HomePolishWindow : Window
         Add(buttons, "CarouselEdges", CheckCarouselEdges);
         Add(buttons, "CoverCancel", CheckCoverCancellation);
         Add(buttons, "HoverExit", CheckHoverExit);
+        Add(buttons, "HoverFrames", CheckHoverFrames);
         Add(buttons, "HoverWheel", CheckHoverWheel);
         Add(buttons, "CoverCycles", CheckCoverCycles);
         Add(buttons, "Stress", Stress);

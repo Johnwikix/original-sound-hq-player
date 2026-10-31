@@ -29,7 +29,9 @@ internal static class WindowCapture
     [DllImport("gdi32.dll")] private static extern bool DeleteDC(nint dc);
     [DllImport("gdi32.dll")] private static extern int GetDIBits(nint dc, nint bitmap, uint start, uint lines, byte[] bytes, ref BitmapHeader header, uint usage);
 
-    internal static async Task<byte[]> CaptureAsync(Window window, string name)
+    internal sealed record Frame(int Width, int Height, byte[] Pixels);
+
+    internal static Frame ReadFrame(Window window)
     {
         nint handle = WinRT.Interop.WindowNative.GetWindowHandle(window);
         if (!GetClientRect(handle, out var rectangle)) throw new InvalidOperationException("GetClientRect failed");
@@ -58,10 +60,21 @@ internal static class WindowCapture
             if (memory != 0) DeleteDC(memory);
             ReleaseDC(handle, dc);
         }
-        using var stream = File.Create(Path.Combine(AppContext.BaseDirectory, name));
+        return new Frame(width, height, pixels);
+    }
+
+    internal static async Task SaveAsync(Frame frame, string path)
+    {
+        using var stream = File.Create(path);
         var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream.AsRandomAccessStream());
-        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)width, (uint)height, 96, 96, pixels);
+        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)frame.Width, (uint)frame.Height, 96, 96, frame.Pixels);
         await encoder.FlushAsync();
-        return pixels;
+    }
+
+    internal static async Task<byte[]> CaptureAsync(Window window, string name)
+    {
+        var frame = ReadFrame(window);
+        await SaveAsync(frame, Path.Combine(AppContext.BaseDirectory, name));
+        return frame.Pixels;
     }
 }

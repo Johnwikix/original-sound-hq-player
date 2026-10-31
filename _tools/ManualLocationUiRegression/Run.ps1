@@ -1,4 +1,4 @@
-param([switch]$SkipBuild)
+param([switch]$SkipBuild, [switch]$Baseline, [string[]]$OnlyActions)
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
@@ -19,7 +19,7 @@ function Wait-State([string]$Action, [int]$Sequence) {
         if (Test-Path -LiteralPath $statePath) {
             try { $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json } catch { $state = $null }
             if ($state -and -not $state.Busy -and $state.Action -eq $Action -and $state.Sequence -gt $Sequence) {
-                if ($state.Status -ne 'PASS') { throw "Fixture failed: $($state.Status)" }
+                if ($state.Status -ne 'PASS' -and -not $Baseline) { throw "Fixture failed: $($state.Status)" }
                 if ($state.ForegroundViolations -ne 0) { throw 'Fixture became foreground' }
                 return $state
             }
@@ -55,16 +55,17 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    foreach ($action in @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges')) {
+    $actions = if ($OnlyActions) { $OnlyActions } else { @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges') }
+    foreach ($action in $actions) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence
-        if ($action -eq 'PrepareSongs' -or $action -eq 'PrepareFavorites' -or $action -eq 'Lifecycle') { Invoke-Button 'LocateCurrentTrackButton' }
-        Write-Output "$action passed ($($state.Checks.Count) checks)"
+        if ($state.Status -eq 'PASS' -and ($action -eq 'PrepareSongs' -or $action -eq 'PrepareFavorites' -or $action -eq 'Lifecycle')) { Invoke-Button 'LocateCurrentTrackButton' }
+        Write-Output "$action : $($state.Status) ($($state.Checks.Count) checks)"
     }
     [IO.File]::WriteAllText((Join-Path $output 'result.json'), ($state | ConvertTo-Json -Depth 8).ReplaceLineEndings("`r`n"))
     Invoke-Button 'Exit'
     if (-not $process.WaitForExit(10000)) { throw 'Fixture did not exit' }
-    Write-Output "PASS: $($state.Checks.Count) checks, $script:index lvt button invocations, no foreground activation. Results: $output"
+    Write-Output "Completed: $($state.Checks.Count) checks, status=$($state.Status), $script:index lvt button invocations, no foreground activation. Results: $output"
 } finally {
     if (-not $process.HasExited) { Stop-Process -Id $process.Id }
 }

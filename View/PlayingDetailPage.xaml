@@ -534,15 +534,16 @@
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
-                                    <Button
-                                        x:Name="LocateCurrentTrackButton"
-                                        x:Uid="LocateCurrentTrackButton"
-                                        Style="{StaticResource FloatingLocateButtonStyle}"
-                                        Grid.Row="1"
-                                        Click="LocateCurrentTrackButton_Click"
-                                        IsEnabled="{x:Bind QueueViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.CurrentPlayingList.Count, QueueViewModel.State.Queue.Version), Mode=OneWay}">
-                                        <FontIcon FontSize="16" Glyph="&#xE81D;" />
-                                    </Button>
+                                    <Border Style="{StaticResource FloatingLocateSurfaceStyle}" Grid.Row="1">
+                                        <Button Margin="0"
+                                            x:Name="LocateCurrentTrackButton"
+                                            x:Uid="LocateCurrentTrackButton"
+                                            Style="{StaticResource FloatingLocateButtonStyle}"
+                                            Click="LocateCurrentTrackButton_Click"
+                                            IsEnabled="{x:Bind QueueViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.CurrentPlayingList.Count, QueueViewModel.State.Queue.Version), Mode=OneWay}">
+                                            <FontIcon FontSize="16" Glyph="&#xE81D;" />
+                                        </Button>
+                                    </Border>
                                     <Button
                                         x:Name="CurrentPlayListTeachingTipCloseButton"
                                         Width="24"

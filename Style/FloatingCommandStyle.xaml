@@ -22,6 +22,17 @@
             <SolidColorBrush x:Key="FloatingCommandPressed" Color="{ThemeResource SystemColorHighlightColor}" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
+    <!-- 命中面独立于禁用的按钮，阻止指针穿到下层列表；保留原来的 44px 与 16px 边距。 -->
+    <Style x:Key="FloatingLocateSurfaceStyle" TargetType="Border">
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Margin" Value="16" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Canvas.ZIndex" Value="10" />
+    </Style>
     <Style x:Key="FloatingLocateButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="Width" Value="44" />
         <Setter Property="Height" Value="44" />
