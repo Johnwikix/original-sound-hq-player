@@ -29,7 +29,9 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
-        public int Id { get; set; }
+        private int _id;
+        internal static long IdentityReads;
+        public int Id { get { Interlocked.Increment(ref IdentityReads); return _id; } set => _id = value; }
         public string Title { get; set; } = "";
         public string Album { get; set; } = "Album";
         public string Author { get; set; } = "Artist";
@@ -125,6 +127,7 @@ namespace WinUIMusicPlayer.ViewModel
         public Music? CurrentFolderObj { get; set; }
         public bool IsBackBtnEnable { get; set; }
         public bool CanStartPlayback => true;
+        public bool CanPublishState => true;
         public string PageType { get; set; } = "song";
         public Microsoft.UI.Xaml.Data.CollectionViewSource AlbumPageSource { get; } = new() { IsSourceGrouped = true };
         public Microsoft.UI.Xaml.Data.CollectionViewSource ArtistPageSource { get; } = new() { IsSourceGrouped = true };
@@ -188,21 +191,6 @@ namespace DevWinUI { public static class DialogExtensions { public static Task S
 namespace WinUIMusicPlayer.View.SubView { public sealed class MusicDetailsWindow(Music music) : Window { } }
 namespace WinUIMusicPlayer.View
 {
-    public sealed class MainPage : Page
-    {
-        public Frame ShellFrame { get; set; } = new() { IsNavigationStackEnabled = false, CacheSize = 0 };
-        public MusicBrowsePage? CurrentLibraryPage => ShellFrame.Content as MusicBrowsePage;
-        public ContentDialog EqualizerDialog { get; } = new();
-        public MainPage() => Content = ShellFrame;
-        public void NavigateToMusicBrowsePage()
-        {
-            if (CurrentLibraryPage is null) ShellFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
-        }
-        public MusicDetailsRequest? LastDetailsRequest;
-        public void ShowMusicDetails(MusicDetailsRequest request, FrameworkElement? sourceCover = null, FrameworkElement? sourceTitle = null) => LastDetailsRequest = request;
-        public void CloseMusicDetails() { }
-        public void NavigateToPlayingDetailPage() { }
-    }
     public sealed partial class EmptyPage : Page { public EmptyPage() => InitializeComponent(); }
 }
 namespace WinUIMusicPlayer.View.Controls
@@ -217,6 +205,7 @@ namespace WinUIMusicPlayer.View.Controls
             row.Height = music.Id % 3 == 0 ? 76 : 44;
         }));
         public Music Music { get => (Music)GetValue(MusicProperty); set => SetValue(MusicProperty, value); }
+        public void StopAutoScroll() { }
         public FrameworkElement CoverElement => this;
         public FrameworkElement TitleElement => this;
         public event EventHandler<Music>? SongInvoked;
@@ -224,5 +213,3 @@ namespace WinUIMusicPlayer.View.Controls
         public event EventHandler<Music>? AlbumInvoked;
     }
 }
-
-namespace WinUIMusicPlayer.View { public sealed class PlayListPage : Page { } }

@@ -42,7 +42,7 @@ function Find-Element($Node, [string]$Id) {
 function Invoke-Button([string]$Id) {
     $script:index++
     $prefix = '{0:D2}-{1}' -f $script:index, $Id
-    $tree = & 'G:/Tool/lvt/lvt.exe' dump --hwnd $script:hwnd --uia --depth 9 --uia-timeout 5000
+    $tree = & 'G:/Tool/lvt/lvt.exe' dump --hwnd $script:hwnd --uia --depth 14 --uia-timeout 5000
     if ($LASTEXITCODE -ne 0) { throw 'lvt dump failed' }
     [IO.File]::WriteAllText((Join-Path $output "$prefix-tree.json"), ($tree | Out-String).ReplaceLineEndings("`r`n"))
     $element = Find-Element (($tree | Out-String) | ConvertFrom-Json) $Id
@@ -55,7 +55,7 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    $actions = if ($OnlyActions) { $OnlyActions } else { @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges') }
+    $actions = if ($OnlyActions) { $OnlyActions } else { @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges','ImportSelection','CrossDetails') }
     foreach ($action in $actions) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence

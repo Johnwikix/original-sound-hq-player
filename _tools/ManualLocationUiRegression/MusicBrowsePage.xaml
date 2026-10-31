@@ -3,6 +3,8 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Only the shell chrome is substituted; the production code behind, selector binding,
          Frame, child pages, child XAML and ViewModels are linked into this executable. -->
+    <Grid>
+    <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
     <Grid RowDefinitions="Auto,*">
         <SelectorBar x:Name="selectPage" SelectionChanged="SelectPage_SelectionChanged"
                      SelectedItem="{x:Bind SelectorItem(ViewModel.SelectedPageTag), Mode=OneWay}">
@@ -14,5 +16,8 @@
         </SelectorBar>
         <Frame CacheSize="0" x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False" />
         <Grid x:Name="DropOverlay" Visibility="Collapsed" />
+    </Grid>
+    </ContentControl>
+    <ContentControl x:Name="MusicDetailsOverlay" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

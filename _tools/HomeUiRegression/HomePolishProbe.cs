@@ -75,6 +75,7 @@ internal sealed partial class HomePolishWindow : Window
     private sealed class PageSentinel { ~PageSentinel() => Interlocked.Increment(ref _finalizedPages); }
     private readonly System.Threading.Timer _foreground;
     private HomePage? _page;
+    private NavigationView? _resizeNavigationHost;
     private bool _busy;
     private int _sequence;
     private int _violations;
@@ -111,9 +112,11 @@ internal sealed partial class HomePolishWindow : Window
         Add(buttons, "OpenFromPreview", OpenFromPreview);
         Add(buttons, "VerifyDetails", CheckDetails);
         Add(buttons, "Secondary", CheckSecondaryLifetimes);
+        Add(buttons, "WindowIO", CheckWindowReaderThreading);
         Add(buttons, "Universal", CheckUniversalDetails);
         Add(buttons, "DetailsTiming", CheckDetailsTiming);
         Add(buttons, "CarouselEdges", CheckCarouselEdges);
+        Add(buttons, "ResizeStress", CheckResizeStress);
         Add(buttons, "CoverCancel", CheckCoverCancellation);
         Add(buttons, "HoverExit", CheckHoverExit);
         Add(buttons, "HoverFrames", CheckHoverFrames);
@@ -123,7 +126,17 @@ internal sealed partial class HomePolishWindow : Window
         Add(buttons, "Collect", Collect);
         Add(buttons, "Exit", async () => { await Task.Delay(500); Close(); });
         _root.Children.Add(buttons);
-        Grid.SetRow(_host, 1); _root.Children.Add(_host);
+        if (Environment.GetEnvironmentVariable("HOME_POLISH_NAV_HOST") == "1")
+        {
+            var frame = new Frame { CacheSize = 0, Content = _host };
+            _resizeNavigationHost = new NavigationView { Content = frame, IsPaneOpen = false,
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Auto, IsBackButtonVisible = NavigationViewBackButtonVisible.Visible };
+            foreach (string label in new[] { "Home", "Sources", "Library", "Playlists", "Statistics" })
+                _resizeNavigationHost.MenuItems.Add(new NavigationViewItem { Content = label });
+            Grid.SetRow(_resizeNavigationHost, 1);
+            _root.Children.Add(_resizeNavigationHost);
+        }
+        else { Grid.SetRow(_host, 1); _root.Children.Add(_host); }
         Content = _root;
         _root.Loaded += async (_, _) => await Run("ready", async () =>
         {
@@ -357,12 +370,15 @@ internal static class PolishNative
     [DllImport("user32.dll")] private static extern nint SetWindowLongPtr(nint hwnd, int index, nint value);
     [DllImport("user32.dll")] internal static extern nint GetForegroundWindow();
     [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(nint hwnd, out uint process);
+    [DllImport("user32.dll")] private static extern uint GetDpiForWindow(nint hwnd);
     internal static void ShowWithoutActivation(Window window)
     {
         nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         SetWindowLongPtr(hwnd, -20, (nint)((GetWindowLongPtr(hwnd, -20).ToInt64() | 0x08000000L | 0x80L) & ~0x40000L));
         window.AppWindow.IsShownInSwitchers = false;
-        window.AppWindow.MoveAndResize(new RectInt32(-30000, -30000, 1120, 900));
+        // Keep the established 1120x900 DIP fixture viewport after enabling the production PMV2 manifest.
+        double scale = GetDpiForWindow(hwnd) / 96d;
+        window.AppWindow.MoveAndResize(new RectInt32(-30000, -30000, (int)Math.Round(1120 * scale), (int)Math.Round(900 * scale)));
         window.AppWindow.Show(false);
     }
 }

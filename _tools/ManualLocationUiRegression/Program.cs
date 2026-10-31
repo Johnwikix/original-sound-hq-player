@@ -89,7 +89,7 @@ internal sealed partial class TestWindow : Window
         services.AddSingleton(provider => new LibraryNavigationService(() => _shell, NullLogger<LibraryNavigationService>.Instance));
         App.Services = services.BuildServiceProvider();
         App.MainWindow = this;
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        var actions = new VariableSizedWrapGrid { Orientation = Orientation.Horizontal, ItemWidth = 120, ItemHeight = 32, MaximumRowsOrColumns = 8 };
         AddAction(actions, "PrepareSongs", PrepareSongs);
         AddAction(actions, "VerifySongs", VerifySongs);
         AddAction(actions, "PrepareFavorites", PrepareFavorites);
@@ -99,6 +99,8 @@ internal sealed partial class TestWindow : Window
         AddAction(actions, "Navigation", CheckNavigation);
         AddAction(actions, "Positions", CheckBrowsePositions);
         AddAction(actions, "Edges", CheckEdges);
+        AddAction(actions, "ImportSelection", CheckSelectionBatch);
+        AddAction(actions, "CrossDetails", CheckCrossDetailsNavigation);
         AddAction(actions, "Exit", async () => { await Task.Delay(500); Close(); });
         _root.Children.Add(actions);
         Grid.SetRow(_shell, 1);
@@ -165,7 +167,7 @@ internal sealed partial class TestWindow : Window
         if (!condition) throw new InvalidOperationException(name);
         _checks.Add(name);
     }
-    private void AddAction(StackPanel panel, string name, Func<Task> action)
+    private void AddAction(Panel panel, string name, Func<Task> action)
     {
         var button = new Button { Content = name };
         AutomationProperties.SetAutomationId(button, name);

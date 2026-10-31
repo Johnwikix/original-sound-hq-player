@@ -1,4 +1,4 @@
-param([switch]$SkipBuild, [switch]$Baseline, [string]$RunName = 'after', [switch]$CaptureDump, [string[]]$OnlyActions)
+param([switch]$SkipBuild, [switch]$Baseline, [string]$RunName = 'after', [switch]$CaptureDump, [string[]]$OnlyActions, [switch]$NavigationHost, [int]$ActionTimeout = 50)
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
@@ -8,8 +8,9 @@ if (-not $SkipBuild) {
 }
 $executable = Join-Path $PSScriptRoot 'bin/x64/Debug/net11.0-windows10.0.26100.0/win-x64/HomeUiRegression.exe'
 $output = Join-Path (Resolve-Path (Join-Path $PSScriptRoot '../..')) "artifacts/home-polish-batch2/$RunName"
-foreach ($flag in @('HOME_POLISH_AUTOMEMORY','HOME_POLISH_UI_GC','HOME_POLISH_NO_WEAK','HOME_POLISH_DETACH','HOME_POLISH_RETAIN_TICKS')) { Remove-Item "Env:$flag" -ErrorAction SilentlyContinue }
+foreach ($flag in @('HOME_POLISH_AUTOMEMORY','HOME_POLISH_UI_GC','HOME_POLISH_NO_WEAK','HOME_POLISH_DETACH','HOME_POLISH_RETAIN_TICKS','HOME_POLISH_NAV_HOST')) { Remove-Item "Env:$flag" -ErrorAction SilentlyContinue }
 $env:HOME_POLISH_PROBE = '1'
+if ($NavigationHost) { $env:HOME_POLISH_NAV_HOST = '1' }
 $env:HOME_POLISH_OUTPUT = $output
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $statePath = Join-Path $output 'state.json'
@@ -18,7 +19,7 @@ $process = Start-Process -FilePath $executable -WindowStyle Hidden -PassThru
 $script:index = 0
 function Wait-State([string]$Action, [int]$Sequence) {
     $watch = [Diagnostics.Stopwatch]::StartNew()
-    while ($watch.Elapsed.TotalSeconds -lt 50) {
+    while ($watch.Elapsed.TotalSeconds -lt $ActionTimeout) {
         if (Test-Path -LiteralPath $statePath) {
             try { $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json } catch { $state = $null }
             if ($state -and -not $state.Busy -and $state.Action -eq $Action -and $state.Sequence -gt $Sequence) {
@@ -58,7 +59,7 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','Universal','DetailsTiming','CarouselEdges','CoverCancel','HoverExit','HoverFrames','HoverWheel','CoverCycles','Stress','Collect','Stress','Collect','Stress','Collect') }
+    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','WindowIO','Universal','DetailsTiming','CarouselEdges','CoverCancel','HoverExit','HoverFrames','HoverWheel','CoverCycles','Stress','Collect','Stress','Collect','Stress','Collect') }
     if ($OnlyActions) { $actions = $OnlyActions }
     foreach ($action in $actions) {
         Invoke-Button $action

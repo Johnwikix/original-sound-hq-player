@@ -23,7 +23,9 @@ internal sealed partial class HomePolishWindow
                 "empty online lookup keeps the current cover and byte pair without republishing");
             var gate = new TaskCompletionSource<byte[]?>(TaskCreationOptions.RunContinuationsAsynchronously);
             CancellationToken readToken = default;
-            var pending = artwork.LoadAsync(token => { readToken = token; token.Register(() => throw new InvalidOperationException("fixture cancellation callback")); return gate.Task; });
+            var readerEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pending = artwork.LoadAsync(token => { readToken = token; token.Register(() => throw new InvalidOperationException("fixture cancellation callback")); readerEntered.TrySetResult(); return gate.Task; });
+            await readerEntered.Task;
             artwork.Dispose();
             artwork.Dispose();
             Assert(artwork.Image is null, "one failing cancellation callback cannot interrupt owner cleanup");

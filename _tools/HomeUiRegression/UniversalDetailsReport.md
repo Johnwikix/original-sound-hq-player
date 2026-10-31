@@ -2,7 +2,49 @@
 
 日期：2026-10-31。最终实现保留 Frame 与既有跨页动画；本功能不导航 Frame，不修改当前自编译 CsWinRT 或播放器协议。
 
-## 2026-10-31 最新：16:9 布局与独立当日审查
+## 2026-10-31 最新：高 DPI 边框缩放卡死与三项 P2 修复
+
+### 缩放卡死：用户日志与原生失败对照
+
+用户确认触发方式是拖动窗口边框改变大小。指定日志 `C:\Users\90684\Documents\OriginalSoundPlayer\Logs\WinUIMusicPlayer-20261031_001.log` 在 18:57:45.097、18:58:13.101、19:17:43.623 记录 LayoutCycleException。稍后的 PipsPager 0x88000FA8 出现在布局异常之后，不据此改分页控件或 CsWinRT。既有 App.UnhandledException 会记录并标记 Handled，解释了进程仍活着而画面停留；本轮没有靠吞掉布局异常或改变全局异常策略处理问题。
+
+此前夹具未指定生产 app.manifest，实际只按 100% DPI 运行，遗漏了本机主屏 150% DPI。两套原生夹具现补上同一 PMV2 清单及与主项目一致的 runtime-async 功能设置。补齐后，修改前夹具在连续缩放第 141 步、物理窗口 1180×805 处复现同一个原生异常。
+
+失败环形记录显示：父 ScrollViewer.ViewportWidth 始终为 722.666687 DIP，RasterizationScale 为 1.5，而 LayoutGrid.ActualWidth 在 674.666687 / 675.333313 DIP 之间反复切换，正好相差一个物理像素；每次 SizeChanged 又用该结果反写行高和 Star 列权重，构成持续布局反馈。证据保存在 `artifacts/home-polish-batch2/resize-dpi-before/resize-failed-layout.json` 与 `resize-last-step.json`；异常退出的运行不计作通过。
+
+最终 FeaturedCarousel 在 MeasureOverride 中使用父级分配的 availableSize.Width，扣除内部 32 DIP 溢出留白后计算 16:9；数据变化只 InvalidateMeasure，SizeChanged 仅定位箭头。分栏时主图列使用该分配宽度，右侧占用剩余空间；无拼贴仍跨 Star 列填满。比例、间距、居中裁切和箭头外伸坐标沿用既有要求。
+
+只切断 ActualWidth 反馈但保留 Star 主列的中间版本，虽然通过缩放循环测试，仍在缺图切换中出现封面宽 408.666656 / 409.333343 的一像素变化，触发 MusicCoverControl 原有尺寸变化停止动画。固定主图的测量分配列后，同一原生动画控制器断言立即通过，封面事件诊断没有再记录该尺寸摆动。把封面 SizeChanged 移到外层的实验没有解决此问题，已撤回，MusicCoverControl 本轮没有最终修改。对应诊断记录为 `p2-dpi-size-probe`、`p2-dpi-cover-fixed`、`p2-dpi-fixed-columns` 目录。
+
+既有居中测试曾在图片刚加载、700ms 进入动画仍在进行时检查 TransformToVisual，记录到 X≈457 DIP；该位置不能用于静态居中判定。现保持动画验证不变，另在进入动画结束后检查真实 Image 的 UniformToFill、居中及尺寸，输出 `carousel-centering.json`。未放宽原有 1 DIP 居中与 1.25 DIP 比例误差标准。
+
+### 三项 P2：实现、失败基线与所有权
+
+1. **页内详情与底栏跨链导航**：MainPage 的详情及导航方法集中到同一 partial 文件，供独立夹具链接真实实现；在主 Frame 已经是 MusicBrowsePage 时，也先 Dismiss 临时详情、清除待显示请求及旧关闭回调，先还原来源返回状态，再让内层目标页发布状态。没有新增全局详情实例或缓存。失败基线为 `artifacts/song-details/p2-navigation-before.log`，实际 footer 命令仍被详情遮挡；修复后覆盖专辑/歌手入口、普通返回、同一 UI 回合先关闭再跨链、播放页切换期间待显示请求被新导航取消。
+2. **旧属性窗口冷封面读取**：WindowArtworkSession 仅将原始字节读取委托 Task.Run，await 继续回到调用方 UI 上下文创建 BitmapImage 与发布 Updated。四个生产调用委托均核对为字节 I/O，不操作 XAML。关闭会取消令牌并断开图片/字节/事件引用；取消不冒充同步磁盘工作已经停止，LoadAsync 等待真实读取收尾，迟到数据不能发布。失败基线 `p2-window-before.log` 证明读取发生在 UI；修复后用真实后台阻塞关卡、UI 心跳、原生 BitmapImage、忽略取消的读取及关闭后释放验证。没有改变图片解码大小或增加长期图片缓存。
+3. **逐首导入的重复匹配**：PlaybackSelectionTracker 为条目变化合并一次 Dispatcher 同步，缓存每个 tracker 的两个回调；播放/切歌和队列状态在 UI 上仍立即同步，不增加自动滚动。排队任务不捕获曲目或索引快照，执行时读取最新状态；离树解绑外部订阅，迟到旧 Unloaded 在重新 Loaded 后不解绑新订阅，排队任务在离树时不触碰选择。
+
+选择匹配采用真实 ListView 与 ObservableCollection 的 4000 个已有条目 + 同一 UI 回合逐首追加 400 条；当前歌曲不在投影中，迫使每次匹配扫完整列表。适配器只在 Music.Id getter 记录次数。失败基线读取 **5,040,600 次**，修复后 **0 次即时读取、排队后总共 13,200 次**，对应一次遍历、每项三次 Id 读取；验证了新增条目被正确选中、真实播放变化立即选中、卸载/重载不采用旧状态。
+
+一次最终 PMV2 样本记录追加发布阶段约 **2.4772 ms、1,431,392 字节**，失败基线约 **515.481 ms、136,509,776 字节**。这是固定夹具中 `GC.GetAllocatedBytesForCurrentThread` 对追加同步阶段的采样，**不包含排队匹配阶段、其他线程或真实导入 I/O**；运行间时间有波动，不换算整个应用的分配或速度改善百分比，不宣称零分配。完整原始样本为 `artifacts/song-details/p2-selection-before.json`、`p2-list-dpi-batch.json`。
+
+### 最终验证与独立审查
+
+- 主项目 x64 Debug 最终构建 **0 错误、381 条警告**：`artifacts/song-details/p2-resize-main-final.log`。没有将构建通过替代运行时验证。
+- 最终首页/详情原生专项 **416 项、22 次定向 lvt 调用、三轮诊断 GC、前台违规 0**：`artifacts/song-details/p2-resize-home-complete.log`、`artifacts/home-polish-batch2/p2-resize-home-complete/result.json`。包含 24 组几何、12 张真实加载图片的居中、缺图及下一张动画、双向封面/标题连接、编辑器样式、后台读取/取消与迟到发布、悬浮末段像素和离页回收。并非历史上另有旧断言失败的184项套件。
+- 完整列表/位置/跨链导航回归 **171 项、15 次 lvt 调用、前台违规 0**：`artifacts/song-details/p2-list-dpi-final.log` 与 `p2-list-dpi-final.json`。两个新 P2 入口均使用真实主导航调用链和原生集合通知。
+- 最终真实 **150% DPI、1806 次连续缩放、1807 次尺寸回调、UI 心跳正常、失败 0、前台违规 0**：`artifacts/song-details/resize-dpi-complete.log`、`artifacts/home-polish-batch2/resize-dpi-complete/result.json`、`resize-layout-history.json`。覆盖原失败点、系统尺寸循环消息、正反向密集宽度、自动/紧凑导航布局、分数边距/布局舍入、自动轮播含缺图、长标题和横竖封面。该次数不是1806个硬件/DPI组合。
+- 三轮回收后，31个卸载首页中未被首轮UIA观察器持有的30个均回收，最终 AlivePageIndices=[0]；退休详情 panel 和移出封面检查均通过。没有由短期进程/显存计数声明净节省比例。
+- PMV2 刚启用但尚未适配夹具初始物理尺寸时，预览测试因为逻辑视口低于产品420 DIP门槛而超时（`p2-resize-home-verified`）；最终夹具按DPI换算原有1120×900 DIP测试窗口后再运行416项通过。产品窗口与门槛未改，没有计入该失败为产品回归。
+- 23个修改/新增文件统一CRLF，3个修改XML解析通过；修改C#没有新增字面GetString调用，七语言资源静态检查无缺失，`git diff --check`通过。
+
+独立子代理 `/root/review_today` 对上述三个 P2 修复及布局修复只读复核，核对失败 JSON、真实调用链、资源所有权和测量输入边界，未发现新的确定问题。未编辑代码、构建或操作窗口。主图需要父级提供有限水平测量宽度；当前唯一生产入口 HomePage 关闭水平滚动，满足该约束。若未来放入横向 StackPanel/ScrollViewer，需要另行定义无限宽时的固有宽度。
+
+所有原生测试窗口离屏、Show(false)、禁止激活，lvt 通过指定 HWND 的 UIA Invoke 驱动，没有发送全局鼠标或键盘，也没有调整或重启生产窗口。夹具替代真实音频、网络和大曲库 I/O；导航测试链接实际 MainPage 导航 partial、LibraryNavigationService、浏览页/子 Frame 与 Presenter，替代无关主壳和编辑业务；另一个夹具验证真实详情编辑、模板、SQLite、动画与回收。这些边界不能外推为已在生产窗口完整复现所有功能。
+
+本轮未运行真实用户文件、Release/AOT、所有 GPU/主题或跨屏真实手动拖拽；确认的高 DPI 压力场景为实际 150%，不声称已验证 125%/200% 的每个布局。未修改自编译 CsWinRT、全局异常吞并策略、播放器/IPC 或用户缓存/数据库；不从 GC 可达性推断显存立即释放或进程净内存下降。
+
+## 2026-10-31 记录：16:9 布局与独立当日审查
 
 用户后续明确要求调整比例，本节替代下文旧记录中“维持原主图比例”的描述。当前主图与右侧卡片都采用 16:9，保留上方一张大卡、下方两张小卡，封面沿用 UniformToFill 和水平/垂直居中，裁切溢出内容而不拉伸图片。
 
@@ -19,7 +61,7 @@
 
 ### 独立子代理审查结果
 
-轮播实现及定向验证完成后，使用未继承父代理对话的独立子代理 `/root/review_today` 进行只读审查。范围为基线 `3434eca674ec85d3e26a12cf2a4cf4ca8d86928b` 至 HEAD 的六个当日提交（`dee9a9fa`、`eaea578c`、`06ff2a36`、`3536b9dc`、`c220b108`、`a1456ba2`）和本轮工作区改动。覆盖功能、并发与生命周期、资源所有权和释放、内存开销、UI 线程与性能；检查工具测试和报告的实际边界。未确认本轮 16:9 生产修改的新缺陷。以下三项均来自今天此前提交，**本轮只审查记录，未修复**。
+轮播实现及定向验证完成后，使用未继承父代理对话的独立子代理 `/root/review_today` 进行只读审查。范围为基线 `3434eca674ec85d3e26a12cf2a4cf4ca8d86928b` 至 HEAD 的六个当日提交（`dee9a9fa`、`eaea578c`、`06ff2a36`、`3536b9dc`、`c220b108`、`a1456ba2`）和本轮工作区改动。覆盖功能、并发与生命周期、资源所有权和释放、内存开销、UI 线程与性能；检查工具测试和报告的实际边界。未确认本轮 16:9 生产修改的新缺陷。以下三项是当时发现问题的历史记录；随后已按用户授权修复，最新证据见本报告顶部。
 
 1. **P2：页内详情未随底栏的内层跨链导航关闭，返回状态被旧快照覆盖。** 引入 `3536b9dc`。从歌曲列表打开详情，再点底栏的专辑/歌手；`LibraryNavigationService.SelectAlbum`（37行）调用 `MainPage.NavigateToMusicBrowsePage`（323行），由于主 Frame 已是 MusicBrowsePage，绕过会 Dismiss 的 NavigateTo，仅下层 ContentFrame 导航。Presenter 只订阅主 Frame.Navigating（MusicDetailsPresenter 42行），所以详情仍遮住目标页。之后 `MainPage.CloseMusicDetails`（445行）恢复原歌曲页的 false，覆盖新分组详情的返回可用状态。建议统一跨链导航先关闭临时详情并根据当前来源计算返回状态，补上真实 MainPage/子 Frame/底栏命令集成测试。
 2. **P2：旧歌曲属性窗口的冷缓存封面读取回到 UI 线程。** 引入 `dee9a9fa`。`View/SubView/MusicDetailsWindow.xaml.cs:179` 直接把 `ToolUtils.GetRawImage` 交给 `WindowArtworkSession.LoadAsync`（30行），而该方法直接在当前线程调用委托。`ApplicationTasks.RunAsync` 的 Task.Yield 不负责切到后台，仍恢复到 UI；缓存缺失或过期时，`ToolUtils.cs:435/447` 同步解析音频封面或创建 ATL Track。本地大文件、慢磁盘/映射盘会占用 UI，取消不能中断这些同步调用。建议仅将原始字节读取放回后台，BitmapImage 创建/发布继续在 UI，复用现有 MusicDetailsEditorFactory 的读取边界。未测具体阻塞时长。

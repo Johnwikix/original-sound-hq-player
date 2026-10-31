@@ -1,3 +1,10 @@
+## 2026-10-31 修复高 DPI 缩放循环与三项 P2 问题
+- FeaturedCarousel：16:9 行高和主列分配改用父级测量宽度，避免将 DPI 舍入的 ActualWidth 反写布局及图片固有尺寸干扰主列；修复边框缩放 LayoutCycleException、画面停滞与缺图后进入动画中止。
+- MainPage.LibraryNavigation：跨链导航先关闭页内歌曲详情、取消待显示请求和旧返回回调，再由目标页更新返回状态，覆盖主 Frame 已在曲库的情况。
+- WindowArtworkSession：原始封面字节读取移到后台，BitmapImage 创建和发布留在 UI；关闭取消请求，等待真实读取结束并阻止迟到结果发布。
+- PlaybackSelectionTracker：合并连续条目变化的选择匹配，播放变化仍立即同步；离树解绑、排队复查读取最新状态，不增加自动滚动。
+- 验证：独立 WinUI/lvt 夹具补齐生产 PMV2 DPI 清单与运行时设置；失败基线、原生回归、构建、分配测量范围和独立审查见 _tools/HomeUiRegression/UniversalDetailsReport.md 最新记录。
+
 ## 2026-10-31 首页主轮播与右侧拼贴统一 16:9
 - FeaturedCarousel：主图与右侧上大、下两小的卡片均改为 16:9，把行列间距计入分配并保持整组等高；兼容右侧 0–3 张卡片，沿用 Star 测量与原有箭头外伸空间。
 - HomeHeroCard、HomeCarouselTile：保留封面居中填充裁切，按实际高度收紧小卡标题与主图说明，避免横向卡片中的文字溢出。

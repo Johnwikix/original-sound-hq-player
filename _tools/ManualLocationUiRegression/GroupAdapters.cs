@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.ViewModel
             else if (kind == "artist") app.CurrentArtistObj = music;
             else app.CurrentFolderObj = music;
         }
-        public void ReceiveNavigation() => IsInDetailMode = Current is not null;
+        public void ReceiveNavigation() { IsInDetailMode = Current is not null; AppViewModel.IsBackBtnEnable = IsInDetailMode; }
         public void EnterDetailFromCrossLink() => ReceiveNavigation();
         public void CollapseDetail() { SetCurrent(null); IsInDetailMode = false; }
         protected void Enter(ItemClickEventArgs args) { SetCurrent((Music)args.ClickedItem); IsInDetailMode = true; }

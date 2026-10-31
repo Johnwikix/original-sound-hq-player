@@ -211,13 +211,20 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         Notify(nameof(ThumbnailVisibility));
         Notify(nameof(SecondaryVisibility));
         Notify(nameof(TertiaryVisibility));
-        UpdateLayoutMode();
+        InvalidateMeasure();
     }
-    private void Layout_SizeChanged(object sender, SizeChangedEventArgs args)
+    /// <inheritdoc />
+    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
     {
-        UpdateLayoutMode();
-        UpdateNavigationLayout();
+        if (LayoutGrid is not null && double.IsFinite(availableSize.Width))
+        {
+            // 使用父级分配的测量宽度；ActualWidth 已经经过 DPI 舍入，反写行列会形成一像素的布局循环。
+            double width = Math.Max(0, availableSize.Width - LayoutGrid.Margin.Left - LayoutGrid.Margin.Right);
+            UpdateLayoutMode(width);
+        }
+        return base.MeasureOverride(availableSize);
     }
+    private void Layout_SizeChanged(object sender, SizeChangedEventArgs args) => UpdateNavigationLayout();
     private void Slider_SizeChanged(object sender, SizeChangedEventArgs args) => UpdateNavigationLayout();
     private void UpdateNavigationLayout()
     {
@@ -229,11 +236,8 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         Canvas.SetTop(PreviousButton, top);
         Canvas.SetTop(NextButton, top);
     }
-    private void UpdateLayoutMode()
+    private void UpdateLayoutMode(double width)
     {
-        if (LayoutGrid is null) return;
-        double width = LayoutGrid.ActualWidth;
-        if (width <= 0) return;
         const double aspectRatio = 16d / 9;
         bool split = ThumbnailVisibility == Visibility.Visible;
         bool lowerRow = SecondaryItem is not null;
@@ -251,8 +255,8 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
             mainWidth = Math.Max(0, width - LayoutGrid.ColumnSpacing - thumbnailWidth);
         }
         LayoutGrid.RowDefinitions[0].Height = new GridLength(mainWidth / aspectRatio);
-        // 保留 Star 测量：固定宽列在无拼贴且跨两列时会把列间距反复计入期望宽度。
-        LayoutGrid.ColumnDefinitions[0].Width = new GridLength(split && thumbnailWidth > 0 ? mainWidth / thumbnailWidth : 1, GridUnitType.Star);
+        // 分栏时主图使用分配宽度，避免图片的固有尺寸改变 Star 列的最小期望宽度和舍入结果。
+        LayoutGrid.ColumnDefinitions[0].Width = split ? new GridLength(mainWidth) : new GridLength(1, GridUnitType.Star);
         LayoutGrid.ColumnDefinitions[1].Width = split ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         ThumbnailGrid.RowSpacing = rowGap;
         ThumbnailGrid.RowDefinitions[0].Height = new GridLength(thumbnailWidth / aspectRatio);

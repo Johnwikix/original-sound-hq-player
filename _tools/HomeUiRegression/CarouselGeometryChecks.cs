@@ -15,6 +15,7 @@ internal sealed partial class HomePolishWindow
         await Task.Delay(500);
         var originalSize = AppWindow.Size;
         var measurements = new List<object>();
+        var centered = new List<object>();
         var carousel = new FeaturedCarousel { ItemsSource = _home.Themes, AutoShuffle = false,
             MainContent = new Border { Background = new SolidColorBrush(Microsoft.UI.Colors.Gray) } };
         var viewport = new Grid { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
@@ -105,11 +106,17 @@ internal sealed partial class HomePolishWindow
                 if (!ReferenceEquals(heroCover.Music, themeArtwork)) heroCover.Music = themeArtwork;
                 var covers = Descendants<MusicCoverControl>(featured).ToArray();
                 await Wait(() => covers.All(cover => ((Image)cover.FindName("CoverImage")).Source is not null));
+                // Centering is a settled-layout assertion; image arrival starts a 700 ms slide.
+                await Task.Delay(800);
                 Assert(covers.Length == 4, "centered cropping checks all four loaded native images at " + size.Width);
                 foreach (var cover in covers)
                 {
                     var image = (Image)cover.FindName("CoverImage");
                     var offset = image.TransformToVisual(cover).TransformPoint(new Point());
+                    centered.Add(new { WindowWidth = size.Width, Music = cover.Music?.Id, Scale = _root.XamlRoot.RasterizationScale,
+                        CoverWidth = cover.ActualWidth, CoverHeight = cover.ActualHeight,
+                        ImageWidth = image.ActualWidth, ImageHeight = image.ActualHeight, offset.X, offset.Y });
+                    File.WriteAllText(Path.Combine(_output, "carousel-centering.json"), JsonSerializer.Serialize(centered));
                     Assert(image.Stretch == Stretch.UniformToFill && image.HorizontalAlignment == HorizontalAlignment.Center
                         && image.VerticalAlignment == VerticalAlignment.Center
                         && Math.Abs(offset.X + image.ActualWidth / 2 - cover.ActualWidth / 2) < 1

@@ -7,7 +7,7 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Services;
 
-/// <summary>属性窗口拥有的封面会话。UI 线程创建和发布；关闭取消读取并断开图片、字节及视图回调。</summary>
+/// <summary>属性窗口拥有的封面会话。原始字节在后台读取，返回调用方 UI 上下文创建和发布；关闭取消读取并断开图片、字节及视图回调。</summary>
 public sealed class WindowArtworkSession : IDisposable
 {
     private readonly CancellationTokenSource _lifetime = new();
@@ -27,7 +27,10 @@ public sealed class WindowArtworkSession : IDisposable
         BitmapImage? image = null;
         try
         {
-            var data = await read(request.Token);
+            // async 读取器在第一次 await 前仍可能同步解析音频；该委托只能读取字节，不访问 UI。
+            // Task.Run 展开并等待完整读取任务，取消等待不冒充同步 I/O 已结束。
+            var readToken = request.Token;
+            var data = await Task.Run(() => read(readToken), readToken);
             request.Token.ThrowIfCancellationRequested();
             if (_closed || !ReferenceEquals(_request, request)) return false;
             if (keepExistingOnEmpty && data is not { Length: > 0 }) return true;

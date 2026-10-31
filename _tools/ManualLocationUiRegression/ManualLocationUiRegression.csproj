@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <ApplicationManifest>../../app.manifest</ApplicationManifest>
+    <Features>$(Features);runtime-async=on</Features>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
@@ -18,6 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
     <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+    <Compile Include="../../View/MainPage.LibraryNavigation.cs;../../Helper/MusicDetailsPresenter.cs" />
     <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />
     <Compile Include="../../View/AlbumPage.xaml.cs;../../View/ArtistPage.xaml.cs;../../View/FolderBrowsePage.xaml.cs;../../Helper/ConnectedAnimationScope.cs;../../Helper/TransitionCache.cs" />
     <Compile Include="../../Services/MusicCommands.cs;../../Model/MusicDetailsRequest.cs;../../Helper/ListViewInteraction.cs;../../Model/MusicGroup.cs;../../State/BrowseState.cs;../../State/BrowsePagePosition.cs;../../Behaviors/BrowsePositionKeeper.cs;../../Behaviors/PlaybackSelectionTracker.cs" />

@@ -46,10 +46,6 @@ namespace WinUIMusicPlayer.View
         public TextScaleService TextScale => TextScaleService.Instance;
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
-        private MusicDetailsRequest? _pendingMusicDetails;
-        private bool _returnPlayingAfterDetails;
-        private bool _backBeforeMusicDetails;
-        private readonly MusicDetailsPresenter _detailsPresenter;
 
         private readonly ListViewCentering _queueCentering;
         private readonly PlaybackSelectionTracker _playbackSelection;
@@ -202,22 +198,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
-        {
-            _pendingMusicDetails = null;
-            _returnPlayingAfterDetails = false;
-            _detailsPresenter.Dismiss();
-            if (pageType == typeof(HomePage))
-            {
-                AppData.CurrentPage = typeof(HomePage);
-                ViewModel.AppViewModel.IsBackBtnEnable = false;
-            }
-            MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
-            if (MainFrame.Content is PlayListPage playlist)
-                ViewModel.AppViewModel.IsBackBtnEnable = playlist.ViewModel.IsInDetailMode;
-            MainFrame.BackStack.Clear();
-        }
-
         private void InitiaizeEqualizerDialog()
         {
             if (EqualizerDialog is null)
@@ -308,29 +288,10 @@ namespace WinUIMusicPlayer.View
                 };
             }
 
-            if (targetType is not null && _detailsPresenter.IsOpen)
-            {
-                _detailsPresenter.Dismiss();
-                _returnPlayingAfterDetails = false;
-                ViewModel.AppViewModel.IsBackBtnEnable = _backBeforeMusicDetails;
-            }
+            if (targetType is not null) DismissMusicDetailsForNavigation();
             if (targetType is not null && MainFrame.Content?.GetType() != targetType)
             {
                 NavigateTo(targetType, null, new EntranceNavigationTransitionInfo());
-            }
-        }
-
-        public void NavigateToMusicBrowsePage()
-        {
-            if (MainFrame.Content is not MusicBrowsePage)
-            {
-                foreach (var item in NavigationViewControl.MenuItems)
-                    if (item is NavigationViewItem navigationItem && navigationItem.Tag?.ToString() == "MusicBrowse")
-                    {
-                        NavigationViewControl.SelectedItem = navigationItem;
-                        break;
-                    }
-                NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
             }
         }
 
@@ -395,56 +356,6 @@ namespace WinUIMusicPlayer.View
             {
                 _isPageTransitioning = false;
             }
-        }
-
-        public void ShowMusicDetails(MusicDetailsRequest request, FrameworkElement? sourceCover = null, FrameworkElement? sourceTitle = null)
-        {
-            if (!ViewModel.AppViewModel.CanPublishState) return;
-            CurrentPlayListTeachingTip.IsOpen = false;
-            if (PlayingFrame.Content is PlayingDetailPage playing) playing.CloseQueuePopup();
-            if (_isPageTransitioning)
-            {
-                _pendingMusicDetails = request;
-                return;
-            }
-            if (PlayingFrame.Visibility == Visibility.Visible)
-            {
-                _returnPlayingAfterDetails = true;
-                _pendingMusicDetails = request;
-                NavigatebackToMusicBrowsePage();
-                return;
-            }
-            if (!_detailsPresenter.IsOpen) _backBeforeMusicDetails = ViewModel.AppViewModel.IsBackBtnEnable;
-            if (!_detailsPresenter.Show(request, sourceCover, sourceTitle))
-            {
-                ViewModel.AppViewModel.IsBackBtnEnable = _backBeforeMusicDetails;
-                if (_returnPlayingAfterDetails)
-                {
-                    _returnPlayingAfterDetails = false;
-                    NavigateToPlayingDetailPage();
-                }
-                return;
-            }
-            ViewModel.AppViewModel.IsBackBtnEnable = true;
-        }
-
-        private void OpenPendingDetails()
-        {
-            if (_pendingMusicDetails is not { } request) return;
-            _pendingMusicDetails = null;
-            ShowMusicDetails(request);
-        }
-
-        public void CloseMusicDetails()
-        {
-            if (!_detailsPresenter.IsOpen) return;
-            bool showPlaying = _returnPlayingAfterDetails;
-            _returnPlayingAfterDetails = false;
-            _detailsPresenter.Back(() =>
-            {
-                ViewModel.AppViewModel.IsBackBtnEnable = _backBeforeMusicDetails;
-                if (showPlaying) NavigateToPlayingDetailPage();
-            });
         }
 
         private void QueueTitle_Click(object sender, RoutedEventArgs args)
