@@ -169,7 +169,7 @@
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:PlayListMusicItem">
-                    <local:MusicListRowControl Music="{x:Bind Music, Mode=OneWay}" ArtistInvoked="MusicRow_ArtistInvoked" AlbumInvoked="MusicRow_AlbumInvoked" />
+                    <local:MusicListRowControl Music="{x:Bind Music, Mode=OneWay}" SongInvoked="MusicRow_SongInvoked" ArtistInvoked="MusicRow_ArtistInvoked" AlbumInvoked="MusicRow_AlbumInvoked" />
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

@@ -38,16 +38,19 @@ internal sealed partial class RegressionApplication
         var data = new MusicDatabaseService(database);
         await data.Lyrics.InitializeAsync(path);
         var stats = new PlaybackStatsService();
+        var editors = new FixtureEditorFactory(data, app);
         var home = new HomeViewModel(app, data, stats, new HomeRecommendationService(), new PlaybackCoordinator(app, stats),
-            new AddFolderViewModel(), new WebDavLibraryService(), NullLogger<HomeViewModel>.Instance, new FixtureEditorFactory(data, app));
-        var services = new ServiceCollection().AddSingleton(home).BuildServiceProvider();
+            new AddFolderViewModel(), new WebDavLibraryService(), NullLogger<HomeViewModel>.Instance, editors, editors.Sessions);
+        var services = new ServiceCollection().AddSingleton(home).AddSingleton(app).AddSingleton(data)
+            .AddSingleton<EditorSessions>(editors.Sessions).AddSingleton<IMusicDetailsEditorFactory>(editors)
+            .AddSingleton<LibraryNavigationService>().BuildServiceProvider();
         App.Services = services;
         var songs = Enumerable.Range(1, 40).Select(id => new Music { Id = id, Title = "Probe song " + id,
             Album = "Album " + id, Author = "Artist " + id, ImageHash = "polish-" + id,
             Path = Path.Combine(AppContext.BaseDirectory, "probe-" + id + ".flac") }).ToArray();
         foreach (var song in songs) { WinUIMusicPlayer.Utils.ToolUtils.PrepareArtwork(song.Id); await database.InsertAsync(song); }
         app.Replace(songs.ToList());
-        var window = new HomePolishWindow(home, songs);
+        var window = new HomePolishWindow(home, songs, editors);
         App.MainWindow = window;
         window.Closed += async (_, _) => { await home.StopAsync(); services.Dispose(); await database.CloseAsync(); Exit(); };
         window.ShowBackground();
@@ -57,6 +60,7 @@ internal sealed partial class RegressionApplication
 internal sealed partial class HomePolishWindow : Window
 {
     private readonly HomeViewModel _home;
+    private readonly FixtureEditorFactory _editors;
     private readonly Music[] _songs;
     private readonly Grid _root = new();
     private readonly ContentControl _host = new() { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
@@ -81,9 +85,9 @@ internal sealed partial class HomePolishWindow : Window
     private bool _handoffNativeCompleted;
     private Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation? _watchedHandoff;
     private string _status = "starting";
-    public HomePolishWindow(HomeViewModel home, Music[] songs)
+    public HomePolishWindow(HomeViewModel home, Music[] songs, FixtureEditorFactory editors)
     {
-        _home = home; _songs = songs;
+        _home = home; _songs = songs; _editors = editors;
         _home.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(HomeViewModel.IsInDetailMode) && _home.IsInDetailMode)
@@ -107,6 +111,8 @@ internal sealed partial class HomePolishWindow : Window
         Add(buttons, "OpenFromPreview", OpenFromPreview);
         Add(buttons, "VerifyDetails", CheckDetails);
         Add(buttons, "Secondary", CheckSecondaryLifetimes);
+        Add(buttons, "Universal", CheckUniversalDetails);
+        Add(buttons, "CarouselEdges", CheckCarouselEdges);
         Add(buttons, "Stress", Stress);
         Add(buttons, "Collect", Collect);
         Add(buttons, "Exit", async () => { await Task.Delay(500); Close(); });
@@ -161,7 +167,7 @@ internal sealed partial class HomePolishWindow : Window
     }
     private void Add(StackPanel panel, string name, Func<Task> action)
     {
-        var button = new Button { Content = name }; AutomationProperties.SetAutomationId(button, name);
+        var button = new Button { Content = name, FontSize = 11, Padding = new Thickness(6, 4, 6, 4) }; AutomationProperties.SetAutomationId(button, name);
         button.Click += async (_, _) => await Run(name, action); panel.Children.Add(button);
     }
     private async Task Run(string action, Func<Task> operation)
@@ -318,6 +324,7 @@ internal sealed partial class HomePolishWindow : Window
             Assert(control ? alive == _createdPages : unobservedAlive == 0,
                 control ? "restoring only a native Tick callback reproduces retained pages" : "all unloaded pages without UIA observers are reclaimed after owned timer cleanup");
         }
+        Assert(_universalPages.All(page => !page.TryGetTarget(out _)), "all retired universal detail pages are reclaimed");
         Assert(_violations == 0, "all actions stayed outside the foreground");
     }
     private void Sample(string phase)

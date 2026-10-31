@@ -20,7 +20,7 @@
     <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
     <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />
     <Compile Include="../../View/AlbumPage.xaml.cs;../../View/ArtistPage.xaml.cs;../../View/FolderBrowsePage.xaml.cs;../../Helper/ConnectedAnimationScope.cs;../../Helper/TransitionCache.cs" />
-    <Compile Include="../../Model/MusicGroup.cs;../../State/BrowseState.cs;../../State/BrowsePagePosition.cs;../../Behaviors/BrowsePositionKeeper.cs" />
+    <Compile Include="../../Services/MusicCommands.cs;../../Model/MusicDetailsRequest.cs;../../Helper/ListViewInteraction.cs;../../Model/MusicGroup.cs;../../State/BrowseState.cs;../../State/BrowsePagePosition.cs;../../Behaviors/BrowsePositionKeeper.cs;../../Behaviors/PlaybackSelectionTracker.cs" />
     <Compile Include="../../State/PlaybackQueueState.cs;../../Behaviors/ListViewCentering.cs;../../Helper/CurrentTrackLookup.cs;../../Model/BulkObservableCollection.cs;../../Model/MenuModel.cs;../../Extensions/MenuFlyoutExtensions.cs" />
     <Compile Include="../../View/SongListPage.xaml.cs;../../View/FavouritePlayListPage.xaml.cs;../../View/MusicBrowsePage/MusicBrowsePage.xaml.cs" />
     <Compile Include="../../ViewModel/Pages/SongListViewModel.cs;../../ViewModel/Pages/FavouritePlayListViewModel.cs;../../ViewModel/Pages/MusicBrowseViewModel.cs;../../ViewModel/Pages/MainViewModel.cs;../../Services/LibraryNavigationService.cs" />

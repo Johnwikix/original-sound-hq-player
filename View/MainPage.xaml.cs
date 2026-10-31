@@ -46,8 +46,13 @@ namespace WinUIMusicPlayer.View
         public TextScaleService TextScale => TextScaleService.Instance;
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
+        private MusicDetailsRequest? _pendingMusicDetails;
+        private bool _returnPlayingAfterDetails;
+        private bool _backBeforeMusicDetails;
+        private readonly MusicDetailsPresenter _detailsPresenter;
 
         private readonly ListViewCentering _queueCentering;
+        private readonly PlaybackSelectionTracker _playbackSelection;
         internal MusicBrowsePage? CurrentLibraryPage => MainFrame.Content as MusicBrowsePage;
 
         public bool IsPlayingDetailVisible => PlayingFrame.Visibility == Visibility.Visible;
@@ -61,7 +66,9 @@ namespace WinUIMusicPlayer.View
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
+            _detailsPresenter = new MusicDetailsPresenter(MainFrame);
             _queueCentering = new ListViewCentering(CurrentPlayListView);
+            _playbackSelection = new PlaybackSelectionTracker(CurrentPlayListView, ViewModel.AppViewModel, queue: true);
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
         }
@@ -197,6 +204,9 @@ namespace WinUIMusicPlayer.View
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
         {
+            _pendingMusicDetails = null;
+            _returnPlayingAfterDetails = false;
+            _detailsPresenter.Dismiss();
             if (pageType == typeof(HomePage))
             {
                 AppData.CurrentPage = typeof(HomePage);
@@ -298,6 +308,12 @@ namespace WinUIMusicPlayer.View
                 };
             }
 
+            if (targetType is not null && _detailsPresenter.IsOpen)
+            {
+                _detailsPresenter.Dismiss();
+                _returnPlayingAfterDetails = false;
+                ViewModel.AppViewModel.IsBackBtnEnable = _backBeforeMusicDetails;
+            }
             if (targetType is not null && MainFrame.Content?.GetType() != targetType)
             {
                 NavigateTo(targetType, null, new EntranceNavigationTransitionInfo());
@@ -338,7 +354,10 @@ namespace WinUIMusicPlayer.View
                 void OnOneCompleted()
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
+                    {
                         _isPageTransitioning = false;
+                        OpenPendingDetails();
+                    }
                 }
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Collapsed;
@@ -362,7 +381,10 @@ namespace WinUIMusicPlayer.View
                 void OnOneCompleted()
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
+                    {
                         _isPageTransitioning = false;
+                        OpenPendingDetails();
+                    }
                 }
                 _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Visible;
@@ -375,8 +397,71 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void ShowMusicDetails(MusicDetailsRequest request, FrameworkElement? sourceCover = null, FrameworkElement? sourceTitle = null)
+        {
+            if (!ViewModel.AppViewModel.CanPublishState) return;
+            CurrentPlayListTeachingTip.IsOpen = false;
+            if (PlayingFrame.Content is PlayingDetailPage playing) playing.CloseQueuePopup();
+            if (_isPageTransitioning)
+            {
+                _pendingMusicDetails = request;
+                return;
+            }
+            if (PlayingFrame.Visibility == Visibility.Visible)
+            {
+                _returnPlayingAfterDetails = true;
+                _pendingMusicDetails = request;
+                NavigatebackToMusicBrowsePage();
+                return;
+            }
+            if (!_detailsPresenter.IsOpen) _backBeforeMusicDetails = ViewModel.AppViewModel.IsBackBtnEnable;
+            if (!_detailsPresenter.Show(request, sourceCover, sourceTitle))
+            {
+                ViewModel.AppViewModel.IsBackBtnEnable = _backBeforeMusicDetails;
+                if (_returnPlayingAfterDetails)
+                {
+                    _returnPlayingAfterDetails = false;
+                    NavigateToPlayingDetailPage();
+                }
+                return;
+            }
+            ViewModel.AppViewModel.IsBackBtnEnable = true;
+        }
+
+        private void OpenPendingDetails()
+        {
+            if (_pendingMusicDetails is not { } request) return;
+            _pendingMusicDetails = null;
+            ShowMusicDetails(request);
+        }
+
+        public void CloseMusicDetails()
+        {
+            if (!_detailsPresenter.IsOpen) return;
+            bool showPlaying = _returnPlayingAfterDetails;
+            _returnPlayingAfterDetails = false;
+            _detailsPresenter.Back(() =>
+            {
+                ViewModel.AppViewModel.IsBackBtnEnable = _backBeforeMusicDetails;
+                if (showPlaying) NavigateToPlayingDetailPage();
+            });
+        }
+
+        private void QueueTitle_Click(object sender, RoutedEventArgs args)
+        {
+            if (sender is not Button { Tag: Music music } button) return;
+            int index = ListViewInteraction.IndexFromSource(button, CurrentPlayListView);
+            long entry = index >= 0 ? ViewModel.AppViewModel.State.Queue.EntryIdAt(index) : 0;
+            ShowMusicDetails(new MusicDetailsRequest(music, null, entry));
+        }
+
         public void HandleBackNavigation()
         {
+            if (_detailsPresenter.IsOpen)
+            {
+                CloseMusicDetails();
+                return;
+            }
             if (MainFrame.Content is HomePage homePage && homePage.ViewModel.IsInDetailMode)
             {
                 homePage.CollapseDetail();
@@ -488,6 +573,7 @@ namespace WinUIMusicPlayer.View
 
         private void CurrentPlayListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
+            if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, CurrentPlayListView)) return;
             _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListView.SelectedIndex);
         }
 

@@ -27,7 +27,7 @@ public static class CurrentTrackLookup
         return null;
     }
 
-    private static bool Matches(Music candidate, Music current)
+    public static bool Matches(Music candidate, Music current)
         => current.Id != 0 ? candidate.Id == current.Id
             : candidate.Id == 0 && !string.IsNullOrEmpty(current.Path)
                 && string.Equals(candidate.Path, current.Path, StringComparison.OrdinalIgnoreCase);

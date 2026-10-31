@@ -62,6 +62,21 @@ public sealed partial class HomePage : Page
     public bool HasText(string text) => !string.IsNullOrWhiteSpace(text);
     /// <summary>将通用轮播选项适配为首页主题，主视图保持同一个实例。</summary>
     public HomeTheme? SelectedTheme(int index, int count) => index >= 0 && index < count ? Featured.SelectedItem as HomeTheme : null;
+    private bool? _externalDetailsShuffle;
+    public void SetExternalDetailsVisible(bool visible)
+    {
+        if (visible && _externalDetailsShuffle is null)
+        {
+            _externalDetailsShuffle = Featured.AutoShuffle;
+            Featured.AutoShuffle = false;
+            DismissPreview();
+        }
+        else if (!visible && _externalDetailsShuffle is { } shuffle)
+        {
+            _externalDetailsShuffle = null;
+            Featured.AutoShuffle = shuffle;
+        }
+    }
     private void Page_Loaded(object sender, RoutedEventArgs args)
     {
         _openPreviewTimer.Tick -= OpenPreview_Tick;

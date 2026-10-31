@@ -522,12 +522,12 @@
                                         ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                         <ListView.ItemTemplate>
                                             <DataTemplate x:DataType="model:Music">
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    Margin="5"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind Title, Mode=OneWay}"
-                                                    TextTrimming="CharacterEllipsis" />
+                                                <Button Margin="5" Padding="0" MinHeight="0" MinWidth="0" HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                                                    Tag="{x:Bind}" Click="QueueTitle_Click"
+                                                    AutomationProperties.Name="{x:Bind Title, Mode=OneWay}">
+                                                    <TextBlock Text="{x:Bind Title, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                                </Button>
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>

@@ -1,4 +1,5 @@
 using DevWinUI;
+using Microsoft.UI.Xaml;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
@@ -6,12 +7,17 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>浏览交互的视图边界；不缓存页面。延迟取得应用级外壳，避免其构造链与浏览 VM 循环依赖。</summary>
 public sealed class LibraryNavigationService(Func<MainPage> getShell, ILogger<LibraryNavigationService> logger)
 {
+    public void ShowSongDetails(Music music, FrameworkElement? sourceCover = null, FrameworkElement? sourceTitle = null)
+        => getShell().ShowMusicDetails(new MusicDetailsRequest(music, AppData.CurrentPage), sourceCover, sourceTitle);
+    public void CloseSongDetails() => getShell().CloseMusicDetails();
+
     public void ShowPlayingDetail() => getShell().NavigateToPlayingDetailPage();
 
     public async Task ShowEqualizerAsync()

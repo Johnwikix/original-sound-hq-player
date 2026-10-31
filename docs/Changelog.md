@@ -1,3 +1,12 @@
+## 2026-10-31 页内通用歌曲详情、双向连接动画与轮播裁切修复
+- MusicDetailControl、MusicDetailsPanel、MusicDetailsPresenter 与主页面：复用首页属性布局，在当前页面内部临时显示详情；不替换 MainFrame.Content，不导航、不重建来源页或列表，关闭释放详情会话；跨页面缓存策略保持禁用。
+- MusicListRowControl 与列表入口：歌曲名改为按钮，封面和标题均支持进入 Gravity、返回 Direct 连接动画；返回保留原列表实例、滚动位置与选择，不叠加 Frame 过渡，也不额外抑制普通导航动画。
+- MusicCommands、MusicBrowseViewModel：详情播放保留来源队列，队列入口转发重复条目标识；未完成读取可以取消，已接受写入由退出屏障等待真实完成。
+- PlaybackSelectionTracker：播放、切歌、待播恢复和集合更新时同步当前歌曲选择；不自动滚动或聚焦，手动定位保持独立，卸载解绑订阅。
+- MusicDetailControl、MusicDetailsWindow、ConvolutionCurveDialog、AboutSettingsControl：11 处 Compact NumberBox 改为 Inline，适当加宽偏移与缓存上限输入，保持数值规则及 MVVM 绑定。
+- FeaturedCarousel、HomePage：预留溢出绘制空间并把箭头放在独立覆盖层，保持封面尺寸、位置、圆角和箭头原有向外 10 DIP 的外观；在受裁切边界内仍可完整显示和命中，未把按钮移入封面。
+- 验证：主项目与后台原生/lvt、SQLite、GC 的结果及范围见 _tools/HomeUiRegression/UniversalDetailsReport.md；没有操作用户前台窗口。
+
 ## 2026-10-31 禁用缓存后恢复曲库浏览位置
 - State/BrowseState、BrowsePagePosition：新增会话内纯值快照，按五个页签分别保存条目标识、视口偏移和 SemanticZoom 状态，不持有页面、集合或数据项。
 - BrowsePositionKeeper 与歌曲/最爱/专辑/艺术家/文件夹页：页面重建后恢复列表、分组网格、缩略索引及当前分组详情列表；保留原有详情进入状态和全部缓存禁用策略。

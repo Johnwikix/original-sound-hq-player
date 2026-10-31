@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Controls;
@@ -17,6 +18,7 @@ namespace WinUIMusicPlayer.View.Controls
     {
         public MusicGroupDetailViewModel ViewModel { get; }
         private readonly ListViewCentering _centering;
+        private readonly PlaybackSelectionTracker _playbackSelection;
         private readonly Music?[] _selectedBuffer = new Music?[256];
 
         public static readonly DependencyProperty PlaySourceTagProperty =
@@ -56,6 +58,7 @@ namespace WinUIMusicPlayer.View.Controls
                 App.Services.GetRequiredService<ApplicationTasks>());
             this.InitializeComponent();
             _centering = new ListViewCentering(MusicListView);
+            _playbackSelection = new PlaybackSelectionTracker(MusicListView, ViewModel.AppViewModel);
             this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
         }
@@ -78,8 +81,12 @@ namespace WinUIMusicPlayer.View.Controls
 
         private void MusicListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
+            if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, MusicListView)) return;
             ViewModel.MusicListView_DoubleTapped();
         }
+
+        private void MusicRow_SongInvoked(object sender, Music music)
+            => App.Services.GetRequiredService<LibraryNavigationService>().ShowSongDetails(music, (sender as MusicListRowControl)?.CoverElement, (sender as MusicListRowControl)?.TitleElement);
 
         private void MusicRow_ArtistInvoked(object sender, Music music)
             => ViewModel.AuthorTextBlock_Tapped(music.Author);

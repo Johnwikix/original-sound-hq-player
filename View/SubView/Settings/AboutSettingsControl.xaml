@@ -157,11 +157,11 @@
                                     IsOn="{x:Bind CacheViewModel.CacheEnabled, Mode=TwoWay}"
                                     AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('WebDavCacheToggleLabel')}" />
                                 <NumberBox
-                                    Width="110"
+                                    Width="160"
                                     Minimum="1"
                                     Maximum="1024"
                                     Value="{x:Bind CacheViewModel.CacheLimitGiB, Mode=TwoWay}"
-                                    SpinButtonPlacementMode="Compact"
+                                    SpinButtonPlacementMode="Inline"
                                     AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('WebDavCacheLimitLabel')}" />
                                 <TextBlock Text="GiB" VerticalAlignment="Center" />
                             </StackPanel>

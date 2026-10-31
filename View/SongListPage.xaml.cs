@@ -6,6 +6,9 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.View.Controls;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
@@ -21,6 +24,7 @@ namespace WinUIMusicPlayer.View
     {
         public SongListViewModel ViewModel { get; }
         private readonly ListViewCentering _centering;
+        private readonly PlaybackSelectionTracker _playbackSelection;
         private readonly BrowsePositionKeeper _position;
         private readonly Music?[] _selectedBuffer = new Music?[256];
 
@@ -31,6 +35,7 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
             _centering = new ListViewCentering(MusicListView);
+            _playbackSelection = new PlaybackSelectionTracker(MusicListView, ViewModel.AppViewModel);
             _position = new BrowsePositionKeeper(this, ViewModel.State.Browse, ViewModel.State.Browse.Positions.Songs, MusicListView);
             Unloaded += OnUnloaded;
         }
@@ -60,6 +65,7 @@ namespace WinUIMusicPlayer.View
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
+            if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, MusicListView)) return;
             ViewModel.MusicListView_DoubleTapped();
         }
 
@@ -103,6 +109,9 @@ namespace WinUIMusicPlayer.View
             }
             e.Handled = true;
         }
+
+        private void MusicRow_SongInvoked(object sender, Music music)
+            => App.Services.GetRequiredService<LibraryNavigationService>().ShowSongDetails(music, (sender as MusicListRowControl)?.CoverElement, (sender as MusicListRowControl)?.TitleElement);
 
         private void MusicRow_ArtistInvoked(object sender, Music music)
             => ViewModel.AuthorTextBlock_Tapped(music.Author);

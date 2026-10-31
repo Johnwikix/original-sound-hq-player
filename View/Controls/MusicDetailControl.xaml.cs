@@ -6,62 +6,42 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View.Controls;
 
-/// <summary>编辑首页歌曲的标签、歌词与封面，复用现有草稿、保存管线和首页命令。</summary>
-public sealed partial class HomeMusicDetailControl : UserControl
+/// <summary>编辑歌曲的标签、歌词与封面，复用既有草稿和保存管线。</summary>
+public sealed partial class MusicDetailControl : UserControl
 {
-    /// <summary>标识详情曲目。</summary>
-    public static readonly DependencyProperty SongProperty = DependencyProperty.Register(
-        nameof(Song), typeof(HomeSong), typeof(HomeMusicDetailControl), new PropertyMetadata(null, SongChanged));
-    /// <summary>标识首页命令和歌单菜单来源。</summary>
+    /// <summary>一次详情的通用展示与编辑上下文，不依赖首页。</summary>
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
-        nameof(ViewModel), typeof(HomeViewModel), typeof(HomeMusicDetailControl), new PropertyMetadata(null));
-    /// <summary>标识独立的标签、歌词和封面编辑会话。</summary>
-    public static readonly DependencyProperty EditorProperty = DependencyProperty.Register(
-        nameof(Editor), typeof(MusicDetailsEditorViewModel), typeof(HomeMusicDetailControl), new PropertyMetadata(null, EditorChanged));
-    /// <summary>获取或设置当前编辑会话。</summary>
-    public MusicDetailsEditorViewModel? Editor { get => (MusicDetailsEditorViewModel?)GetValue(EditorProperty); set => SetValue(EditorProperty, value); }
-    /// <summary>获取或设置当前规范曲目。</summary>
-    public HomeSong? Song { get => (HomeSong?)GetValue(SongProperty); set => SetValue(SongProperty, value); }
-    /// <summary>获取或设置首页状态与命令。</summary>
-    public HomeViewModel? ViewModel { get => (HomeViewModel?)GetValue(ViewModelProperty); set => SetValue(ViewModelProperty, value); }
+        nameof(ViewModel), typeof(MusicDetailsViewModel), typeof(MusicDetailControl), new PropertyMetadata(null, ViewModelChanged));
+    public MusicDetailsViewModel? ViewModel { get => (MusicDetailsViewModel?)GetValue(ViewModelProperty); set => SetValue(ViewModelProperty, value); }
+    public MusicDetailsEditorViewModel? Editor => ViewModel?.Editor;
+    public WinUIMusicPlayer.Model.Music? Music => ViewModel?.Music;
     /// <summary>获取共享封面动画的目的元素。</summary>
     public FrameworkElement CoverElement => CoverHost;
+    public FrameworkElement TitleElement => SongTitleText;
     /// <summary>获取与封面协调进入的文本与按钮。</summary>
     internal UIElement[] CoordinatedElements { get; }
 
     /// <summary>初始化属性视图，布局变化只调整视觉排列。</summary>
-    public HomeMusicDetailControl()
+    public MusicDetailControl()
     {
         InitializeComponent();
         CoordinatedElements = [HeroText];
         SizeChanged += OnSizeChanged;
         Unloaded += OnUnloaded;
     }
-    private static void SongChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    private static void ViewModelChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
-        var control = (HomeMusicDetailControl)sender;
-        control.PlaylistMenu.Hide();
-        control.Artwork.Music = control.Song?.Music;
-        if (control.Song is null)
-        {
-            control.PlayButton.CommandParameter = null;
-            control.FavoriteButton.CommandParameter = null;
-            control.QueueButton.CommandParameter = null;
-            control.CoverPreviewImage.Source = null;
-        }
+        var control = (MusicDetailControl)sender;
+        control.DismissMenus();
+        control.Artwork.Music = control.Music;
+        control.CoverPreviewImage.Source = null;
         control.WorkspaceTabs.SelectedIndex = 0;
         control.LyricsTabs.SelectedIndex = 0;
         control.IdentityScroll.ChangeView(null, 0, null, true);
         control.DetailScroll.ChangeView(null, 0, null, true);
         control.FileScroll.ChangeView(null, 0, null, true);
-    }
-    private static void EditorChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
-    {
-        if (args.NewValue is not null) return;
-        var control = (HomeMusicDetailControl)sender;
-        control.CoverPreviewImage.Source = null;
-        control.ActivityIndicator.IsActive = false;
-        control.DismissMenus();
+        control.Bindings?.Update();
+        if (control.ViewModel is null) control.ActivityIndicator.IsActive = false;
     }
     private void Confirm_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
     private void Cancel_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
@@ -96,7 +76,7 @@ public sealed partial class HomeMusicDetailControl : UserControl
         SongTitleText.FontSize = compact ? 22 : 26;
         SongTitleText.MaxLines = stacked ? 1 : compact ? 2 : 3;
         SongAlbumText.Visibility = stacked ? Visibility.Collapsed : Visibility.Visible;
-        RecommendationText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        RecommendationText.Visibility = compact || !HasText(ViewModel?.Reason) ? Visibility.Collapsed : Visibility.Visible;
         Grid.SetRow(WorkspaceViewport, stacked ? 1 : 0);
         Grid.SetColumn(WorkspaceViewport, stacked ? 0 : 2);
         Grid.SetColumnSpan(WorkspaceViewport, stacked ? 3 : 1);

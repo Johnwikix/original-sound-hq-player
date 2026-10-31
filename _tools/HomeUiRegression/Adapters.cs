@@ -118,6 +118,12 @@ namespace WinUIMusicPlayer.Utils
     }
     public static class BindUtils
     {
+        public static double MusicRowOpacity(bool playable) => playable ? 1 : .5;
+        public static Visibility GetHrMusicVisibility(int rate, int depth) => Visibility.Collapsed;
+        public static string TimeSpanToTextConverter(TimeSpan time) => time.ToString();
+        public static string IsExistOnDeviceGlyphConverter(int exists) => "\uE8FB";
+        public static string MusicSourceGlyph(bool remote, bool offline, bool cached) => "\uE753";
+        public static string MusicSourceLabel(bool remote, bool cached) => remote ? "Remote" : "Local";
         public static double BoolToOpacityReConverter(bool value) => value ? 0 : 1;
         public static double BoolToOpacityConverter(bool value) => value ? 1 : 0;
         public static bool BoolToBoolReConverter(bool value) => !value;
@@ -129,6 +135,8 @@ namespace WinUIMusicPlayer.Services
 {
     public static class MusicCommands
     {
+        public static MusicDetailsRequest? LastDetailsPlay;
+        public static IAsyncRelayCommand<MusicDetailsRequest> DetailsPlayCommand { get; } = new AsyncRelayCommand<MusicDetailsRequest>(request => { LastDetailsPlay = request; return Task.CompletedTask; });
         public static ICommand PlayCommand { get; } = new RelayCommand(() => { });
         public static ICommand UpdateFavouriteCommand { get; } = new RelayCommand<Music>(m =>
         {

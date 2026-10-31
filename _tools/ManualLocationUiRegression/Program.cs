@@ -11,6 +11,8 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 using Windows.Graphics;
@@ -216,7 +218,7 @@ internal sealed partial class TestWindow : Window
         await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(_app.SelectedPlaybackMusic);
         await Task.Delay(450);
         Check(Math.Abs(before - scroller.VerticalOffset) < 1, "navigation and track start do not scroll songs automatically");
-        Check(_songPage!.ViewModel.SelectedMusic is null, "navigation and playback do not select the playing row");
+        Check(ReferenceEquals(_songPage!.ViewModel.SelectedMusic, _app.ListSongs[810]), "playback selects the projected playing row without scrolling");
         Check(Locate(page).IsEnabled, "button reacts to current playback change");
         Check(AutomationProperties.GetName(Locate(page)) == "Locate current track", "actual button loads localized automation name");
         Check(ToolTipService.GetToolTip(Locate(page))?.ToString() == "Locate current track", "actual button loads localized tooltip");
@@ -385,10 +387,22 @@ internal sealed partial class TestWindow : Window
             "external Id=0 lookup compares file paths");
         Check(CurrentTrackLookup.Find(new List<Music> { repeated }, new Music { Id = 0 }) is null, "unidentified external playback cannot match arbitrary Id=0 rows");
         var queueList = new ListView { Height = 360, ItemsSource = _app.CurrentPlayingList, DisplayMemberPath = "Title" };
+        var queueSelection = new WinUIMusicPlayer.Behaviors.PlaybackSelectionTracker(queueList, _app, queue: true);
         _root.Children.Add(queueList);
         Grid.SetRow(queueList, 1);
         await Wait(() => queueList.IsLoaded && queueList.ActualHeight > 0);
         await Task.Delay(100);
+        var queueScrollerBefore = Find<ScrollViewer>(queueList);
+        double queueOffset = queueScrollerBefore.VerticalOffset;
+        Check(queueList.SelectedIndex == 950, "queue load selects the exact second occurrence of a repeated Music object");
+        _app.PendingEntryId = _app.Queue.EntryIdAt(20);
+        await Task.Delay(50);
+        Check(queueList.SelectedIndex == 20, "pending playback selects the requested duplicate queue entry");
+        _app.PendingEntryId = 0;
+        await Task.Delay(50);
+        Check(queueList.SelectedIndex == 950, "failed or cancelled pending playback restores the confirmed queue occurrence");
+        Check(Math.Abs(queueScrollerBefore.VerticalOffset - queueOffset) < 1,
+            "playback selection changes do not scroll the queue");
         var queueCentering = new ListViewCentering(queueList);
         Check(await queueCentering.LocateIndexAsync(queueVm.LocateCurrentTrack()), "repeated object at a virtualized queue index can be located");
         var queueRow = (FrameworkElement)queueList.ContainerFromIndex(950);
@@ -397,6 +411,24 @@ internal sealed partial class TestWindow : Window
         Check(duplicateError < 1.5, "second occurrence of the same queue object is centered");
         _measurements.Add(new { Label = "duplicate queue entry 950", ErrorDip = duplicateError });
         _root.Children.Remove(queueList);
+        var originalPage = AppData.CurrentPage;
+        var originalSequence = _app.SequentialPlayingList;
+        var playback = App.Services.GetRequiredService<PlaybackCoordinator>();
+        AppData.CurrentPage = typeof(FavouritePlayListPage);
+        long requestedEntry = _app.Queue.EntryIdAt(950);
+        await MusicCommands.DetailsPlayCommand.ExecuteAsync(new MusicDetailsRequest(repeated, null, requestedEntry));
+        Check(ReferenceEquals(_app.SequentialPlayingList, originalSequence) && ReferenceEquals(playback.LastMusic, repeated)
+            && playback.LastEntryId == requestedEntry, "real detail command keeps the existing queue and forwards the precise duplicate entry to playback");
+        await MusicCommands.DetailsPlayCommand.ExecuteAsync(new MusicDetailsRequest(_all[100], typeof(SongListPage)));
+        Check(_app.SequentialPlayingList.SequenceEqual(_app.ListSongs),
+            "real detail command retains its captured song-list source even while the global page points elsewhere");
+        _app.PlayListSongs.Add(new PlayListMusicItem { Music = _all[2] });
+        await MusicCommands.DetailsPlayCommand.ExecuteAsync(new MusicDetailsRequest(_all[2], typeof(PlayListPage)));
+        Check(_app.SequentialPlayingList.Count == 1 && ReferenceEquals(_app.SequentialPlayingList[0], _all[2]),
+            "real detail command unwraps the playlist source without using the global page");
+        _app.PlayListSongs.Clear();
+        _app.SequentialPlayingList = originalSequence;
+        AppData.CurrentPage = originalPage;
         foreach (int index in new[] { 300, 999, 50, 700, 1190, 101 })
         {
             Check(await centering.LocateAsync(_app.ListSongs[index]), "location converges for index " + index);

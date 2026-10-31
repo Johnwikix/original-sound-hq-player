@@ -19,7 +19,9 @@
             </controls:HomeSongItem>
         </DataTemplate>
     </Page.Resources>
-    <Grid KeyDown="Home_KeyDown">
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid KeyDown="Home_KeyDown">
     <ContentControl x:Name="BrowseRoot" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
         Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
         IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.IsInDetailMode), Mode=OneWay}">
@@ -33,7 +35,7 @@
         </Grid>
         <ScrollViewer Grid.Row="1" x:Name="ContentScroll" ViewChanging="Content_ViewChanging" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasContent), Mode=OneWay}" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
             <Grid>
-                <StackPanel Margin="24,12,24,24" Spacing="24">
+                <StackPanel Margin="0,12,0,24" Padding="24,0,24,0" Spacing="24">
                     <controls:FeaturedCarousel x:Name="Featured" ItemsSource="{x:Bind ViewModel.Themes, Mode=OneWay}"
                         ThumbnailItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}">
                         <controls:FeaturedCarousel.MainContent>
@@ -115,11 +117,15 @@
         </InfoBar>
     </Grid>
     </ContentControl>
-    <controls:HomeMusicDetailControl x:Name="DetailView" Song="{x:Bind ViewModel.DetailSong, Mode=OneWay}" ViewModel="{x:Bind ViewModel}" Editor="{x:Bind ViewModel.DetailEditor, Mode=OneWay}"
+    <controls:MusicDetailControl x:Name="DetailView" ViewModel="{x:Bind ViewModel.DetailPresentation, Mode=OneWay}"
         Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasDetails), Mode=OneWay}"
         Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
         IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}">
-        <controls:HomeMusicDetailControl.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></controls:HomeMusicDetailControl.OpacityTransition>
-    </controls:HomeMusicDetailControl>
+        <controls:MusicDetailControl.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></controls:MusicDetailControl.OpacityTransition>
+    </controls:MusicDetailControl>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

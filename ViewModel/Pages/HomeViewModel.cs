@@ -40,6 +40,7 @@ public sealed class HomeViewModel : ObservableObject
     private readonly WebDavLibraryService _remote;
     private readonly ILogger<HomeViewModel> _logger;
     private readonly IMusicDetailsEditorFactory _editors;
+    private readonly EditorSessions _editorSessions;
     private Task _editorTasks = Task.CompletedTask;
     private DispatcherQueue? _dispatcher;
     private CancellationTokenSource? _operation;
@@ -77,7 +78,12 @@ public sealed class HomeViewModel : ObservableObject
         private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(HasDetails)); }
     }
     /// <summary>获取属性面板拥有的标签与歌词编辑会话。</summary>
-    public MusicDetailsEditorViewModel? DetailEditor { get; private set => SetProperty(ref field, value); }
+    public MusicDetailsViewModel? DetailPresentation
+    {
+        get;
+        private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(DetailEditor)); }
+    }
+    public MusicDetailsEditorViewModel? DetailEditor => DetailPresentation?.Editor;
     /// <summary>获取属性控件是否仍持有曲目，包含返回过渡期间。</summary>
     public bool HasDetails => DetailSong is not null;
     /// <summary>获取当前是否处于歌曲属性界面。</summary>
@@ -86,20 +92,22 @@ public sealed class HomeViewModel : ObservableObject
     public bool OpenDetails(HomeSong song, bool preservePreview = false)
     {
         if (!_active || _stopped || !_app.CanPublishState || HasDetails || !(Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) return false;
-        MusicDetailsEditorViewModel? editor = null;
+        MusicDetailsViewModel? presentation = null;
         try
         {
-            editor = _editors.Create(song.Music);
-            editor.Start();
+            var editor = _editors.Create(song.Music);
+            presentation = new MusicDetailsViewModel(editor, _app, _database, _editorSessions, _logger,
+                song.PlayCommand, song, song.Reason);
+            presentation.Start();
         }
         catch (Exception ex)
         {
-            if (editor is not null) RetireEditor(editor);
+            if (presentation is not null) RetireEditor(presentation);
             _logger.LogError(ex, "打开首页歌曲编辑器失败");
             ErrorMessage = ToolUtils.GetString("Error") + " " + ex.Message;
             return false;
         }
-        DetailEditor = editor;
+        DetailPresentation = presentation;
         DetailSong = song;
         IsInDetailMode = true;
         if (!preservePreview) DismissPreview();
@@ -110,7 +118,7 @@ public sealed class HomeViewModel : ObservableObject
     public void BeginCloseDetails()
     {
         if (!IsInDetailMode) return;
-        DetailEditor?.BeginClose();
+        DetailPresentation?.BeginClose();
         IsInDetailMode = false;
         _app.IsBackBtnEnable = false;
     }
@@ -119,13 +127,13 @@ public sealed class HomeViewModel : ObservableObject
     {
         if (IsInDetailMode) return;
         DetailSong = null;
-        var editor = DetailEditor;
-        DetailEditor = null;
-        if (editor is not null) RetireEditor(editor);
+        var presentation = DetailPresentation;
+        DetailPresentation = null;
+        if (presentation is not null) RetireEditor(presentation);
     }
-    private void RetireEditor(MusicDetailsEditorViewModel editor)
+    private void RetireEditor(MusicDetailsViewModel editor)
         => _editorTasks = Task.WhenAll(_editorTasks, StopEditorAsync(editor));
-    private async Task StopEditorAsync(MusicDetailsEditorViewModel editor)
+    private async Task StopEditorAsync(MusicDetailsViewModel editor)
     {
         try { await editor.StopAsync(); }
         catch (Exception ex) { _logger.LogError(ex, "结束首页歌曲编辑会话失败"); }
@@ -167,7 +175,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>初始化依赖，不订阅事件或启动工作。</summary>
     public HomeViewModel(AppViewModel app, MusicDatabaseService database, PlaybackStatsService statistics,
         HomeRecommendationService recommendations, PlaybackCoordinator playback, AddFolderViewModel folders,
-        WebDavLibraryService remote, ILogger<HomeViewModel> logger, IMusicDetailsEditorFactory editors)
+        WebDavLibraryService remote, ILogger<HomeViewModel> logger, IMusicDetailsEditorFactory editors, EditorSessions editorSessions)
     {
         _app = app;
         _database = database;
@@ -178,6 +186,7 @@ public sealed class HomeViewModel : ObservableObject
         _remote = remote;
         _logger = logger;
         _editors = editors;
+        _editorSessions = editorSessions;
         RefreshCommand = new RelayCommand(() => { _batch++; RequestRefresh(invalidateSnapshot: true); }, () => !_stopped);
         PlaySongCommand = new AsyncRelayCommand<HomeSong>(song => PlayAsync(song?.Music, song?.Queue),
             song => song is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);

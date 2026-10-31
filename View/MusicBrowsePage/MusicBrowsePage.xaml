@@ -17,7 +17,9 @@
     IsTabStop="True"
     TabIndex="0"
     mc:Ignorable="d">
-    <Grid Margin="0" RowDefinitions="Auto,Auto,*">
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid Margin="0" RowDefinitions="Auto,Auto,*">
         <Grid
             x:Name="TopPanel"
             Grid.Row="0"
@@ -244,5 +246,9 @@
                 </Grid>
             </Grid>
         </Grid>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

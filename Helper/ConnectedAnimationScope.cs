@@ -13,6 +13,7 @@ public sealed class ConnectedAnimationScope : IDisposable
     private readonly string _key;
     private ConnectedAnimation? _animation;
     private Action? _completed;
+    private FrameworkElement? _target;
     private int _generation;
     private bool _disposed;
 
@@ -23,7 +24,7 @@ public sealed class ConnectedAnimationScope : IDisposable
         owner.Unloaded += OwnerUnloaded;
     }
 
-    public bool Prepare(FrameworkElement? source)
+    public bool Prepare(FrameworkElement? source, ConnectedAnimationConfiguration? configuration = null)
     {
         if (_disposed) return false;
         Cancel();
@@ -32,6 +33,7 @@ public sealed class ConnectedAnimationScope : IDisposable
         try
         {
             _animation = ConnectedAnimationService.GetForCurrentView().PrepareToAnimate(_key, source);
+            if (configuration is not null) _animation.Configuration = configuration;
             return true;
         }
         catch (COMException exception)
@@ -56,6 +58,8 @@ public sealed class ConnectedAnimationScope : IDisposable
             var destination = target();
             if (destination is not { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 }
                 || destination.XamlRoot != _owner.XamlRoot) { Complete(animation); return; }
+            _target = destination;
+            destination.Unloaded += TargetUnloaded;
             animation.Completed += AnimationCompleted;
             try { if (!animation.TryStart(destination)) Complete(animation); }
             catch (COMException exception)
@@ -78,11 +82,17 @@ public sealed class ConnectedAnimationScope : IDisposable
     }
 
     private void OwnerUnloaded(object sender, RoutedEventArgs args) => Cancel();
+    private void TargetUnloaded(object sender, RoutedEventArgs args)
+    {
+        if (_animation is { } animation) Complete(animation);
+    }
 
     public void Cancel()
     {
         _generation++;
         _completed = null;
+        if (_target is { } target) target.Unloaded -= TargetUnloaded;
+        _target = null;
         if (_animation is not { } animation) return;
         _animation = null;
         animation.Completed -= AnimationCompleted;

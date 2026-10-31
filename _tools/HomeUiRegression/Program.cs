@@ -127,7 +127,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await database.CreateTableAsync<PendingMetadataWrite>();
             await data.Lyrics.InitializeAsync(path);
             var editorFactory = new FixtureEditorFactory(data, app);
-            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory);
+            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory, editorFactory.Sessions);
             using var services = new ServiceCollection().AddSingleton(home).BuildServiceProvider();
             App.Services = services;
             window = new Window();
@@ -258,12 +258,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Task.Delay(230);
             Check(home.PreviewSong is null, "keyboard focus leaves Enter available for full song properties instead of moving to preview playback");
             double detailEntryOffset = contentScroll.VerticalOffset;
-            var details = (HomeMusicDetailControl)page.FindName("DetailView");
+            var details = (MusicDetailControl)page.FindName("DetailView");
             carousel.AutoShuffle = true;
             app.IsPlaybackEngineReady = false;
             ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(cardSource).GetPattern(PatternInterface.Invoke)).Invoke();
             await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitionPending"));
-            Check(ReferenceEquals(home.DetailSong, selected) && ReferenceEquals(details.Song?.Music, selected.Music)
+            Check(ReferenceEquals(home.DetailSong, selected) && ReferenceEquals(details.Music, selected.Music)
                 && app.IsBackBtnEnable && playback.LastId == 0
                 && ReferenceEquals(FocusManager.GetFocusedElement(page.XamlRoot), details.FindName("HeaderFocus"))
                 && ((ScrollViewer)details.FindName("DetailScroll")).VerticalOffset == 0,
@@ -303,16 +303,18 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             app.AllPlayList.Add(new PlayList { Id = 42, Name = "Properties playlist" });
             detailPlaylist.ShowAt((Button)details.FindName("PlaylistButton"));
             await Task.Delay(80);
-            Check(detailPlaylist.Items[0] is MenuFlyoutItem { CommandParameter: HomePlaylistTarget { PlaylistId: 42 } detailTarget }
-                && detailTarget.MusicId == selected.Music.Id,
+            var detailMenuItem = (MenuFlyoutItem)detailPlaylist.Items[0];
+            var detailTarget = detailMenuItem.CommandParameter;
+            Check((int)detailTarget.GetType().GetProperty("PlaylistId")!.GetValue(detailTarget)! == 42
+                && (int)detailTarget.GetType().GetProperty("MusicId")!.GetValue(detailTarget)! == selected.Music.Id,
                 "full properties playlist menu captures the correct song without depending on hover state");
             await CloseFlyout(detailPlaylist);
             data.FailPlaylistAdd = true;
-            await home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(42, selected.Music.Id));
+            await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)detailMenuItem.Command).ExecuteAsync(detailTarget);
             Check(((InfoBar)details.FindName("ErrorInfo")).IsOpen,
                 "playlist failures remain visible inside the properties view while browse is hidden");
             data.FailPlaylistAdd = false;
-            await home.AddToPlaylistCommand.ExecuteAsync(new HomePlaylistTarget(42, selected.Music.Id));
+            await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)detailMenuItem.Command).ExecuteAsync(detailTarget);
             app.AllPlayList.Clear();
             await database.ExecuteAsync("DELETE FROM PlayListMusic WHERE PlayListId = 42");
             await Capture(page, "home-song-properties.png");

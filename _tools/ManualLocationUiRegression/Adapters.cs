@@ -23,6 +23,7 @@ namespace WinUIMusicPlayer
     }
 }
 namespace WinUIMusicPlayer.State { public sealed class AppState { public PlaybackQueueState Queue { get; } = new(); public BrowseState Browse { get; } = new(); } }
+namespace AnimatedWin2dControls.Messages { }
 namespace WinUIMusicPlayer.Reader { public static class Placeholder { } }
 namespace WinUIMusicPlayer.Model
 {
@@ -51,6 +52,9 @@ namespace WinUIMusicPlayer.Services
     {
         public Task AddMusicListToPlayList(IEnumerable<Music> songs, int id) => Task.CompletedTask;
         public Task SaveFavoriteOrderAsync(IEnumerable<Music> songs) => Task.CompletedTask;
+        public Task AddToFavourite(Music music) => Task.CompletedTask;
+        public Task UpdateLyricsOffsetAsync(int id, int value) => Task.CompletedTask;
+        public Task RemoveMusic(int id) => Task.CompletedTask;
     }
     public sealed class BassPlayerCommandService { public void UpdateSettings() { } }
     public sealed class SystemMediaControlsService { }
@@ -63,7 +67,15 @@ namespace WinUIMusicPlayer.Services
     public sealed class PlaybackCoordinator
     {
         public event Action<Music, CancellationToken>? TrackStarted;
-        public Task PlayAsync(Music music) { TrackStarted?.Invoke(music, default); return Task.CompletedTask; }
+        public Music? LastMusic;
+        public long LastEntryId;
+        public Task PlayAsync(Music music, long entryId = 0)
+        {
+            LastMusic = music;
+            LastEntryId = entryId;
+            TrackStarted?.Invoke(music, default);
+            return Task.CompletedTask;
+        }
     }
     public sealed class PlaybackCommands
     {
@@ -71,7 +83,8 @@ namespace WinUIMusicPlayer.Services
         public IRelayCommand NextCommand { get; } = new RelayCommand(() => { });
         public IRelayCommand PreviousCommand { get; } = new RelayCommand(() => { });
     }
-    public static class MusicCommands { public static IRelayCommand<Music> UpdateFavouriteCommand { get; } = new RelayCommand<Music>(_ => { }); }
+    public sealed class ApplicationTasks { public Task RunCommittedAsync(Func<Task> operation) => operation(); }
+    public static class OffsetMsBus { public static void Publish(int value) { } }
 }
 namespace WinUIMusicPlayer.Services.NavigationService { public interface INavigatable { void ReceiveNavigationParameter(object parameter); } }
 namespace WinUIMusicPlayer.ViewModel
@@ -80,9 +93,15 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public WinUIMusicPlayer.State.AppState State { get; } = new();
         public BulkObservableCollection<Music> ListSongs { get; } = [];
+        public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; } = [];
+        public bool IsInitialized => false;
+        public void AddToFavoriteSongs(Music song) => FavoriteSongs.Add(song);
+        public void RemoveFromFavoriteSongs(Music song) => FavoriteSongs.Remove(song);
+        public void RemoveFromPlayListSongs(Music song) { }
+        public void AddMusicToCurrentPlayList(Music song) => CurrentPlayingList.Add(song);
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public WinUIMusicPlayer.State.PlaybackQueueState Queue => State.Queue;
-        public long PendingEntryId { get; set; }
+        public long PendingEntryId { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(SelectedPlaybackMusic)); } }
         public BulkObservableCollection<Music> CurrentPlayingList => Queue.Playing;
         public int GetSelectedPlaybackIndex()
         {
@@ -171,7 +190,7 @@ namespace WinUIMusicPlayer.View
 {
     public sealed class MainPage : Page
     {
-        public Frame ShellFrame { get; } = new() { IsNavigationStackEnabled = false, CacheSize = 0 };
+        public Frame ShellFrame { get; set; } = new() { IsNavigationStackEnabled = false, CacheSize = 0 };
         public MusicBrowsePage? CurrentLibraryPage => ShellFrame.Content as MusicBrowsePage;
         public ContentDialog EqualizerDialog { get; } = new();
         public MainPage() => Content = ShellFrame;
@@ -179,6 +198,9 @@ namespace WinUIMusicPlayer.View
         {
             if (CurrentLibraryPage is null) ShellFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
         }
+        public MusicDetailsRequest? LastDetailsRequest;
+        public void ShowMusicDetails(MusicDetailsRequest request, FrameworkElement? sourceCover = null, FrameworkElement? sourceTitle = null) => LastDetailsRequest = request;
+        public void CloseMusicDetails() { }
         public void NavigateToPlayingDetailPage() { }
     }
     public sealed partial class EmptyPage : Page { public EmptyPage() => InitializeComponent(); }
@@ -195,7 +217,12 @@ namespace WinUIMusicPlayer.View.Controls
             row.Height = music.Id % 3 == 0 ? 76 : 44;
         }));
         public Music Music { get => (Music)GetValue(MusicProperty); set => SetValue(MusicProperty, value); }
+        public FrameworkElement CoverElement => this;
+        public FrameworkElement TitleElement => this;
+        public event EventHandler<Music>? SongInvoked;
         public event EventHandler<Music>? ArtistInvoked;
         public event EventHandler<Music>? AlbumInvoked;
     }
 }
+
+namespace WinUIMusicPlayer.View { public sealed class PlayListPage : Page { } }

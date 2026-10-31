@@ -17,12 +17,19 @@ namespace WinUIMusicPlayer.Services
         public static IRelayCommand<Music> AddToPlayListCommand { get; } = new RelayCommand<Music>(AddToCurrentPlayList);
         public static IRelayCommand<Music> AddToFavouriteCommand { get; } = new RelayCommand<Music>(AddToFavourite);
 
-        private static async Task PlayAsync(Music? music)
+        public static IAsyncRelayCommand<MusicDetailsRequest> DetailsPlayCommand { get; } = new AsyncRelayCommand<MusicDetailsRequest>(
+            request => request is null ? Task.CompletedTask : PlayFromPageAsync(request.Music, request.PlaybackPage, request.QueueEntryId),
+            _ => App.Services.GetRequiredService<AppViewModel>().CanStartPlayback,
+            AsyncRelayCommandOptions.AllowConcurrentExecutions);
+
+        private static Task PlayAsync(Music? music)
+            => music is null ? Task.CompletedTask : PlayFromPageAsync(music, AppData.CurrentPage);
+
+        private static async Task PlayFromPageAsync(Music music, System.Type? page, long entryId = 0)
         {
             // 手动播放由 PlaybackCoordinator 重新探活，不能被缓存的离线状态拦截。
             if (music is null) return;
             var app = App.Services.GetRequiredService<AppViewModel>();
-            var page = AppData.CurrentPage;
             if (page == typeof(FavouritePlayListPage))
                 app.SequentialPlayingList = new(app.FavoriteSongs);
             else if (page == typeof(PlayListPage))
@@ -42,7 +49,7 @@ namespace WinUIMusicPlayer.Services
             else if (page == typeof(FolderBrowsePage))
                 app.SequentialPlayingList = new(app.FolderSongs);
 
-            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: music, IsChangeList: true);
+            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: music, IsChangeList: true, entryId: entryId);
         }
 
         private static void UpdateFavourite(Music? music)

@@ -155,6 +155,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         ObserveCollections();
         NotifySelection();
         NotifyThumbnails();
+        UpdateNavigationLayout();
         _lighting.Attach();
         foreach (var shadow in _thumbnailShadows) shadow.Attach();
     }
@@ -215,6 +216,18 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private void Layout_SizeChanged(object sender, SizeChangedEventArgs args)
     {
         UpdateLayoutMode();
+        UpdateNavigationLayout();
+    }
+    private void Slider_SizeChanged(object sender, SizeChangedEventArgs args) => UpdateNavigationLayout();
+    private void UpdateNavigationLayout()
+    {
+        if (!SliderGrid.IsLoaded || SliderGrid.ActualWidth <= 0) return;
+        var origin = SliderGrid.TransformToVisual(NavigationOverlay).TransformPoint(new Windows.Foundation.Point());
+        double top = origin.Y + (SliderGrid.ActualHeight - 32) / 2;
+        Canvas.SetLeft(PreviousButton, origin.X - 10);
+        Canvas.SetLeft(NextButton, origin.X + SliderGrid.ActualWidth - 22);
+        Canvas.SetTop(PreviousButton, top);
+        Canvas.SetTop(NextButton, top);
     }
     private void UpdateLayoutMode()
     {

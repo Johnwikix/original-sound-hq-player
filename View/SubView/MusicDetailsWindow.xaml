@@ -172,7 +172,7 @@
                                 IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
+                                SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind MetadataEditor.Draft.Year, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="1">
@@ -185,7 +185,7 @@
                                 IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
+                                SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind MetadataEditor.Draft.DiskNumber, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2">
@@ -198,7 +198,7 @@
                                 IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
+                                SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind MetadataEditor.Draft.TrackNumber, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="3">
@@ -212,7 +212,7 @@
                                 Maximum="10000"
                                 Minimum="-10000"
                                 SmallChange="100"
-                                SpinButtonPlacementMode="Compact"
+                                SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind MusicDetail.LyricsOffsetMs, Mode=TwoWay}" />
                         </StackPanel>
                     </Grid>

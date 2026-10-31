@@ -239,8 +239,8 @@ namespace WinUIMusicPlayer.ViewModel
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
-        public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
-            => _coordinator.PlayAsync(music);
+        public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false, long entryId = 0)
+            => _coordinator.PlayAsync(music, entryId);
 
         private void OnTrackStarted(Music music, CancellationToken token)
         {

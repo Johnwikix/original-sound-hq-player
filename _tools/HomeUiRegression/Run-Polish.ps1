@@ -1,4 +1,4 @@
-param([switch]$SkipBuild, [switch]$Baseline, [string]$RunName = 'after', [switch]$CaptureDump)
+param([switch]$SkipBuild, [switch]$Baseline, [string]$RunName = 'after', [switch]$CaptureDump, [string[]]$OnlyActions)
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
@@ -58,7 +58,8 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','Stress','Collect','Stress','Collect','Stress','Collect') }
+    $actions = if ($Baseline) { @('ReproCarousel','RoundTrip','Preview','OpenFromPreview','VerifyDetails','Stress','Collect','Stress','Collect','Stress','Collect') } else { @('ReproCarousel','RoundTrip','Preview','VerifyDetails','Secondary','Universal','CarouselEdges','Stress','Collect','Stress','Collect','Stress','Collect') }
+    if ($OnlyActions) { $actions = $OnlyActions }
     foreach ($action in $actions) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence
