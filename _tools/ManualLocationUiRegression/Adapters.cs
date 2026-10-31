@@ -22,7 +22,7 @@ namespace WinUIMusicPlayer
         public static ILogger<T> GetLogger<T>() => NullLogger<T>.Instance;
     }
 }
-namespace WinUIMusicPlayer.State { public sealed class AppState { public PlaybackQueueState Queue { get; } = new(); } }
+namespace WinUIMusicPlayer.State { public sealed class AppState { public PlaybackQueueState Queue { get; } = new(); public BrowseState Browse { get; } = new(); } }
 namespace WinUIMusicPlayer.Reader { public static class Placeholder { } }
 namespace WinUIMusicPlayer.Model
 {
@@ -107,6 +107,12 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsBackBtnEnable { get; set; }
         public bool CanStartPlayback => true;
         public string PageType { get; set; } = "song";
+        public Microsoft.UI.Xaml.Data.CollectionViewSource AlbumPageSource { get; } = new() { IsSourceGrouped = true };
+        public Microsoft.UI.Xaml.Data.CollectionViewSource ArtistPageSource { get; } = new() { IsSourceGrouped = true };
+        public Microsoft.UI.Xaml.Data.CollectionViewSource FolderPageSource { get; } = new() { IsSourceGrouped = true };
+        public BulkObservableCollection<Music> AlbumSongs { get; } = [];
+        public BulkObservableCollection<Music> ArtistSongs { get; } = [];
+        public BulkObservableCollection<Music> FolderSongs { get; } = [];
         public string DefaultPlayListComboBoxTag { get; set; } = "song";
         public PlayMode CurrentPlayMode { get; set; }
         public Visibility FavoriteEmptyVisibility => Visibility.Collapsed;
@@ -134,6 +140,16 @@ namespace WinUIMusicPlayer.Utils
     public static class ArtistHelper { public static string[] GetArtistNames(string value) => value.Split(';'); }
     public static class ToolUtils
     {
+        public static T? FindVisualChild<T>(DependencyObject root, Func<T, bool> match) where T : DependencyObject
+        {
+            for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is T typed && match(typed)) return typed;
+                if (FindVisualChild(child, match) is { } found) return found;
+            }
+            return null;
+        }
         public static string GetString(string key) => key;
         public static bool DeleteFileFromDisk(string path) => throw new NotSupportedException("No disk writes in fixture");
         public static ObservableCollection<MenuModel> BuildConvertMenuChildren(ICommand command) => [];
@@ -164,27 +180,6 @@ namespace WinUIMusicPlayer.View
             if (CurrentLibraryPage is null) ShellFrame.Navigate(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
         }
         public void NavigateToPlayingDetailPage() { }
-    }
-    public sealed class DetailVm { public bool IsInDetailMode { get; set; } }
-    public sealed partial class AlbumPage : Page
-    {
-        public AlbumPage() => InitializeComponent();
-        public DetailVm ViewModel { get; } = new();
-        public void EnterDetailFromCrossLink() => ViewModel.IsInDetailMode = true;
-        public void CollapseDetail() => ViewModel.IsInDetailMode = false;
-    }
-    public sealed partial class ArtistPage : Page
-    {
-        public ArtistPage() => InitializeComponent();
-        public DetailVm ViewModel { get; } = new();
-        public void EnterDetailFromCrossLink() => ViewModel.IsInDetailMode = true;
-        public void CollapseDetail() => ViewModel.IsInDetailMode = false;
-    }
-    public sealed partial class FolderBrowsePage : Page
-    {
-        public FolderBrowsePage() => InitializeComponent();
-        public DetailVm ViewModel { get; } = new();
-        public void CollapseDetail() => ViewModel.IsInDetailMode = false;
     }
     public sealed partial class EmptyPage : Page { public EmptyPage() => InitializeComponent(); }
 }

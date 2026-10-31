@@ -25,14 +25,15 @@ internal sealed partial class TestWindow
         _shell.NavigateToMusicBrowsePage();
         await Wait(() => _shell.CurrentLibraryPage?.IsLoaded == true && InnerFrame.Content is Page);
         ObserveCachePage(_shell.CurrentLibraryPage!);
+        ObserveCachePage((Page)InnerFrame.Content);
         for (int i = 0; i < 4; i++)
         {
-            _shell.CurrentLibraryPage!.SelectBarItem("favourite");
-            await Task.Delay(120);
-            ObserveCachePage((Page)InnerFrame.Content);
-            _shell.CurrentLibraryPage.SelectBarItem("song");
-            await Task.Delay(120);
-            ObserveCachePage((Page)InnerFrame.Content);
+            foreach (string tag in new[] { "favourite", "album", "artist", "folder", "song" })
+            {
+                _shell.CurrentLibraryPage!.SelectBarItem(tag);
+                await Task.Delay(120);
+                ObserveCachePage((Page)InnerFrame.Content);
+            }
         }
         _shell.ShellFrame.Navigate(typeof(EmptyPage));
         await Task.Delay(250);

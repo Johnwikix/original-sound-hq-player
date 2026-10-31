@@ -1,3 +1,9 @@
+## 2026-10-31 禁用缓存后恢复曲库浏览位置
+- State/BrowseState、BrowsePagePosition：新增会话内纯值快照，按五个页签分别保存条目标识、视口偏移和 SemanticZoom 状态，不持有页面、集合或数据项。
+- BrowsePositionKeeper 与歌曲/最爱/专辑/艺术家/文件夹页：页面重建后恢复列表、分组网格、缩略索引及当前分组详情列表；保留原有详情进入状态和全部缓存禁用策略。
+- ListViewCentering：手动定位优先取消同一列表的恢复，用户滚动、按键或主动 SemanticZoom 切换也会终止旧恢复；不同查询/分组隔离快照，数据重排按标识恢复，缺失条目回退到有效位置。
+- 验证：主项目 x64 Debug 构建 0 错误；后台原生/lvt 回归通过，66 个离页实例全部回收、前台违规 0；范围与数据见 _tools/ManualLocationUiRegression/BrowsePositionReport.md。
+
 ## 2026-10-31 修复点击后圆角丢失并试用禁用导航缓存
 - MusicCoverControl：圆角裁切移到私有内容层，避免官方连接动画清除根 Visual.Clip 后封面永久变方；保留进入和返回动画。
 - MainWindow.xaml、MainPage.xaml、MusicBrowsePage.xaml：全部四个 Frame 显式设置 CacheSize=0；曲库、歌曲、收藏、专辑、艺术家和文件夹页改为 NavigationCacheMode.Disabled，主壳与播放详情也显式 Disabled。

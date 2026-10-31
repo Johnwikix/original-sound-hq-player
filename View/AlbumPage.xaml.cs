@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using WinRT;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
@@ -17,6 +18,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class AlbumPage : Page, INavigatable
     {
         private readonly ConnectedAnimationScope _coverAnimation;
+        private readonly BrowsePositionKeeper _position;
         public AlbumViewModel ViewModel { get; }
 
         public AlbumPage()
@@ -27,6 +29,10 @@ namespace WinUIMusicPlayer.View
             _coverAnimation = new ConnectedAnimationScope(this, "AlbumCover");
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
+            _position = new BrowsePositionKeeper(this, ViewModel.AppViewModel.State.Browse,
+                ViewModel.AppViewModel.State.Browse.Positions.Albums, AlbumGridView, BrowsePositionKind.Album,
+                BrowseZoom, ZoomedOutGridView, (ListView)DetailView.FindName("MusicListView"),
+                () => ViewModel.AppViewModel.CurrentAlbumObj?.Album);
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -91,6 +97,7 @@ namespace WinUIMusicPlayer.View
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
+            _position.Leave();
             _coverAnimation.Cancel();
             DetailView.ViewModel.IsClosingForTransition = false;
             base.OnNavigatedFrom(e);

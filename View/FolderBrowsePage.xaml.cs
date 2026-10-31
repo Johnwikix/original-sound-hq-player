@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using WinRT;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
@@ -17,6 +18,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class FolderBrowsePage : Page, INavigatable
     {
         private readonly ConnectedAnimationScope _coverAnimation;
+        private readonly BrowsePositionKeeper _position;
         public FolderViewModel ViewModel { get; }
 
         public FolderBrowsePage()
@@ -27,6 +29,10 @@ namespace WinUIMusicPlayer.View
             _coverAnimation = new ConnectedAnimationScope(this, "FolderCover");
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
+            _position = new BrowsePositionKeeper(this, ViewModel.AppViewModel.State.Browse,
+                ViewModel.AppViewModel.State.Browse.Positions.Folders, FolderGridView, BrowsePositionKind.Folder,
+                BrowseZoom, ZoomedOutGridView, (ListView)DetailView.FindName("MusicListView"),
+                () => ViewModel.AppViewModel.CurrentFolderObj?.LastLevelFolderPath);
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -81,6 +87,7 @@ namespace WinUIMusicPlayer.View
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
+            _position.Leave();
             _coverAnimation.Cancel();
             DetailView.ViewModel.IsClosingForTransition = false;
             base.OnNavigatedFrom(e);

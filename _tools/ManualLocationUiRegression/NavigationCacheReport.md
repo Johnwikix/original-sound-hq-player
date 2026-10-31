@@ -1,5 +1,7 @@
 # 圆角往返修复与禁用导航缓存试验
 
+后续更新：禁用缓存后的浏览位置已补齐恢复，见 [位置恢复报告](G:/SoftwareProject/winui/music_player/_tools/ManualLocationUiRegression/BrowsePositionReport.md)。下文保留上一批试用时的验证记录。
+
 日期：2026-10-31。变更基线：dee9a9fa。保留 Frame 和官方动画，不修改 CsWinRT。
 
 ## 点击后圆角丢失

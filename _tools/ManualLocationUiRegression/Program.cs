@@ -70,6 +70,7 @@ internal sealed partial class TestWindow : Window
     private nint _hwnd;
     private bool _busy;
     private string _status = "starting";
+    private double _savedSongTop;
     private SongListPage? _songPage;
     private FavouritePlayListPage? _favoritePage;
     public TestWindow()
@@ -78,6 +79,7 @@ internal sealed partial class TestWindow : Window
         var services = new ServiceCollection();
         services.AddLoggingForFixture();
         services.AddSingleton(_app).AddSingleton(_shell);
+        services.AddSingleton<AlbumViewModel>().AddSingleton<ArtistViewModel>().AddSingleton<FolderViewModel>();
         services.AddSingleton<MusicBrowseViewModel>().AddSingleton<SongListViewModel>().AddSingleton<FavouritePlayListViewModel>();
         services.AddSingleton<BassPlayerCommandService>().AddSingleton<SystemMediaControlsService>().AddSingleton<MusicDatabaseService>()
             .AddSingleton<UsbDeviceService>().AddSingleton<PlaybackCoordinator>().AddSingleton<PlaybackCommands>().AddSingleton<CoverPresentationService>()
@@ -93,6 +95,7 @@ internal sealed partial class TestWindow : Window
         AddAction(actions, "Lifecycle", CheckLifecycle);
         AddAction(actions, "VerifyReentry", VerifyReentry);
         AddAction(actions, "Navigation", CheckNavigation);
+        AddAction(actions, "Positions", CheckBrowsePositions);
         AddAction(actions, "Edges", CheckEdges);
         AddAction(actions, "Exit", async () => { await Task.Delay(500); Close(); });
         _root.Children.Add(actions);
@@ -104,6 +107,10 @@ internal sealed partial class TestWindow : Window
             await _app.ListSongs.ReplaceAllAsync(_all);
             await _app.FavoriteSongs.ReplaceAllAsync(_all);
             _app.SongsSource.AddRange(_all);
+            PrepareGroupSources();
+            await _app.AlbumSongs.ReplaceAllAsync(_all);
+            await _app.ArtistSongs.ReplaceAllAsync(_all);
+            await _app.FolderSongs.ReplaceAllAsync(_all);
             _shell.NavigateToMusicBrowsePage();
             await Wait(() => _shell.CurrentLibraryPage?.IsLoaded == true);
             await Task.Delay(400);
@@ -221,6 +228,7 @@ internal sealed partial class TestWindow : Window
 
         Check(ReferenceEquals(list.SelectedItem, _app.ListSongs[810]), "selection uses current projection instance by ID");
         CheckCentered(list, _app.ListSongs[810], "songs virtualized target");
+        _savedSongTop = ((FrameworkElement)list.ContainerFromIndex(810)).TransformToVisual(list).TransformPoint(new Point()).Y;
         await Capture("songs-centered.png");
     }
     private async Task PrepareFavorites()
@@ -281,7 +289,14 @@ internal sealed partial class TestWindow : Window
         Check(!ReferenceEquals(_songPage, previousSong), "disabled navigation caching creates a fresh songs page");
         Check(_songPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
             "new song page explicitly disables navigation caching");
-        Check(Find<ScrollViewer>(Songs(_songPage)).VerticalOffset < 1, "fresh page starts at the top without an implicit track jump");
+        var returned = Songs(_songPage);
+        double top = (returned.ContainerFromIndex(810) as FrameworkElement)?.TransformToVisual(returned).TransformPoint(new Point()).Y ?? double.NaN;
+        _measurements.Add(new { Label = "uncached return anchor", ErrorDip = double.IsFinite(top) ? Math.Abs(top - _savedSongTop) : (double?)null });
+        File.WriteAllText(Path.Combine(Program.Output, "position-debug.json"), JsonSerializer.Serialize(new {
+            SavedTop = _savedSongTop, CurrentTop = double.IsFinite(top) ? top : (double?)null,
+            Offset = Find<ScrollViewer>(returned).VerticalOffset, Snapshot = _app.State.Browse.Positions.Songs.Items.Bookmark
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Check(Math.Abs(top - _savedSongTop) < 1.5, "rebuilt songs page restores the previous visible anchor");
         Check(typeof(SongListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null
             && typeof(FavouritePlayListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null,
             "singletons need no view location subscriptions during rebuilt page reentry");

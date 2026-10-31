@@ -55,7 +55,7 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    foreach ($action in @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Edges')) {
+    foreach ($action in @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges')) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence
         if ($action -eq 'PrepareSongs' -or $action -eq 'PrepareFavorites' -or $action -eq 'Lifecycle') { Invoke-Button 'LocateCurrentTrackButton' }
