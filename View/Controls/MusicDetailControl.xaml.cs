@@ -103,6 +103,8 @@ public sealed partial class MusicDetailControl : UserControl
     }
     /// <summary>聚焦固定标题，避免禁用的播放按钮使焦点自动滚入下面的输入区。</summary>
     public void FocusHeader() => HeaderFocus.Focus(FocusState.Programmatic);
+    /// <summary>加载期间保护草稿；保持启用状态，避免完成加载时输入框切换禁用样式。</summary>
+    public bool TagsReadOnly(bool remote, bool loading) => remote || loading;
     /// <summary>判断属性面板是否需要显示共享命令的错误反馈。</summary>
     public bool HasText(string? value) => !string.IsNullOrWhiteSpace(value);
     /// <summary>只在有内容时显示歌词状态。</summary>

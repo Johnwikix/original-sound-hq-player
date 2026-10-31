@@ -194,6 +194,19 @@ public sealed partial class HomeSongPreview : UserControl
         _clip.BottomInset = 0;
     }
 
+    /// <summary>隐藏后保持透明，不把退出终态复位成全尺寸可见的一帧；下次 Reveal 再初始化。</summary>
+    public void Hide()
+    {
+        Visibility = Visibility.Collapsed;
+        CancelClosing();
+        if (_visual is null) return;
+        _visual.StopAnimation("Scale");
+        _visual.StopAnimation("Translation");
+        _visual.StopAnimation("Opacity");
+        _clip?.StopAnimation("BottomInset");
+        _visual.Opacity = 0;
+    }
+
     private void EnsureAnimation()
     {
         if (_visual is not null) return;

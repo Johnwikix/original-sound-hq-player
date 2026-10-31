@@ -68,6 +68,13 @@ public sealed partial class MusicCoverControl : UserControl
     }
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
+        // WinUI 快速移出并重新挂入时，旧 Unloaded 可以晚于新 Loaded 到达。
+        // 此时不能释放已经重新加载的图片和裁切；真正离树的控件仍立即清理。
+        if (!IsLoaded) ReleaseLoadedResources();
+        else if (!_dispatcher.TryEnqueue(() => { if (!IsLoaded) ReleaseLoadedResources(); })) ReleaseLoadedResources();
+    }
+    private void ReleaseLoadedResources()
+    {
         Unsubscribe();
         Cancel();
         SetSource(null);

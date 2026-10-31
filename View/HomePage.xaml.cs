@@ -452,8 +452,7 @@ public sealed partial class HomePage : Page
         if (XamlRoot is not null && IsWithin(FocusManager.GetFocusedElement(XamlRoot) as DependencyObject, SongPreview))
             ContentScroll.Focus(FocusState.Programmatic);
         SongPreview.DismissMenus();
-        SongPreview.Restore();
-        SongPreview.Visibility = Visibility.Collapsed;
+        SongPreview.Hide();
     }
     private void DismissPreview()
     {
@@ -462,7 +461,17 @@ public sealed partial class HomePage : Page
     }
     private void Content_ViewChanging(object sender, ScrollViewerViewChangingEventArgs args) => HandleScroll();
     private void Shelf_Paging(object? sender, EventArgs args) => HandleScroll();
-    private void HandleScroll() => DismissPreview();
+    private void HandleScroll()
+    {
+        if (_previewHandoff) return;
+        _pendingPreviewSource = null;
+        _sourcePointerInside = false;
+        _previewPointerInside = false;
+        _openPreviewTimer.Stop();
+        if (IsLoaded && ViewModel.PreviewSong is not null && SongPreview.Visibility == Visibility.Visible)
+            BeginPreviewClose();
+        else DismissPreview();
+    }
     private void PreviewLayer_SizeChanged(object sender, SizeChangedEventArgs args) => DismissPreview();
     private void Empty_DragOver(object sender, DragEventArgs args)
     {

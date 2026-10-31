@@ -104,7 +104,7 @@ internal sealed partial class HomePolishWindow : Window
         Title = "Home polish and memory verification (background)";
         _root.RowDefinitions.Add(new() { Height = GridLength.Auto });
         _root.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) });
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var buttons = new VariableSizedWrapGrid { Orientation = Orientation.Horizontal, ItemWidth = 92, ItemHeight = 30, MaximumRowsOrColumns = 11 };
         Add(buttons, "ReproCarousel", CheckCarousel);
         Add(buttons, "RoundTrip", CheckCoverRoundTrips);
         Add(buttons, "Preview", ShowPreview);
@@ -112,7 +112,12 @@ internal sealed partial class HomePolishWindow : Window
         Add(buttons, "VerifyDetails", CheckDetails);
         Add(buttons, "Secondary", CheckSecondaryLifetimes);
         Add(buttons, "Universal", CheckUniversalDetails);
+        Add(buttons, "DetailsTiming", CheckDetailsTiming);
         Add(buttons, "CarouselEdges", CheckCarouselEdges);
+        Add(buttons, "CoverCancel", CheckCoverCancellation);
+        Add(buttons, "HoverExit", CheckHoverExit);
+        Add(buttons, "HoverWheel", CheckHoverWheel);
+        Add(buttons, "CoverCycles", CheckCoverCycles);
         Add(buttons, "Stress", Stress);
         Add(buttons, "Collect", Collect);
         Add(buttons, "Exit", async () => { await Task.Delay(500); Close(); });
@@ -165,7 +170,7 @@ internal sealed partial class HomePolishWindow : Window
         _watchedHandoff = null;
         _handoffNativeCompleted = true;
     }
-    private void Add(StackPanel panel, string name, Func<Task> action)
+    private void Add(Panel panel, string name, Func<Task> action)
     {
         var button = new Button { Content = name, FontSize = 11, Padding = new Thickness(6, 4, 6, 4) }; AutomationProperties.SetAutomationId(button, name);
         button.Click += async (_, _) => await Run(name, action); panel.Children.Add(button);
@@ -324,6 +329,7 @@ internal sealed partial class HomePolishWindow : Window
             Assert(control ? alive == _createdPages : unobservedAlive == 0,
                 control ? "restoring only a native Tick callback reproduces retained pages" : "all unloaded pages without UIA observers are reclaimed after owned timer cleanup");
         }
+        Assert(_retiredCovers.All(cover => !cover.TryGetTarget(out _)), "reloaded and detached artwork controls are reclaimed");
         Assert(_universalPages.All(page => !page.TryGetTarget(out _)), "all retired universal detail pages are reclaimed");
         Assert(_violations == 0, "all actions stayed outside the foreground");
     }

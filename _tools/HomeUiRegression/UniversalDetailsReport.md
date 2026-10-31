@@ -2,11 +2,34 @@
 
 日期：2026-10-31。最终实现保留 Frame 与既有跨页动画；本功能不导航 Frame，不修改当前自编译 CsWinRT 或播放器协议。
 
+## 2026-10-31 追加：封面生命周期与双向交接时序
+
+本轮使用 diagnose、winui-design、lvt 技能，读取用户指定的 `C:\Users\90684\Documents\OriginalSoundPlayer\Logs\WinUIMusicPlayer-20261031.log`，在现有独立原生夹具中复现后修改生产实现。没有启动或操作用户正在使用的生产窗口，没有更改 Carousel 的尺寸、位置、圆角或材质。
+
+### 已确认的问题与修复
+
+1. **缩略图与圆角一起消失**：真实原生加载循环出现 `Loaded → Loaded → Unloaded`，最后一个回调到达时 `IsLoaded`、内部内容的 `IsLoaded` 均为 true。旧卸载回调清掉了新图片、加载令牌和合成 Clip；这直接解释占位符与方角同时出现。现在只有确认已经离树才清理，旗标未更新时排队复核，重新挂入的控件保留新资源。旧事件记录位于 `artifacts/home-polish-batch2/hover-cycle-repro/cover-cycle-events.json`，修复后同类记录位于 `artwork-detail-final/cover-cycle-events.json`。
+2. **取消与损坏缓存**：用户日志存在 150px 缓存过小及取消解码错误，而悬浮面板的较大图片仍能加载。基线直接运行实际 WIC 解码方法，已取消令牌仍被吞成成功，并留下 54 字节 BMP 文件。现在取消继续抛出；缓存先写同目录独立临时文件，写完、刷新、关闭后再替换最终文件，失败清理临时文件。缓存读者允许文件被替换，原有缓存格式不变。没有清空用户缓存，旧损坏文件仍由既有校验逻辑按需重建。
+3. **悬浮面板退出末帧闪烁**：原先动画结束后先 Restore 到全尺寸、不透明，再 Collapsed；基线观测到关闭后的合成 Opacity 为 1。现在 Hide 保持透明终态，下次 Reveal 才复位。滚动回调原先直接 Dismiss；改走原来的 200ms CollapseToCover，保留图片到实际合成动画完成，重复滚动不重启动画。离页和尺寸变化仍及时清理。
+4. **详情切换过早隐藏与样式闪烁**：基线标题点击的同一调用内来源 Opacity 已经为 0，来源根 IsEnabled 为 false，标签 TextBox IsEnabled 也为 false；连接动画却要等之后的排队回调才 TryStart。现在让目标以近透明状态完成布局并经过两次实际 Rendering 回调，再在同一 UI 回调 Prepare/TryStart 封面与标题，随后交接内容透明度。返回同样预先恢复来源渲染。内容用 150ms 透明度交接，没有平移、缩放整页或 Frame Entrance。
+5. **交互与清理**：来源不再禁用整树，只禁止命中；详情聚焦标题并使用 Cycle 限制 Tab 范围。九个标签 TextBox 加载中只读，加载完成后可编辑，远程歌曲继续只读。渲染等待由 presenter 持有，返回、请求替换、离页和 Dispose 均解绑；准备中返回不显示详情，进入中返回直接反向。仍保留同一 Frame、Page 和 ListView，详情没有全局单例或导航缓存。
+
+### 本轮证据
+
+- 失败基线：`artifacts/song-details/hover-artwork-before.log`、`hover-cycle-repro.log`、`detail-styles-before.log`。最初用程序 ChangeView 触发滚动的用例没有触发 ViewChanging，超时不能算作产品故障证据；最终用例调用实际 XAML 绑定的滚动处理器，并观察真实原生合成退出。
+- 最终主项目 x64 Debug：0 错误、381 个警告，`artifacts/song-details/artwork-detail-main-final.log`。独立夹具 0 错误、29 个警告；没有改动播放器或 IPC，无需重新发布 AudioPlayer。
+- 最终原生/lvt：**163 项检查、20 次定向 UIA Invoke、三轮诊断 GC、前台违规 0**。`artifacts/home-polish-batch2/artwork-detail-final/result.json` 与 `artifacts/song-details/artwork-detail-final.log`。复跑：`./_tools/HomeUiRegression/Run-Polish.ps1 -RunName artwork-detail-final`。
+- 封面检查涵盖反复移出/挂入后图片与 Clip 保留、预取消和解码启动后取消、完整缓存输出、目标文件被锁时保留旧缓存且无临时文件残留。锁文件测试故意触发一次写缓存 IOException，属于故障注入，不能解读为真实用户缓存写入失败。
+- 详情检查涵盖真正的封面与标题正反向 Completed、TextBox 原生模板已经实现且加载中保持启用/只读、来源根 IsEnabled 变化为 0、相同来源实例/行/滚动偏移/选择、真实 SQLite 保存与迟到读取隔离。另验证渲染前返回、连续替换准备请求、进入动画中返回、准备期间卸载；实际 Rendering 记录在 `artwork-detail-final/detail-render-timeline.json`。
+- 三轮 GC 均确认退休的 **7 个详情 panel**、循环重载后移出的封面可回收。31 个首页中保留第一个 UIA 观察对象，其他 30 个在最后一轮后均不可达；这沿用夹具的既有观察者隔离规则，不声称 31 个全部回收，也不由此推导显存即时下降。
+
+后台测试隔离实际音频、网络和用户文件；封面解码、控件、模板、渲染回调、合成动画、SQLite 与 GC 是真实实现。为避免影响前台，没有发送真实鼠标滚轮，也没有在生产窗口逐帧录屏。RTB 静态输出与旧基线均存在文本编辑器内容缺失，没有把它当作动画末帧像素验收。因此，这里证明了导致闪烁的状态切换与错误交接时序被移除，不宣称所有 DPI、主题和 GPU 上已经逐帧验证。既有 184 项全量首页旧断言的限制仍见下文，不将本轮 163 项专项混称为该全量通过。
+
 ## 最终承载方式
 
 详情是当前页面中的 `MusicDetailsPanel`（UserControl），复用通用 `MusicDetailControl` 和独立 `MusicDetailsViewModel`。歌曲列表、最爱、分组与歌单中的歌曲标题进入同一详情流程，两个播放队列沿用同一展示入口。
 
-来源页从创建时就拥有来源内容与详情两个 presenter。打开详情只暂时隐藏、禁用来源内容；来源仍在可视化树中，既不 Collapsed、不 Unloaded，也不重设 ItemsSource。返回只收起临时详情层，因此保留同一 Page、ListView、已实现的歌曲行控件、滚动位置和选择。
+来源页从创建时就拥有来源内容与详情两个 presenter。打开详情先准备目标渲染，再交接来源的可见性与交互；来源不切换 IsEnabled，避免整个控件树的 Disabled/Normal 视觉状态过渡；来源仍在可视化树中，既不 Collapsed、不 Unloaded，也不重设 ItemsSource。返回只收起临时详情层，因此保留同一 Page、ListView、已实现的歌曲行控件、滚动位置和选择。
 
 `MusicDetailsPresenter` 不调用 Frame.Navigate/GoBack，不更换 MainFrame.Content，不修改 BackStack，也不再包含主/内层 Frame 的额外过渡抑制逻辑。普通页签和侧栏导航保持原有行为。这里的保留仅持续到关闭详情或离开当前页面；没有为其他已离开的页面恢复缓存，也没有注册全局详情视图单例。
 

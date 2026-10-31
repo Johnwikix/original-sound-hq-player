@@ -55,20 +55,35 @@ public sealed class ConnectedAnimationScope : IDisposable
             if (generation != _generation || !ReferenceEquals(animation, _animation)) return;
             if (!_owner.IsLoaded) { Cancel(); return; }
             _owner.UpdateLayout();
-            var destination = target();
-            if (destination is not { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 }
-                || destination.XamlRoot != _owner.XamlRoot) { Complete(animation); return; }
-            _target = destination;
-            destination.Unloaded += TargetUnloaded;
-            animation.Completed += AnimationCompleted;
-            try { if (!animation.TryStart(destination)) Complete(animation); }
-            catch (COMException exception)
-            {
-                App.GetLogger<ConnectedAnimationScope>().LogDebug(exception, "连接动画目的元素已失效");
-                Complete(animation);
-            }
+            StartAnimation(animation, target());
         })) return;
         Complete(animation);
+    }
+
+    /// <summary>调用方已经完成渲染准备时，同一 UI 回调内启动，避免来源提前隐藏。</summary>
+    public void StartNow(FrameworkElement? target, Action? completed = null)
+    {
+        if (_disposed) return;
+        var animation = _animation;
+        if (animation is null) { if (_owner.IsLoaded) completed?.Invoke(); return; }
+        _completed = completed;
+        StartAnimation(animation, target);
+    }
+
+    private void StartAnimation(ConnectedAnimation animation, FrameworkElement? destination)
+    {
+        if (!_owner.IsLoaded) { Cancel(); return; }
+        if (destination is not { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 }
+            || destination.XamlRoot != _owner.XamlRoot) { Complete(animation); return; }
+        _target = destination;
+        destination.Unloaded += TargetUnloaded;
+        animation.Completed += AnimationCompleted;
+        try { if (!animation.TryStart(destination)) Complete(animation); }
+        catch (COMException exception)
+        {
+            App.GetLogger<ConnectedAnimationScope>().LogDebug(exception, "连接动画目的元素已失效");
+            Complete(animation);
+        }
     }
 
     private void AnimationCompleted(ConnectedAnimation sender, object args) => Complete(sender);

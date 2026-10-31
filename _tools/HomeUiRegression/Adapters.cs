@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static string[] ArtistSplitters { get; } = [";", "/"];
-        public static string MusicCoverCache { get; } = Path.Combine(AppContext.BaseDirectory, "covers");
+        public static string MusicCoverCache { get; set; } = Path.Combine(AppContext.BaseDirectory, "covers");
     }
 }
 namespace WinUIMusicPlayer.Utils

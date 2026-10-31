@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media;
 using WinUIMusicPlayer;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -30,15 +31,18 @@ internal sealed partial class HomePolishWindow
         frame.Navigated += (_, _) => navigations++;
         ConnectedAnimation? forwardAnimation = null, forwardTitle = null;
         bool forwardCompleted = false, titleCompleted = false;
+        double sourceOpacityAtRequest = -1;
+        bool sourceEnabledAtRequest = false, textEnabledAtRequest = false;
         using var detailsPresenter = new MusicDetailsPresenter(frame);
         navigation.Open = (music, sourceCover, sourceTitle) =>
         {
             forwardCompleted = titleCompleted = false;
             detailsPresenter.Show(new MusicDetailsRequest(music, typeof(UniversalOriginPage)), sourceCover, sourceTitle);
-            forwardAnimation = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsCover");
-            forwardTitle = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsTitle");
-            if (forwardAnimation is not null) forwardAnimation.Completed += (_, _) => forwardCompleted = true;
-            if (forwardTitle is not null) forwardTitle.Completed += (_, _) => titleCompleted = true;
+            var source = (ContentControl)((Page)frame.Content).FindName("MusicDetailsSource");
+            sourceOpacityAtRequest = source.Opacity;
+            sourceEnabledAtRequest = source.IsEnabled;
+            var control = (MusicDetailControl)detailsPresenter.CurrentDetails!.FindName("DetailView");
+            textEnabledAtRequest = ((TextBox)control.FindName("TitleInput")).IsEnabled;
         };
         navigation.Close = () => detailsPresenter.Back();
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -52,6 +56,9 @@ internal sealed partial class HomePolishWindow
             frame.Navigate(typeof(UniversalOriginPage));
             await Wait(() => frame.Content is UniversalOriginPage { IsLoaded: true });
             var origin = (UniversalOriginPage)frame.Content;
+            var sourceRoot = (ContentControl)origin.FindName("MusicDetailsSource");
+            int enabledChanges = 0;
+            long enabledWatch = sourceRoot.RegisterPropertyChangedCallback(Control.IsEnabledProperty, (_, _) => enabledChanges++);
             var firstRow = (MusicListRowControl)origin.List.Items[20];
             origin.List.ScrollIntoView(firstRow, ScrollIntoViewAlignment.Leading);
             await Wait(() => firstRow.IsLoaded && origin.List.ContainerFromIndex(20) is not null);
@@ -72,6 +79,26 @@ internal sealed partial class HomePolishWindow
             var firstPage = detailsPresenter.CurrentDetails!;
             _universalPages.Add(new(firstPage));
             var first = firstPage.ViewModel!;
+            Assert(sourceOpacityAtRequest == 1 && sourceEnabledAtRequest && textEnabledAtRequest,
+                $"entry waits for render readiness without disabling either tree: sourceOpacity={sourceOpacityAtRequest}, sourceEnabled={sourceEnabledAtRequest}, textEnabled={textEnabledAtRequest}");
+            await Wait(() =>
+            {
+                if (forwardAnimation is null)
+                {
+                    forwardAnimation = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsCover");
+                    if (forwardAnimation is not null) forwardAnimation.Completed += (_, _) => forwardCompleted = true;
+                }
+                if (forwardTitle is null)
+                {
+                    forwardTitle = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsTitle");
+                    if (forwardTitle is not null) forwardTitle.Completed += (_, _) => titleCompleted = true;
+                }
+                return forwardAnimation is not null && forwardTitle is not null;
+            });
+            var titleInput = (TextBox)((MusicDetailControl)firstPage.FindName("DetailView")).FindName("TitleInput");
+            Assert(titleInput.IsLoaded && titleInput.ActualHeight > 0 && Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(titleInput) > 0
+                && titleInput.IsReadOnly && titleInput.IsEnabled,
+                "entry renders the real TextBox template while keeping a loading draft read-only and visually enabled");
             Assert(forwardAnimation is not null && forwardTitle is not null,
                 "row cover and title both prepare real connected animations");
             await Wait(() => forwardCompleted && titleCompleted);
@@ -83,13 +110,24 @@ internal sealed partial class HomePolishWindow
             var addMenu = first.PlaylistMenuItems.First(item => item.Title == playlist.Name);
             var playlistWrite = ((IAsyncRelayCommand)addMenu.Command).ExecuteAsync(addMenu.Tag);
             navigation.CloseSongDetails();
-            var backCover = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsCover");
-            var backTitle = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsTitle");
+            ConnectedAnimation? backCover = null, backTitle = null;
             bool coverBackDone = false, titleBackDone = false;
+            await Wait(() =>
+            {
+                if (backCover is null)
+                {
+                    backCover = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsCover");
+                    if (backCover is not null) backCover.Completed += (_, _) => coverBackDone = true;
+                }
+                if (backTitle is null)
+                {
+                    backTitle = ConnectedAnimationService.GetForCurrentView().GetAnimation("MusicDetailsTitle");
+                    if (backTitle is not null) backTitle.Completed += (_, _) => titleBackDone = true;
+                }
+                return backCover?.Configuration is DirectConnectedAnimationConfiguration && backTitle?.Configuration is DirectConnectedAnimationConfiguration;
+            });
             Assert(backCover?.Configuration is DirectConnectedAnimationConfiguration && backTitle?.Configuration is DirectConnectedAnimationConfiguration,
                 "back prepares direct connected animations for both cover and title");
-            backCover!.Completed += (_, _) => coverBackDone = true;
-            backTitle!.Completed += (_, _) => titleBackDone = true;
             Assert(!first.StopAsync().IsCompleted, "leaving universal details waits for the actual uncooperative cover reader");
 
             _editors.CoverGate = Task.CompletedTask;
@@ -98,6 +136,9 @@ internal sealed partial class HomePolishWindow
                 "back preserves the original page and row with zero additional Frame navigations");
             Assert(Math.Abs(scroller.VerticalOffset - originalOffset) < 1 && origin.List.SelectedIndex == 20,
                 $"return preserves scrolled viewport and selection: before={originalOffset}, after={scroller.VerticalOffset}, selected={origin.List.SelectedIndex}");
+            Assert(enabledChanges == 0 && sourceRoot.IsEnabled,
+                "both directions leave the entire source tree enabled without disabled/normal button transitions");
+            sourceRoot.UnregisterPropertyChangedCallback(Control.IsEnabledProperty, enabledWatch);
             var secondRow = (MusicListRowControl)((UniversalOriginPage)frame.Content).List.Items[21];
             var secondTitle = (Button)secondRow.FindName("MusicTitleButton");
             ((IInvokeProvider)FrameworkElementAutomationPeer.CreatePeerForElement(secondTitle).GetPattern(PatternInterface.Invoke)).Invoke();
@@ -171,6 +212,93 @@ internal sealed partial class HomePolishWindow
             frame.Content = null;
             navigation.Open = null;
             navigation.Close = null;
+            _root.Children.Remove(frame);
+        }
+    }
+}
+
+internal sealed partial class HomePolishWindow
+{
+    private async Task CheckDetailsTiming()
+    {
+        var frame = new Frame { CacheSize = 0 };
+        Grid.SetRow(frame, 1);
+        _root.Children.Add(frame);
+        using var presenter = new MusicDetailsPresenter(frame);
+        var timeline = new List<object>();
+        string phase = "setup";
+        ContentControl? source = null, host = null;
+        int rendered = 0;
+        EventHandler<object> rendering = (_, _) =>
+        {
+            rendered++;
+            timeline.Add(new { Phase = phase, Frame = rendered, SourceOpacity = source?.Opacity,
+                SourceEnabled = source?.IsEnabled, HostOpacity = host?.Opacity,
+                DetailsLoaded = presenter.CurrentDetails?.IsLoaded });
+        };
+        CompositionTarget.Rendering += rendering;
+        try
+        {
+            UniversalOriginPage.Songs = _songs;
+            frame.Navigate(typeof(UniversalOriginPage));
+            await Wait(() => frame.Content is UniversalOriginPage { IsLoaded: true });
+            var origin = (UniversalOriginPage)frame.Content;
+            var row = (MusicListRowControl)origin.List.Items[0];
+            await Wait(() => row.IsLoaded);
+            source = (ContentControl)origin.FindName("MusicDetailsSource");
+            host = (ContentControl)origin.FindName("MusicDetailsOverlay");
+            var request = new MusicDetailsRequest(_songs[0], typeof(UniversalOriginPage));
+
+            phase = "cancel-before-render";
+            presenter.Show(request, row.CoverElement, row.TitleElement);
+            _universalPages.Add(new(presenter.CurrentDetails!));
+            int closed = 0;
+            presenter.Back(() => closed++);
+            await Task.Delay(100);
+            Assert(closed == 1 && !presenter.IsOpen && source.Opacity == 1 && source.IsEnabled,
+                "back before the first rendered frame cancels preparation and cannot resurrect a details panel");
+
+            phase = "replace-before-render";
+            presenter.Show(request, row.CoverElement, row.TitleElement);
+            _universalPages.Add(new(presenter.CurrentDetails!));
+            presenter.Show(new MusicDetailsRequest(_songs[1], typeof(UniversalOriginPage)));
+            _universalPages.Add(new(presenter.CurrentDetails!));
+            Assert(ReferenceEquals(presenter.CurrentDetails?.Music, _songs[1]) && source.Opacity == 1 && source.IsEnabled,
+                "replacing a pending details request retains visible source content while preparing the new session");
+            presenter.Back();
+            await Task.Delay(100);
+            Assert(!presenter.IsOpen && host.Content is null, "only the newest preparation can commit after a replacement is cancelled");
+
+            phase = "enter";
+            int before = rendered;
+            presenter.Show(request, row.CoverElement, row.TitleElement);
+            _universalPages.Add(new(presenter.CurrentDetails!));
+            Assert(source.Opacity == 1 && host.Opacity < .01 && !source.IsHitTestVisible && !host.IsHitTestVisible,
+                "prewarming retains the source while both trees reject pointer input");
+            await Wait(() => host.Opacity == 1);
+            Assert(rendered - before >= 2 && presenter.CurrentDetails is { IsLoaded: true, ActualWidth: > 0 },
+                "forward handoff waits for two real CompositionTarget.Rendering callbacks");
+            phase = "reverse-during-entry";
+            presenter.Back();
+            await Wait(() => !presenter.IsOpen);
+            Assert(ReferenceEquals(frame.Content, origin) && source.Opacity == 1 && source.IsHitTestVisible && source.IsEnabled,
+                "reversing an in-progress entry restores the same source tree");
+
+            phase = "detach-before-render";
+            presenter.Show(request, row.CoverElement, row.TitleElement);
+            _universalPages.Add(new(presenter.CurrentDetails!));
+            _root.Children.Remove(frame);
+            await Wait(() => !presenter.IsOpen);
+            await Task.Delay(100);
+            Assert(host.Content is null && source.Opacity == 1 && source.IsEnabled,
+                "unloading the owner during render preparation cancels pending callbacks and releases the overlay");
+        }
+        finally
+        {
+            CompositionTarget.Rendering -= rendering;
+            File.WriteAllText(Path.Combine(_output, "detail-render-timeline.json"), System.Text.Json.JsonSerializer.Serialize(timeline));
+            presenter.Dismiss();
+            frame.Content = null;
             _root.Children.Remove(frame);
         }
     }

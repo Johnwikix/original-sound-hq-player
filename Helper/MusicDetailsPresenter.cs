@@ -25,6 +25,9 @@ public sealed class MusicDetailsPresenter : IDisposable
     private WeakReference<FrameworkElement>? _returnCover, _returnTitle;
     private Music? _music;
     private bool _closing;
+    private bool _presented;
+    private bool _entering;
+    private EventHandler<object>? _renderReady;
     private bool _keyboardEntry;
     private int _revision;
     private Action? _closed;
@@ -46,7 +49,7 @@ public sealed class MusicDetailsPresenter : IDisposable
             current.UpdatePlaybackContext(request);
             return true;
         }
-        if (_closing) Dismiss();
+        if (IsOpen) Dismiss();
         if (_frame.Content is not Page page
             || page.FindName("MusicDetailsSource") is not ContentControl source
             || page.FindName("MusicDetailsOverlay") is not ContentControl host) return false;
@@ -61,52 +64,111 @@ public sealed class MusicDetailsPresenter : IDisposable
         _keyboardEntry = row is not null && _frame.XamlRoot is { } xamlRoot
             && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(xamlRoot) is Control { FocusState: FocusState.Keyboard } focused
             && ReferenceEquals(AncestorRow(focused), row);
-        if (_settings.AnimationsEnabled)
-        {
-            _cover.Prepare(sourceCover, new GravityConnectedAnimationConfiguration());
-            _title.Prepare(sourceTitle, new GravityConnectedAnimationConfiguration());
-        }
         row?.StopAutoScroll();
-        CurrentDetails?.Release();
         var details = new MusicDetailsPanel();
         if (!details.Open(request)) { Dismiss(); return false; }
+        host.OpacityTransition = null;
+        host.Opacity = 0.001;
         host.Content = details;
-        host.Opacity = 1;
         host.Visibility = Visibility.Visible;
-        host.IsHitTestVisible = true;
-        source.Opacity = 0;
-        source.IsEnabled = false;
+        host.IsHitTestVisible = false;
+        host.TabFocusNavigation = Microsoft.UI.Xaml.Input.KeyboardNavigationMode.Cycle;
+        source.IsHitTestVisible = false;
+        _presented = false;
+        _entering = true;
         if (page is HomePage home) home.SetExternalDetailsVisible(true);
-        _cover.StartDeferred(() => CurrentDetails?.CoverElement);
-        _title.StartDeferred(() => CurrentDetails?.TitleElement);
-        _frame.DispatcherQueue.TryEnqueue(() => { if (ReferenceEquals(CurrentDetails, details) && !_closing) details.FocusHeader(); });
+        int revision = _revision;
+        AfterRenderReady(() =>
+        {
+            if (revision != _revision || !ReferenceEquals(CurrentDetails, details)) return;
+            bool animate = _settings.AnimationsEnabled;
+            if (animate)
+            {
+                _cover.Prepare(sourceCover, new GravityConnectedAnimationConfiguration());
+                _title.Prepare(sourceTitle, new GravityConnectedAnimationConfiguration());
+            }
+            _presented = true;
+            host.IsHitTestVisible = true;
+            SetFade(host, 1, animate);
+            int remaining = 2;
+            void Completed()
+            {
+                if (revision == _revision && --remaining == 0) _entering = false;
+            }
+            _cover.StartNow(details.CoverElement, Completed);
+            _title.StartNow(details.TitleElement, Completed);
+            SetFade(source, 0, animate);
+            details.FocusHeader();
+        });
         return true;
     }
     public bool Back(Action? closed = null)
     {
         if (CurrentDetails is not { } details || _source is null || _host is null || _closing) return false;
+        bool presented = _presented;
+        bool entering = _entering;
         Cancel();
         _closing = true;
         _closed = closed;
+        if (!presented) { FinishBack(); return true; }
         int revision = _revision;
-        if (_settings.AnimationsEnabled)
+        void BeginBack()
         {
-            _cover.Prepare(details.CoverElement, new DirectConnectedAnimationConfiguration());
-            _title.Prepare(details.TitleElement, new DirectConnectedAnimationConfiguration());
+            if (revision != _revision) return;
+            bool animate = _settings.AnimationsEnabled;
+            if (animate)
+            {
+                _cover.Prepare(details.CoverElement, new DirectConnectedAnimationConfiguration());
+                _title.Prepare(details.TitleElement, new DirectConnectedAnimationConfiguration());
+            }
+            var source = _source!;
+            var host = _host!;
+            host.IsHitTestVisible = false;
+            SetFade(source, 1, animate);
+            SetFade(host, 0, animate);
+            int remaining = 2;
+            void Completed()
+            {
+                if (revision == _revision && --remaining == 0) FinishBack();
+            }
+            _cover.StartNow(ReturnCover(), Completed);
+            _title.StartNow(ReturnTitle(), Completed);
+            details.BeginClose();
         }
-        details.BeginClose();
-        _source.Opacity = 1;
-        _source.IsEnabled = true;
-        _host.Opacity = 0;
-        _host.IsHitTestVisible = false;
-        int remaining = 2;
-        void Completed()
+        // 仍在进入时来源刚渲染过，直接反向；正常返回先让不透明详情后面的列表恢复渲染。
+        if (entering) BeginBack();
+        else
         {
-            if (revision == _revision && --remaining == 0) FinishBack();
+            _source.OpacityTransition = null;
+            _source.Opacity = 0.001;
+            AfterRenderReady(BeginBack);
         }
-        _cover.StartDeferred(ReturnCover, Completed);
-        _title.StartDeferred(ReturnTitle, Completed);
         return true;
+    }
+    private static void SetFade(UIElement element, double opacity, bool animate)
+    {
+        element.OpacityTransition = animate ? new ScalarTransition { Duration = TimeSpan.FromMilliseconds(150) } : null;
+        element.Opacity = opacity;
+    }
+    private void AfterRenderReady(Action ready)
+    {
+        StopRenderWait();
+        _frame.UpdateLayout();
+        int frames = 0;
+        _renderReady = (_, _) =>
+        {
+            // Loaded/UpdateLayout 只保证布局，模板视觉状态还需经过渲染提交。
+            if (++frames < 2) return;
+            StopRenderWait();
+            ready();
+        };
+        CompositionTarget.Rendering += _renderReady;
+    }
+    private void StopRenderWait()
+    {
+        if (_renderReady is null) return;
+        CompositionTarget.Rendering -= _renderReady;
+        _renderReady = null;
     }
     private void FinishBack()
     {
@@ -183,6 +245,7 @@ public sealed class MusicDetailsPresenter : IDisposable
     public void Cancel()
     {
         _revision++;
+        StopRenderWait();
         _closed = null;
         _cover.Cancel();
         _title.Cancel();
@@ -193,6 +256,7 @@ public sealed class MusicDetailsPresenter : IDisposable
         CurrentDetails?.Release();
         if (_host is { } host)
         {
+            host.OpacityTransition = null;
             host.Content = null;
             host.Visibility = Visibility.Collapsed;
             host.Opacity = 1;
@@ -200,8 +264,9 @@ public sealed class MusicDetailsPresenter : IDisposable
         }
         if (_source is { } source)
         {
+            source.OpacityTransition = null;
             source.Opacity = 1;
-            source.IsEnabled = true;
+            source.IsHitTestVisible = true;
         }
         if (_frame.Content is HomePage home) home.SetExternalDetailsVisible(false);
         _host = null;
@@ -211,6 +276,8 @@ public sealed class MusicDetailsPresenter : IDisposable
         _returnTitle = null;
         _music = null;
         _closing = false;
+        _presented = false;
+        _entering = false;
         _keyboardEntry = false;
     }
     private void FrameNavigating(object sender, NavigatingCancelEventArgs args) => Dismiss();

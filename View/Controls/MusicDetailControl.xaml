@@ -148,35 +148,30 @@
                             <StackPanel Spacing="4">
                     <TextBlock x:Uid="TitleTextBlock" Style="{StaticResource PropertyCaption}" />
                     <TextBox x:Name="TitleInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
                             <StackPanel Spacing="4">
                     <TextBlock x:Uid="AuthorTextBlock" Style="{StaticResource PropertyCaption}" />
                     <TextBox x:Name="AuthorInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Author, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Author, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
                             <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock x:Uid="AlbumTextBlock" Style="{StaticResource PropertyCaption}" />
                     <TextBox x:Name="AlbumInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Album, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Album, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
                         </Grid>
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
                             <StackPanel Spacing="4">
                     <TextBlock x:Uid="MusicTagAlbumArtist" Style="{StaticResource PropertyCaption}" />
                     <TextBox x:Name="AlbumArtistInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
                             <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock x:Uid="MusicTagGenre" Style="{StaticResource PropertyCaption}" />
                     <TextBox x:Name="GenreInput"
-                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
                         </Grid>
                             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
@@ -200,28 +195,24 @@
                                 <StackPanel Spacing="4">
                                     <TextBlock x:Uid="MusicTagComposer" Style="{StaticResource PropertyCaption}" />
                                     <TextBox x:Name="ComposerInput"
-                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Spacing="4">
                                     <TextBlock x:Uid="MusicTagLyricist" Style="{StaticResource PropertyCaption}" />
                                     <TextBox x:Name="LyricistInput"
-                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
                             <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
                                 <StackPanel Spacing="4">
                                     <TextBlock x:Uid="MusicTagConductor" Style="{StaticResource PropertyCaption}" />
                                     <TextBox x:Name="ConductorInput"
-                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Spacing="4">
                                     <TextBlock x:Uid="MusicTagCatalogNumber" Style="{StaticResource PropertyCaption}" />
                                     <TextBox x:Name="CatalogNumberInput"
-                                        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.Editor.IsLoading), Mode=OneWay}"
-                                        IsReadOnly="{x:Bind ViewModel.Music.IsRemote, Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Music.IsRemote, ViewModel.Editor.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Editor.Metadata.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

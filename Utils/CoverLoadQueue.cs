@@ -370,7 +370,7 @@ internal static class CoverLoadQueue
             try
             {
                 await using (var fs = new FileStream(
-                    cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                    cachePath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete,
                     bufferSize: 4096, useAsync: true))
                 {
                     if (fs.Length < 58)
@@ -421,7 +421,7 @@ internal static class CoverLoadQueue
                 ArrayPool<byte>.Shared.Return(header, clearArray: false);
             }
         }
-        catch (OperationCanceledException) { return null; }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "LoadThumbFromCacheAsync 失败，删除损坏缓存: {Path}", cachePath);
@@ -436,6 +436,7 @@ internal static class CoverLoadQueue
         SoftwareBitmap? softwareBitmap = null;
         try
         {
+            token.ThrowIfCancellationRequested();
             using var memStream = new MemoryStream(picture, writable: false);
             using var inputStream = memStream.AsRandomAccessStream();
 
@@ -463,14 +464,16 @@ internal static class CoverLoadQueue
             var pixels = new byte[pixelBytes];
             softwareBitmap.CopyToBuffer(pixels.AsBuffer());
 
-            // 写缩略图像素缓存（Bgra8 裸像素，约 90KB）
+            token.ThrowIfCancellationRequested();
+            // 临时文件完整写入并关闭后才发布，取消或失败不破坏现有可读缓存。
             if (music.ImageHash is { Length: > 0 })
             {
+                string? temporary = null;
                 try
                 {
                     var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
                     Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
-
+                    temporary = thumbPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
                     Span<byte> header = stackalloc byte[54];
                     header[0] = (byte)'B'; header[1] = (byte)'M';
                     BinaryPrimitives.WriteUInt32LittleEndian(header[2..], (uint)(14 + 40 + pixelBytes));
@@ -488,19 +491,33 @@ internal static class CoverLoadQueue
                     BinaryPrimitives.WriteUInt32LittleEndian(header[46..], 0);
                     BinaryPrimitives.WriteUInt32LittleEndian(header[50..], 0);
 
-                    await using var fs = new FileStream(
-                        thumbPath, FileMode.Create, FileAccess.Write,
-                        FileShare.None, bufferSize: 8192, useAsync: true);
-                    fs.Write(header);
-                    await fs.WriteAsync(pixels.AsMemory(), token);
+                    await using (var fs = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write,
+                        FileShare.None, bufferSize: 8192, useAsync: true))
+                    {
+                        fs.Write(header);
+                        await fs.WriteAsync(pixels.AsMemory(), token);
+                        await fs.FlushAsync(token);
+                    }
+                    token.ThrowIfCancellationRequested();
+                    File.Move(temporary, thumbPath, overwrite: true);
+                    temporary = null;
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException) { throw; }
                 catch (Exception ex) { _logger?.LogError(ex, "写缩略图缓存失败"); }
+                finally
+                {
+                    if (temporary is not null)
+                    {
+                        try { File.Delete(temporary); }
+                        catch (Exception ex) { _logger?.LogDebug(ex, "清理未发布的缩略图失败"); }
+                    }
+                }
             }
 
             token.ThrowIfCancellationRequested();
             return new DecodedCover((int)w, (int)h, pixels);
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "DecodeAndCacheThumbAsync 失败");
@@ -534,7 +551,7 @@ internal static class CoverLoadQueue
             result = null;
             return completed;
         }
-        catch (OperationCanceledException) { return null; }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "创建缩略图 SoftwareBitmapSource 失败");

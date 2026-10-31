@@ -1,3 +1,11 @@
+## 2026-10-31 修复封面重载与详情切换闪烁
+- MusicCoverControl：忽略控件重新 Loaded 后迟到的旧 Unloaded 清理，避免缩略图和圆角同时消失；真正离树仍清理图片、订阅和合成资源。
+- CoverLoadQueue：取消继续按取消传播；缩略图写入独立临时文件，完整关闭后再替换缓存，取消或发布失败不留下半截成品、不破坏旧缓存。
+- HomeSongPreview、HomePage：退出后保持透明再等待下次展开初始化，移除末帧全尺寸复位；滚动与横向翻页使用原有退出动画。
+- MusicDetailsPresenter、ConnectedAnimationScope：进入与返回先等待目标布局经过两次渲染回调，再在同一 UI 回调启动封面和标题连接动画并交接内容；来源保留启用状态，仅阻止交互，避免整树 Disabled/Normal 样式闪烁，快速取消与离页移除渲染等待。
+- MusicDetailControl：标签 TextBox 加载中使用只读保护草稿，保持启用样式；远程歌曲仍只读，正常加载后恢复编辑。
+- 验证：主项目 x64 Debug 构建 0 错误；后台原生/lvt 专项 163 项及三轮诊断 GC 通过，前台违规 0；详情见 _tools/HomeUiRegression/UniversalDetailsReport.md 本轮追加记录。
+
 ## 2026-10-31 页内通用歌曲详情、双向连接动画与轮播裁切修复
 - MusicDetailControl、MusicDetailsPanel、MusicDetailsPresenter 与主页面：复用首页属性布局，在当前页面内部临时显示详情；不替换 MainFrame.Content，不导航、不重建来源页或列表，关闭释放详情会话；跨页面缓存策略保持禁用。
 - MusicListRowControl 与列表入口：歌曲名改为按钮，封面和标题均支持进入 Gravity、返回 Direct 连接动画；返回保留原列表实例、滚动位置与选择，不叠加 Frame 过渡，也不额外抑制普通导航动画。
