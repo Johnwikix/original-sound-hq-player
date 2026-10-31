@@ -78,7 +78,7 @@
                 </StackPanel>
                 <Canvas x:Name="PreviewLayer" SizeChanged="PreviewLayer_SizeChanged">
                     <controls:HomeSongPreview x:Name="SongPreview" Visibility="Collapsed" Song="{x:Bind ViewModel.PreviewSong, Mode=OneWay}" ViewModel="{x:Bind ViewModel}"
-                        BringIntoViewRequested="Preview_BringIntoViewRequested" MenuStateChanged="Preview_MenuStateChanged" Tapped="Preview_Tapped"
+                        BringIntoViewRequested="Preview_BringIntoViewRequested" MenuStateChanged="Preview_MenuStateChanged" Tapped="Preview_Tapped" Invoked="Preview_Invoked"
                         CloseAnimationCompleted="Preview_CloseAnimationCompleted"
                         PointerEntered="Preview_PointerEntered" PointerExited="Preview_PointerExited"
                         LostFocus="Song_LostFocus" KeyDown="Preview_KeyDown" />

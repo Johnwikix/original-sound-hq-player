@@ -1,5 +1,7 @@
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation.Peers;
+using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using System;
@@ -39,6 +41,26 @@ public sealed partial class HomeSongPreview : UserControl
     public event EventHandler? MenuStateChanged;
     /// <summary>在退出动画实际完成后通知宿主释放曲目，取消退出时不发送。</summary>
     public event EventHandler? CloseAnimationCompleted;
+
+    /// <summary>请求进入属性面板，供触摸和辅助技术复用同一交互入口。</summary>
+    public event EventHandler? Invoked;
+
+    internal void Invoke()
+    {
+        if (IsLoaded && IsEnabled && Visibility == Visibility.Visible) Invoked?.Invoke(this, EventArgs.Empty);
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new PreviewAutomationPeer(this);
+
+    private sealed partial class PreviewAutomationPeer(HomeSongPreview owner) : FrameworkElementAutomationPeer(owner), IInvokeProvider
+    {
+        protected override string GetClassNameCore() => nameof(HomeSongPreview);
+        protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Group;
+        protected override string GetNameCore() => owner.Song?.Music.Title ?? base.GetNameCore();
+        protected override object GetPatternCore(PatternInterface patternInterface)
+            => patternInterface == PatternInterface.Invoke ? this : base.GetPatternCore(patternInterface);
+        public void Invoke() => owner.DispatcherQueue.TryEnqueue(owner.Invoke);
+    }
 
     /// <summary>初始化详情模板，合成对象只在面板第一次显示后创建。</summary>
     public HomeSongPreview()

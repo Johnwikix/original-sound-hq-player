@@ -457,7 +457,7 @@
                                         FontSize="80"
                                         Glyph="&#xE93C;"
                                         Opacity="0.3" />
-                                    <Image Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" Stretch="Uniform" />
+                                    <Image Source="{x:Bind AlbumCoverBitmap, Mode=OneWay}" Stretch="Uniform" />
                                 </Grid>
                             </Border>
                         </StackPanel>

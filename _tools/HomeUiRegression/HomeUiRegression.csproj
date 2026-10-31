@@ -18,7 +18,7 @@
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../Model/AdditionalMusicMetadata.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs;../../Model/PendingMetadataWrite.cs" />
     <Compile Include="../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsFilePolicy.cs" />
-    <Compile Include="../../Services/ApplicationTasks.cs;../../Services/EditorSessions.cs;../../Services/IMusicDetailsEditorFactory.cs;../../Services/MusicDetailsEditorFactory.cs;../../Services/MusicMetadataStorage.cs" />
+    <Compile Include="../../Helper/ConnectedAnimationScope.cs;../../Services/WindowArtworkSession.cs;../../Services/ApplicationTasks.cs;../../Services/EditorSessions.cs;../../Services/IMusicDetailsEditorFactory.cs;../../Services/MusicDetailsEditorFactory.cs;../../Services/MusicMetadataStorage.cs" />
     <Compile Include="../../ViewModel/Controls/MusicMetadataEditorViewModel.cs;../../ViewModel/Controls/LyricsEditorViewModel.cs;../../ViewModel/Controls/MusicDetailsEditorViewModel.cs" />
     <Compile Include="../../Model/Recommendations/*.cs;../../Services/Recommendations/*.cs;../../Services/MusicDatabaseService.Recommendations.cs" />
     <Compile Include="../../ViewModel/Pages/HomeViewModel.cs;../../Services/AppLifecycle.cs;../../Model/Music.cs;../../Model/BulkObservableCollection.cs;../../State/LibraryState.cs;../../Utils/ArtistHelper.cs" />

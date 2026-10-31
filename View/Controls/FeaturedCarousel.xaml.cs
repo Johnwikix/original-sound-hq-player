@@ -111,7 +111,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         _lighting = new CarouselLighting(LayoutGrid, Presenter, PrimaryThumbnail, SecondaryThumbnail, TertiaryThumbnail);
         _thumbnailShadows = [new(PrimaryThumbnail, PrimaryShadowHost), new(SecondaryThumbnail, SecondaryShadowHost), new(TertiaryThumbnail, TertiaryShadowHost)];
         _shuffleTimer = DispatcherQueue.CreateTimer();
-        _shuffleTimer.Tick += (sender, args) => Move(1);
+
     }
     /// <summary>按相对方向循环翻页。</summary>
     public void Move(int direction)
@@ -146,8 +146,12 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         control.ObserveCollections();
         control.NotifyThumbnails();
     }
+    private void ShuffleTimer_Tick(DispatcherQueueTimer sender, object args) => Move(1);
+
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
+        _shuffleTimer.Tick -= ShuffleTimer_Tick;
+        _shuffleTimer.Tick += ShuffleTimer_Tick;
         ObserveCollections();
         NotifySelection();
         NotifyThumbnails();
@@ -160,6 +164,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         _pointerInside = false;
         _focusInside = false;
         _shuffleTimer.Stop();
+        _shuffleTimer.Tick -= ShuffleTimer_Tick;
         Countdown.StopAt(0);
         NotifyNavigation();
         Notify(nameof(CountdownVisibility));

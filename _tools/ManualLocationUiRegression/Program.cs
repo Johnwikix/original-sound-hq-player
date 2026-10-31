@@ -50,6 +50,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         Resources.MergedDictionaries.Add(new XamlControlsResources());
+        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Style/FloatingCommandStyle.xaml") });
         UnhandledException += (_, error) => File.WriteAllText(Path.Combine(Program.Output, "unhandled.txt"), error.Exception.ToString());
         new TestWindow().ShowInBackground();
     }
@@ -70,6 +71,7 @@ internal sealed class TestWindow : Window
     private bool _busy;
     private string _status = "starting";
     private double _savedOffset;
+    private double _savedAnchorTop;
     private SongListPage? _songPage;
     private FavouritePlayListPage? _favoritePage;
     public TestWindow()
@@ -175,9 +177,25 @@ internal sealed class TestWindow : Window
         Measurements = _measurements, ForegroundViolations = _foregroundViolations,
         Hwnd = $"0x{_hwnd:X}"
     }, new JsonSerializerOptions { WriteIndented = true }));
+    private void CheckFloatingButton(Page page, string label)
+    {
+        var button = Locate(page);
+        var list = Songs(page);
+        var position = button.TransformToVisual(list).TransformPoint(new Point());
+        Check(button.ActualWidth == 44 && button.ActualHeight == 44 && button.CornerRadius.TopLeft == 22,
+            label + " uses the custom circular floating command style");
+        Check(Math.Abs(list.ActualWidth - position.X - button.ActualWidth - 16) < 1.5
+            && Math.Abs(list.ActualHeight - position.Y - button.ActualHeight - 16) < 1.5,
+            label + " overlays the list lower-right corner with a 16-DIP inset");
+        Check(ReferenceEquals(VisualTreeHelper.GetParent(button), VisualTreeHelper.GetParent(list)),
+            label + " shares the list grid instead of consuming a toolbar row");
+        Check(button.UseSystemFocusVisuals, label + " keeps native keyboard focus visuals");
+        Check(button.Background is SolidColorBrush brush && brush.Color.A == 255, label + " has an opaque themed floating surface");
+    }
     private async Task PrepareSongs()
     {
         var page = _songPage!;
+        CheckFloatingButton(page, "songs");
         var list = Songs(page);
         var scroller = Find<ScrollViewer>(list);
         double before = scroller.VerticalOffset;
@@ -199,6 +217,7 @@ internal sealed class TestWindow : Window
         Check(ReferenceEquals(list.SelectedItem, _app.ListSongs[810]), "selection uses current projection instance by ID");
         CheckCentered(list, _app.ListSongs[810], "songs virtualized target");
         _savedOffset = Find<ScrollViewer>(list).VerticalOffset;
+        _savedAnchorTop = ((FrameworkElement)list.ContainerFromItem(_app.ListSongs[810])).TransformToVisual(list).TransformPoint(new Point()).Y;
         await Capture("songs-centered.png");
     }
     private async Task PrepareFavorites()
@@ -207,6 +226,7 @@ internal sealed class TestWindow : Window
         await Wait(() => InnerFrame.Content is FavouritePlayListPage { IsLoaded: true });
         await Task.Delay(400);
         _favoritePage = (FavouritePlayListPage)InnerFrame.Content;
+        CheckFloatingButton(_favoritePage, "favorites");
         _app.SelectedPlaybackMusic = new Music { Id = 477 };
         _favoritePage.ViewModel.ReceiveNavigation();
         await Task.Delay(250);
@@ -221,9 +241,13 @@ internal sealed class TestWindow : Window
         Check(ReferenceEquals(list.SelectedItem, _app.FavoriteSongs[476]), "favorite button selects the displayed projection instance");
         CheckCentered(list, _app.FavoriteSongs[476], "favorites virtualized target");
         double offset = Find<ScrollViewer>(list).VerticalOffset;
+        var anchor = (FrameworkElement)list.ContainerFromItem(_app.FavoriteSongs[476]);
+        double anchorTop = anchor.TransformToVisual(list).TransformPoint(new Point()).Y;
         _app.SelectedPlaybackMusic = new Music { Id = 1000 };
         await Task.Delay(250);
-        Check(Math.Abs(offset - Find<ScrollViewer>(list).VerticalOffset) < 1, "changing track keeps the manual scroll position");
+        double afterTop = anchor.TransformToVisual(list).TransformPoint(new Point()).Y;
+        _measurements.Add(new { Label = "track change anchor", ErrorDip = Math.Abs(anchorTop - afterTop), BeforeOffset = offset, AfterOffset = Find<ScrollViewer>(list).VerticalOffset });
+        Check(Math.Abs(anchorTop - afterTop) < 1.5, $"changing track keeps the visible manual anchor (offset {offset}->{Find<ScrollViewer>(list).VerticalOffset}, anchor {anchorTop}->{afterTop})");
         await _app.FavoriteSongs.ReplaceAllAsync(_all.Where(m => m.Id != 1000));
         await Task.Delay(100);
         Check(!Locate(page).IsEnabled, "filtered-out current track disables the button through real x:Bind");
@@ -249,7 +273,12 @@ internal sealed class TestWindow : Window
         Check(!await pending, "unloading cancels an in-flight virtualized location");
         await Task.Delay(300);
         Check(ReferenceEquals(InnerFrame.Content, _songPage), "Frame retains the enabled songs page instance");
-        Check(Math.Abs(_savedOffset - Find<ScrollViewer>(Songs(_songPage)).VerticalOffset) < 1, "return to cached page preserves previous scroll position");
+        var returnedList = Songs(_songPage);
+        var returnedRow = returnedList.ContainerFromItem(_app.ListSongs[810]) as FrameworkElement;
+        double returnedTop = returnedRow?.TransformToVisual(returnedList).TransformPoint(new Point()).Y ?? double.NaN;
+        _measurements.Add(new { Label = "cached return anchor", ErrorDip = Math.Abs(_savedAnchorTop - returnedTop), BeforeOffset = _savedOffset, AfterOffset = Find<ScrollViewer>(returnedList).VerticalOffset });
+        Check(returnedRow is not null && Math.Abs(_savedAnchorTop - returnedTop) < 1.5,
+            $"return to cached page preserves visible anchor (offset {_savedOffset}->{Find<ScrollViewer>(returnedList).VerticalOffset}, top {_savedAnchorTop}->{returnedTop})");
         Check(typeof(SongListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null
             && typeof(FavouritePlayListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null,
             "singletons need no view location subscriptions during cached page reentry");
@@ -383,12 +412,8 @@ internal sealed class TestWindow : Window
     }
     private async Task Capture(string name)
     {
-        var image = new RenderTargetBitmap();
-        await image.RenderAsync(_root);
-        using var stream = File.Create(Path.Combine(Program.Output, name));
-        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream.AsRandomAccessStream());
-        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)image.PixelWidth, (uint)image.PixelHeight, 96, 96, (await image.GetPixelsAsync()).ToArray());
-        await encoder.FlushAsync();
+        await WindowCapture.CaptureAsync(this, name);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, name), Path.Combine(Program.Output, name), true);
     }
     public void ShowInBackground()
     {

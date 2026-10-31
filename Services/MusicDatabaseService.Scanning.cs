@@ -20,13 +20,16 @@ public partial class MusicDatabaseService
             public int SongCount { get; set; }
         }
 
-        public async Task<List<Folder>> GetFoldersWithSongCountsAsync()
+        public async Task<List<Folder>> GetFoldersWithSongCountsAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var folders = await GetFolders();
+            cancellationToken.ThrowIfCancellationRequested();
             // The persisted Folder.SongCount can be stale in older databases. Count actual songs,
             // grouping once by directory rather than materializing every Music or relying on UI startup order.
             var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
                 "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId = 0 GROUP BY FolderPath COLLATE NOCASE");
+            cancellationToken.ThrowIfCancellationRequested();
             // 外部导入虚拟行的计数同源现算：归属 = 分组目录不落入任何本地扫描根。
             Folder? external = null;
             var roots = new List<Folder>(folders.Count);
@@ -39,6 +42,7 @@ public partial class MusicDatabaseService
             if (external is not null) external.SongCount = 0;
             foreach (var count in counts)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool ownedByRoot = false;
                 foreach (var folder in roots)
                 {

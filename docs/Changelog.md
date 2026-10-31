@@ -1,3 +1,14 @@
+## 2026-10-31 首页动画、悬浮定位与第二批离页清理
+- `FloatingCommandStyle.xaml` 与列表/详情/播放队列：定位按钮改为列表右下角 44px 自定义圆形悬浮按钮，保留原命令、手动居中和无障碍名称。
+- `MusicCoverControl`、`StoreCarouselImageMotion`：缺图占位与正常封面共用进入动画，明暗主题使用实心占位色；封面统一 8px 合成裁切，动画完成释放上一张图片。
+- `HomeSongPreview`、`HomePage`：移除三栏共用悬浮面板中的第四行推荐描述；属性共享动画完成或取消后再清理预览源，并提供辅助技术 Invoke 入口。
+- `HomePage`、`FeaturedCarousel`：卸载时解绑 DispatcherQueueTimer.Tick，重载时对称恢复；修复仅 Stop 后仍保留整个首页的 WinRT 回调引用。
+- 四个分组/歌单页面与 `ConnectedAnimationScope`：显式拥有并取消连接动画，离页、覆盖请求和无效目标不再执行过期刷新。
+- 两个旧属性窗口与 `WindowArtworkSession`：关闭取消封面读取，屏蔽迟到结果，清理图片/字节/绑定；已接受的写入或封面导出保留原快照。
+- `StatsViewModel`、`PlaybackStatsService`、`AddFolderViewModel`、`MusicDatabaseService.Scanning`：只读查询间检查取消，合并重复文件夹刷新；等待在途 SQLite 查询结束，保留扫描及已接受写入。
+- `AboutSettingsControl`：重入恢复悬停订阅，离页停止滚动并关闭对话框。
+- 验证：主项目 x64 Debug 构建 0 错误；完整首页 184 项、定位 103 项及新增原生 UI/lvt/SQLite 回归通过。31 页内存对照确认 Tick 解绑后全部回收，数据、显存计数限制与未覆盖场景见 `_tools/HomeUiRegression/PolishReport.md`。
+
 ## 2026-10-30 手动居中定位与浏览页面引用清理
 - 歌曲、收藏、专辑/艺术家/文件夹详情、歌单详情和当前播放队列：取消进入页面与切歌时的自动定位，新增手动定位当前歌曲按钮，按当前筛选结果定位并居中显示，离页取消未完成定位。
 - `MusicBrowseViewModel`、歌曲/收藏与详情 ViewModel：移除对子页面与 SelectorBarItem 的长期引用，详情订阅使用成对 Activate/Dispose，页签保存字符串标识，导航经不缓存子页面的边界转发；保留 Frame 与官方动画。

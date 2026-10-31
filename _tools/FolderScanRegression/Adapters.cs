@@ -92,6 +92,9 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
         public bool IsPlaybackEngineReady => false;
+        public bool CanPublishState => true;
+        public bool IsPlaying { get; set; }
+        public event Action<long>? CurrentPlayingTimeChanged;
         public ProgressCenter Progress { get; } = new();
         public List<Music> SongsSource { get; } = [];
         public Music? FindById(int id) => SongsSource.Find(music => music.Id == id);
@@ -123,6 +126,7 @@ namespace WinUIMusicPlayer.Services
     {
         private readonly Microsoft.Extensions.Logging.ILogger<MusicDatabaseService> _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MusicDatabaseService>.Instance;
         public SQLite.SQLiteAsyncConnection Connection => _dbConnection;
+        public SQLite.SQLiteAsyncConnection GetDbConnection() => _dbConnection;
         private readonly SQLite.SQLiteAsyncConnection _dbConnection;
         private readonly AddFolderService addFolderService = new();
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);

@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Xaml.Hosting;
+using System.Numerics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -33,6 +36,9 @@ public sealed partial class MusicCoverControl : UserControl
     private readonly DispatcherQueue _dispatcher;
     private StoreCarouselImageMotion? _motion;
     private UISettings? _motionSettings;
+    private Visual? _coverVisual;
+    private CompositionRoundedRectangleGeometry? _roundedGeometry;
+    private CompositionGeometricClip? _roundedClip;
     /// <summary>获取或设置封面所属曲目。</summary>
     public Music? Music { get => (Music?)GetValue(MusicProperty); set => SetValue(MusicProperty, value); }
     /// <summary>获取或设置解码尺寸。</summary>
@@ -56,6 +62,7 @@ public sealed partial class MusicCoverControl : UserControl
     private static void MusicChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((MusicCoverControl)sender).Reload();
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
+        UpdateRoundedClip();
         UpdateMotion();
         Reload();
     }
@@ -64,8 +71,13 @@ public sealed partial class MusicCoverControl : UserControl
         Unsubscribe();
         Cancel();
         SetSource(null);
-        _motion?.Dispose();
-        _motion = null;
+        ReleaseMotion();
+        if (_coverVisual is not null) _coverVisual.Clip = null;
+        _roundedClip?.Dispose();
+        _roundedGeometry?.Dispose();
+        _roundedClip = null;
+        _roundedGeometry = null;
+        _coverVisual = null;
     }
     private static void TransitionChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((MusicCoverControl)sender).UpdateMotion();
     private void UpdateMotion()
@@ -74,19 +86,21 @@ public sealed partial class MusicCoverControl : UserControl
         if (EnableCarouselTransition)
         {
             _motionSettings ??= new UISettings();
-            _motion ??= new StoreCarouselImageMotion(CurrentLayer, PreviousLayer);
+            if (_motion is null)
+            {
+                _motion = new StoreCarouselImageMotion(CurrentLayer, PreviousLayer);
+                _motion.Completed += OnMotionCompleted;
+            }
             try { _motion.Attach(); }
             catch (Exception ex)
             {
-                _motion.Dispose();
-                _motion = null;
+                ReleaseMotion();
                 App.GetLogger<MusicCoverControl>().LogWarning(ex, "轮播图片动画不可用，保留静态封面");
             }
         }
         else
         {
-            _motion?.Dispose();
-            _motion = null;
+            ReleaseMotion();
             ClearPrevious();
         }
     }
@@ -94,7 +108,8 @@ public sealed partial class MusicCoverControl : UserControl
     {
         CoverClip.Rect = new Windows.Foundation.Rect(0, 0, args.NewSize.Width, args.NewSize.Height);
         // 无封面占位音符随卡片等比缩放；固定 44px 在轮播拼贴大图上几乎不可见，像加载失败。
-        CoverPlaceholder.FontSize = Math.Clamp(Math.Min(args.NewSize.Width, args.NewSize.Height) * .22, 20, 120);
+        UpdateRoundedClip();
+        CoverPlaceholder.FontSize = PreviousPlaceholder.FontSize = Math.Clamp(Math.Min(args.NewSize.Width, args.NewSize.Height) * .22, 20, 120);
         _motion?.Stop();
         ClearPrevious();
     }
@@ -148,7 +163,7 @@ public sealed partial class MusicCoverControl : UserControl
                 }
             }
             if (token.IsCancellationRequested || !IsLoaded || !ReferenceEquals(music, Music)) return;
-            SetSource(source);
+            SetSource(source, animate: true);
             source = null;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
@@ -161,18 +176,19 @@ public sealed partial class MusicCoverControl : UserControl
         _load?.Dispose();
         _load = null;
     }
-    private void SetSource(ImageSource? source)
+    private void SetSource(ImageSource? source, bool animate = false)
     {
         var previous = CoverImage.Source;
-        if (ReferenceEquals(previous, source)) return;
+        if (source is not null && ReferenceEquals(previous, source)) return;
         _motion?.Stop();
         ClearPrevious();
         CoverImage.Source = source;
         CoverPlaceholder.Visibility = source is null ? Visibility.Visible : Visibility.Collapsed;
-        if (source is not null && _motion is not null && _motionSettings!.AnimationsEnabled && ActualWidth > 0)
+        if (animate && _motion is not null && _motionSettings!.AnimationsEnabled && ActualWidth > 0)
         {
             // 上一张源转交给下层；最多保留当前/上一张两个自有源，换图或卸载时释放。
             PreviousImage.Source = previous;
+            PreviousPlaceholder.Visibility = previous is null ? Visibility.Visible : Visibility.Collapsed;
             PreviousLayer.Opacity = 1;
             try { _motion.Start(SlideFromRight, ActualWidth); }
             catch (Exception ex)
@@ -188,9 +204,35 @@ public sealed partial class MusicCoverControl : UserControl
     {
         var source = PreviousImage.Source;
         PreviousImage.Source = null;
+        PreviousPlaceholder.Visibility = Visibility.Collapsed;
         PreviousLayer.Opacity = 0;
         DisposeSource(source);
     }
+    private void OnMotionCompleted() => ClearPrevious();
+
+    private void ReleaseMotion()
+    {
+        if (_motion is null) return;
+        _motion.Completed -= OnMotionCompleted;
+        _motion.Dispose();
+        _motion = null;
+    }
+
+    private void UpdateRoundedClip()
+    {
+        if (!IsLoaded) return;
+        if (_coverVisual is null)
+        {
+            _coverVisual = ElementCompositionPreview.GetElementVisual(this);
+            _roundedGeometry = _coverVisual.Compositor.CreateRoundedRectangleGeometry();
+            _roundedClip = _coverVisual.Compositor.CreateGeometricClip(_roundedGeometry);
+            _coverVisual.Clip = _roundedClip;
+        }
+        _roundedGeometry!.Size = new Vector2((float)ActualWidth, (float)ActualHeight);
+        float radius = (float)Math.Min(8, Math.Min(ActualWidth, ActualHeight) / 2);
+        _roundedGeometry.CornerRadius = new Vector2(radius);
+    }
+
     private static void DisposeSource(ImageSource? source)
     {
         try { (source as IDisposable)?.Dispose(); }

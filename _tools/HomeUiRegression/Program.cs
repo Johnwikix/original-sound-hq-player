@@ -96,6 +96,11 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
     }
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        if (Environment.GetEnvironmentVariable("HOME_POLISH_PROBE") == "1")
+        {
+            await StartPolishProbeAsync();
+            return;
+        }
         string path = Path.Combine(AppContext.BaseDirectory, "fixture.db");
         if (File.Exists(path)) File.Delete(path);
         var database = new SQLiteAsyncConnection(path);
@@ -132,7 +137,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var page = new HomePage { RequestedTheme = ElementTheme.Light,
                 Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 243, 243, 243)) };
             window.Content = page;
-            window.Activate();
+            PolishNative.ShowWithoutActivation(window);
             await Task.Delay(220);
             Check(home.IsLoading && !home.IsEmpty, "real page distinguishes initial loading from an empty library");
             app.Replace([]);
@@ -347,7 +352,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             typeof(HomePage).GetMethod("OpenSongDetails", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(page,
                 [previewSource, selected, (MusicCoverControl)preview.FindName("Artwork"), false]);
             await Wait(() => home.IsInDetailMode && !Field<bool>(page, "_detailTransitionPending"));
-            Check(home.PreviewSong is null && Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation") is not null,
+            Check(ReferenceEquals(home.PreviewSong, selected) && Field<Microsoft.UI.Xaml.Media.Animation.ConnectedAnimation?>(page, "_detailAnimation") is not null,
                 "opening from the hover artwork hands off a native connected snapshot and dismisses preview");
             await Wait(() => !Field<bool>(page, "_detailTransitioning"));
             page.CollapseDetail();

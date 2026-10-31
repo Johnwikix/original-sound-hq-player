@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:WinUIMusicPlayer.View.Controls">
     <Grid>
-        <Grid CornerRadius="8" RequestedTheme="Dark">
+        <Grid CornerRadius="8">
             <controls:MusicCoverControl x:Name="Artwork" DecodePixelSize="400" />
             <Border IsHitTestVisible="False" CornerRadius="8">
                 <Border.Background>

@@ -83,7 +83,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>获取当前是否处于歌曲属性界面。</summary>
     public bool IsInDetailMode { get; private set => SetProperty(ref field, value); }
     /// <summary>打开当前推荐中的规范曲目，不改变播放状态或栏目快照。</summary>
-    public bool OpenDetails(HomeSong song)
+    public bool OpenDetails(HomeSong song, bool preservePreview = false)
     {
         if (!_active || _stopped || !_app.CanPublishState || HasDetails || !(Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) return false;
         MusicDetailsEditorViewModel? editor = null;
@@ -102,7 +102,7 @@ public sealed class HomeViewModel : ObservableObject
         DetailEditor = editor;
         DetailSong = song;
         IsInDetailMode = true;
-        DismissPreview();
+        if (!preservePreview) DismissPreview();
         _app.IsBackBtnEnable = true;
         return true;
     }

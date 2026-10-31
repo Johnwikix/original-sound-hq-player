@@ -195,6 +195,8 @@ static async Task RunAsync()
     Check(statsService.Queries.Count == 1, "Initial stats query missing.");
     stats.SelectedTimeRangeIndex = (int)WinUIMusicPlayer.ViewModel.StatsRange.PastYear;
     timer.Fire();
+    Check(statsService.QueryTokens[0].IsCancellationRequested, "Changing range must cancel the old read request without completing the actual query await.");
+    Check(stats.IsLoading, "Cancellation must wait for the real pending query boundary.");
     statsService.Queries[0].SetResult(new() { TracksPlayedCount = 7 });
     while (statsService.Queries.Count < 2) await Task.Yield();
     Check(stats.TracksPlayedCount == 0, "Stale stats result was published.");
@@ -217,6 +219,7 @@ static async Task RunAsync()
     stats.OnPageActive();
     timer.Fire();
     stats.OnPageInactive();
+    Check(statsService.QueryTokens[3].IsCancellationRequested, "Inactive page must signal cancellation to its read request.");
     statsService.Queries[3].SetResult(new() { TracksPlayedCount = 999 });
     await stats.StopAsync();
     Check(stats.TracksPlayedCount == 1000, "Late inactive result must not overwrite displayed state.");

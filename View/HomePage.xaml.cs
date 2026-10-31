@@ -28,6 +28,7 @@ public sealed partial class HomePage : Page
     private FrameworkElement? _previewSource;
     private FrameworkElement? _pendingPreviewSource;
     private bool _collapsingPreview;
+    private bool _previewHandoff;
     private bool _sourcePointerInside;
     private bool _previewPointerInside;
     private readonly UISettings _settings = new();
@@ -50,10 +51,8 @@ public sealed partial class HomePage : Page
         NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         _openPreviewTimer = DispatcherQueue.CreateTimer();
         _openPreviewTimer.IsRepeating = false;
-        _openPreviewTimer.Tick += OpenPreview_Tick;
         _closePreviewTimer = DispatcherQueue.CreateTimer();
         _closePreviewTimer.IsRepeating = false;
-        _closePreviewTimer.Tick += ClosePreview_Tick;
         Loaded += Page_Loaded;
         Unloaded += Page_Unloaded;
     }
@@ -65,6 +64,10 @@ public sealed partial class HomePage : Page
     public HomeTheme? SelectedTheme(int index, int count) => index >= 0 && index < count ? Featured.SelectedItem as HomeTheme : null;
     private void Page_Loaded(object sender, RoutedEventArgs args)
     {
+        _openPreviewTimer.Tick -= OpenPreview_Tick;
+        _closePreviewTimer.Tick -= ClosePreview_Tick;
+        _openPreviewTimer.Tick += OpenPreview_Tick;
+        _closePreviewTimer.Tick += ClosePreview_Tick;
         Bindings.Initialize();
         Bindings.Update();
         ViewModel.Activate(DispatcherQueue);
@@ -73,6 +76,9 @@ public sealed partial class HomePage : Page
     }
     private void Page_Unloaded(object sender, RoutedEventArgs args)
     {
+        // Stop 只停止调度；解绑 WinRT 定时器回调，避免队列通过委托继续保留页面。
+        _openPreviewTimer.Tick -= OpenPreview_Tick;
+        _closePreviewTimer.Tick -= ClosePreview_Tick;
         ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
         if (_observedEditor is not null) _observedEditor.Saved -= Editor_Saved;
         _observedEditor = null;
@@ -115,17 +121,31 @@ public sealed partial class HomePage : Page
     {
         for (var element = args.OriginalSource as DependencyObject; element is not null && !ReferenceEquals(element, SongPreview); element = VisualTreeHelper.GetParent(element))
             if (element is ButtonBase) return;
+        SongPreview.Invoke();
+        args.Handled = true;
+    }
+    private void Preview_Invoked(object? sender, EventArgs args)
+    {
         if (_previewSource is { } source && SongPreview.Song is { } song)
-        {
             OpenSongDetails(source, song, FindArtwork(SongPreview), false);
-            args.Handled = true;
-        }
     }
     private void OpenSongDetails(FrameworkElement source, HomeSong song, FrameworkElement? artwork, bool keyboard)
     {
         if (!IsLoaded || _detailTransitioning || ViewModel.HasDetails) return;
         var animation = PrepareDetailAnimation(artwork, false);
-        if (!ViewModel.OpenDetails(song)) { animation?.Cancel(); return; }
+        _previewHandoff = animation is not null && IsWithin(artwork, SongPreview) && ViewModel.PreviewSong is not null;
+        if (_previewHandoff)
+        {
+            _openPreviewTimer.Stop();
+            _closePreviewTimer.Stop();
+            _pendingPreviewSource = null;
+        }
+        if (!ViewModel.OpenDetails(song, preservePreview: _previewHandoff))
+        {
+            _previewHandoff = false;
+            animation?.Cancel();
+            return;
+        }
         _detailSource = new WeakReference<FrameworkElement>(source);
         _detailMusicId = song.Music.Id;
         _detailKeyboardEntry = keyboard;
@@ -222,6 +242,11 @@ public sealed partial class HomePage : Page
     {
         _detailTransitionPending = false;
         _detailTransitioning = false;
+        if (_previewHandoff)
+        {
+            _previewHandoff = false;
+            DismissPreview();
+        }
         if (_detailAnimation is not { } animation) return;
         _detailAnimation = null;
         animation.Completed -= DetailAnimation_Completed;
@@ -364,7 +389,7 @@ public sealed partial class HomePage : Page
     }
     private void ScheduleClose()
     {
-        if (!IsLoaded || SongPreview.IsPlaylistMenuOpen || HasKeyboardFocus() || _sourcePointerInside || _previewPointerInside || _closePreviewTimer.IsRunning) return;
+        if (_previewHandoff || !IsLoaded || SongPreview.IsPlaylistMenuOpen || HasKeyboardFocus() || _sourcePointerInside || _previewPointerInside || _closePreviewTimer.IsRunning) return;
         _openPreviewTimer.Stop();
         _closePreviewTimer.Interval = TimeSpan.FromMilliseconds(160);
         _closePreviewTimer.Start();
@@ -376,6 +401,7 @@ public sealed partial class HomePage : Page
     }
     private void BeginPreviewClose()
     {
+        if (_previewHandoff) return;
         _closePreviewTimer.Stop();
         _openPreviewTimer.Stop();
         if (_collapsingPreview) return;

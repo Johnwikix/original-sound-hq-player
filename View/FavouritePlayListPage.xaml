@@ -22,19 +22,9 @@
             </Setter>
         </Style>
     </Page.Resources>
-    <Grid RowDefinitions="Auto,*">
-        <Button
-            x:Name="LocateCurrentTrackButton"
-            x:Uid="LocateCurrentTrackButton"
-            Margin="0,0,12,4"
-            HorizontalAlignment="Right"
-            Click="LocateCurrentTrackButton_Click"
-            IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.FavoriteSongs.Count), Mode=OneWay}">
-            <FontIcon FontSize="16" Glyph="&#xE81D;" />
-        </Button>
+    <Grid>
         <ListView
             x:Name="MusicListView"
-            Grid.Row="1"
             AllowDrop="True"
             CanDragItems="True"
             CanReorderItems="True"
@@ -54,7 +44,6 @@
         <!--  空状态：库非空但没有任何收藏（搜索过滤导致的空列表不显示）  -->
         <Grid
             x:Name="FavoriteEmptyGrid"
-            Grid.Row="1"
             Visibility="{x:Bind ViewModel.AppViewModel.FavoriteEmptyVisibility, Mode=OneWay}">
             <StackPanel
                 MaxWidth="520"
@@ -88,5 +77,13 @@
                     TextWrapping="Wrap" />
             </StackPanel>
         </Grid>
+        <Button
+            x:Name="LocateCurrentTrackButton"
+            x:Uid="LocateCurrentTrackButton"
+            Style="{StaticResource FloatingLocateButtonStyle}"
+            Click="LocateCurrentTrackButton_Click"
+            IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.FavoriteSongs.Count), Mode=OneWay}">
+            <FontIcon FontSize="16" Glyph="&#xE81D;" />
+        </Button>
     </Grid>
 </Page>

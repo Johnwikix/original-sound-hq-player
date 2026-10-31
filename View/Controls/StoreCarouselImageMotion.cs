@@ -18,6 +18,8 @@ internal sealed class StoreCarouselImageMotion : IDisposable
     private Visual? _previousVisual;
     private Vector3KeyFrameAnimation? _offsetAnimation;
     private ScalarKeyFrameAnimation? _fadeOutAnimation;
+    private CompositionScopedBatch? _batch;
+    internal event Action? Completed;
 
     /// <summary>保存两层展示区域；原生动画延至显式 Attach 时创建。</summary>
     internal StoreCarouselImageMotion(FrameworkElement current, FrameworkElement previous)
@@ -49,12 +51,16 @@ internal sealed class StoreCarouselImageMotion : IDisposable
         _currentVisual.Offset = new Vector3((float)(fromRight ? width : -width), 0, 0);
         _currentVisual.Opacity = 1;
         _previousVisual.Opacity = 1;
+        _batch = _currentVisual.Compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
+        _batch.Completed += BatchCompleted;
         _currentVisual.StartAnimation("Offset", _offsetAnimation);
         _previousVisual.StartAnimation("Opacity", _fadeOutAnimation);
+        _batch.End();
     }
     /// <summary>停止在途动画并呈现当前图，供快速切换、缩放、禁用动画和卸载使用。</summary>
     internal void Stop()
     {
+        ReleaseBatch();
         if (_currentVisual is not null)
         {
             try
@@ -74,6 +80,19 @@ internal sealed class StoreCarouselImageMotion : IDisposable
             }
             catch (Exception ex) { App.GetLogger<StoreCarouselImageMotion>().LogDebug(ex, "停止轮播旧图淡出失败"); }
         }
+    }
+    private void BatchCompleted(object sender, CompositionBatchCompletedEventArgs args)
+    {
+        if (!ReferenceEquals(sender, _batch)) return;
+        Stop();
+        Completed?.Invoke();
+    }
+    private void ReleaseBatch()
+    {
+        if (_batch is not { } batch) return;
+        _batch = null;
+        batch.Completed -= BatchCompleted;
+        batch.Dispose();
     }
     /// <summary>释放自有动画；XAML 提供的 Visual 仅解除引用，不由本对象释放。</summary>
     public void Dispose()

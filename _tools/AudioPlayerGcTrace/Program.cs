@@ -10,6 +10,8 @@ using (var source = new EventPipeEventSource(input))
     TraceLog.CreateFromEventTraceLogFile(source, etlx, new TraceLogOptions());
 using var log = new TraceLog(etlx);
 var collections = new List<object>();
+var phases = new List<object>();
+string phase = "unmarked";
 var starts = new Dictionary<int, (double Ms, int Gen, string Reason, string Type)>();
 var suspensionWindows = new List<object>();
 var types = new Dictionary<string, long>();
@@ -21,6 +23,12 @@ long sampledAllocation = 0;
 int allocations = 0, missingStacks = 0, unresolvedTypes = 0;
 foreach (TraceEvent data in log.Events)
 {
+    if (data.ProviderName == "HomePolishProbe")
+    {
+        phase = data.PayloadNames.Length > 0 ? data.PayloadValue(0)?.ToString() ?? "unknown" : "unknown";
+        phases.Add(new { Ms = data.TimeStampRelativeMSec, Phase = phase });
+        continue;
+    }
     if (data.ProviderName != "Microsoft-Windows-DotNETRuntime") continue;
     events[data.EventName] = events.GetValueOrDefault(data.EventName) + 1;
     double ms = data.TimeStampRelativeMSec;
@@ -63,7 +71,7 @@ foreach (TraceEvent data in log.Events)
         double duration = ms - suspensionStart.Value;
         totalSuspension += duration;
         maxSuspension = Math.Max(maxSuspension, duration);
-        suspensionWindows.Add(new { StartMs = suspensionStart.Value, EndMs = ms, DurationMs = duration,
+        suspensionWindows.Add(new { Phase = phase, StartMs = suspensionStart.Value, EndMs = ms, DurationMs = duration,
             FullySuspendedMs = suspended.HasValue && restarting.HasValue ? restarting.Value - suspended.Value : (double?)null });
         suspensionStart = null;
     }
@@ -75,6 +83,6 @@ File.WriteAllText(args[1], JsonSerializer.Serialize(new { Input = input,
     AllocationSamples = allocations, SampledAllocationBytes = sampledAllocation, AllocationsWithoutStacks = missingStacks,
     AllocationsWithoutTypeNames = unresolvedTypes,
     SuspensionCount = suspensionWindows.Count, TotalSuspensionMs = totalSuspension, MaxSuspensionMs = maxSuspension,
-    Collections = collections, SuspensionWindows = suspensionWindows, AllocationTypes = Top(types, 20),
+    Phases = phases, Collections = collections, SuspensionWindows = suspensionWindows, AllocationTypes = Top(types, 20),
     AllocationStacks = Top(stacks, 20), EventCounts = events }, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine($"{collections.Count} collections, {suspensionWindows.Count} suspension windows ({totalSuspension:F3} ms), {allocations} allocation samples");

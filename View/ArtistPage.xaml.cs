@@ -16,12 +16,15 @@ namespace WinUIMusicPlayer.View
 {
     public sealed partial class ArtistPage : Page, INavigatable
     {
+        private readonly ConnectedAnimationScope _coverAnimation;
         public ArtistViewModel ViewModel { get; }
 
         public ArtistPage()
         {
             ViewModel = App.Services.GetRequiredService<ArtistViewModel>();
             this.InitializeComponent();
+            Unloaded += PageUnloaded;
+            _coverAnimation = new ConnectedAnimationScope(this, "ArtistCover");
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
@@ -44,79 +47,43 @@ namespace WinUIMusicPlayer.View
             var gridView = sender as GridView;
             var item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
             var coverBorder = FindCoverBorderInItem(item);
-            if (coverBorder is not null)
-            {
-                ConnectedAnimationService.GetForCurrentView()
-                    .PrepareToAnimate("ArtistCover", coverBorder);
-            }
+            bool animate = _coverAnimation.Prepare(coverBorder);
             SetEntryTransitions();
             ViewModel.ArtistGridView_ItemClick(sender, e);
-            if (coverBorder is not null)
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("ArtistCover");
-                    anim?.TryStart(DetailView.DetailCoverBorder);
-                });
-            }
+            if (animate) _coverAnimation.StartDeferred(() => DetailView.DetailCoverBorder);
         }
 
         public void CollapseDetail()
         {
             if (!ViewModel.IsInDetailMode) return;
-            var artist = ViewModel.AppViewModel.CurrentArtistObj;
-            var detailBorder = DetailView.DetailCoverBorder;
-
-            // 跨链进入(SongsList 行点 Artist/Album,主界面 bottom bar 跳转)时
-            // 对应的 GridViewItem 可能不在视觉树里，此时不能触发 ConnectedAnimation。
-            Border? sourceBorder = null;
-            if (artist is not null)
-            {
-                var item = ArtistsGridView.ContainerFromItem(artist)?.As<GridViewItem>();
-                sourceBorder = FindCoverBorderInItem(item);
-            }
-            // 页面已脱离窗口视觉树时 XamlRoot 为 null，PrepareToAnimate 会抛
-            // "source element is not in the element tree"，此时只能走无动画收起。
-            bool canAnimate = detailBorder is not null && sourceBorder is not null && detailBorder.XamlRoot is not null;
-
-            if (canAnimate)
-            {
-                ConnectedAnimationService.GetForCurrentView()
-                    .PrepareToAnimate("ArtistCover", detailBorder);
-            }
+            var item = ViewModel.AppViewModel.CurrentArtistObj is { } selected
+                ? ArtistsGridView.ContainerFromItem(selected)?.As<GridViewItem>() : null;
+            var source = FindCoverBorderInItem(item);
+            bool animate = source is not null && _coverAnimation.Prepare(DetailView.DetailCoverBorder);
+            if (!animate) _coverAnimation.Cancel();
             SetExitTransitions();
+            DetailView.ViewModel.IsClosingForTransition = animate;
+            ViewModel.CollapseDetail();
+            if (animate) _coverAnimation.StartDeferred(() => source, FinishCoverTransition);
+        }
 
-            if (canAnimate)
-            {
-                DetailView.ViewModel.IsClosingForTransition = true;
-                ViewModel.CollapseDetail();
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("ArtistCover");
-                    if (anim != null)
-                    {
-                        anim.Completed += (s, e) =>
-                        {
-                            DetailView.ViewModel.IsClosingForTransition = false;
-                            DetailView.ViewModel.RefreshFromAppState();
-                        };
-                        if (!anim.TryStart(sourceBorder))
-                        {
-                            DetailView.ViewModel.IsClosingForTransition = false;
-                            DetailView.ViewModel.RefreshFromAppState();
-                        }
-                    }
-                    else
-                    {
-                        DetailView.ViewModel.IsClosingForTransition = false;
-                        DetailView.ViewModel.RefreshFromAppState();
-                    }
-                });
-            }
-            else
-            {
-                ViewModel.CollapseDetail();
-            }
+        private void FinishCoverTransition()
+        {
+            DetailView.ViewModel.IsClosingForTransition = false;
+            DetailView.ViewModel.RefreshFromAppState();
+        }
+
+        private void PageUnloaded(object sender, RoutedEventArgs args)
+        {
+            _coverAnimation.Cancel();
+            DetailView.ViewModel.IsClosingForTransition = false;
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            _coverAnimation.Cancel();
+            DetailView.ViewModel.IsClosingForTransition = false;
+            base.OnNavigatedFrom(e);
         }
 
         private static Border? FindCoverBorderInItem(GridViewItem? item)
@@ -137,6 +104,8 @@ namespace WinUIMusicPlayer.View
 
         public void EnterDetailFromCrossLink()
         {
+            _coverAnimation.Cancel();
+            DetailView.ViewModel.IsClosingForTransition = false;
             SetEntryTransitions();
             ViewModel.EnterDetailFromCrossLink();
         }

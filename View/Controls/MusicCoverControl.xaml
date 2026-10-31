@@ -2,13 +2,23 @@
     x:Class="WinUIMusicPlayer.View.Controls.MusicCoverControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="{ThemeResource SubtleFillColorSecondaryBrush}" SizeChanged="Cover_SizeChanged">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="CoverPlaceholderBrush" Color="#FFE4E4E8" /></ResourceDictionary>
+                <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="CoverPlaceholderBrush" Color="#FF34363F" /></ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast"><SolidColorBrush x:Key="CoverPlaceholderBrush" Color="{ThemeResource SystemColorWindowColor}" /></ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Background="{ThemeResource CoverPlaceholderBrush}" SizeChanged="Cover_SizeChanged">
         <Grid.Clip><RectangleGeometry x:Name="CoverClip" /></Grid.Clip>
-        <FontIcon x:Name="CoverPlaceholder" Glyph="&#xE93C;" FontSize="44" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        <Grid x:Name="PreviousLayer" Opacity="0">
+        <Grid x:Name="PreviousLayer" Opacity="0" Background="{ThemeResource CoverPlaceholderBrush}">
+            <FontIcon x:Name="PreviousPlaceholder" Glyph="&#xE93C;" FontSize="44" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed" />
             <Image x:Name="PreviousImage" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Grid>
-        <Grid x:Name="CurrentLayer">
+        <Grid x:Name="CurrentLayer" Background="{ThemeResource CoverPlaceholderBrush}">
+            <FontIcon x:Name="CoverPlaceholder" Glyph="&#xE93C;" FontSize="44" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             <Image x:Name="CoverImage" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Grid>
     </Grid>

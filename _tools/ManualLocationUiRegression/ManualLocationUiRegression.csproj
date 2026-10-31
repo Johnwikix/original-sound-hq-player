@@ -18,11 +18,13 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
     <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+    <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />
     <Compile Include="../../State/PlaybackQueueState.cs;../../Behaviors/ListViewCentering.cs;../../Helper/CurrentTrackLookup.cs;../../Model/BulkObservableCollection.cs;../../Model/MenuModel.cs;../../Extensions/MenuFlyoutExtensions.cs" />
     <Compile Include="../../View/SongListPage.xaml.cs;../../View/FavouritePlayListPage.xaml.cs;../../View/MusicBrowsePage/MusicBrowsePage.xaml.cs" />
     <Compile Include="../../ViewModel/Pages/SongListViewModel.cs;../../ViewModel/Pages/FavouritePlayListViewModel.cs;../../ViewModel/Pages/MusicBrowseViewModel.cs;../../ViewModel/Pages/MainViewModel.cs;../../Services/LibraryNavigationService.cs" />
     <Page Include="../../View/SongListPage.xaml" Link="View/SongListPage.xaml" />
     <Page Include="../../View/FavouritePlayListPage.xaml" Link="View/FavouritePlayListPage.xaml" />
+    <Page Include="../../Style/FloatingCommandStyle.xaml" Link="Style/FloatingCommandStyle.xaml" />
     <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />
   </ItemGroup>
 </Project>

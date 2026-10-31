@@ -30,8 +30,6 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 <TextBlock Text="{x:Bind Song.Music.Album, Mode=OneWay}" TextTrimming="CharacterEllipsis"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <TextBlock Text="{x:Bind Song.Reason, Mode=OneWay}" TextTrimming="CharacterEllipsis" FontSize="12"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 <StackPanel x:Name="Actions" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="6" Margin="0,8,0,0">
                     <Button x:Name="PlayButton" x:Uid="HomePlaySong" Style="{StaticResource HomeSongActionButtonStyle}"
                         Command="{x:Bind Song.PlayCommand, Mode=OneWay}" CommandParameter="{x:Bind Song, Mode=OneWay}">

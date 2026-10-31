@@ -115,7 +115,7 @@
                     Grid.Row="3"
                     Margin="10,0,10,0"
                     VerticalAlignment="Bottom"
-                    ColumnDefinitions="Auto,Auto,Auto,Auto">
+                    ColumnDefinitions="Auto,Auto,Auto">
                     <Button
                         Grid.Column="0"
                         Margin="10,0,10,0"
@@ -155,15 +155,6 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
-                    <Button
-                        x:Name="LocateCurrentTrackButton"
-                        x:Uid="LocateCurrentTrackButton"
-                        Grid.Column="3"
-                        Margin="10,0,10,0"
-                        Click="LocateCurrentTrackButton_Click"
-                        IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.Songs.Count), Mode=OneWay}">
-                        <FontIcon FontSize="16" Glyph="&#xE81D;" />
-                    </Button>
                 </Grid>
             </Grid>
         </Grid>
@@ -182,5 +173,14 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <Button
+            x:Name="LocateCurrentTrackButton"
+            x:Uid="LocateCurrentTrackButton"
+            Style="{StaticResource FloatingLocateButtonStyle}"
+            Grid.Row="1"
+            Click="LocateCurrentTrackButton_Click"
+            IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.Songs.Count), Mode=OneWay}">
+            <FontIcon FontSize="16" Glyph="&#xE81D;" />
+        </Button>
     </Grid>
 </UserControl>
