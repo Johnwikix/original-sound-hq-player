@@ -63,10 +63,12 @@ internal sealed partial class HomePolishWindow
         _page!.CollapseDetail();
         await Wait(() => !_home.HasDetails);
         var scroll = (ScrollViewer)_page.FindName("ContentScroll");
-        scroll.ChangeView(null, 520, null, true);
-        await Task.Delay(100);
+        _page.UpdateLayout();
         var shelf = (RecommendationShelf)_page.FindName("SongsShelf");
         var source = Descendants<HomeSongItem>(shelf).First();
+        double sourceTop = source.TransformToVisual(scroll).TransformPoint(new Point()).Y + scroll.VerticalOffset;
+        scroll.ChangeView(null, Math.Max(0, sourceTop - 80), null, true);
+        await Task.Delay(100);
         typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(_page, [source]);
         await Wait(() => _home.PreviewSong is not null);
         await Task.Delay(260);

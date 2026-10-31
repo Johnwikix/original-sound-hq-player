@@ -90,12 +90,12 @@ public sealed partial class HomeHeroCard : UserControl
     }
     private void OnSizeChanged(object sender, SizeChangedEventArgs args)
     {
-        bool compact = args.NewSize.Width < 360;
+        bool compact = args.NewSize.Width < 360 || args.NewSize.Height < 220;
         double margin = compact ? 12 : 40;
         ActionPanel.Margin = compact ? new Thickness(12) : new Thickness(40, 24, 24, 24);
         ActionPanel.MaxWidth = System.Math.Min(300, System.Math.Max(0, args.NewSize.Width - margin - (compact ? 12 : 24)));
         TitleText.FontSize = compact ? 20 : 28;
-        TitleText.MaxLines = compact ? (args.NewSize.Height < 170 ? 1 : 2) : 0;
+        TitleText.MaxLines = args.NewSize.Height < 170 ? 1 : 2;
         DescriptionText.Visibility = args.NewSize.Height < 260 ? Visibility.Collapsed : Visibility.Visible;
         PlayButton.MinWidth = System.Math.Min(120, ActionPanel.MaxWidth);
         PlayButton.MaxWidth = ActionPanel.MaxWidth;

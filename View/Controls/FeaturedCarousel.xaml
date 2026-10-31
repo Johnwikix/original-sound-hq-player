@@ -39,7 +39,7 @@
     <!-- Reserve an overflow gutter without changing image or arrow coordinates in the page. -->
     <Grid x:Name="OverflowRoot" KeyDown="Carousel_KeyDown" PointerEntered="Carousel_PointerEntered" PointerExited="Carousel_PointerExited"
           GotFocus="Carousel_GotFocus" LostFocus="Carousel_LostFocus">
-    <Grid x:Name="LayoutGrid" Margin="16,0,16,0" ColumnDefinitions="1.5*,*" RowDefinitions="400,24" ColumnSpacing="15" RowSpacing="15"
+    <Grid x:Name="LayoutGrid" Margin="16,0,16,0" ColumnDefinitions="*,0" RowDefinitions="0,24" ColumnSpacing="15" RowSpacing="15"
           SizeChanged="Layout_SizeChanged">
         <Grid x:Name="SliderGrid" Background="Transparent" SizeChanged="Slider_SizeChanged">
             <ContentPresenter x:Name="Presenter" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
@@ -50,7 +50,7 @@
         <PipsPager x:Name="Pager" Grid.Row="1" HorizontalAlignment="Center" Margin="0,-10,0,0"
             NumberOfPages="{x:Bind PageCount, Mode=OneWay}" SelectedPageIndex="{x:Bind SelectedIndex, Mode=OneWay}"
             SelectedIndexChanged="Pager_SelectedIndexChanged" Visibility="{x:Bind PagerVisibility, Mode=OneWay}" />
-        <Grid x:Name="ThumbnailGrid" Grid.Column="1" ColumnDefinitions="*,*" RowDefinitions="1.35*,*" ColumnSpacing="15" RowSpacing="15"
+        <Grid x:Name="ThumbnailGrid" Grid.Column="1" ColumnDefinitions="*,*" RowDefinitions="2*,*" ColumnSpacing="15" RowSpacing="15"
             Visibility="{x:Bind ThumbnailVisibility, Mode=OneWay}">
             <Grid x:Name="PrimaryShadowHost" Grid.ColumnSpan="2" IsHitTestVisible="False" />
             <Grid x:Name="SecondaryShadowHost" Grid.Row="1" IsHitTestVisible="False" Visibility="{x:Bind SecondaryVisibility, Mode=OneWay}" />

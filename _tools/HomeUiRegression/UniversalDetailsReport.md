@@ -1,6 +1,33 @@
-# 歌曲页内详情、双向连接动画与轮播外观保持验证
+# 首页轮播、页内详情与当日独立审查记录
 
 日期：2026-10-31。最终实现保留 Frame 与既有跨页动画；本功能不导航 Frame，不修改当前自编译 CsWinRT 或播放器协议。
+
+## 2026-10-31 最新：16:9 布局与独立当日审查
+
+用户后续明确要求调整比例，本节替代下文旧记录中“维持原主图比例”的描述。当前主图与右侧卡片都采用 16:9，保留上方一张大卡、下方两张小卡，封面沿用 UniformToFill 和水平/垂直居中，裁切溢出内容而不拉伸图片。
+
+### 实现与实际验证
+
+- 通过主图与拼贴等高的约束计算列权重，计入上下和左右的 15 DIP 间距，右侧 1、2、3 张卡片分别保持可见卡片的 16:9；无拼贴时主图跨满两列。保持 Star 测量，避免固定列宽把列间距重复计入期望宽度。
+- 主图标题至多两行，说明至多两行；较矮布局隐藏说明，小卡按高度收紧标题字号、边距和行数，过小的图块不绘制放不下的标题，歌曲名仍保留于宿主无障碍名称。没有创建新的封面实例、图片源或解码尺寸设置。
+- 实现过程中原生测试测出一次 LayoutCycleException：无拼贴时固定宽列与跨列间距构成尺寸反馈。改回 Star 权重后，以同样的 0–3 张卡片矩阵验证通过；未将失败运行计作通过。
+- 定向矩阵覆盖 320、600、900、1280、1820、2460 DIP 六个宽度和 0–3 张右侧卡片，共 24 种组合，检查实际尺寸、16:9、整组底边、外伸箭头及命中。另捕获 1280×720、1920×1080、2560×1440 三种离屏窗口的真实合成帧，检查所有四张已加载图片的实际居中和 UniformToFill。
+- 主项目 x64 Debug 构建 0 错误、517 警告：`artifacts/song-details/carousel-16x9-main.log`。
+- 整体原生/lvt 专项 **405 项、21 次定向 UIA Invoke、三轮诊断 GC、前台违规 0**：`artifacts/song-details/carousel-16x9-final.log` 与 `artifacts/home-polish-batch2/carousel-16x9-final/result.json`。覆盖此前的预览、末段像素、连接动画、详情状态及资源回收回归。
+- 对截图再补强“四个源必须全部加载，不能跳过缺图主封面”后，定向 **288 项**及一轮 GC 检查共 **291 项**通过：`artifacts/song-details/carousel-16x9-centered.log`、`artifacts/home-polish-batch2/carousel-16x9-centered/result.json`。整体 405 项是在补强该测试前运行，不能将两个计数相加宣称为另一套全量测试。
+- 最新尺寸数据与截图位于 `artifacts/home-polish-batch2/carousel-16x9-centered/carousel-16x9-layout.json`、`carousel-16x9-1280.png`、`carousel-16x9-1920.png`、`carousel-16x9-2560.png`。截图使用隔离的合成封面；没有操作生产窗口，也没有测量实际大曲库、HDR、高对比度、所有 DPI 或 Release/AOT。回收检查证明受测对象可达性收尾，不代表整个进程内存或显存即时下降。
+
+### 独立子代理审查结果
+
+轮播实现及定向验证完成后，使用未继承父代理对话的独立子代理 `/root/review_today` 进行只读审查。范围为基线 `3434eca674ec85d3e26a12cf2a4cf4ca8d86928b` 至 HEAD 的六个当日提交（`dee9a9fa`、`eaea578c`、`06ff2a36`、`3536b9dc`、`c220b108`、`a1456ba2`）和本轮工作区改动。覆盖功能、并发与生命周期、资源所有权和释放、内存开销、UI 线程与性能；检查工具测试和报告的实际边界。未确认本轮 16:9 生产修改的新缺陷。以下三项均来自今天此前提交，**本轮只审查记录，未修复**。
+
+1. **P2：页内详情未随底栏的内层跨链导航关闭，返回状态被旧快照覆盖。** 引入 `3536b9dc`。从歌曲列表打开详情，再点底栏的专辑/歌手；`LibraryNavigationService.SelectAlbum`（37行）调用 `MainPage.NavigateToMusicBrowsePage`（323行），由于主 Frame 已是 MusicBrowsePage，绕过会 Dismiss 的 NavigateTo，仅下层 ContentFrame 导航。Presenter 只订阅主 Frame.Navigating（MusicDetailsPresenter 42行），所以详情仍遮住目标页。之后 `MainPage.CloseMusicDetails`（445行）恢复原歌曲页的 false，覆盖新分组详情的返回可用状态。建议统一跨链导航先关闭临时详情并根据当前来源计算返回状态，补上真实 MainPage/子 Frame/底栏命令集成测试。
+2. **P2：旧歌曲属性窗口的冷缓存封面读取回到 UI 线程。** 引入 `dee9a9fa`。`View/SubView/MusicDetailsWindow.xaml.cs:179` 直接把 `ToolUtils.GetRawImage` 交给 `WindowArtworkSession.LoadAsync`（30行），而该方法直接在当前线程调用委托。`ApplicationTasks.RunAsync` 的 Task.Yield 不负责切到后台，仍恢复到 UI；缓存缺失或过期时，`ToolUtils.cs:435/447` 同步解析音频封面或创建 ATL Track。本地大文件、慢磁盘/映射盘会占用 UI，取消不能中断这些同步调用。建议仅将原始字节读取放回后台，BitmapImage 创建/发布继续在 UI，复用现有 MusicDetailsEditorFactory 的读取边界。未测具体阻塞时长。
+3. **P2：逐首导入会重复执行全列表播放选择匹配。** 引入 `3536b9dc`。`PlaybackSelectionTracker.cs:58` 对每次 VectorChanged 立即 Synchronize，79行遍历 Items；`AppViewModel.AppendSongsBatch`（460–472行）为保持 WinUI 虚拟化位置，逐首 ListSongs.Add。歌曲页可见且有待播或已播歌曲时，当前播放不在过滤结果中必须每次扫完 N 条；位于列表末部也接近全量。B 首批次成为 O(BN) 的 UI 线程工作，持续导入最坏二次增长并重复创建 WinRT 集合枚举工作。建议合并一次 Dispatcher 同步或按插入索引/变更类型增量匹配，增加大列表连续追加验证。未测实际卡顿、分配字节数或收益比例。
+
+三项由独立代理完成 git/blame 与真实调用链核对，父代理复核关键入口和行号；属于静态调用链证明，**没有在用户生产 UI 中复现**。现有 Universal 夹具替代了 MainPage 导航，窗口封面测试替换了字节读取委托，选择测试未覆盖逐首导入增长，所以这些测试通过不能排除上述问题。
+
+审查没有发现能够确证的新增资源泄漏；这一结论限于所读调用链及现有对象回收证据，不等于证明不存在泄漏。来源 UI 在详情期间存活、Frame 缓存禁用、播放选择不自动滚动均是明确设计，不作为缺陷。独立代理核对修改文件中的 30 个字面 GetString 键，七语言均存在；CRLF 检查通过。真实音频、网络、文件选择器、高对比度、长期运行及 Release/AOT 仍未独立执行。
 
 ## 2026-10-31 补充：退出过程明暗脉冲与定位禁用命中
 

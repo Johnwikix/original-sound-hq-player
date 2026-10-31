@@ -218,10 +218,9 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var slider = (Grid)carousel.FindName("SliderGrid");
             var primary = (ContentPresenter)carousel.FindName("PrimaryThumbnail");
             var secondary = (ContentPresenter)carousel.FindName("SecondaryThumbnail");
-            Check(slider.ActualWidth / slider.ActualHeight is > 1.16 and < 1.3
-                && primary.ActualWidth / primary.ActualHeight is > 1.2 and < 1.65
-                && secondary.ActualWidth / secondary.ActualHeight is > .8 and < 1.15,
-                $"main and collage artwork use near-square rectangular proportions (slider {slider.ActualWidth:F0}x{slider.ActualHeight:F0}, primary {primary.ActualWidth:F0}x{primary.ActualHeight:F0}, secondary {secondary.ActualWidth:F0}x{secondary.ActualHeight:F0})");
+            Check(new FrameworkElement[] { slider, primary, secondary }.All(element =>
+                    System.Math.Abs(element.ActualHeight - element.ActualWidth * 9 / 16) < 1.25),
+                $"main and collage artwork use 16:9 proportions (slider {slider.ActualWidth:F0}x{slider.ActualHeight:F0}, primary {primary.ActualWidth:F0}x{primary.ActualHeight:F0}, secondary {secondary.ActualWidth:F0}x{secondary.ActualHeight:F0})");
             var contentScroll = (ScrollViewer)page.FindName("ContentScroll");
             contentScroll.ChangeView(null, 520, null, true);
             await Task.Delay(180);
@@ -1042,7 +1041,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(((MusicCoverControl)card.FindName("Artwork")).Visibility == Visibility.Visible
                 && Grid.GetRow(collage) == 0 && Grid.GetColumn(collage) == 1
                 && Grid.GetRowSpan((ContentPresenter)carousel.FindName("PrimaryThumbnail")) == 1
-                && primary.ActualWidth < 250 && slider.ActualWidth / slider.ActualHeight is > 1.16 and < 1.3,
+                && primary.ActualWidth < 250 && System.Math.Abs(slider.ActualHeight - slider.ActualWidth * 9 / 16) < 1.25,
                 "narrow carousel and collage stay side by side and shrink together without enlarging wrapped tiles");
             await Capture(page, "home-narrow.png");
             var narrowTile = Descendants<HomeCarouselTile>(primary).Single();

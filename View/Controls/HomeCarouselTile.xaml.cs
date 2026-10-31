@@ -35,11 +35,13 @@ public sealed partial class HomeCarouselTile : UserControl
     private void OnSizeChanged(object sender, SizeChangedEventArgs args) => UpdateLayoutMode();
     private void UpdateLayoutMode()
     {
-        bool compact = ActualWidth < 230;
+        bool compact = ActualWidth < 230 || ActualHeight < 90;
         TitleText.FontSize = compact ? 14 : IsPrimary ? 24 : 16;
-        TitleText.Margin = new Thickness(ActualWidth < 180 ? 8 : IsPrimary ? 32 : 16);
+        TitleText.Margin = new Thickness(ActualWidth < 180 || ActualHeight < 90 ? 8 : IsPrimary ? 32 : 16);
         TitleText.VerticalAlignment = IsPrimary ? VerticalAlignment.Center : VerticalAlignment.Bottom;
         TitleText.HorizontalAlignment = HorizontalAlignment.Left;
+        TitleText.MaxLines = ActualHeight < 64 ? 1 : 2;
+        TitleText.Visibility = ActualHeight < 32 ? Visibility.Collapsed : Visibility.Visible;
         TitleText.MaxWidth = System.Math.Max(0, ActualWidth - TitleText.Margin.Left - TitleText.Margin.Right);
         Shade.EndPoint = IsPrimary ? new Point(1, 0) : new Point(.25, 1);
         ShadeStart.Offset = IsPrimary ? 0 : .2;

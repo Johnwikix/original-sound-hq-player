@@ -232,13 +232,31 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private void UpdateLayoutMode()
     {
         if (LayoutGrid is null) return;
-        bool split = ThumbnailVisibility == Visibility.Visible;
         double width = LayoutGrid.ActualWidth;
-        double mainWidth = split ? Math.Max(0, width - LayoutGrid.ColumnSpacing) * .6 : width;
-        // 主图约 1.22:1；拼贴上图略宽、下图接近方形，随可用宽度等比调整。
-        LayoutGrid.RowDefinitions[0].Height = new GridLength(mainWidth / 1.22);
-        LayoutGrid.ColumnDefinitions[0].Width = new GridLength(split ? 1.5 : 1, GridUnitType.Star);
+        if (width <= 0) return;
+        const double aspectRatio = 16d / 9;
+        bool split = ThumbnailVisibility == Visibility.Visible;
+        bool lowerRow = SecondaryItem is not null;
+        bool lowerPair = TertiaryItem is not null;
+        double rowGap = lowerRow ? ThumbnailGrid.ColumnSpacing : 0;
+        double mainWidth = width;
+        double thumbnailWidth = 0;
+        if (split)
+        {
+            // 主图与右侧拼贴等高，各卡片均为 16:9；下方半宽卡片和行间距一并计入。
+            double lowerWidthFraction = lowerPair ? .5 : lowerRow ? 1 : 0;
+            double halfColumnGap = lowerPair ? ThumbnailGrid.ColumnSpacing / 2 : 0;
+            thumbnailWidth = Math.Max(0, (width - LayoutGrid.ColumnSpacing - aspectRatio * rowGap + halfColumnGap)
+                / (2 + lowerWidthFraction));
+            mainWidth = Math.Max(0, width - LayoutGrid.ColumnSpacing - thumbnailWidth);
+        }
+        LayoutGrid.RowDefinitions[0].Height = new GridLength(mainWidth / aspectRatio);
+        // 保留 Star 测量：固定宽列在无拼贴且跨两列时会把列间距反复计入期望宽度。
+        LayoutGrid.ColumnDefinitions[0].Width = new GridLength(split && thumbnailWidth > 0 ? mainWidth / thumbnailWidth : 1, GridUnitType.Star);
         LayoutGrid.ColumnDefinitions[1].Width = split ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        ThumbnailGrid.RowSpacing = rowGap;
+        ThumbnailGrid.RowDefinitions[0].Height = new GridLength(thumbnailWidth / aspectRatio);
+        ThumbnailGrid.RowDefinitions[1].Height = lowerRow ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         Grid.SetColumnSpan(SliderGrid, split ? 1 : 2);
         Grid.SetColumnSpan(Pager, split ? 1 : 2);
         bool largeTileOnly = SecondaryItem is null;

@@ -42,7 +42,7 @@
                 </Rectangle>
                 <StackPanel x:Name="ActionPanel" Margin="40,24,24,24" MaxWidth="300" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="8" RenderTransformOrigin="0.5,0.5">
                     <TextBlock x:Name="TitleText" Text="{x:Bind Theme.Title, Mode=OneWay}" FontSize="28" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="DescriptionText" Text="{x:Bind Theme.Description, Mode=OneWay}" MaxWidth="240" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    <TextBlock x:Name="DescriptionText" Text="{x:Bind Theme.Description, Mode=OneWay}" MaxWidth="240" MaxLines="2" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                     <Button x:Name="PlayButton" x:Uid="HomePlayTheme" Style="{StaticResource MenuButtonStyle}" Margin="0,8,0,0" MinWidth="120" CornerRadius="8" Foreground="White" BorderThickness="0,0,0,2"
                         Command="{x:Bind Theme.PlayCommand, Mode=OneWay}" CommandParameter="{x:Bind Theme, Mode=OneWay}">
                         <Button.Background><SolidColorBrush x:Name="ActionBrush" Color="#FF303030" /></Button.Background>
