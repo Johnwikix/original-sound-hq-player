@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Для некоторых функций нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Для коррекции свёрткой нужна полная лицензия. Купите её для разблокировки.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>Состояние лицензии</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Полная лицензия активна — доступны все функции.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>Не удалось проверить лицензию через Microsoft Store; функции полной версии заблокированы.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Перед началом</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Принять и продолжить</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Отклонить и выйти</value></data>

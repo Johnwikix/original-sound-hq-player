@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Some features require the full license. Purchase to unlock them; your saved settings are retained.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Convolution correction requires the full license. Purchase to unlock.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>License status</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Full version owned — all features are available.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>The license could not be verified through the Microsoft Store; full-version features are locked.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Before you start</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Agree and continue</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Decline and exit</value></data>

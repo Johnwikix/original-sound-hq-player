@@ -227,7 +227,9 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool CrossfeedEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Crossfeed);
     public bool WidthEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.StereoWidth);
     /// <summary>DSP 页面是否存在被许可锁定的功能。</summary>
-    public bool LicenseRestricted { get => field; private set => SetProperty(ref field, value); }
+    public bool LicenseRestricted { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(PurchaseVisible)); } }
+    /// <summary>DSP 提示条购买按钮：仅在存在被锁功能且当前许可状态可购买（许可非活跃）时显示。</summary>
+    public bool PurchaseVisible => LicenseRestricted && AppViewModel.CanPurchaseLicense;
     /// <summary>顶部提示条级别：许可受限升为警告，其余保持信息级。</summary>
     public InfoBarSeverity InfoSeverity { get => field; private set => SetProperty(ref field, value); } = InfoBarSeverity.Informational;
     /// <summary>当前输出为立体声（或空闲未知）。</summary>
@@ -258,6 +260,8 @@ public partial class DspSettingsViewModel : ObservableObject
     {
         if (!_loaded) return;
         LicenseRestricted = _license.IsFeatureRestricted(LicenseFeature.AllDsp);
+        // 可购买性变化不必然改变 LicenseRestricted（如非活跃 → Store 状态未知），购买按钮可见性需独立重估。
+        OnPropertyChanged(nameof(PurchaseVisible));
         ApplyState(_lastState);
     });
 

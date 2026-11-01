@@ -1935,6 +1935,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>部分功能需要完整许可。购买后可解锁，已保存的设置会保留。</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>卷积校正需要完整许可，购买后可解锁。</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>许可状态</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>已拥有完整版，全部功能可用。</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>无法通过 Microsoft Store 确认许可，完整版功能已锁定。</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>使用前请阅读</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>同意并继续</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>不同意并退出</value></data>

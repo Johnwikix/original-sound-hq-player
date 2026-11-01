@@ -1,3 +1,22 @@
+## 2026-11-01 license.debug 作为未签名自建包的完整版入口
+- `Services/LicenseService.cs`：许可覆盖文件在 Release 下仅对未签名包（`Add-AppxPackage -Register` 布局）生效，作为开发者自用后门；DEBUG 行为不变（任意包可模拟 full/trial/expired）；开发者/企业签名与 Store 签名包均不读取该文件；新增内部 `LicenseOverrideReader` 测试注入点避免回归依赖真实文档目录。
+- `_tools/LicenseRegression`：新增未签名包文件解锁、开发者签名与 Store 签名包忽略文件的断言，`PackageSignatureKind` 桩补 `None`。
+- `docs/LicensePolicy.md`：补充覆盖文件适用范围说明。
+
+## 2026-11-01 关于页许可卡片常显并展示当前许可状态
+- `View/SubView/Settings/AboutSettingsControl.xaml`：许可卡片任何许可状态下常显，标题改用 `LicenseStatusHeader`，购买按钮仅在试用/许可非活跃时出现。
+- `ViewModel/AppViewModel.License.cs`：`LicenseDescription` 覆盖全部四种许可状态（完整版/试用剩余天数/许可非活跃/无法确认许可）。
+- `View/SubView/Settings/GeneralSettingsControl.xaml`、`DspSettingsControl.xaml`：购买按钮统一按可购买状态显隐，Store 状态未知时隐藏，避免可见但不可用。
+- `ViewModel/Controls/DspSettingsViewModel.cs`：新增 `PurchaseVisible`（受限且可购买），许可迁移不改变 `LicenseRestricted` 时独立通知按钮可见性。
+- `Services/LicenseService.cs`：`CanPurchase` 收回为仅试用/许可非活跃（Store 状态未知时商店购买无法完成）。
+- `Strings/*/Resources.resw`：新增 `LicenseStatusHeader`、`LicenseFull`、`LicenseUnavailable` 七语言资源。
+
+## 2026-11-01 非 Store 渠道与许可查询失败改为受限（fail-closed）
+- `Services/LicenseService.cs`：`StoreUnavailable`（非 Store 渠道、首次查询失败）纳入 `IsRestricted`，与许可非活跃共用 `LicensePolicy` 清单；`CanPurchase` 保持仅试用/许可非活跃（Store 状态未知时购买无法完成，不提供购买入口）；日志与注释同步 fail-closed 语义。
+- `_tools/LicenseRegression`：首次查询失败与非 Store 包断言翻转为受限且不可购买，并补充受限时高级输出门控生效的断言。
+- `README.md`、`README.en.md`、`docs/LicensePolicy.md`：移除"非 Store 渠道不受限"描述，改为同样按未授权处理。
+- 兼容性：非 Store 渠道（含源码自构建）存量用户将开始受限，完整版功能需 Microsoft Store 版本；DEBUG 构建可用 `Documents\OriginalSoundPlayer\license.debug` 本地覆盖。
+
 ## 2026-11-01 列表来源图标改为打开位置操作
 - `MusicListRowControl`、`Music`、`MusicCommands`：来源图标改为按钮，仅本地曲目可用（`CanEditFile` 置灰，远程曲目不打开任何内容），点击在资源管理器定位文件，缺失时 InfoBar 提示。
 - `BindUtils`：删除动作文案函数，提示与无障碍名称直接复用 `FlyoutOpenLocationItem` 资源。

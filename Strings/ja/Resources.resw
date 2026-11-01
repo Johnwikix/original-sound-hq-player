@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>一部の機能には製品版ライセンスが必要です。購入すると解除され、保存済みの設定は保持されます。</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>畳み込み補正には製品版ライセンスが必要です。購入すると解除されます。</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>ライセンス状態</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>製品版ライセンスが有効です。すべての機能を利用できます。</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>Microsoft Store でライセンスを確認できません。製品版の機能はロックされています。</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>ご利用の前に</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>同意して続行</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>同意せず終了</value></data>

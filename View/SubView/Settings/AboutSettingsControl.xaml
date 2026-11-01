@@ -97,11 +97,14 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
+                <!--  许可状态：任何状态下显示当前许可，购买按钮仅在试用/许可非活跃时出现  -->
                 <controls:SettingsCard
                     Description="{x:Bind ViewModel.AppViewModel.LicenseDescription, Mode=OneWay}"
-                    Header="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
-                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CanPurchaseLicense), Mode=OneWay}">
-                    <Button Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}" Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}" />
+                    Header="{x:Bind tool:ToolUtils.GetString('LicenseStatusHeader')}">
+                    <Button
+                        Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}"
+                        Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
+                        Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CanPurchaseLicense), Mode=OneWay}" />
                 </controls:SettingsCard>
 
                 <!--  音频可视化  -->

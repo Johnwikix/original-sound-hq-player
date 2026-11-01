@@ -55,7 +55,7 @@ namespace CommunityToolkit.WinUI
 
 namespace Windows.ApplicationModel
 {
-    public enum PackageSignatureKind { Store, Developer }
+    public enum PackageSignatureKind { None, Store, Developer }
     public sealed class Package
     {
         public static Package Current { get; } = new();

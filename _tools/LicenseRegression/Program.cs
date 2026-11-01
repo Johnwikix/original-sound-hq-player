@@ -134,14 +134,37 @@ static async Task RunTestsAsync()
     context.Query = () => throw new IOException("First query unavailable");
     using var unavailable = new LicenseService(NullLogger<LicenseService>.Instance, clock);
     await unavailable.InitializeAsync();
-    Check(unavailable.State == AppLicenseState.StoreUnavailable && !unavailable.IsRestricted, "Initial failure did not fail open");
+    Check(unavailable.State == AppLicenseState.StoreUnavailable && unavailable.IsRestricted && !unavailable.CanPurchase,
+        "Initial failure must stay restricted without a purchase entry (fail-closed)");
+    effective = preferences;
+    unavailable.ApplyOutputRestrictions(ref effective);
+    Check(!effective.IsDopEnabled && !effective.ExperimentalSurround51 && !effective.ExperimentalAtmosPassthrough,
+        "Store-unavailable license did not gate advanced output");
     unavailable.Dispose();
     Package.Current.SignatureKind = PackageSignatureKind.Developer;
     context = StoreContext.Current = new();
-    using var developer = new LicenseService(NullLogger<LicenseService>.Instance, clock);
+    using var developer = new LicenseService(NullLogger<LicenseService>.Instance, clock) { LicenseOverrideReader = () => "full" };
     await developer.InitializeAsync();
-    Check(context.Queries == 0 && !developer.CanPurchase && !developer.IsRestricted, "Developer package contacted Store or became restricted");
-    Console.WriteLine("PASS: initial failure and non-Store package policy.");
+    Check(context.Queries == 0 && developer.IsRestricted && !developer.CanPurchase,
+        "Developer-signed package honored the unlock file or contacted Store");
+    developer.Dispose();
+
+    Package.Current.SignatureKind = PackageSignatureKind.None;
+    context = StoreContext.Current = new();
+    using var unlocked = new LicenseService(NullLogger<LicenseService>.Instance, clock) { LicenseOverrideReader = () => "full" };
+    await unlocked.InitializeAsync();
+    Check(context.Queries == 0 && unlocked.State == AppLicenseState.FullLicense
+        && !unlocked.IsRestricted && !unlocked.CanPurchase,
+        "Unsigned local package did not unlock with the license file");
+    unlocked.Dispose();
+
+    Package.Current.SignatureKind = PackageSignatureKind.Store;
+    context = StoreContext.Current = new();
+    context.Query = () => Task.FromResult(inactive);
+    using var storeOnly = new LicenseService(NullLogger<LicenseService>.Instance, clock) { LicenseOverrideReader = () => "full" };
+    await storeOnly.InitializeAsync();
+    Check(context.Queries == 1 && storeOnly.IsRestricted, "Store-signed package honored the local unlock file");
+    Console.WriteLine("PASS: fail-closed packages and unsigned-package license file unlock.");
 }
 
 sealed class TestClock : TimeProvider

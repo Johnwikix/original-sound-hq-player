@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Einige Funktionen erfordern die Vollversion. Durch den Kauf werden sie freigeschaltet; gespeicherte Einstellungen bleiben erhalten.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Die Faltungskorrektur erfordert die Vollversion. Kaufen Sie diese zum Freischalten.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>Lizenzstatus</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Vollversion aktiviert – alle Funktionen sind verfügbar.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>Die Lizenz konnte nicht über den Microsoft Store überprüft werden; die Vollversionsfunktionen sind gesperrt.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Vor dem Start</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Zustimmen und fortfahren</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Ablehnen und beenden</value></data>

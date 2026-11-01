@@ -14,15 +14,19 @@ namespace WinUIMusicPlayer.ViewModel
         /// <summary>关于页与 DSP 提示共用购买命令，防止跨页面重复发起购买。</summary>
         public IAsyncRelayCommand PurchaseLicenseCommand { get; }
 
-        /// <summary>试用中或许可非活跃时显示购买入口。</summary>
+        /// <summary>试用中或许可非活跃时显示购买入口；Store 状态未知时不显示。</summary>
         public bool CanPurchaseLicense => _licenseService.CanPurchase;
 
-        /// <summary>关于页显示试用剩余天数或许可受限说明。</summary>
-        public string LicenseDescription => _licenseService.TrialRemainingDays is int days
-            ? string.Format(ToolUtils.GetString("LicenseTrialRemaining"), days)
-            : LicenseRestricted ? ToolUtils.GetString("LicenseRestrictedFeatures") : "";
+        /// <summary>关于页许可卡片：按当前状态显示完整版、试用剩余天数或受限原因。</summary>
+        public string LicenseDescription => _licenseService.State switch
+        {
+            AppLicenseState.FullLicense => ToolUtils.GetString("LicenseFull"),
+            AppLicenseState.TrialActive => string.Format(ToolUtils.GetString("LicenseTrialRemaining"), _licenseService.TrialRemainingDays ?? 0),
+            AppLicenseState.LicenseInactive => ToolUtils.GetString("LicenseRestrictedFeatures"),
+            _ => ToolUtils.GetString("LicenseUnavailable"),
+        };
 
-        /// <summary>许可非活跃；具体设置的可用性由 LicensePolicy 决定。</summary>
+        /// <summary>许可受限（非活跃或 Store 状态未知）；具体设置的可用性由 LicensePolicy 决定。</summary>
         public bool LicenseRestricted
         {
             get => field;
@@ -41,7 +45,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        /// <summary>DSD Dop/Native 开关可用性：试用受限时锁定。</summary>
+        /// <summary>DSD Dop/Native 开关可用性：许可受限时锁定。</summary>
         public bool DsdBitstreamAllowed => !_licenseService.IsFeatureRestricted(LicenseFeature.DsdBitstream);
 
         /// <summary>5.1 输出仅在许可不受限时可编辑。</summary>

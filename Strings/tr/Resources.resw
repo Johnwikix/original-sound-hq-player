@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Bazı özellikler tam lisans gerektirir. Kilidini açmak için satın alın; kaydedilmiş ayarlarınız korunur.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Evrişim düzeltmesi tam lisans gerektirir. Kilidi açmak için satın alın.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>Lisans durumu</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Tam lisans etkin — tüm özellikler kullanılabilir.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>Lisans Microsoft Store üzerinden doğrulanamadı; tam sürüm özellikleri kilitli.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Başlamadan önce</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Kabul et ve devam et</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Reddet ve çık</value></data>

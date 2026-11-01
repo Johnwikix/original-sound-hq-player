@@ -33,7 +33,8 @@
                     <InfoBar.ActionButton>
                         <Button
                             Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
-                            Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}" />
+                            Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}"
+                            Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CanPurchaseLicense), Mode=OneWay}" />
                     </InfoBar.ActionButton>
                 </InfoBar>
 

@@ -22,7 +22,7 @@
                         <Button
                             Command="{x:Bind ViewModel.PurchaseCommand}"
                             Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
-                            Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.LicenseRestricted), Mode=OneWay}" />
+                            Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.PurchaseVisible), Mode=OneWay}" />
                     </InfoBar.ActionButton>
                 </InfoBar>
                 <TextBlock

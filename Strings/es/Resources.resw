@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Algunas funciones requieren la licencia completa. Compra para desbloquearlas; se conservarán tus ajustes guardados.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>La corrección por convolución requiere la licencia completa. Compra para desbloquearla.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>Estado de la licencia</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Licencia completa activada; todas las funciones están disponibles.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>No se pudo verificar la licencia a través de Microsoft Store; las funciones de la versión completa están bloqueadas.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Antes de comenzar</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Aceptar y continuar</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Rechazar y salir</value></data>
