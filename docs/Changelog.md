@@ -1,3 +1,14 @@
+## 2026-11-01 Store 状态未知时保留购买入口，许可卡片移至音频可视化下方
+- `Services/LicenseService.cs`：`CanPurchase` 改为除已购完整版外均为 true——查询失败（StoreUnavailable）时发起购买会顺带强制刷新许可，账户已有许可或购买成功即恢复完整版；通用设置/DSP 横幅购买按钮随同恢复显示。
+- `View/SubView/Settings/AboutSettingsControl.xaml`：许可状态卡片移至音频可视化卡片下方。
+- `ViewModel/AppViewModel.License.cs`：购买入口注释同步。
+- `_tools/LicenseRegression`：Store 不可用断言改为受限且可购买。
+
+## 2026-11-01 许可判定改为按包身份查询，自建包继承已购许可
+- `Services/LicenseService.cs`：初始判定不再按包签名类型短路——仓库 manifest 即 Store 发布者，所有自建包与商店版同 PFN，许可随账户判定；旁加载包一律查询商店，查询失败仍 fail-closed 受限。已购机器上安装的开发者签名包启动即完整版，不再需要点击购买触发刷新。
+- `_tools/LicenseRegression`：开发者签名包断言改为"忽略文件并查询商店"；新增旁加载包继承已购许可的断言。
+- `docs/LicensePolicy.md`：补充许可按 PFN+账户判定、与签名渠道无关的说明。
+
 ## 2026-11-01 license.debug 作为未签名自建包的完整版入口
 - `Services/LicenseService.cs`：许可覆盖文件在 Release 下仅对未签名包（`Add-AppxPackage -Register` 布局）生效，作为开发者自用后门；DEBUG 行为不变（任意包可模拟 full/trial/expired）；开发者/企业签名与 Store 签名包均不读取该文件；新增内部 `LicenseOverrideReader` 测试注入点避免回归依赖真实文档目录。
 - `_tools/LicenseRegression`：新增未签名包文件解锁、开发者签名与 Store 签名包忽略文件的断言，`PackageSignatureKind` 桩补 `None`。

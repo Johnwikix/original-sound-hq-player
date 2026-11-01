@@ -14,7 +14,7 @@ namespace WinUIMusicPlayer.ViewModel
         /// <summary>关于页与 DSP 提示共用购买命令，防止跨页面重复发起购买。</summary>
         public IAsyncRelayCommand PurchaseLicenseCommand { get; }
 
-        /// <summary>试用中或许可非活跃时显示购买入口；Store 状态未知时不显示。</summary>
+        /// <summary>除已购完整版外显示购买入口；Store 状态未知时可尝试购买并触发许可刷新。</summary>
         public bool CanPurchaseLicense => _licenseService.CanPurchase;
 
         /// <summary>关于页许可卡片：按当前状态显示完整版、试用剩余天数或受限原因。</summary>

@@ -97,7 +97,15 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <!--  许可状态：任何状态下显示当前许可，购买按钮仅在试用/许可非活跃时出现  -->
+                <!--  音频可视化  -->
+                <controls:SettingsCard
+                    x:Uid="SpectrumVisualization"
+                    Click="SpectrumVisualization_Click"
+                    Description="{x:Bind GetCopyrightDescription()}"
+                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
+                    IsClickEnabled="True" />
+
+                <!--  许可状态：任何状态下显示当前许可，购买按钮在未获得完整版时出现  -->
                 <controls:SettingsCard
                     Description="{x:Bind ViewModel.AppViewModel.LicenseDescription, Mode=OneWay}"
                     Header="{x:Bind tool:ToolUtils.GetString('LicenseStatusHeader')}">
@@ -106,14 +114,6 @@
                         Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
                         Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CanPurchaseLicense), Mode=OneWay}" />
                 </controls:SettingsCard>
-
-                <!--  音频可视化  -->
-                <controls:SettingsCard
-                    x:Uid="SpectrumVisualization"
-                    Click="SpectrumVisualization_Click"
-                    Description="{x:Bind GetCopyrightDescription()}"
-                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
-                    IsClickEnabled="True" />
 
                 <!--  缓存  -->
                 <controls:SettingsExpander x:Uid="AboutCacheExpander">

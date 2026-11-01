@@ -13,7 +13,7 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>许可状态；受限表示 Store 许可非活跃或无法确认（含非 Store 渠道）。</summary>
 public enum AppLicenseState
 {
-    /// <summary>非 Store 渠道或首次查询失败：无法确认许可，按受限处理（fail-closed）。</summary>
+    /// <summary>首次查询失败或 Store 不可用：无法确认许可，按受限处理（fail-closed）。</summary>
     StoreUnavailable,
     /// <summary>已购完整版。</summary>
     FullLicense,
@@ -24,7 +24,8 @@ public enum AppLicenseState
 }
 
 /// <summary>Store 许可状态源：非活跃或无法确认许可时按 LicensePolicy 限制功能；
-/// 非 Store 渠道和首次查询失败同样受限（fail-closed）；后续查询失败保持上次确认的状态。</summary>
+/// 许可按包身份（PFN）+ 账户判定、与签名渠道无关，查询失败即受限（fail-closed），
+/// 后续查询失败保持上次确认的状态。</summary>
 public sealed class LicenseService : IDisposable
 {
     private const string ProductId = "9NFW1RPPT999";
@@ -55,8 +56,9 @@ public sealed class LicenseService : IDisposable
     {
         LicensePolicy.ApplyOutputRestrictions(ref settings, RestrictedFeatures);
     }
-    /// <summary>试用期内或许可非活跃时可发起商店购买；Store 状态未知（非 Store 渠道或查询失败）时购买无法完成，不提供购买入口。</summary>
-    public bool CanPurchase => State is AppLicenseState.TrialActive or AppLicenseState.LicenseInactive;
+    /// <summary>除已购完整版外均可发起商店购买；Store 状态未知时购买请求会强制刷新许可，
+    /// 账户已有许可或购买成功后即恢复完整版。</summary>
+    public bool CanPurchase => State is not AppLicenseState.FullLicense;
     /// <summary>试用剩余天数（不足一天按 1 计，到期为 0）；非试用期内为 null。</summary>
     public int? TrialRemainingDays => State == AppLicenseState.TrialActive && TrialExpiration is { } expiration
         ? Math.Max(0, (int)Math.Ceiling((expiration - _timeProvider.GetUtcNow()).TotalDays))
@@ -82,16 +84,10 @@ public sealed class LicenseService : IDisposable
         #if DEBUG
         if (TryApplyLicenseFileOverride()) { StartTimers(); return; }
         #endif
-        var signature = Package.Current.SignatureKind;
-        if (signature != PackageSignatureKind.Store)
-        {
-            // 文件解锁仅限未签名包（本地 Add-AppxPackage -Register 注册的构建布局）：
-            // 开发者/企业签名的旁加载包可能被再分发，保持受限；Store 签名包已在上部分流，
-            // 商业渠道只认商店许可。
-            if (signature == PackageSignatureKind.None && TryApplyLicenseFileOverride()) { StartTimers(); return; }
-            _logger.LogInformation("包签名类型为 {Kind}，非 Store 渠道，无法确认许可，按受限处理（fail-closed）", signature);
-            return;
-        }
+        // 许可按包身份（PFN）+ 账户判定，与二进制签名无关：仓库 manifest 即 Store 发布者，
+        // 所有自建包与商店版同 PFN，已购机器上启动即为完整版。未签名包额外保留
+        // license.debug 自用入口；其余一律查询商店，查询失败按受限处理（fail-closed）。
+        if (Package.Current.SignatureKind == PackageSignatureKind.None && TryApplyLicenseFileOverride()) { StartTimers(); return; }
         try
         {
             EnsureContext();
