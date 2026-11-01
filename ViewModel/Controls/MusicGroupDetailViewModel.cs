@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -97,7 +96,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             AddToPlayListCommand = new RelayCommand<int>(OnAddToPlayList);
             DeleteMenuItemCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnDeleteAsync));
             ConvertAudioCommand = new AsyncRelayCommand<string>(tag => ObserveCommandAsync(() => OnConvertAudioAsync(tag)));
-            OpenInExplorerCommand = new RelayCommand(OnOpenInExplorer);
+            // 统一入口：本地曲目在资源管理器定位，远程曲目打开来源浏览器（与列表行按钮同源）。
+            OpenInExplorerCommand = new RelayCommand(() => MusicCommands.OpenSourceCommand.Execute(SelectedMusic));
             MusicDetailCommand = new RelayCommand(OnMusicDetail);
             ReGetLyricsCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnReGetLyricsAsync));
             TransmitFileToUsbCommand = new AsyncRelayCommand<UsbSendTarget>(target => ObserveCommandAsync(() => OnTransmitFileToUsbAsync(target)));
@@ -474,23 +474,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (MusicBrowseViewModel is null) return;
             await MusicBrowseViewModel.ConvertAudio_Click(SelectedMusics.ToArray(), tag);
-        }
-
-        private void OnOpenInExplorer()
-        {
-            if (SelectedMusic is null) return;
-            var filePath = SelectedMusic.Path;
-            if (System.IO.File.Exists(filePath))
-            {
-                try
-                {
-                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "OpenInExplorer 打开资源管理器时出错: {Message}", ex.Message);
-                }
-            }
         }
 
         private void OnMusicDetail()

@@ -2126,6 +2126,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>No se puede leer el recurso remoto. Comprueba la conexión y reintenta.</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>El archivo no existe o se ha movido.</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>Credenciales o permisos no válidos. Edita la fuente.</value>
   </data>

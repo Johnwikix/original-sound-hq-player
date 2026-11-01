@@ -2128,6 +2128,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>无法读取远程资源，请检查连接后重试。</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>文件不存在或已被移动。</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>账号、密码或访问权限无效，请编辑来源重新连接。</value>
   </data>

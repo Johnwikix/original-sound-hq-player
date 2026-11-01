@@ -2126,6 +2126,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>Uzak kaynak okunamıyor. Bağlantıyı denetleyin ve yeniden deneyin.</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>Dosya mevcut değil veya taşınmış.</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>Kimlik bilgileri veya izinler geçersiz. Yeniden bağlanmak için kaynağı düzenleyin.</value>
   </data>

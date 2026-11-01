@@ -92,5 +92,6 @@ namespace WinUIMusicPlayer.Model
         [Ignore] public ICommand PlayCommand => MusicCommands.PlayCommand;
         [Ignore] public ICommand UpdateFavouriteCommand => MusicCommands.UpdateFavouriteCommand;
         [Ignore] public ICommand AddMusicToCurrentPlayListCommand => MusicCommands.AddToPlayListCommand;
+        [Ignore] public ICommand OpenSourceCommand => MusicCommands.OpenSourceCommand;
     }
 }

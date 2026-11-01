@@ -1,3 +1,10 @@
+## 2026-11-01 列表来源图标改为打开位置操作
+- `MusicListRowControl`、`Music`、`MusicCommands`：来源图标改为按钮，仅本地曲目可用（`CanEditFile` 置灰，远程曲目不打开任何内容），点击在资源管理器定位文件，缺失时 InfoBar 提示。
+- `BindUtils`：删除动作文案函数，提示与无障碍名称直接复用 `FlyoutOpenLocationItem` 资源。
+- `ToolUtils`：`OpenFileInExplorer` 返回是否成功，文件缺失记录日志；右键菜单"打开文件位置"对远程曲目置灰。
+- 右键菜单"打开文件位置"收敛到同一入口：`SongListViewModel`、`FavouritePlayListViewModel`、`MusicGroupDetailViewModel`、`PlaylistDetailViewModel` 删除各自的 `Process.Start` 拷贝改为转发统一命令。
+- `Strings/*/Resources.resw`：新增 `OpenLocationFileMissing` 七语言资源。
+
 ## 2026-11-01 精简设置页 5.1 与 Atmos 说明
 - `Strings/*/Resources.resw`：缩短七种语言的 5.1 与 Atmos 描述，保留输出行为、格式限制和音量提示。
 

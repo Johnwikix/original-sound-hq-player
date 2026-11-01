@@ -1,11 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -27,13 +25,12 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel AppViewModel { get; }
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
-        private ILogger<FavouritePlayListViewModel> _logger;
-        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FavouritePlayListViewModel> logger)
+        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             BrowseViewModel = browseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
-            _logger = logger;
+            OpenInExplorerCommand = new RelayCommand(() => MusicCommands.OpenSourceCommand.Execute(SelectedMusic));
             InitalizeOption();
         }
 
@@ -174,25 +171,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        [RelayCommand]
-        public void OpenInExplorer()
-        {
-            if (SelectedMusic is not null)
-            {
-                var filePath = SelectedMusic.Path;
-                if (System.IO.File.Exists(filePath))
-                {
-                    try
-                    {
-                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"OpenInExplorer 打开资源管理器时出错: {ex.Message}");
-                    }
-                }
-            }
-        }
+        // 统一入口：本地曲目在资源管理器定位，远程曲目打开来源浏览器（与列表行按钮同源）。
+        public IRelayCommand OpenInExplorerCommand { get; }
 
         [RelayCommand]
         public void MusicDetail()

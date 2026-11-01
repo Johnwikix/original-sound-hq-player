@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -90,7 +89,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             AddToPlayListCommand = new RelayCommand<int>(OnAddToPlayList);
             DeleteMenuItemCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnDeleteFromPlaylistAsync));
             ConvertAudioCommand = new AsyncRelayCommand<string>(tag => ObserveCommandAsync(() => OnConvertAudioAsync(tag)));
-            OpenInExplorerCommand = new RelayCommand(OnOpenInExplorer);
+            // 统一入口：本地曲目在资源管理器定位，远程曲目打开来源浏览器（与列表行按钮同源）。
+            OpenInExplorerCommand = new RelayCommand(() => MusicCommands.OpenSourceCommand.Execute(SelectedMusic?.Music ?? (SelectedMusics.Count > 0 ? SelectedMusics[0].Music : null)));
             MusicDetailCommand = new RelayCommand(OnMusicDetail);
             ReGetLyricsCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnReGetLyricsAsync));
             TransmitFileToUsbCommand = new AsyncRelayCommand<UsbSendTarget>(target => ObserveCommandAsync(() => OnTransmitFileToUsbAsync(target)));
@@ -390,24 +390,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             else
                 return;
             await MusicBrowseViewModel.ConvertAudio_Click(targets.ToArray(), tag);
-        }
-
-        private void OnOpenInExplorer()
-        {
-            Music? music = SelectedMusic?.Music ?? (SelectedMusics.Count > 0 ? SelectedMusics[0].Music : null);
-            if (music is null) return;
-            string filePath = music.Path;
-            if (System.IO.File.Exists(filePath))
-            {
-                try
-                {
-                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "OpenInExplorer 打开资源管理器时出错: {Message}", ex.Message);
-                }
-            }
         }
 
         private void OnMusicDetail()

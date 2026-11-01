@@ -2126,6 +2126,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>リモートデータを読み込めません。接続を確認して再試行してください。</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>ファイルが存在しないか、移動されています。</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>認証情報または権限が無効です。ソースを編集してください。</value>
   </data>

@@ -182,12 +182,25 @@
             Grid.Column="10"
             FontSize="14"
             Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(Music.IsExistOnDevice), Mode=OneWay}" />
-        <FontIcon
+        <Button
             Grid.Column="11"
-            FontSize="14"
-            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote, Music.IsRemoteOffline, Music.IsRemoteCached), Mode=OneWay}"
-            AutomationProperties.Name="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote, Music.IsRemoteCached), Mode=OneWay}"
-            ToolTipService.ToolTip="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote, Music.IsRemoteCached), Mode=OneWay}" />
+            Width="32"
+            Height="32"
+            Padding="0"
+            VerticalAlignment="Center"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            Command="{x:Bind Music.OpenSourceCommand, Mode=OneWay}"
+            CommandParameter="{x:Bind Music, Mode=OneWay}"
+            IsEnabled="{x:Bind Music.CanEditFile, Mode=OneWay}"
+            Style="{StaticResource MenuButtonStyle}"
+            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('FlyoutOpenLocationItem')}"
+            ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('FlyoutOpenLocationItem')}">
+            <FontIcon
+                FontSize="14"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote, Music.IsRemoteOffline, Music.IsRemoteCached), Mode=OneWay}" />
+        </Button>
     </Grid>
 </UserControl>

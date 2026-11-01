@@ -2126,6 +2126,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>Не удалось прочитать удалённый ресурс. Проверьте подключение.</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>Файл не существует или был перемещён.</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>Неверные учётные данные или права. Измените источник.</value>
   </data>

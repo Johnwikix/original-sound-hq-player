@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 
@@ -16,6 +17,8 @@ namespace WinUIMusicPlayer.Services
         public static IRelayCommand<Music> UpdateFavouriteCommand { get; } = new RelayCommand<Music>(UpdateFavourite);
         public static IRelayCommand<Music> AddToPlayListCommand { get; } = new RelayCommand<Music>(AddToCurrentPlayList);
         public static IRelayCommand<Music> AddToFavouriteCommand { get; } = new RelayCommand<Music>(AddToFavourite);
+        // 本地曲目的资源管理器定位入口；远程曲目由行按钮 IsEnabled=CanEditFile 与右键菜单置灰拦截。
+        public static IRelayCommand<Music> OpenSourceCommand { get; } = new RelayCommand<Music>(OpenSource);
 
         public static IAsyncRelayCommand<MusicDetailsRequest> DetailsPlayCommand { get; } = new AsyncRelayCommand<MusicDetailsRequest>(
             request => request is null ? Task.CompletedTask : PlayFromPageAsync(request.Music, request.PlaybackPage, request.QueueEntryId),
@@ -90,6 +93,22 @@ namespace WinUIMusicPlayer.Services
         {
             if (music is null) return;
             App.Services.GetRequiredService<AppViewModel>().AddMusicToCurrentPlayList(music);
+        }
+
+        private static void OpenSource(Music? music)
+        {
+            if (music is null) return;
+            // 失败细节（文件缺失或资源管理器启动失败）由 ToolUtils 记录，这里只做界面提示。
+            if (!ToolUtils.OpenFileInExplorer(music.Path))
+                ShowShellError("OpenLocationFileMissing");
+        }
+
+        private static void ShowShellError(string messageKey)
+        {
+            var shell = App.Services.GetRequiredService<AppViewModel>().State.Shell;
+            shell.InfoBarTitle = ToolUtils.GetString("Error");
+            shell.InfoBarMessage = ToolUtils.GetString(messageKey);
+            shell.InfoBarIsOpen = true;
         }
 
         private static int ComputeNextFavoriteOrder(AppViewModel app)
