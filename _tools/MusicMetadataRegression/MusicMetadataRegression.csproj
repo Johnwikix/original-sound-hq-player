@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="z440.atl.core" Version="7.18.0" />
+    <Compile Include="../../Model/Music.cs;../../Model/AdditionalMusicMetadata.cs;../../Model/PendingMetadataWrite.cs;../../Model/LyricsDocument.cs" />
+    <Compile Include="../../Utils/AudioMetadataTags.cs;../../Services/MusicMetadataStorage.cs;../../ViewModel/Controls/MusicMetadataEditorViewModel.cs" />
+  </ItemGroup>
+</Project>

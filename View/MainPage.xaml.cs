@@ -14,6 +14,7 @@ using Windows.Foundation;
 using Windows.Graphics;
 using WinUIEx;
 using WinUIMusicPlayer.DesktopLyrics;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -46,17 +47,24 @@ namespace WinUIMusicPlayer.View
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
 
+        private readonly ListViewCentering _queueCentering;
+        private readonly PlaybackSelectionTracker _playbackSelection;
+        internal MusicBrowsePage? CurrentLibraryPage => MainFrame.Content as MusicBrowsePage;
+
         public bool IsPlayingDetailVisible => PlayingFrame.Visibility == Visibility.Visible;
         //private ToolTip _progressToolTip = new();
         public MainPage(MainViewModel viewModel)
         {
             InitializeComponent();
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             ViewModel = viewModel;
             DataContext = this;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
-            ViewModel.MusicBrowseVM.SetMainPage(this);
+            _detailsPresenter = new MusicDetailsPresenter(MainFrame);
+            _queueCentering = new ListViewCentering(CurrentPlayListView);
+            _playbackSelection = new PlaybackSelectionTracker(CurrentPlayListView, ViewModel.AppViewModel, queue: true);
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
         }
@@ -86,6 +94,7 @@ namespace WinUIMusicPlayer.View
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
         {
+            _queueCentering.Cancel();
             try
             {
                 if (App.MainWindow is { } mw)
@@ -189,12 +198,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
-        {
-            MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
-            MainFrame.BackStack.Clear();
-        }
-
         private void InitiaizeEqualizerDialog()
         {
             if (EqualizerDialog is null)
@@ -216,17 +219,20 @@ namespace WinUIMusicPlayer.View
 
         private void NavigateToDefaultPage()
         {
-
+            string entry = StartupEntry.Normalize(ViewModel.AppViewModel.DefaultEntryComboBoxTag);
             foreach (var item in NavigationViewControl.MenuItems)
             {
-                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == ViewModel.AppViewModel.DefaultEntryComboBoxTag)
+                if (item is NavigationViewItem navigationViewItem && navigationViewItem.Tag?.ToString() == entry)
                 {
                     NavigationViewControl.SelectedItem = navigationViewItem;
                     break;
                 }
             }
-            switch (ViewModel.AppViewModel.DefaultEntryComboBoxTag)
+            switch (entry)
             {
+                case "Home":
+                    NavigateTo(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
+                    break;
                 case "AddFolder":
                     NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
                     break;
@@ -240,7 +246,7 @@ namespace WinUIMusicPlayer.View
                     NavigateTo(typeof(StatsPage), null, new EntranceNavigationTransitionInfo());
                     break;
                 default:
-                    NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                    NavigateTo(typeof(HomePage), null, new EntranceNavigationTransitionInfo());
                     break;
             }
         }
@@ -273,6 +279,7 @@ namespace WinUIMusicPlayer.View
             {
                 targetType = args.InvokedItemContainer.Tag.ToString() switch
                 {
+                    "Home" => typeof(HomePage),
                     "AddFolder" => typeof(AddFolderPage),
                     "MusicBrowse" => typeof(MusicBrowsePage),
                     "PlayLists" => typeof(PlayListPage),
@@ -281,19 +288,20 @@ namespace WinUIMusicPlayer.View
                 };
             }
 
+            if (targetType is not null) DismissMusicDetailsForNavigation();
             if (targetType is not null && MainFrame.Content?.GetType() != targetType)
             {
                 NavigateTo(targetType, null, new EntranceNavigationTransitionInfo());
             }
         }
 
-        public void NavigateToMusicBrowsePage()
+        private void Search_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            if (MainFrame.Content is not MusicBrowsePage)
-            {
-                NavigationViewControl.SelectedItem = NavigationViewControl.MenuItems[1];
-                NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
-            }
+            if (MainFrame.Content is not HomePage || string.IsNullOrWhiteSpace(args.QueryText)) return;
+            ViewModel.AppViewModel.State.Browse.SourceFilterId = -1;
+            ViewModel.AppViewModel.SearchText = args.QueryText;
+            NavigateToMusicBrowsePage();
+            if (MainFrame.Content is MusicBrowsePage browse) browse.SelectBarItem("song");
         }
 
         public void NavigateToPlayingDetailPage()
@@ -307,7 +315,10 @@ namespace WinUIMusicPlayer.View
                 void OnOneCompleted()
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
+                    {
                         _isPageTransitioning = false;
+                        OpenPendingDetails();
+                    }
                 }
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Collapsed;
@@ -331,7 +342,10 @@ namespace WinUIMusicPlayer.View
                 void OnOneCompleted()
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
+                    {
                         _isPageTransitioning = false;
+                        OpenPendingDetails();
+                    }
                 }
                 _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Visible;
@@ -344,16 +358,33 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void QueueTitle_Click(object sender, RoutedEventArgs args)
+        {
+            if (sender is not Button { Tag: Music music } button) return;
+            int index = ListViewInteraction.IndexFromSource(button, CurrentPlayListView);
+            long entry = index >= 0 ? ViewModel.AppViewModel.State.Queue.EntryIdAt(index) : 0;
+            ShowMusicDetails(new MusicDetailsRequest(music, null, entry));
+        }
+
         public void HandleBackNavigation()
         {
+            if (_detailsPresenter.IsOpen)
+            {
+                CloseMusicDetails();
+                return;
+            }
+            if (MainFrame.Content is HomePage homePage && homePage.ViewModel.IsInDetailMode)
+            {
+                homePage.CollapseDetail();
+                return;
+            }
             if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
             {
                 playListPage.CollapseDetail();
                 return;
             }
-            // 返回键/全局热键在任意主页面都会进入这里。MusicBrowsePage 离开视觉树后，
-            // 其 ContentFrame.Content 仍持有缓存页且 IsInDetailMode 为恢复详情态而刻意保留，
-            // 继续下发会在已脱离视觉树的页面上触发 ConnectedAnimation 并抛异常。
+            // 返回键/全局热键在任意主页面都会进入这里；只让当前曲库页处理，
+            // 避免单例 ViewModel 保留的详情状态影响其他主页面。
             if (MainFrame.Content is MusicBrowsePage)
             {
                 App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
@@ -453,6 +484,7 @@ namespace WinUIMusicPlayer.View
 
         private void CurrentPlayListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
+            if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, CurrentPlayListView)) return;
             _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListView.SelectedIndex);
         }
 
@@ -483,7 +515,6 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
         {
             CurrentPlayListTeachingTip.IsOpen = true;
-            UpdateCurrentPlayList();
         }
 
         private void CurrentPlayListTeachingTipCloseButton_Click(object sender, RoutedEventArgs e)
@@ -491,15 +522,17 @@ namespace WinUIMusicPlayer.View
             CurrentPlayListTeachingTip.IsOpen = false;
         }
 
-        public void UpdateCurrentPlayList()
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
         {
-            int index = ViewModel.AppViewModel.GetSelectedPlaybackIndex();
+            if (!CurrentPlayListTeachingTip.IsOpen) return;
+            int index = ViewModel.LocateCurrentTrack();
+            if (index < 0 || index >= CurrentPlayListView.Items.Count) return;
             CurrentPlayListView.SelectedIndex = index;
-            if (index < 0) return;
-            if (CurrentPlayListView.ContainerFromIndex(index) is FrameworkElement container)
-                container.StartBringIntoView();
-            else CurrentPlayListView.ScrollIntoView(ViewModel.AppViewModel.CurrentPlayingList[index]);
+            await _queueCentering.LocateIndexAsync(index);
         }
+
+        private void CurrentPlayListTeachingTip_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
+            => _queueCentering.Cancel();
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {

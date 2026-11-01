@@ -8,12 +8,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -32,7 +32,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private readonly ApplicationTasks _tasks;
         private readonly ILogger<PlaylistDetailViewModel> _logger;
 
-        private PlaylistDetailControl? _view;
         private bool _active;
 
         private readonly HashSet<string> _seenAlbums = new(StringComparer.Ordinal);
@@ -90,7 +89,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             AddToPlayListCommand = new RelayCommand<int>(OnAddToPlayList);
             DeleteMenuItemCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnDeleteFromPlaylistAsync));
             ConvertAudioCommand = new AsyncRelayCommand<string>(tag => ObserveCommandAsync(() => OnConvertAudioAsync(tag)));
-            OpenInExplorerCommand = new RelayCommand(OnOpenInExplorer);
+            // 统一入口：本地曲目在资源管理器定位，远程曲目打开来源浏览器（与列表行按钮同源）。
+            OpenInExplorerCommand = new RelayCommand(() => MusicCommands.OpenSourceCommand.Execute(SelectedMusic?.Music ?? (SelectedMusics.Count > 0 ? SelectedMusics[0].Music : null)));
             MusicDetailCommand = new RelayCommand(OnMusicDetail);
             ReGetLyricsCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnReGetLyricsAsync));
             TransmitFileToUsbCommand = new AsyncRelayCommand<UsbSendTarget>(target => ObserveCommandAsync(() => OnTransmitFileToUsbAsync(target)));
@@ -114,10 +114,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             }
         }
 
-        public void SetView(PlaylistDetailControl? view)
+        public void Activate()
         {
-            if (view is null) { Dispose(); return; }
-            _view = view;
             if (_active) return;
             _active = true;
             AppViewModel.PropertyChanged += OnAppVmPropertyChanged;
@@ -167,7 +165,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             {
                 Songs = AppViewModel.PlayListSongs;
             }
-            UpdateMusicListView();
         }
 
         private void RefreshTitlesOnly()
@@ -192,29 +189,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             }
         }
 
-        public void UpdateMusicListView()
+        public bool CanLocateCurrentTrack(Music? current, int itemCount)
+            => itemCount > 0 && CurrentTrackLookup.Find(Songs, current) is not null;
+
+        public PlayListMusicItem? LocateCurrentTrack()
         {
-            try
-            {
-                if (AppViewModel.SelectedPlaybackMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
-                {
-                    var plm = AppViewModel.PlayListSongs;
-                    for (int i = 0; i < plm.Count; i++)
-                    {
-                        if (plm[i].Music.Id == m.Id)
-                        {
-                            SelectedMusic = plm[i];
-                            _view?.OnScrollToMusic(plm[i]);
-                            return;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdateMusicListView 滚动音乐失败: {Message}", ex.Message);
-            }
+            var target = CurrentTrackLookup.Find(Songs, AppViewModel.SelectedPlaybackMusic);
+            if (target is not null) SelectedMusic = target;
+            return target;
         }
 
         public void AuthorTextBlock_Tapped(string artist)
@@ -410,24 +392,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             await MusicBrowseViewModel.ConvertAudio_Click(targets.ToArray(), tag);
         }
 
-        private void OnOpenInExplorer()
-        {
-            Music? music = SelectedMusic?.Music ?? (SelectedMusics.Count > 0 ? SelectedMusics[0].Music : null);
-            if (music is null) return;
-            string filePath = music.Path;
-            if (System.IO.File.Exists(filePath))
-            {
-                try
-                {
-                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "OpenInExplorer 打开资源管理器时出错: {Message}", ex.Message);
-                }
-            }
-        }
-
         private void OnMusicDetail()
         {
             Music? music = SelectedMusics.Count > 0 ? SelectedMusics[0].Music : SelectedMusic?.Music;
@@ -502,7 +466,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void Dispose()
         {
-            _view = null;
             if (!_active) return;
             _active = false;
             AppViewModel.PropertyChanged -= OnAppVmPropertyChanged;

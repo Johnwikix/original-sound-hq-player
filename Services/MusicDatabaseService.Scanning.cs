@@ -20,13 +20,16 @@ public partial class MusicDatabaseService
             public int SongCount { get; set; }
         }
 
-        public async Task<List<Folder>> GetFoldersWithSongCountsAsync()
+        public async Task<List<Folder>> GetFoldersWithSongCountsAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var folders = await GetFolders();
+            cancellationToken.ThrowIfCancellationRequested();
             // The persisted Folder.SongCount can be stale in older databases. Count actual songs,
             // grouping once by directory rather than materializing every Music or relying on UI startup order.
             var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
                 "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId = 0 GROUP BY FolderPath COLLATE NOCASE");
+            cancellationToken.ThrowIfCancellationRequested();
             // 外部导入虚拟行的计数同源现算：归属 = 分组目录不落入任何本地扫描根。
             Folder? external = null;
             var roots = new List<Folder>(folders.Count);
@@ -39,6 +42,7 @@ public partial class MusicDatabaseService
             if (external is not null) external.SongCount = 0;
             foreach (var count in counts)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool ownedByRoot = false;
                 foreach (var folder in roots)
                 {
@@ -107,6 +111,8 @@ public partial class MusicDatabaseService
                             music.Title, music.Author, music.Album, music.Duration, music.FolderPath, music.LastLevelFolderPath,
                             music.Extension, music.BitDepth, music.BitRate, music.SampleRate, music.Channel,
                             music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.Id);
+                        if (music.AdditionalMetadataRead)
+                            MusicMetadataStorage.Save(db, music.Id, AdditionalMusicMetadata.From(music));
                     }
                     if (embedded.TryGetValue(music, out var document))
                         WinUIMusicPlayer.Services.Lyrics.LyricsRepository.AddEmbeddedInTransaction(db, music.Id, document);
@@ -125,6 +131,16 @@ public partial class MusicDatabaseService
             string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
             return _dbConnection.QueryAsync<Music>(
                 "SELECT * FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,?) = ? COLLATE NOCASE",
+                root, prefix.Length, prefix);
+        }
+
+        /// <summary>扫描根下现有歌曲行数（含子目录），与 GetSongsInFolderAsync 的递归口径一致；供重扫进度做分母，不物化行。</summary>
+        public Task<int> CountSongsInFolderAsync(string folderPath)
+        {
+            string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folderPath));
+            string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
+            return _dbConnection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,?) = ? COLLATE NOCASE",
                 root, prefix.Length, prefix);
         }
 
@@ -184,7 +200,8 @@ public partial class MusicDatabaseService
             }
         }
 
-        public async Task RescanFolder(int folderId, Func<IReadOnlyList<Music>, Task>? onBatchInserted = null)
+        public async Task RescanFolder(int folderId, Func<IReadOnlyList<Music>, Task>? onBatchInserted = null,
+            Action<int>? onFilesChecked = null)
         {
             var folder = await GetFolder(folderId);
             if (folder is null) return;
@@ -194,7 +211,7 @@ public partial class MusicDatabaseService
                 await ReconcileExternalImportsAsync();
                 return;
             }
-            await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted);
+            await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted, onFilesChecked: onFilesChecked);
         }
 
         public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)

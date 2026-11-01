@@ -14,7 +14,9 @@ UI 可用性、ViewModel 写入保护和发往播放端的快照均读取这份�
 4. 批量编辑/重置涉及该功能时，在 `PreserveRestrictedPreferences` 中保留其原有偏好。
 5. 添加许可受限、恢复、偏好保留和其他功能不受影响的回归用例。
 
-许可服务只负责 Store 状态。试用中、正式许可、非 Store 渠道和首次查询失败的既有规则不变。
+许可服务只负责 Store 状态。试用与正式许可不受限；许可非活跃、无有效许可和查询失败均按受限处理（fail-closed），后续查询失败保持上次确认的状态。
+许可按包身份（PFN）+ 账户判定，与二进制签名无关：仓库 manifest 即 Store 发布者，旁加载/未签名自建包与商店版同 PFN，已购机器上的自建包启动即完整版。
+许可覆盖文件 `Documents\OriginalSoundPlayer\license.debug`（内容 full/trial/expired，删除即恢复真实判定）：DEBUG 构建对任意包生效；Release 仅对未签名包（`Add-AppxPackage -Register` 注册的构建布局）生效，作为本地自用完整版入口，其余签名包不读取、一律查询商店。
 限制覆盖不落盘，购买或恢复许可后重新推送原设置。DSP 总开关和 EQ 不在当前可配置门控项中。
 
 回归：`dotnet run --project _tools/LicenseRegression -c Release`、`dotnet run --project _tools/CurvePresetRegression -c Release`。

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -12,6 +12,8 @@ namespace WinUIMusicPlayer.Model
         public int BitRate { get; set; } = 0;
         public int BitDepth { get; set; } = 0;
         public int Year { get; set; } = 0;
+        /// <summary>获取或设置 ATL 直接读取的可选标签；空值表示未能读取。</summary>
+        public AdditionalMusicMetadata? AdditionalMetadata { get; set; }
         public string Lyrics { get; set; } = string.Empty;
         public int TrackNumber { get; set; } = 0;
         public int DiskNumber { get; set; } = 0;

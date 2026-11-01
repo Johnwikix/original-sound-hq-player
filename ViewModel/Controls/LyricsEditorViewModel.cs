@@ -26,6 +26,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     private long _draftVersion;
     private bool _loaded;
     private bool _disposed;
+    private Task _operationTask = Task.CompletedTask;
 
     public string OriginalText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
     public string TranslationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
@@ -49,6 +50,8 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     public bool CanSave => _loaded && !IsBusy && !_disposed;
     public bool CanSaveFile => CanSave && !_music.IsRemote;
     public bool HasLegacy { get => field; private set => SetProperty(ref field, value); }
+    /// <summary>获取最近一次已提交事务的标签快照；歌词在保存期间继续编辑时也可发布已保存的标签。</summary>
+    public Music? LastCommittedMetadata { get; private set; }
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand ExportCommand { get; }
     public IAsyncRelayCommand TranslateCommand { get; }
@@ -132,10 +135,13 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         SetDocument(_parser.Import(result.Original, token: token, pronunciation: result.Pronunciation));
     });
 
-    public async Task<bool> SaveAsync(byte[]? cover = null, bool queueMetadata = false)
+    public async Task<bool> SaveAsync(byte[]? cover = null, bool queueMetadata = false, Music? metadataDraft = null)
     {
         bool saved = false;
         if (!_loaded || IsBusy || _disposed) return false;
+        if (metadataDraft is not null && (metadataDraft.Id != _music.Id || metadataDraft.SourceId != _music.SourceId ||
+            !string.Equals(metadataDraft.Path, _music.Path, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Metadata draft belongs to a different track.");
         await RunAsync(async token =>
         {
             long draft = _draftVersion;
@@ -159,10 +165,11 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
                 if (!OneShotLyricsCache.SaveEdited(_music.Path, document, _revision)) throw new InvalidOperationException("LyricsEditConflict");
             }
             else if (queueMetadata)
-                await _database.QueueMetadataWriteAsync(_music, cover, document, _revision, token, lyricsChanged: lyricsChanged);
-            else await _database.SaveDetailsAsync(_music, document, _revision, token, lyricsChanged: lyricsChanged);
+                await _database.QueueMetadataWriteAsync(metadataDraft ?? _music, cover, document, _revision, token, lyricsChanged: lyricsChanged);
+            else await _database.SaveDetailsAsync(metadataDraft ?? _music, document, _revision, token, lyricsChanged: lyricsChanged);
             _revision++;
             _savedDocument = document;
+            LastCommittedMetadata = metadataDraft;
             // A binding notification can arrive after the transaction commits. Treat an
             // unchanged text snapshot as success even if that notification bumped the
             // draft counter; a real edit during the transaction still keeps the window open.
@@ -267,9 +274,16 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         PronunciationText = document.PronunciationLrc ?? "";
     }
 
-    private async Task RunAsync(Func<CancellationToken, Task> action)
+    /// <summary>等待已经接受的真实操作；被守卫拒绝的重复命令不会替换此任务。</summary>
+    public Task WhenIdleAsync() => _operationTask;
+
+    private Task RunAsync(Func<CancellationToken, Task> action)
     {
-        if (_disposed || IsBusy) return;
+        if (_disposed || IsBusy) return Task.CompletedTask;
+        return _operationTask = RunCoreAsync(action);
+    }
+    private async Task RunCoreAsync(Func<CancellationToken, Task> action)
+    {
         IsBusy = true;
         Error = "";
         Status = "";

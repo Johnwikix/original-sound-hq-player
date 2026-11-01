@@ -13,7 +13,7 @@ public delegate PipeResponse PipeCommandHandler(CommandId command, ReadOnlySpan<
 public static class PipeProtocol
 {
     public const uint Magic = 0x5041534F;
-    public const ushort Version = 3;
+    public const ushort Version = 4;
     public const int HeaderSize = 24;
 
     public static NamedPipeServerStream CreateServer(string name, int instances = 1)

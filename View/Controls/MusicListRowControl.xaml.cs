@@ -28,6 +28,10 @@ public sealed partial class MusicListRowControl : UserControl
         set => SetValue(ShowTrackNumbersProperty, value);
     }
 
+    public FrameworkElement CoverElement => CoverArtwork;
+    public FrameworkElement TitleElement => MusicTitleText;
+
+    public event EventHandler<Music>? SongInvoked;
     public event EventHandler<Music>? ArtistInvoked;
     public event EventHandler<Music>? AlbumInvoked;
 
@@ -39,13 +43,19 @@ public sealed partial class MusicListRowControl : UserControl
     private static void OnMusicChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
         => ((MusicListRowControl)sender).StopAutoScroll();
 
-    private void StopAutoScroll()
+    public void StopAutoScroll()
     {
+        if (TitleScroll is not null) TitleScroll.IsPlaying = false;
         if (AuthorScroll is not null) AuthorScroll.IsPlaying = false;
         if (AlbumScroll is not null) AlbumScroll.IsPlaying = false;
     }
 
     private void Row_Unloaded(object sender, RoutedEventArgs e) => StopAutoScroll();
+
+    private void TitleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Music is { } music) SongInvoked?.Invoke(this, music);
+    }
 
     private void AuthorButton_Click(object sender, RoutedEventArgs e)
     {

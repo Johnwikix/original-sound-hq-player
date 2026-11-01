@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
@@ -79,7 +80,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void Start(T value)
         {
-            if (value.Equals(_currentValue) && _configuredDelaySeconds <= 0) return;
+            if (EqualityComparer<T>.Default.Equals(value, _currentValue) && _configuredDelaySeconds <= 0) return;
             ResetSegments();
             if (_configuredDelaySeconds > 0)
             {

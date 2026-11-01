@@ -11,7 +11,6 @@ internal static class DesktopHighlightChecks
     private static readonly FieldInfo Line = typeof(CanvasLyricsRenderer).GetField("_currentLine", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly FieldInfo Renderer = typeof(CanvasLyricsRenderer).GetField("_lineRenderer", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly FieldInfo Time = typeof(CanvasLyricsRenderer).GetField("_internalTimeMs", BindingFlags.Instance | BindingFlags.NonPublic)!;
-    private static readonly MethodInfo DisposeLine = typeof(CanvasLyricsRenderer).GetMethod("DisposeCurrentLine", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
     internal static async Task RunAsync()
     {
@@ -72,10 +71,10 @@ internal static class DesktopHighlightChecks
         }
         finally
         {
-            await canvas.RunOnGameLoopThreadAsync(() =>
-            {
-                DisposeLine.Invoke(desktop, null);
-            });
+            var retired = Line.GetValue(desktop) as RenderLyricsLine;
+            desktop.Dispose();
+            if (retired is not null && (retired.CachedFill is not null || retired.PrimaryTextLayout is not null))
+                throw new InvalidOperationException("Desktop shutdown did not release the native resources after draining callbacks.");
             desktop.Dispose();
             canvas.RemoveFromVisualTree();
             window.Close();

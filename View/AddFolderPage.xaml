@@ -6,7 +6,9 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:sub="using:WinUIMusicPlayer.View.SubView"
     xmlns:tools="using:WinUIMusicPlayer.Utils">
-    <Grid
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid
         AllowDrop="True"
         Background="Transparent"
         DragLeave="Grid_DragLeave"
@@ -245,5 +247,9 @@
                     Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
             </StackPanel>
         </Grid>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

@@ -1,13 +1,14 @@
-using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.View.Controls;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
@@ -22,19 +23,21 @@ namespace WinUIMusicPlayer.View
     public sealed partial class SongListPage : Page, INavigatable
     {
         public SongListViewModel ViewModel { get; }
-        private readonly ScrollerHelper _scrollHelper;
+        private readonly ListViewCentering _centering;
+        private readonly PlaybackSelectionTracker _playbackSelection;
+        private readonly BrowsePositionKeeper _position;
         private readonly Music?[] _selectedBuffer = new Music?[256];
-        private Music? _pendingScroll;
 
         public SongListPage()
         {
             InitializeComponent();
-            ViewModel = App.Services.GetRequiredService<SongListViewModel>(); ;
-            ViewModel.SetCurrentPage(this);
+            ViewModel = App.Services.GetRequiredService<SongListViewModel>();
             DataContext = this;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
-            _scrollHelper = new ScrollerHelper(DispatcherQueue);
-            _scrollHelper.Tick += OnScrollTick;
+            this.NavigationCacheMode = NavigationCacheMode.Disabled;
+            _centering = new ListViewCentering(MusicListView);
+            _playbackSelection = new PlaybackSelectionTracker(MusicListView, ViewModel.AppViewModel);
+            _position = new BrowsePositionKeeper(this, ViewModel.State.Browse, ViewModel.State.Browse.Positions.Songs, MusicListView);
+            Unloaded += OnUnloaded;
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -48,28 +51,21 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
         }
 
-        public void OnScrollToMusic(Music selectedMusic)
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            _pendingScroll = selectedMusic;
-            _scrollHelper.Trigger();
+            _position.Leave();
+            _centering.Cancel();
+            base.OnNavigatedFrom(e);
         }
 
-        private void OnScrollTick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
-        {
-            if (_pendingScroll is { } m)
-            {
-                MusicListView.ScrollIntoView(m);
-                _pendingScroll = null;
-            }
-        }
+        private void OnUnloaded(object sender, RoutedEventArgs e) => _centering.Cancel();
 
-        public void UpdateMusicListView()
-        {
-            ViewModel.UpdateMusicListView();
-        }
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
+            => await _centering.LocateAsync(ViewModel.LocateCurrentTrack());
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
+            if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, MusicListView)) return;
             ViewModel.MusicListView_DoubleTapped();
         }
 
@@ -113,6 +109,9 @@ namespace WinUIMusicPlayer.View
             }
             e.Handled = true;
         }
+
+        private void MusicRow_SongInvoked(object sender, Music music)
+            => App.Services.GetRequiredService<LibraryNavigationService>().ShowSongDetails(music, (sender as MusicListRowControl)?.CoverElement, (sender as MusicListRowControl)?.TitleElement);
 
         private void MusicRow_ArtistInvoked(object sender, Music music)
             => ViewModel.AuthorTextBlock_Tapped(music.Author);

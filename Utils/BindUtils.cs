@@ -27,9 +27,6 @@ namespace WinUIMusicPlayer.Utils
             => isRemote && isOffline ? "\uF384" : MusicSourceGlyph(isRemote);
         public static string MusicSourceGlyph(bool isRemote, bool isOffline, bool isCached)
             => isRemote && isCached ? "\uEBD3" : MusicSourceGlyph(isRemote, isOffline);
-        public static string MusicSourceLabel(bool isRemote) => isRemote ? "WebDAV" : GetString("WebDavLocalSources");
-        public static string MusicSourceLabel(bool isRemote, bool isCached)
-            => isRemote && isCached ? GetString("WebDavCachedAudio") : MusicSourceLabel(isRemote);
         /// <summary>离线行仅作视觉弱化，保留点击播放以重新检查连接。</summary>
         public static double MusicRowOpacity(bool isPlayable) => isPlayable ? 1.0 : 0.45;
         public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? "WebDAV" : status;

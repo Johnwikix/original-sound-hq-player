@@ -54,6 +54,7 @@ public sealed partial class PlaybackEngine
         if (rendered.Current == _session || rendered.CompletedToken == 0) return;
         var old = _session;
         var request = _gaplessPreloader?.Request;
+        rendered.Current.Effects?.CompleteContinuation();
         SetSession(rendered.Current);
         if (request != null && request.Token == rendered.CompletedToken)
         {
@@ -110,7 +111,7 @@ public sealed partial class PlaybackEngine
             var (position, duration) = GetTimeProgress();
             if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate()));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate(), EffectiveResampleMode, EffectiveResampleTarget));
         }
     }
 
@@ -124,7 +125,7 @@ public sealed partial class PlaybackEngine
             maxChannels: preparation.Current.Channels <= 2 ? 2 : null,
             experimentalSurround51: preparation.Surround, cancellationToken: token,
             playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
-            enhancementDeviceRate: preparation.EnhancementDeviceRate);
+            enhancementDeviceRate: preparation.EnhancementDeviceRate, resampleMode: preparation.ResampleMode, resampleTargetRate: preparation.ResampleTargetRate);
     }
 
     // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。
@@ -150,6 +151,16 @@ public sealed partial class PlaybackEngine
             rendered.Pending?.ConfigureDsp(settings);
         }
         else _session?.ConfigureDsp(settings);
+        if (!settings.IsEnabled || !settings.ConvolutionEnabled) PreparedCorrectionCache.Clear();
+        RetireInactiveConvolution();
+    }
+
+    private void RetireInactiveConvolution()
+    {
+        if (IsPlaying || _pauseFadeActive) return;
+        if (_gaplessSource is { } source) source.RetireInactiveConvolution();
+        // 所有实际 PCM 输出均经 OutputSource 包装；无包装且无输出的会话尚未开始渲染。
+        else if (_output == null) _session?.Effects?.RetireInactiveConvolution();
     }
 
     public Task StopGaplessAsync()

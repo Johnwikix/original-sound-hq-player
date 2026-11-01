@@ -14,6 +14,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -33,6 +34,9 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayingDetailPage : Page, IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
+        public MainViewModel QueueViewModel { get; }
+        private readonly ListViewCentering _queueCentering;
+        private readonly PlaybackSelectionTracker _playbackSelection;
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
         private bool _isPortraitLayout;
@@ -44,10 +48,24 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             ViewModel = viewModel;
+            QueueViewModel = App.Services.GetRequiredService<MainViewModel>();
             this.InitializeComponent();
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             DataContext = this;
+            _queueCentering = new ListViewCentering(CurrentPlayListViewPlayingDetail);
+            _playbackSelection = new PlaybackSelectionTracker(CurrentPlayListViewPlayingDetail, ViewModel.AppViewModel, queue: true);
             Loaded += PlayingDetailPage_Loaded;
             _logger = App.GetLogger<PlayingDetailPage>();
+        }
+
+        public void CloseQueuePopup() => CurrentPlayListTeachingTipPlayingDetail.IsOpen = false;
+
+        private void QueueTitle_Click(object sender, RoutedEventArgs args)
+        {
+            if (sender is not Button { Tag: Music music } button) return;
+            int index = ListViewInteraction.IndexFromSource(button, CurrentPlayListViewPlayingDetail);
+            long entry = index >= 0 ? ViewModel.AppViewModel.State.Queue.EntryIdAt(index) : 0;
+            App.Services.GetRequiredService<MainPage>().ShowMusicDetails(new MusicDetailsRequest(music, null, entry));
         }
 
         private bool _isLoaded;
@@ -383,19 +401,22 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)
         {
             CurrentPlayListTeachingTipPlayingDetail.IsOpen = true;
-            UpdateCurrentPlayList();
         }
-        private void UpdateCurrentPlayList()
+        private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
         {
-            int index = ViewModel.AppViewModel.GetCurrentIndex();
+            if (!CurrentPlayListTeachingTipPlayingDetail.IsOpen) return;
+            int index = QueueViewModel.LocateCurrentTrack();
+            if (index < 0 || index >= CurrentPlayListViewPlayingDetail.Items.Count) return;
             CurrentPlayListViewPlayingDetail.SelectedIndex = index;
-            if (index < 0) return;
-            if (CurrentPlayListViewPlayingDetail.ContainerFromIndex(index) is FrameworkElement container)
-                container.StartBringIntoView();
-            else CurrentPlayListViewPlayingDetail.ScrollIntoView(ViewModel.AppViewModel.CurrentPlayingList[index]);
+            await _queueCentering.LocateIndexAsync(index);
         }
+
+        private void CurrentPlayListTeachingTipPlayingDetail_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
+            => _queueCentering.Cancel();
+
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
+            if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, CurrentPlayListViewPlayingDetail)) return;
             _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListViewPlayingDetail.SelectedIndex);
         }
 

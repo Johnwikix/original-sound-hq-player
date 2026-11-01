@@ -72,6 +72,7 @@ public static class LicensePolicy
             SwapChannels = Contains(restricted, LicenseFeature.ChannelSwap) ? saved.SwapChannels : candidate.SwapChannels,
             Mono = Contains(restricted, LicenseFeature.Mono) ? saved.Mono : candidate.Mono,
             Crossfeed = Contains(restricted, LicenseFeature.Crossfeed) ? saved.Crossfeed : candidate.Crossfeed,
+            CrossfeedCutoffHz = Contains(restricted, LicenseFeature.Crossfeed) ? saved.CrossfeedCutoffHz : candidate.CrossfeedCutoffHz,
             StereoWidth = Contains(restricted, LicenseFeature.StereoWidth) ? saved.StereoWidth : candidate.StereoWidth
         };
     }

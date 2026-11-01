@@ -18,6 +18,7 @@ namespace WinUIMusicPlayer.View
 {
     public sealed partial class PlayListPage : Page, INavigatable
     {
+        private readonly ConnectedAnimationScope _coverAnimation;
         public PlayListViewModel ViewModel { get; }
         private readonly HashSet<Grid> _hoveredPlaylistCards = [];
 
@@ -25,6 +26,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = App.Services.GetRequiredService<PlayListViewModel>();
             this.InitializeComponent();
+            _coverAnimation = new ConnectedAnimationScope(this, "PlaylistCover");
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -34,6 +36,8 @@ namespace WinUIMusicPlayer.View
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            _coverAnimation.Cancel();
+            DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             PlayListGridView.SelectionChanged -= PlayListGridView_SelectionChanged;
             _hoveredPlaylistCards.Clear();
@@ -126,24 +130,13 @@ namespace WinUIMusicPlayer.View
             var gridView = sender as GridView;
             var item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
             var coverBorder = FindCoverBorderInItem(item);
-            if (coverBorder is not null)
-            {
-                ConnectedAnimationService.GetForCurrentView()
-                    .PrepareToAnimate("PlaylistCover", coverBorder);
-            }
+            bool animate = _coverAnimation.Prepare(coverBorder);
             SetEntryTransitions();
             if (e.ClickedItem is PlayList playList)
             {
                 ViewModel.EnterPlayList(playList);
             }
-            if (coverBorder is not null)
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("PlaylistCover");
-                    anim?.TryStart(DetailView.DetailCoverBorder);
-                });
-            }
+            if (animate) _coverAnimation.StartDeferred(() => DetailView.DetailCoverBorder);
         }
 
         private void PlayListGridView_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -154,63 +147,29 @@ namespace WinUIMusicPlayer.View
         public void CollapseDetail()
         {
             if (!ViewModel.IsInDetailMode) return;
-            var playList = ViewModel.AppViewModel.CurrentPlayList;
-            var detailBorder = DetailView.DetailCoverBorder;
-
-            Border? sourceBorder = null;
-            if (playList is not null)
-            {
-                var item = PlayListGridView.ContainerFromItem(playList)?.As<GridViewItem>();
-                sourceBorder = FindCoverBorderInItem(item);
-            }
-            bool canAnimate = detailBorder is not null && sourceBorder is not null;
-
-            if (canAnimate)
-            {
-                ConnectedAnimationService.GetForCurrentView()
-                    .PrepareToAnimate("PlaylistCover", detailBorder);
-            }
+            var item = ViewModel.AppViewModel.CurrentPlayList is { } selected
+                ? PlayListGridView.ContainerFromItem(selected)?.As<GridViewItem>() : null;
+            var source = FindCoverBorderInItem(item);
+            bool animate = source is not null && _coverAnimation.Prepare(DetailView.DetailCoverBorder);
+            if (!animate) _coverAnimation.Cancel();
             SetExitTransitions();
+            DetailView.ViewModel.IsClosingForTransition = animate;
+            if (ViewModel.AppViewModel.CurrentPlayList is not null) ViewModel.AppViewModel.CurrentPlayList = null;
+            ViewModel.IsInDetailMode = false;
+            if (animate) _coverAnimation.StartDeferred(() => source, FinishCoverTransition);
+        }
 
-            if (canAnimate)
-            {
-                DetailView.ViewModel.IsClosingForTransition = true;
-                if (ViewModel.AppViewModel.CurrentPlayList is not null)
-                {
-                    ViewModel.AppViewModel.CurrentPlayList = null;
-                }
-                ViewModel.IsInDetailMode = false;
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("PlaylistCover");
-                    if (anim != null)
-                    {
-                        anim.Completed += (s, e) =>
-                        {
-                            DetailView.ViewModel.IsClosingForTransition = false;
-                            DetailView.ViewModel.RefreshFromAppState();
-                        };
-                        if (!anim.TryStart(sourceBorder))
-                        {
-                            DetailView.ViewModel.IsClosingForTransition = false;
-                            DetailView.ViewModel.RefreshFromAppState();
-                        }
-                    }
-                    else
-                    {
-                        DetailView.ViewModel.IsClosingForTransition = false;
-                        DetailView.ViewModel.RefreshFromAppState();
-                    }
-                });
-            }
-            else
-            {
-                if (ViewModel.AppViewModel.CurrentPlayList is not null)
-                {
-                    ViewModel.AppViewModel.CurrentPlayList = null;
-                }
-                ViewModel.IsInDetailMode = false;
-            }
+        private void FinishCoverTransition()
+        {
+            DetailView.ViewModel.IsClosingForTransition = false;
+            DetailView.ViewModel.RefreshFromAppState();
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            _coverAnimation.Cancel();
+            DetailView.ViewModel.IsClosingForTransition = false;
+            base.OnNavigatedFrom(e);
         }
 
         public void RefreshDetailView() { }

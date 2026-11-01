@@ -1745,7 +1745,7 @@
     <value>Ожидание состояния проигрывателя. Управление эффектами временно недоступно.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Эффекты каналов/наушников требуют стерео; EQ и анализ громкости поддерживают моно и стерео.</value>
+    <value>Для этой схемы стереоэффекты обходятся. Поддерживаемая многоканальная свёртка и анализ громкости остаются доступны.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Трек анализируется; пока действует осторожное ослабление. Измеренное усиление будет плавно применено и сохранено.</value>
@@ -1777,7 +1777,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Convolution correction</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Enable convolution correction</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Enable convolution correction</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>Import a headphone or room correction WAV impulse response (IR). Mono or stereo, up to 8192 samples before and after resampling to the output rate. Automatically bypassed for DSD bitstream output.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 каналов. Моно применяется ко всем выходам, иначе число каналов должно совпадать. С учётом ресемплинга: не более 2 с, 262144 отсчётов на канал и 1048576 на все выходы. DSD обходит DSP.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Impulse response file</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>Import WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Remove</value></data>
@@ -1788,10 +1788,10 @@
   <data name="DspIrBypass" xml:space="preserve"><value>Convolution is bypassed. The imported file and settings are retained.</value></data>
   <data name="DspIrLoading" xml:space="preserve"><value>Loading and preparing the impulse response…</value></data>
   <data name="DspIrActive" xml:space="preserve"><value>Convolution correction is active.</value></data>
-  <data name="DspIrFailed" xml:space="preserve"><value>The IR cannot be used for this output: it may be missing, invalid, or exceed 8192 samples after resampling. Import another IR.</value></data>
-  <data name="DspIrUnsupported" xml:space="preserve"><value>Convolution supports mono and stereo PCM output only.</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR недоступен: файл отсутствует, неверен, каналы не совпадают или превышен предел длины/отсчётов.</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>Свёртка поддерживает 1–8 каналов PCM. IR должен быть моно или совпадать с выходом.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Convolution is inactive. Import an IR and enable correction to apply it during PCM playback.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>Import failed. Choose a valid mono or stereo WAV (16/24/32-bit PCM or 32/64-bit float), up to 8192 samples and 4 MiB. The previous configuration is retained.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Выберите корректный WAV IR в пределах числа каналов, длительности и отсчётов.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Combined frequency response</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ and convolution frequency response. Frequency in Hz, gain in dB.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Left</value></data>
@@ -1849,16 +1849,16 @@
     <value>Удалить пресет «{0}»? Текущая кривая сохранится.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Экспериментальный вывод 5.1</value>
+    <value>Вывод 5.1</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Совместимые треки PCM 5.1 автоматически используют WASAPI Exclusive; остальные сохраняют обычные настройки. ASIO сохраняет свой режим: первые шесть выходов L, R, C, LFE, Ls, Rs. При ошибке используется стерео. Без рендеринга объектов Atmos.</value>
+    <value>Совместимые треки PCM 5.1 автоматически переходят на WASAPI Exclusive; остальные сохраняют настройки. ASIO без изменений; выходы 1–6: L, R, C, LFE, Ls, Rs. При сбое — стерео. Без рендеринга объектов Atmos.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Предпочитать Atmos по HDMI (экспериментально)</value>
+    <value>Предпочитать Atmos по HDMI</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Совместимые треки автоматически используют WASAPI Exclusive; остальные сохраняют обычные настройки вывода. Поддерживается E-AC-3 / Atmos: 48 кГц, 6 каналов, без TrueHD. Громкость и эффекты приложения обходятся; регулируйте громкость на ресивере.</value>
+    <value>Совместимые треки автоматически используют WASAPI Exclusive; остальные сохраняют вывод. E-AC-3 / Atmos: 48 кГц, 6 каналов; без TrueHD. Прямой вывод обходит громкость и эффекты приложения; громкость — на ресивере.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Экспериментальный битстрим E-AC-3 / Atmos HDMI: громкость и эффекты приложения обходятся. Регулируйте громкость на ресивере. При возврате к PCM настройки возобновляются.</value>
@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Для некоторых функций нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Для коррекции свёрткой нужна полная лицензия. Купите её для разблокировки.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>Состояние лицензии</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Полная лицензия активна — доступны все функции.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>Не удалось проверить лицензию через Microsoft Store; функции полной версии заблокированы.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Перед началом</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Принять и продолжить</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Отклонить и выйти</value></data>
@@ -2126,6 +2129,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>Не удалось прочитать удалённый ресурс. Проверьте подключение.</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>Файл не существует или был перемещён.</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>Неверные учётные данные или права. Измените источник.</value>
   </data>
@@ -2316,7 +2322,7 @@ SHA-256: {5}
     <value>Компрессор / лимитер</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>Приглушает громкие фрагменты и усиливает тихие компенсирующим усилением. Каналы связаны; пики отсчётов ограничены −1 dBFS.</value>
+    <value>Приглушает громкие фрагменты и усиливает тихие компенсирующим усилением. Каналы связаны; пики отсчётов используют общий потолок ниже.</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>Порог (dBFS)</value>
@@ -2505,4 +2511,145 @@ SHA-256: {5}
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>В очереди: {0}; без названия или исполнителя: {1}.</value></data>
   <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>Отменить импорт</value></data>
   <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>Импорт отменён; избранное, уже добавленное в очередь, будет отправлено.</value></data>
+  <data name="DspPcmResample" xml:space="preserve"><value>Ресемплинг PCM</value></data>
+  <data name="DspPcmResampleHelp" xml:space="preserve"><value>Повторная буферизация с текущей позиции. Поток DSD обходит обработку; сохраняется прежняя схема устройства.</value></data>
+  <data name="DspPcmSourceRate" xml:space="preserve"><value>Исходная частота</value></data>
+  <data name="DspPcmFixedRate" xml:space="preserve"><value>Заданная частота</value></data>
+  <data name="DspPcmIntegerRate" xml:space="preserve"><value>Целое кратное исходной</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Целевая частота дискретизации</value></data>
+  <data name="DspTruePeakLimiter" xml:space="preserve"><value>Защита True Peak</value></data>
+  <data name="DspTruePeakHelp" xml:space="preserve"><value>Интерполяция 4× и упреждение 5 мс для итогового PCM; микшер ОС и обработка устройства не учитываются.</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Общий потолок пика (dB)</value></data>
+  <data name="DspPcmDither" xml:space="preserve"><value>TPDF-дизеринг целого PCM</value></data>
+  <data name="DspPcmDitherHelp" xml:space="preserve"><value>По умолчанию выключен. Для уменьшения разрядности после DSP; выключите для побитовой передачи.</value></data>
+  <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Частота Crossfeed (Гц)</value></data>
+  <data name="DspCrossfeedAmount" xml:space="preserve"><value>Интенсивность Crossfeed (%)</value></data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>Исполнитель альбома</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>Жанр</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Text" xml:space="preserve">
+    <value>Исполнитель альбома</value>
+  </data>
+  <data name="MusicTagAlbumArtistInput.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagGenre.Text" xml:space="preserve">
+    <value>Жанр</value>
+  </data>
+  <data name="MusicTagGenreInput.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagComposer.Text" xml:space="preserve">
+    <value>Композитор</value>
+  </data>
+  <data name="MusicTagComposerInput.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagLyricist.Text" xml:space="preserve">
+    <value>Автор текста</value>
+  </data>
+  <data name="MusicTagLyricistInput.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagConductor.Text" xml:space="preserve">
+    <value>Дирижёр</value>
+  </data>
+  <data name="MusicTagConductorInput.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Text" xml:space="preserve">
+    <value>Каталожный номер</value>
+  </data>
+  <data name="MusicTagCatalogNumberInput.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Предел целого кратного частоты</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Общий потолок используется нормализацией для оценки пиков источника, компрессором для пиков отсчётов до регулировки громкости и True Peak для оценки истинных пиков конечного PCM.</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>Пользовательский</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>Главная</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>Главная</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>Главная</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>Обновить подборку</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>ИЗ ВАШЕЙ МУЗЫКИ</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>Начать прослушивание</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>Воспроизвести подборку</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>Воспроизвести эту песню</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>Изменить избранное</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>Добавить в текущую очередь воспроизведения</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Предыдущая подборка</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Следующая подборка</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Часто слушаете</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Откройте другие жанры</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>Подготовка вашей музыки</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Начните со своей музыки</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Добавьте папку с музыкой. Прослушивания и избранное помогут подобрать музыку для вас.</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>Добавить папку с музыкой</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Источники музыки недоступны. Проверьте подключение или настройки источников.</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>Повторить</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>Исследуйте медиатеку</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>Для вас</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>Часто слушаете</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>Откройте другие жанры</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>Знакомые мелодии и новые открытия из вашей медиатеки.</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>Вернитесь к музыке, которую недавно слушали.</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>Добавьте разнообразия с другими жанрами.</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>Вы часто слушаете {0}</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>Из любимого жанра: {0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>Из вашего избранного</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>Недавно слушали</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>Откройте другую сторону медиатеки</value></data>
+  <data name="HomeError" xml:space="preserve"><value>Не удалось обновить рекомендации. Повторите попытку.</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>Не удалось воспроизвести музыку. Повторите попытку.</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>Перейти к другой подборке</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>Изменить избранное</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>Воспроизвести эту песню</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Предыдущая подборка</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Следующая подборка</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Добавить в текущую очередь воспроизведения</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>Предыдущие композиции</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Предыдущие композиции</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>Следующие композиции</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Следующие композиции</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>Плейлистов пока нет</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Не удалось добавить композицию в плейлист. Повторите попытку.</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>Информация о композиции</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>Свойства аудио</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>Каналы</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>Формат</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>Открыть свойства композиции</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>Открыть расположение файла</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>Открыть расположение файла</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>Искать обложку онлайн</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>Искать обложку онлайн</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>Сохранить локально</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>Сохранить локально</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Редактировать обложку</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Редактировать обложку</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Информация о файле</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Авторы и выпуск</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Действия с обложкой</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Действия с обложкой</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Действия с текстом</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Действия с текстом</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Текст</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Восстановить старый LRC</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Восстановить старый KRC</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Открыть расположение файла</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Искать обложку онлайн</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Редактировать обложку</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Сохранить локально</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Получение метаинформации из файла</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Автоматическое сопоставлениеrics онлайн</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Найти текущую композицию</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Найти текущую композицию</value></data>
 </root>

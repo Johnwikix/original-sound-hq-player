@@ -12,6 +12,7 @@
                 <ResourceDictionary Source="/Style/NavigationViewStyle.xaml" />
                 <ResourceDictionary Source="/Style/ConverterDictionary.xaml" />
                 <ResourceDictionary Source="/Style/BtnStyle.xaml" />
+                <ResourceDictionary Source="/Style/FloatingCommandStyle.xaml" />
                 <ResourceDictionary Source="/Style/GroupStyleHeader.xaml" />
                 <ResourceDictionary Source="/Style/SilderDictionary.xaml" />
                 <ResourceDictionary Source="/Style/ComboBoxNMenuFlyoutStyle.xaml" />

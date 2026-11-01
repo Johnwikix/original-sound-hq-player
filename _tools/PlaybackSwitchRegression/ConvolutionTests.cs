@@ -48,7 +48,7 @@ internal static unsafe partial class Program
             Require(Math.Abs(samples.Sum() - 1) < 0.002, "Resampling changed DC gain");
             Require(Array.IndexOf(samples, samples.Max()) == 128, "Resampling changed impulse time");
             bool rejected = false;
-            try { _ = new ConvolutionFilter(new(48000, [new double[8192]]), 96000, 2); }
+            try { _ = new ConvolutionFilter(new(48000, [new double[48000]]), 384000, 2); }
             catch (InvalidDataException) { rejected = true; }
             Require(rejected, "Oversized resampled IR accepted");
         });

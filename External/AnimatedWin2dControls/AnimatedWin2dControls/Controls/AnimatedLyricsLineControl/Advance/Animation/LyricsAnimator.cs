@@ -117,9 +117,23 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
                     line.BlurAmountTransition.SetDuration(yScrollDuration);
                     line.BlurAmountTransition.SetDelay(scrollDelay);
-                    line.BlurAmountTransition.Start(
-                        (isMouseScrolling || isSecondaryLinePlaying) ? 0 :
-                        (isBlurEnabled ? (blurAmountMax * distanceFactor) : 0));
+                    double targetBlur = (isMouseScrolling || isSecondaryLinePlaying) ? 0 :
+                        (isBlurEnabled ? (blurAmountMax * distanceFactor) : 0);
+                    if (targetBlur == 0 && scrollDelay <= 0
+                        && line.BlurAmountTransition.Value == 0
+                        && line.BlurAmountTransition.IsTransitioning
+                        && line.BlurAmountTransition.TargetValue != 0)
+                    {
+                        // Start(0) keeps an already-zero value's pending entrance, and
+                        // word-float sequencing relies on that behavior. A paused zero-time
+                        // update can instead arm a stale non-zero blur target; cancel only
+                        // that case without changing the shared transition contract.
+                        line.BlurAmountTransition.JumpTo(0);
+                    }
+                    else
+                    {
+                        line.BlurAmountTransition.Start(targetBlur);
+                    }
 
                     line.ScaleTransition.SetDuration(yScrollDuration);
                     line.ScaleTransition.SetDelay(scrollDelay);

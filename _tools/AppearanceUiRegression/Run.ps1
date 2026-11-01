@@ -1,4 +1,6 @@
 $ErrorActionPreference = 'Stop'
+python "$PSScriptRoot/prepare_pcm_fixture.py"
+if ($LASTEXITCODE -ne 0) { throw 'PCM fixture preparation failed' }
 dotnet build "$PSScriptRoot/AppearanceUiRegression.csproj" --no-restore -p:Platform=x64 -v:q -clp:ErrorsOnly
 if ($LASTEXITCODE -ne 0) { throw 'Appearance regression build failed' }
 $testExe = Join-Path $PSScriptRoot 'bin/x64/Debug/net11.0-windows10.0.26100.0/win-x64/AppearanceUiRegression.exe'

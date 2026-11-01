@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Geometry;
@@ -65,6 +66,14 @@ public sealed class RenderLyricsAuxiliaryLayer
     }
 
     public void Draw(ICanvasResourceCreator creator, CanvasDrawingSession ds, Vector2 destination,
+        double opacity, double blur, double strokeWidth, Color color)
+    {
+        using var scope = CanvasDrawingSessionScope.Borrow(ds);
+        Draw(creator, scope.Context, destination, opacity, blur, strokeWidth, color);
+    }
+
+    /// <summary>Draws the cached auxiliary track in a native drawing scope.</summary>
+    public void Draw(ICanvasResourceCreator creator, CanvasDrawContext ds, Vector2 destination,
         double opacity, double blur, double strokeWidth, Color color)
     {
         if (Layout is null || Reveal.Value <= 0 || opacity <= 0) return;

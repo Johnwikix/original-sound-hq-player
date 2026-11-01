@@ -1,0 +1,8 @@
+<Page x:Class="WinUIMusicPlayer.View.UniversalOriginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+        <ContentControl x:Name="MusicDetailsOverlay" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" TabFocusNavigation="Cycle" />
+    </Grid>
+</Page>

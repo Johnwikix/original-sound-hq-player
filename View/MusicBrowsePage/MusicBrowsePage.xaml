@@ -17,7 +17,9 @@
     IsTabStop="True"
     TabIndex="0"
     mc:Ignorable="d">
-    <Grid Margin="0" RowDefinitions="Auto,Auto,*">
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid Margin="0" RowDefinitions="Auto,Auto,*">
         <Grid
             x:Name="TopPanel"
             Grid.Row="0"
@@ -31,7 +33,7 @@
                 <SelectorBar
                     x:Name="selectPage"
                     VerticalAlignment="Center"
-                    SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=OneWay}"
+                    SelectedItem="{x:Bind SelectorItem(ViewModel.SelectedPageTag), Mode=OneWay}"
                     SelectionChanged="SelectPage_SelectionChanged">
                     <SelectorBarItem
                         x:Name="Song"
@@ -130,7 +132,7 @@
             Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
             Severity="Informational" />
         <Grid Grid.Row="2">
-            <Frame
+            <Frame CacheSize="0"
                 x:Name="ContentFrame"
                 Margin="6,6,0,0"
                 IsNavigationStackEnabled="False"
@@ -244,5 +246,9 @@
                 </Grid>
             </Grid>
         </Grid>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

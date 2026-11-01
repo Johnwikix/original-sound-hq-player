@@ -35,7 +35,7 @@
             CommandParameter="{x:Bind Music, Mode=OneWay}"
             CornerRadius="5"
             Style="{StaticResource PlayHoverButtonStyle}">
-            <Grid Width="40" Height="40">
+            <Grid x:Name="CoverArtwork" Width="40" Height="40">
                 <Image
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -74,13 +74,16 @@
                 Foreground="Red"
                 Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(Music.IsFavorite), Mode=OneWay}" />
         </Button>
-        <TextBlock
-            Grid.Column="2"
-            Margin="5"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Center"
-            Text="{x:Bind Music.Title, Mode=OneWay}"
-            TextTrimming="CharacterEllipsis" />
+        <Button x:Name="MusicTitleButton" Grid.Column="2" Margin="5" Padding="5"
+            HorizontalAlignment="Left" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+            Click="TitleButton_Click" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
+            ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('MusicDetailTitle')}">
+            <dev:AutoScrollView x:Name="TitleScroll" IsPlaying="False"
+                PointerCanceled="AutoScrollHover_PointerCanceled" PointerEntered="AutoScrollHover_PointerEntered"
+                PointerExited="AutoScrollHover_PointerExited">
+                <TextBlock x:Name="MusicTitleText" VerticalAlignment="Center" Text="{x:Bind Music.Title, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+            </dev:AutoScrollView>
+        </Button>
         <Button
             Grid.Column="3"
             Margin="5"
@@ -179,12 +182,25 @@
             Grid.Column="10"
             FontSize="14"
             Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(Music.IsExistOnDevice), Mode=OneWay}" />
-        <FontIcon
+        <Button
             Grid.Column="11"
-            FontSize="14"
-            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote, Music.IsRemoteOffline, Music.IsRemoteCached), Mode=OneWay}"
-            AutomationProperties.Name="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote, Music.IsRemoteCached), Mode=OneWay}"
-            ToolTipService.ToolTip="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote, Music.IsRemoteCached), Mode=OneWay}" />
+            Width="32"
+            Height="32"
+            Padding="0"
+            VerticalAlignment="Center"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            Command="{x:Bind Music.OpenSourceCommand, Mode=OneWay}"
+            CommandParameter="{x:Bind Music, Mode=OneWay}"
+            IsEnabled="{x:Bind Music.CanEditFile, Mode=OneWay}"
+            Style="{StaticResource MenuButtonStyle}"
+            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('FlyoutOpenLocationItem')}"
+            ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('FlyoutOpenLocationItem')}">
+            <FontIcon
+                FontSize="14"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote, Music.IsRemoteOffline, Music.IsRemoteCached), Mode=OneWay}" />
+        </Button>
     </Grid>
 </UserControl>

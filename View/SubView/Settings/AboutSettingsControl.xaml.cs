@@ -24,16 +24,28 @@ namespace WinUIMusicPlayer.View.SubView.Settings
             CacheViewModel = App.Services.GetRequiredService<WebDavSourcesViewModel>();
             InitializeComponent();
             DataContext = this;
-            Loaded += async (_, _) => await CacheViewModel.LoadAsync();
+            Loaded += OnLoaded;
             Unloaded += OnUnloaded;
+        }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            AutoScrollViewControl.PointerEntered -= AutoScrollHover_PointerEntered;
+            AutoScrollViewControl.PointerExited -= AutoScrollHover_PointerExited;
+            AutoScrollViewControl.PointerCanceled -= AutoScrollHover_PointerCanceled;
+            AutoScrollViewControl.PointerEntered += AutoScrollHover_PointerEntered;
+            AutoScrollViewControl.PointerExited += AutoScrollHover_PointerExited;
+            AutoScrollViewControl.PointerCanceled += AutoScrollHover_PointerCanceled;
+            await CacheViewModel.LoadAsync();
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            Unloaded -= OnUnloaded;
+            _thirdPartyDialog?.Hide();
             _thirdPartyDialog = null;
             if (AutoScrollViewControl is not null)
             {
+                AutoScrollViewControl.IsPlaying = false;
                 AutoScrollViewControl.PointerEntered -= AutoScrollHover_PointerEntered;
                 AutoScrollViewControl.PointerExited -= AutoScrollHover_PointerExited;
                 AutoScrollViewControl.PointerCanceled -= AutoScrollHover_PointerCanceled;

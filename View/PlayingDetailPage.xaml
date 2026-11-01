@@ -512,26 +512,38 @@
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTipPlayingDetail"
+                            Closed="CurrentPlayListTeachingTipPlayingDetail_Closed"
                             IsLightDismissEnabled="True"
                             Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                             <TeachingTip.Content>
-                                <Grid Width="290" Margin="0">
+                                <Grid Width="290" Margin="0" RowDefinitions="Auto,*">
                                     <ListView
                                         x:Name="CurrentPlayListViewPlayingDetail"
+                                        Grid.Row="1"
                                         MaxHeight="400"
-                                        Margin="0,24,0,0"
+                                        Margin="0,4,0,0"
                                         DoubleTapped="CurrentPlayListViewPlayingDetail_DoubleTapped"
                                         ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                         <ListView.ItemTemplate>
                                             <DataTemplate x:DataType="model:Music">
-                                                <TextBlock
-                                                    Margin="5"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind Title, Mode=OneWay}"
-                                                    TextTrimming="CharacterEllipsis" />
+                                                <Button Margin="5" Padding="0" MinHeight="0" MinWidth="0" HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                                                    Tag="{x:Bind}" Click="QueueTitle_Click" AutomationProperties.Name="{x:Bind Title, Mode=OneWay}">
+                                                    <TextBlock Text="{x:Bind Title, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                                </Button>
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
+                                    <Border Style="{StaticResource FloatingLocateSurfaceStyle}" Grid.Row="1">
+                                        <Button Margin="0"
+                                            x:Name="LocateCurrentTrackButton"
+                                            x:Uid="LocateCurrentTrackButton"
+                                            Style="{StaticResource FloatingLocateButtonStyle}"
+                                            Click="LocateCurrentTrackButton_Click"
+                                            IsEnabled="{x:Bind QueueViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.CurrentPlayingList.Count, QueueViewModel.State.Queue.Version), Mode=OneWay}">
+                                            <FontIcon FontSize="16" Glyph="&#xE81D;" />
+                                        </Button>
+                                    </Border>
                                     <Button
                                         x:Name="CurrentPlayListTeachingTipCloseButton"
                                         Width="24"

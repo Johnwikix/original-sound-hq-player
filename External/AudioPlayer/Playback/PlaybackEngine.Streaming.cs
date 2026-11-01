@@ -148,13 +148,14 @@ public sealed partial class PlaybackEngine
         int dsdRate = DsdPcmFreq, dsdGain = DsdGain, latency = Latency;
         RenderKind kind = StreamingKind(slot.Source);
         double playbackRate = EffectivePlaybackRate;
+        var resampleMode = EffectiveResampleMode; int targetRate = EffectiveResampleTarget;
         slot.Work = Task.Run(async () =>
         {
             Session? prepared = null;
             try
             {
                 prepared = Session.Open(this, slot.Source.Location, kind, dsdRate, dsdGain, latency,
-                    maxChannels: 2, source: slot.Source, cancellationToken: slot.Cancel.Token, playbackRate: playbackRate);
+                    maxChannels: 2, source: slot.Source, cancellationToken: slot.Cancel.Token, playbackRate: playbackRate, resampleMode: resampleMode, resampleTargetRate: targetRate);
                 if (prepared is null) throw new IOException("OpenFailed");
                 slot.Cancel.Token.ThrowIfCancellationRequested();
                 if (slot.ResumePosition > 0)

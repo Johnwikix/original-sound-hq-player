@@ -1,3 +1,320 @@
+## 2026-11-01 Store 状态未知时保留购买入口，许可卡片移至音频可视化下方
+- `Services/LicenseService.cs`：`CanPurchase` 改为除已购完整版外均为 true——查询失败（StoreUnavailable）时发起购买会顺带强制刷新许可，账户已有许可或购买成功即恢复完整版；通用设置/DSP 横幅购买按钮随同恢复显示。
+- `View/SubView/Settings/AboutSettingsControl.xaml`：许可状态卡片移至音频可视化卡片下方。
+- `ViewModel/AppViewModel.License.cs`：购买入口注释同步。
+- `_tools/LicenseRegression`：Store 不可用断言改为受限且可购买。
+
+## 2026-11-01 许可判定改为按包身份查询，自建包继承已购许可
+- `Services/LicenseService.cs`：初始判定不再按包签名类型短路——仓库 manifest 即 Store 发布者，所有自建包与商店版同 PFN，许可随账户判定；旁加载包一律查询商店，查询失败仍 fail-closed 受限。已购机器上安装的开发者签名包启动即完整版，不再需要点击购买触发刷新。
+- `_tools/LicenseRegression`：开发者签名包断言改为"忽略文件并查询商店"；新增旁加载包继承已购许可的断言。
+- `docs/LicensePolicy.md`：补充许可按 PFN+账户判定、与签名渠道无关的说明。
+
+## 2026-11-01 license.debug 作为未签名自建包的完整版入口
+- `Services/LicenseService.cs`：许可覆盖文件在 Release 下仅对未签名包（`Add-AppxPackage -Register` 布局）生效，作为开发者自用后门；DEBUG 行为不变（任意包可模拟 full/trial/expired）；开发者/企业签名与 Store 签名包均不读取该文件；新增内部 `LicenseOverrideReader` 测试注入点避免回归依赖真实文档目录。
+- `_tools/LicenseRegression`：新增未签名包文件解锁、开发者签名与 Store 签名包忽略文件的断言，`PackageSignatureKind` 桩补 `None`。
+- `docs/LicensePolicy.md`：补充覆盖文件适用范围说明。
+
+## 2026-11-01 关于页许可卡片常显并展示当前许可状态
+- `View/SubView/Settings/AboutSettingsControl.xaml`：许可卡片任何许可状态下常显，标题改用 `LicenseStatusHeader`，购买按钮仅在试用/许可非活跃时出现。
+- `ViewModel/AppViewModel.License.cs`：`LicenseDescription` 覆盖全部四种许可状态（完整版/试用剩余天数/许可非活跃/无法确认许可）。
+- `View/SubView/Settings/GeneralSettingsControl.xaml`、`DspSettingsControl.xaml`：购买按钮统一按可购买状态显隐，Store 状态未知时隐藏，避免可见但不可用。
+- `ViewModel/Controls/DspSettingsViewModel.cs`：新增 `PurchaseVisible`（受限且可购买），许可迁移不改变 `LicenseRestricted` 时独立通知按钮可见性。
+- `Services/LicenseService.cs`：`CanPurchase` 收回为仅试用/许可非活跃（Store 状态未知时商店购买无法完成）。
+- `Strings/*/Resources.resw`：新增 `LicenseStatusHeader`、`LicenseFull`、`LicenseUnavailable` 七语言资源。
+
+## 2026-11-01 非 Store 渠道与许可查询失败改为受限（fail-closed）
+- `Services/LicenseService.cs`：`StoreUnavailable`（非 Store 渠道、首次查询失败）纳入 `IsRestricted`，与许可非活跃共用 `LicensePolicy` 清单；`CanPurchase` 保持仅试用/许可非活跃（Store 状态未知时购买无法完成，不提供购买入口）；日志与注释同步 fail-closed 语义。
+- `_tools/LicenseRegression`：首次查询失败与非 Store 包断言翻转为受限且不可购买，并补充受限时高级输出门控生效的断言。
+- `README.md`、`README.en.md`、`docs/LicensePolicy.md`：移除"非 Store 渠道不受限"描述，改为同样按未授权处理。
+- 兼容性：非 Store 渠道（含源码自构建）存量用户将开始受限，完整版功能需 Microsoft Store 版本；DEBUG 构建可用 `Documents\OriginalSoundPlayer\license.debug` 本地覆盖。
+
+## 2026-11-01 列表来源图标改为打开位置操作
+- `MusicListRowControl`、`Music`、`MusicCommands`：来源图标改为按钮，仅本地曲目可用（`CanEditFile` 置灰，远程曲目不打开任何内容），点击在资源管理器定位文件，缺失时 InfoBar 提示。
+- `BindUtils`：删除动作文案函数，提示与无障碍名称直接复用 `FlyoutOpenLocationItem` 资源。
+- `ToolUtils`：`OpenFileInExplorer` 返回是否成功，文件缺失记录日志；右键菜单"打开文件位置"对远程曲目置灰。
+- 右键菜单"打开文件位置"收敛到同一入口：`SongListViewModel`、`FavouritePlayListViewModel`、`MusicGroupDetailViewModel`、`PlaylistDetailViewModel` 删除各自的 `Process.Start` 拷贝改为转发统一命令。
+- `Strings/*/Resources.resw`：新增 `OpenLocationFileMissing` 七语言资源。
+
+## 2026-11-01 精简设置页 5.1 与 Atmos 说明
+- `Strings/*/Resources.resw`：缩短七种语言的 5.1 与 Atmos 描述，保留输出行为、格式限制和音量提示。
+
+## 2026-11-01 设置页 5.1 与 Atmos 文案调整
+- `Strings/*/Resources.resw`：移除常规页 5.1 和 Atmos 项标题中的实验性标注，保留功能说明。
+
+## 2026-10-31 修复高 DPI 缩放循环与三项 P2 问题
+- FeaturedCarousel：16:9 行高和主列分配改用父级测量宽度，避免将 DPI 舍入的 ActualWidth 反写布局及图片固有尺寸干扰主列；修复边框缩放 LayoutCycleException、画面停滞与缺图后进入动画中止。
+- MainPage.LibraryNavigation：跨链导航先关闭页内歌曲详情、取消待显示请求和旧返回回调，再由目标页更新返回状态，覆盖主 Frame 已在曲库的情况。
+- WindowArtworkSession：原始封面字节读取移到后台，BitmapImage 创建和发布留在 UI；关闭取消请求，等待真实读取结束并阻止迟到结果发布。
+- PlaybackSelectionTracker：合并连续条目变化的选择匹配，播放变化仍立即同步；离树解绑、排队复查读取最新状态，不增加自动滚动。
+- 验证：独立 WinUI/lvt 夹具补齐生产 PMV2 DPI 清单与运行时设置；失败基线、原生回归、构建、分配测量范围和独立审查见 _tools/HomeUiRegression/UniversalDetailsReport.md 最新记录。
+
+## 2026-10-31 首页主轮播与右侧拼贴统一 16:9
+- FeaturedCarousel：主图与右侧上大、下两小的卡片均改为 16:9，把行列间距计入分配并保持整组等高；兼容右侧 0–3 张卡片，沿用 Star 测量与原有箭头外伸空间。
+- HomeHeroCard、HomeCarouselTile：保留封面居中填充裁切，按实际高度收紧小卡标题与主图说明，避免横向卡片中的文字溢出。
+- 验证：主项目 x64 Debug 构建 0 错误；后台整体专项 405 项、四图必加载的补强矩阵 288 项通过，三轮诊断 GC 与前台违规 0；独立子代理审查了今天 6 个提交与本轮改动，发现的 3 项既有提交问题及证据范围见 _tools/HomeUiRegression/UniversalDetailsReport.md 最新记录。
+
+## 2026-10-31 修复悬浮退出明暗脉冲与禁用定位按钮穿透
+- HomeSongPreview：移除退出时作用于整个实心面板的 Opacity 动画；封面保持不透明地沿原位移/缩放收回，正文仍由裁切收起，保留 200ms 时长、展开外观和阴影，完成后再隐藏。
+- FloatingCommandStyle 与歌曲、最爱、分组详情、歌单详情及两个队列入口：为定位按钮增加独立透明命中面，按钮禁用时阻止指针命中下层列表；保留禁用语义、44px 尺寸、16px 边距与原样式。
+- 验证：新增真实合成帧像素失败/通过对照，后台首页/lvt 165 项、列表/lvt 159 项通过，前台违规 0；主项目 x64 Debug 构建 0 错误。证据和限制见 _tools/HomeUiRegression/UniversalDetailsReport.md 最新补充。
+
+## 2026-10-31 修复封面重载与详情切换闪烁
+- MusicCoverControl：忽略控件重新 Loaded 后迟到的旧 Unloaded 清理，避免缩略图和圆角同时消失；真正离树仍清理图片、订阅和合成资源。
+- CoverLoadQueue：取消继续按取消传播；缩略图写入独立临时文件，完整关闭后再替换缓存，取消或发布失败不留下半截成品、不破坏旧缓存。
+- HomeSongPreview、HomePage：退出后保持透明再等待下次展开初始化，移除末帧全尺寸复位；滚动与横向翻页使用原有退出动画。
+- MusicDetailsPresenter、ConnectedAnimationScope：进入与返回先等待目标布局经过两次渲染回调，再在同一 UI 回调启动封面和标题连接动画并交接内容；来源保留启用状态，仅阻止交互，避免整树 Disabled/Normal 样式闪烁，快速取消与离页移除渲染等待。
+- MusicDetailControl：标签 TextBox 加载中使用只读保护草稿，保持启用样式；远程歌曲仍只读，正常加载后恢复编辑。
+- 验证：主项目 x64 Debug 构建 0 错误；后台原生/lvt 专项 163 项及三轮诊断 GC 通过，前台违规 0；详情见 _tools/HomeUiRegression/UniversalDetailsReport.md 本轮追加记录。
+
+## 2026-10-31 页内通用歌曲详情、双向连接动画与轮播裁切修复
+- MusicDetailControl、MusicDetailsPanel、MusicDetailsPresenter 与主页面：复用首页属性布局，在当前页面内部临时显示详情；不替换 MainFrame.Content，不导航、不重建来源页或列表，关闭释放详情会话；跨页面缓存策略保持禁用。
+- MusicListRowControl 与列表入口：歌曲名改为按钮，封面和标题均支持进入 Gravity、返回 Direct 连接动画；返回保留原列表实例、滚动位置与选择，不叠加 Frame 过渡，也不额外抑制普通导航动画。
+- MusicCommands、MusicBrowseViewModel：详情播放保留来源队列，队列入口转发重复条目标识；未完成读取可以取消，已接受写入由退出屏障等待真实完成。
+- PlaybackSelectionTracker：播放、切歌、待播恢复和集合更新时同步当前歌曲选择；不自动滚动或聚焦，手动定位保持独立，卸载解绑订阅。
+- MusicDetailControl、MusicDetailsWindow、ConvolutionCurveDialog、AboutSettingsControl：11 处 Compact NumberBox 改为 Inline，适当加宽偏移与缓存上限输入，保持数值规则及 MVVM 绑定。
+- FeaturedCarousel、HomePage：预留溢出绘制空间并把箭头放在独立覆盖层，保持封面尺寸、位置、圆角和箭头原有向外 10 DIP 的外观；在受裁切边界内仍可完整显示和命中，未把按钮移入封面。
+- 验证：主项目与后台原生/lvt、SQLite、GC 的结果及范围见 _tools/HomeUiRegression/UniversalDetailsReport.md；没有操作用户前台窗口。
+
+## 2026-10-31 禁用缓存后恢复曲库浏览位置
+- State/BrowseState、BrowsePagePosition：新增会话内纯值快照，按五个页签分别保存条目标识、视口偏移和 SemanticZoom 状态，不持有页面、集合或数据项。
+- BrowsePositionKeeper 与歌曲/最爱/专辑/艺术家/文件夹页：页面重建后恢复列表、分组网格、缩略索引及当前分组详情列表；保留原有详情进入状态和全部缓存禁用策略。
+- ListViewCentering：手动定位优先取消同一列表的恢复，用户滚动、按键或主动 SemanticZoom 切换也会终止旧恢复；不同查询/分组隔离快照，数据重排按标识恢复，缺失条目回退到有效位置。
+- 验证：主项目 x64 Debug 构建 0 错误；后台原生/lvt 回归通过，66 个离页实例全部回收、前台违规 0；范围与数据见 _tools/ManualLocationUiRegression/BrowsePositionReport.md。
+
+## 2026-10-31 修复点击后圆角丢失并试用禁用导航缓存
+- MusicCoverControl：圆角裁切移到私有内容层，避免官方连接动画清除根 Visual.Clip 后封面永久变方；保留进入和返回动画。
+- MainWindow.xaml、MainPage.xaml、MusicBrowsePage.xaml：全部四个 Frame 显式设置 CacheSize=0；曲库、歌曲、收藏、专辑、艺术家和文件夹页改为 NavigationCacheMode.Disabled，主壳与播放详情也显式 Disabled。
+- 本轮页面返回会重建，ViewModel 中的页签、排序、筛选状态保留，纯视图滚动位置回到顶部；播放详情仍由 DI 单例持有，不将导航缓存禁用等同于销毁单例。
+- 验证：点击中间两首歌往返后圆角保留，54 项首页/lvt 检查、105 项列表导航检查及完整首页回归通过；独立无 UIA 回收实验确认离页页面可回收，但短场景 Private Bytes 未下降。详细数据与限制见 _tools/ManualLocationUiRegression/NavigationCacheReport.md。
+
+## 2026-10-31 首页动画、悬浮定位与第二批离页清理
+- `FloatingCommandStyle.xaml` 与列表/详情/播放队列：定位按钮改为列表右下角 44px 自定义圆形悬浮按钮，保留原命令、手动居中和无障碍名称。
+- `MusicCoverControl`、`StoreCarouselImageMotion`：缺图占位与正常封面共用进入动画，明暗主题使用实心占位色；封面统一 8px 合成裁切，动画完成释放上一张图片。
+- `HomeSongPreview`、`HomePage`：移除三栏共用悬浮面板中的第四行推荐描述；属性共享动画完成或取消后再清理预览源，并提供辅助技术 Invoke 入口。
+- `HomePage`、`FeaturedCarousel`：卸载时解绑 DispatcherQueueTimer.Tick，重载时对称恢复；修复仅 Stop 后仍保留整个首页的 WinRT 回调引用。
+- 四个分组/歌单页面与 `ConnectedAnimationScope`：显式拥有并取消连接动画，离页、覆盖请求和无效目标不再执行过期刷新。
+- 两个旧属性窗口与 `WindowArtworkSession`：关闭取消封面读取，屏蔽迟到结果，清理图片/字节/绑定；已接受的写入或封面导出保留原快照。
+- `StatsViewModel`、`PlaybackStatsService`、`AddFolderViewModel`、`MusicDatabaseService.Scanning`：只读查询间检查取消，合并重复文件夹刷新；等待在途 SQLite 查询结束，保留扫描及已接受写入。
+- `AboutSettingsControl`：重入恢复悬停订阅，离页停止滚动并关闭对话框。
+- 验证：主项目 x64 Debug 构建 0 错误；完整首页 184 项、定位 103 项及新增原生 UI/lvt/SQLite 回归通过。31 页内存对照确认 Tick 解绑后全部回收，数据、显存计数限制与未覆盖场景见 `_tools/HomeUiRegression/PolishReport.md`。
+
+## 2026-10-30 手动居中定位与浏览页面引用清理
+- 歌曲、收藏、专辑/艺术家/文件夹详情、歌单详情和当前播放队列：取消进入页面与切歌时的自动定位，新增手动定位当前歌曲按钮，按当前筛选结果定位并居中显示，离页取消未完成定位。
+- `MusicBrowseViewModel`、歌曲/收藏与详情 ViewModel：移除对子页面与 SelectorBarItem 的长期引用，详情订阅使用成对 Activate/Dispose，页签保存字符串标识，导航经不缓存子页面的边界转发；保留 Frame 与官方动画。
+- `HomePage.xaml.cs`：显式使用 `NavigationCacheMode.Disabled`；其他页面的缓存策略保持现状。
+- 播放队列按实际条目索引定位，支持同一首歌重复入队和待播放选择；定位期间更换数据源、离页或重复请求会取消旧操作。
+- `Strings/*/Resources.resw`：补齐七语言定位按钮提示与无障碍名称。
+- 验证：主项目 x64 Debug 构建 0 错误；独立 WinUI/lvt 后台回归 93 项通过，非首尾样本居中偏差 0 DIP，前台违规 0；七语言资源、XML、CRLF 检查通过。范围与盲区见 `_tools/ManualLocationUiRegression/README.md`。
+
+## 2026-10-30 收紧首页歌词间距与平铺标签字段
+- `HomeMusicDetailControl.xaml`：歌词工具栏和状态/错误提示改用同一 StackPanel，移除空提示行前后的固定 RowSpacing，提示折叠时不再留出额外间距。
+- `HomeMusicDetailControl*`：移除“创作与发行”折叠容器及上方分隔线，作曲、作词、指挥和目录编号按两行直接展示，保持默认输入框和原有编辑绑定。
+- `_tools/HomeUiRegression/Program.cs`：移除已删除折叠容器的定位，等待原生页签动画稳定后采集标签和歌词截图。
+- 验证：主项目 x64 Debug 构建通过（0 错误），184 项原生首页回归通过；已检查标签平铺与歌词收紧间距的实际渲染截图，XAML/CRLF 检查通过。
+
+## 2026-10-30 修复首页属性封面取消与无图误报
+- `MusicDetailsEditorFactory.cs`：初始封面读取和在线匹配透传编辑会话的取消令牌，返回页面时取消可取消的下游 I/O，继续等待实际任务与不可取消边界收尾。
+- `MusicDetailsEditorViewModel.cs`、`IMusicDetailsEditorFactory.cs`：初始读取的 null/空数组视为正常无图；非空坏图、主动查找无结果和选择空文件仍保留错误提示。
+- `_tools/HomeUiRegression`：编译实际编辑器工厂，对齐无图/解码适配契约；新增 null/空数组、坏图/重试、在线空结果保留已有封面，以及真实宿主令牌传播和取消后等待清理的检查。
+- 验证：新增回归在修复前检出空数组误报；修复后 184 项原生首页检查通过，主项目 x64 Debug 与 AOT/裁剪分析器编译通过（0 错误），七语言资源与 CRLF 检查通过。完整 NativeAOT 发布未重跑，沿用独立审查记录的工具链限制。
+
+## 2026-10-30 首页属性小窗口布局与编辑区对齐
+- `HomeMusicDetailControl.xaml`：标签与歌词输入恢复系统默认 TextBox 外观；统一根布局留白，移除内外层 PivotItem 的累积边距，并让页签标题、歌词工具栏、编辑框及保存区共用对齐边界。
+- `HomeMusicDetailControl.xaml.cs`：矮窗在宽度足够时使用紧凑侧栏，极窄窗保留封面标题横排；页签按剩余视口约束尺寸，表单滚动与固定保存区分别占用空间，减少最小窗口下的裁切。
+- 按用户要求，本次未构建、运行回归或进行 UI 自动化验证。
+
+## 2026-10-30 首页属性编辑视觉重设计
+- `HomeMusicDetailControl.xaml`：改为左侧封面与歌曲信息、右侧歌曲/歌词/文件三个工作区；移除纵向大表单卡片，常用标签采用轻量下划线输入，创作与发行字段折叠收纳，歌词编辑区随可用高度展开。
+- 封面操作和歌词辅助操作分别收进各自工具菜单，文件参数与路径使用只读信息布局；保存区固定在底部，以强调色突出数据库保存，继续使用已有悬停/按压动画。
+- `HomeMusicDetailControl.xaml.cs`：窄窗切为 112px 方形封面与紧凑标题区，切换曲目时复位工作区、滚动与折叠状态，并收起新增菜单；草稿、保存命令和 Connected Animation 数据入口继续复用。
+- `Strings/*/Resources.resw`、`_tools/HomeUiRegression/Program.cs`：补齐七语言工作区/菜单标签，并同步既有夹具的控件定位。按用户要求，本次未构建、运行回归或进行 UI 自动化验证，交由用户验收。
+
+## 2026-10-30 首页属性编辑与导航样式对齐
+- `HomeMusicDetailControl*`：移除整页不透明底色及重复返回箭头，使用窗口背景与主导航返回；保留现有卡片/方形封面布局，补齐与 MusicDetailsWindow 对应的标签编辑、歌词偏移、原文/翻译/注音、读取/刷新/导出/旧版恢复、封面操作、文件信息及两种保存入口。
+- `MusicDetailsEditorViewModel.cs`、`MusicDetailsEditorFactory.cs`、`HomeViewModel.cs`：复用 MusicMetadataEditorViewModel、LyricsEditorViewModel 和现有保存/文件写入队列；编辑草稿独立，保存期间有新输入时保留编辑器，保存失败可重试，导航立即取消活动并在动画后释放图片，退出等待真实在途任务。
+- `LyricsEditorViewModel.cs`：提供已接受操作的等待边界，避免被拒绝的重复命令覆盖 ExecutionTask 后使编辑会话过早结束；未改变歌词解析与保存规则。
+- `HomePage*`、`App.xaml.cs`、`Strings/*/Resources.resw`：接入编辑器生命周期与保存后共享动画返回，编辑依赖延迟到打开属性时创建；移除旧返回文案，补齐七语言工具提示和辅助功能名称。
+- `_tools/HomeUiRegression`：173 项原生回归通过，新增透明背景像素、真实编译双向编辑、SQLite 保存/失败/冲突、歌词和封面导出、远程限制、加载重试、重复命令守卫和取消等待检查；42 项文件元数据检查与既有歌词 UI 回归通过。此前的 x64 Debug 构建、七语言和 CRLF 检查通过；最后一轮 SDK/RID 还原构建按用户要求停止，最终验收由用户自行完成。网络提供方、选择器和曲库通知使用适配边界，未使用个人曲库或真实音频设备进行人工验收。
+
+## 2026-10-30 首页歌曲属性控件与共享封面导航
+- `HomeMusicDetailControl*`：新增页内歌曲属性界面，展示方形封面、艺术家/专辑、推荐理由、标签、音频参数和路径；复用播放、收藏、入队及歌单菜单，错误反馈直接显示在详情中，支持窄窗堆叠。
+- `HomeSongItem.cs`、`HomePage*`、`MainPage.xaml.cs`：三栏及三张拼贴点击、Enter/空格或辅助技术 Invoke 进入属性；悬停预览空白处也可进入。封面正向使用 Connected Animation、返回使用 Direct 配置，接入详情返回键、Escape 和全局返回入口。
+- `HomeViewModel.cs`：集中管理属性曲目与返回状态；过渡完成再释放封面，隐藏浏览区禁用输入并暂停轮播，返回恢复滚动和对应焦点；曲目移除、离页及过期回调安全收尾，正常刷新保留规范曲目与原栏目播放快照。
+- `Style/BtnStyle.xaml`、`HomeSongPreview.xaml`：提取共享 HomeSongActionButtonStyle，预览和属性界面保持相同的紧凑按钮外观及动画。`Strings/*/Resources.resw` 补齐七语言栏目、返回和辅助功能文案。
+- `_tools/HomeUiRegression`：149 项原生回归通过，覆盖真实双向 Connected Animation、原生 Invoke/命令、菜单与失败反馈、快速返回/卸载取消、窄窗布局、封面释放与滚动恢复；x64 Debug 构建和七语言资源/CRLF 检查通过。未进行个人曲库及真实鼠标/触摸设备的人工验收。
+
+## 2026-10-30 修正首页滚动跳跃、详情宽度与操作按钮
+- `RecommendationShelf*`：使用 ScrollView + ItemsRepeater 保留虚拟化，禁用栏目滚轮和手势平移；删除手动滚轮位移转发，由页面原生垂直滚动。按钮连点累加目标，外部焦点滚入后从实际位置继续翻页。
+- `HomePage*`：详情浮层移入页面滚动祖先，按可见视口定位；禁止详情按钮重复 BringIntoView，滚动收起时聚焦视口，键盘展开等待原卡片滚入稳定，避免页面被拉回。
+- `HomeSongPreview*`：详情按原封面加宽 48px、至少 360px，窄窗约束在视口；四个操作按钮改用基于 MenuButtonStyle 的独立样式，恢复主题背景/描边、增大内边距并改为 6px 紧凑排列。
+- `_tools/HomeUiRegression`：125 项原生回归通过，覆盖宽窄详情、按钮外观和动画、焦点滚动、虚拟化与快速分页；x64 Debug 构建、资源及 CRLF 检查通过。真实滚轮终验因 Computer Use 应用授权超时未执行，触摸板硬件行为尚待设备验收。
+
+## 2026-10-30 首页卡片统一详情操作与歌单菜单
+- `CarouselArtworkShadow.cs`：图片彩色阴影收窄为 8px 模糊、4px 下移与 12px 渐隐边界，外缘归零，避免依赖大 margin 才能遮住硬裁切；按反馈移除按钮动态投影尝试，未引入长阴影着色器依赖。
+- `HomePage*`、`FeaturedCarousel*`、`HomeCarouselTile*`、`RecommendationShelf*`：移除三栏及三张拼贴的 Button 包装、整卡播放和悬停播放遮罩；拼贴保持原比例和叠字，按实际封面尺寸展开共享动画详情，播放仅由详情按钮触发。
+- `HomeSongPreview*`、`HomeViewModel.cs`：新增添加到播放列表的 MenuFlyout；菜单打开时保留详情，固定曲目/歌单标识，串行处理连续添加并观察失败，退出等待已接受的写入完成。
+- 首页操作按钮复用 `MenuButtonStyle`；轮播箭头在继承相同按压/悬停动画的同时保留亚克力外观与淡出。`Strings/*/Resources.resw` 补齐七语言空歌单与写入失败文案。
+- `_tools/HomeUiRegression`：116 项原生回归通过，覆盖无 Invoke 卡片、三张拼贴详情、真实菜单和按钮动画、紧凑阴影及卸载、歌单快照/连续写入/失败重试/退出等待；x64 Debug 构建、七语言资源和 CRLF 检查通过。歌单目录与写入边界使用适配桩及真实 SQLite，未用个人曲库做端到端验收。
+
+## 2026-10-30 补齐卡片退出、轮播箭头淡出与倒计时圆盘
+- `HomeSongPreview*`、`HomePage*`：退出采用 200ms 缩回、裁切和淡出，等待 CompositionScopedBatch 实际完成再清空封面；移向相邻卡片先退出旧卡，重入取消过期完成回调，Escape 同样收起。
+- `FeaturedCarousel*`、`CarouselLighting.cs`：箭头采用半透明亚克力、细描边和 200ms 原生透明度过渡；仅键盘焦点保持显示，修复鼠标点击后移出仍常驻；导航材质不参与封面聚光。
+- `CarouselCountdown.cs`：左下角增加 20px 扇形倒计时圆盘，与自动轮播共用剩余时间，悬停/键盘聚焦暂停、移出续跑、手动换页重置、关闭自动轮播或卸载时停止。
+- `_tools/HomeUiRegression`：99 项原生回归通过，新增退出完成/重入/相邻卡交接、鼠标焦点移出、亚克力及倒计时暂停续跑；x64 Debug 构建和七语言资源/CRLF 静态检查通过。完整实鼠标滚轮输入与视觉轨迹终验仍未执行。
+
+## 2026-10-30 首页轮播图片投影与悬浮详情
+- `View/Controls/CarouselArtworkShadow.cs`、`CarouselLighting.cs`：以实时图片表面重建彩色模糊投影，独立宿主保留模糊边缘；增加斜向指针光照，卸载释放表面、光源和效果资源。
+- `FeaturedCarousel*`、`HomeHeroCard*`、`HomeCarouselTile*`：保留既有专辑封面比例与窄窗同排；三张拼贴增加标题，大卡左侧居中、小卡底部叠字；修复循环首尾翻页的动画方向。
+- `RecommendationShelf*`、`HomePage*`：三栏隐藏横向滚动条，改用有边界禁用状态的圆形左右按钮；滚轮在内层默认处理前截获，只滚动页面，仍支持原生触摸平移。
+- `HomeSongPreview*`、`HomeViewModel.cs`：共享详情覆盖层从原封面展开，艺术家、专辑、推荐理由和播放/收藏/入队命令移入面板，外部只显示封面与歌名；支持悬停容错、键盘聚焦/Escape、滚动/刷新/离页收起。
+- `Strings/*/Resources.resw`：补齐七语言栏目分页按钮的辅助功能名称与提示。
+- `_tools/HomeUiRegression`：88 项原生回归通过，覆盖详情命令、双向分页与边界、专辑比例、真实合成光源、图片阴影资源和卸载重入；主项目 x64 Debug 构建通过。Computer Use 被用户 Escape 停止，真实滚轮输入与完整动画轨迹的人工验收未完成。
+- `docs/HomeRecommendationsPlan.md`：记录本机 Store 22609.1401.8.0 XBF 证据与实现边界；光源角度、模糊量和详情动画时序为项目调校值，未声称恢复 Store 原生实现。
+
+## 2026-10-29 首页轮播 5 张自动滚动与封面加载线程修复
+- `View/Controls/MusicCoverControl.xaml.cs`：修复封面管线工作线程写 `ImageHash` 时 `PropertyChanged` 同步回调 UI 抛 RPC_E_WRONG_THREAD (0x8001010E)、导致首页封面整链路加载失败的问题；`MetadataChanged` 在订阅边界封送回控件线程执行。无封面占位音符随卡片尺寸等比缩放，轮播拼贴大卡不再是空灰块配小图标。
+- `View/Controls/FeaturedCarousel.xaml.cs`：补齐 DevWinUI 原版 `AutoShuffle`/`ShuffleDuration` 走马灯：默认 5 秒自动翻页，悬停暂停并保留剩余时间（一次性尾段恢复），手动翻页、换源或卸载时停表，属性可关。
+- `ViewModel/Pages/HomeViewModel.cs`：轮播主题最多 5 张（精选/常听/探索 + 精选、常听各再取一位，从该曲起播同栏目队列），自动跳过已用作封面的曲目避免重复封面页。
+- `View/Controls/HomeHeroCard.xaml(.cs)`：遮罩对齐原版形状（左 40% 宽、50% 不透明、0.28→0.4 线性淡出）后，颜色改为跟应用主题整套适配：浅色主题浅色遮罩 + 主题深色文字、深色主题深色遮罩 + 白色文字，卡片底色同步跟随，不再取封面边缘色（亮封面下叠字不可读）；播放按钮沿用压暗封面色调。
+- `Services/Recommendations/HomeRecommendationService.cs`：三栏各 12→20 首，探索位注入点扩至第 15 位。
+- `_tools/HomeUiRegression`：78 项通过，新增后台写 ImageHash 不再同步进 UI、五张主题去重、自动轮播/悬停暂停、大卡无封面占位、遮罩主题中性等回归。
+- `_tools/HomeRecommendationRegression`：栏目数量断言 12→20，33 项通过（含 10 万曲目 148ms 规模测试）。
+
+## 2026-10-29 修复全局字体刷新覆盖窗口主题
+- `ApplicationFontService.cs`：在 `XamlRoot.Content` 刷新字体资源，避免 WinUIEx 把内层 WindowContent 恢复的 Default 写回外层，覆盖启动时保存的浅/深主题；保留内层继承状态。
+- `_tools/FontUiRegression`：改用真实 WindowContent 包装层，修复前复现仅调用一次 SetAppTheme 后 Light 被 Loaded 改为 Default；修复后 207 项原生检查通过，覆盖浅/深/跟随系统、Mica/亚克力、即时换字体及重新挂接。
+- 清理此前追加启动主题恢复的替代方案；完整播放器关闭重启待验证。
+
+## 2026-10-29 首页歌曲封面统一播放入口
+- `View/HomePage.xaml`：推荐、常听、流派探索的整张封面改为播放按钮；参考任务栏封面增加悬停压暗与居中播放图标，键盘聚焦同样显示，移除下方重复播放按钮，保留收藏和加入队列。
+- `ViewModel/Pages/HomeViewModel.cs`、`View/HomePage.xaml.cs`：移除首页不再使用的属性命令、事件和窗口转发，播放继续复用栏目快照与现有可用条件。
+- `_tools/HomeUiRegression`：71 项通过，覆盖各栏目封面播放、无重复入口、悬停/键盘图标、未就绪禁用与底部按钮滚动间距；主项目完整构建被另一会话的中间 DLL 占用问题阻塞，按用户要求不处理该构建问题。
+
+## 2026-10-29 修正首页拼贴点击行为
+- `View/HomePage.xaml`：三图拼贴点击改为从对应歌曲开始播放当前推荐栏目队列，复用现有播放命令与可用条件，修复错误打开音乐属性窗口的行为。
+- `_tools/HomeUiRegression`：61 项通过，新增三个拼贴按钮的原生 UIA 点击回归，确认对应歌曲、推荐队列和未触发属性事件；x64 构建通过。
+
+## 2026-10-29 移植 DevWinUI 轮播原版动效并保持拼贴同排
+- `View/Controls/HomeHeroCard*`：按 DevWinUI 10.8.0 `RunTextAnimation` 移植整组文字/按钮动效：700ms、横移 100→0、透明度 0→1、缩放 0.8→1；移除逐项延迟和自定义 easing。
+- `StoreCarouselImageMotion.cs`、`MusicCoverControl*`：移植 ImageFrame 的整幅 SlideLeft/SlideRight 与旧图淡出，包括首次进入；保留现有封面读取/解码/缓存链路，主视图保持单实例，当前/旧图最多各保留一张，快速切换和卸载释放自有源及动画。
+- `FeaturedCarousel*`、`HomePage*`：翻页按钮还原直接显隐；主图和三图拼贴在窄窗仍然同排、一起缩小，不再换行放大，紧凑文字按可用尺寸收敛；固定首页标题行保持。
+- `Libraries/DevWinUI/LICENSE-StoreCarousel.txt`：补充图片与文字动画的准确源码引用，保留 MIT 许可。
+- `_tools/HomeUiRegression`：58 项通过，覆盖正反滑入与旧图保留、真实合成动画挂接、同封面文字更新、整组 700ms 线性动效、清空释放及窄窗同排；x64 构建通过，独立合成轨迹的交互式验收限制见方案文档。
+
+## 2026-10-28 首页封面比例、固定标题与轮播光效
+- `View/HomePage.xaml`：首页标题与换一批固定在滚动区域上方，加载、空库和离线占位保留独立内容区。
+- `View/Controls/FeaturedCarousel*`、`MusicCoverControl.xaml`：主图约 1.22:1，拼贴随宽度保持接近方形的矩形比例；封面显式居中裁切，窄窗保留主图与下方拼贴。
+- `View/Controls/CarouselLighting.cs`：自实现区域环境光、合成线程跟随的悬停聚光和按压扩散光；卸载解除目标与事件并释放光源及动画，重入可恢复。
+- `View/Controls/HomeHeroCard*`、`FeaturedCarousel*`：标题、说明和播放按钮依次滑入、淡入及轻微缩放，图片独立过渡；翻页按钮淡入缩放，隐藏时不拦截指针，关闭系统动画时直接显示文本最终状态。
+- `_tools/HomeUiRegression`：54 项通过，新增封面中心色带像素检查、固定标题几何检查、文本/按钮动画状态与光源生命周期检查；窗口快照验证悬停光照，原生控制器验证扩散动画已挂接，完整合成轨迹仍需交互式窗口确认；x64 构建通过。
+
+## 2026-10-28 首页 Store 轮播外观与交互修正
+- `View/Controls/FeaturedCarousel*`、`HomeHeroCard*`：按 DevWinUI StoreCarousel 实现满幅叠字主图、三图拼贴、圆点分页、悬停翻页与切换动效；窄窗拼贴移至下方，首页不依赖 DevWinUI 控件。
+- `Utils/CoverLoadQueue.cs`、`MusicCoverControl*`：沿用现有原图读取、WIC 与像素缓存，支持轮播大图尺寸及像素边缘取色；消费者独立拥有图片源，极端竖图解码最长边限制为 2048px。
+- `ViewModel/Pages/HomeViewModel.cs`：播放、收藏和历史结算引起的推荐更新延后至换一批或重进首页应用，避免卡片/封面刷新及滚动位置丢失；相同内容复用栏目对象。
+- `View/HomePage.xaml`、`Strings/*/Resources.resw`：横向栏按钮下留出滚动条间距，爱心改为红色，加号提示“加入当前播放队列”；换一批改为无边框主题强调色按钮。
+- `Libraries/DevWinUI/LICENSE-StoreCarousel.txt`、`WinUIMusicPlayer.csproj`：保留 StoreCarousel 布局参考来源与 MIT 许可，并随构建和发布输出。
+- `_tools/HomeUiRegression`：41 项原生检查覆盖实际 WIC/缓存、Store 布局、播放稳定性和滚动条间距；x64 构建与推荐内核回归通过。截图使用合成封面，个人曲库和真实 WebDAV 未做端到端验收。
+
+## 2026-10-28 首页与本地音乐推荐
+- `View/HomePage*`、`ViewModel/Pages/HomeViewModel.cs`：新增一级首页、精选主题、推荐/常听/流派探索栏目、空库拖放导入、加载/离线/失败重试状态；播放显式使用栏目快照，刷新不改正在播放的队列。
+- `View/Controls/FeaturedCarousel*`、`HomeHeroCard*`、`MusicCoverControl*`：自实现轻量轮播、相邻主题预览与窄窗折叠；支持集合替换、方向键、离页重载，封面复用现有队列并取消/释放，不依赖 DevWinUI StoreCarousel。
+- `Services/Recommendations/*`、`MusicDatabaseService.Recommendations.cs`、`Model/Recommendations/*`：本地标签与收藏/有效收听推荐，90 天历史聚合、时间衰减、艺术家/专辑/流派多样性、探索配额和冷启动；缺流派不丢歌，不把未收听当负反馈。
+- `MainPage*`、`SaveSettings.cs`、`GeneralPreferencesState.cs`、`GeneralSettingsControl.xaml`：首页接入导航和默认入口设置；新配置默认首页，旧有效入口及旧配置缺字段时的文件夹默认均保持；首页搜索提交进入音乐库，导航选中不再依赖固定索引。
+- `Strings/*/Resources.resw`：补齐七语言首页文案及辅助功能名称，代码取词使用独立资源键。
+- `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`、`_tools/SettingsPersistenceRegression`：推荐 33 项与真实 WinUI 26 项通过；x64 构建、现有播放导航（含原生 UI）、文件夹扫描和设置回归通过。现有 LifecycleRegression 的旧桩契约缺失，未通过编译；个人曲库、实际音频设备和真实 WebDAV 仍需端到端验收。
+
+## 2026-10-27 属性窗口标签区重排与标签样式统一
+- `View/SubView/MusicDetailsWindow.xaml`：标题|艺术家一行两列，专辑|专辑艺术家|流派一行三列，作曲|作词|指挥|目录号一行四列，信息区 5 行缩至 3 行；六个可选标签由 TextBox Header 改为与其余字段一致的 12px/70% TextBlock 标签，TextBox 改用 `MusicTag*Input` Uid 仅承载占位符。
+- `Strings/*/Resources.resw`：`MusicTag*.Header` 改名 `MusicTag*.Text`（标签），`MusicTag*.PlaceholderText` 改名 `MusicTag*Input.PlaceholderText`（七语言，值不变）。
+- `_tools/MusicMetadataUiRegression`：`prepare_fixture.py` 适配新结构（按 MusicTag Uid 定位两个网格包入 `OptionalTags` StackPanel、仅 TextBox 命名 `*Input`），并修复 72853f2b 遗留的 `FileInfoSection` 仍按 StackPanel 查找导致的生成失败；`Program.cs` 对应改类型；重新生成 `MetadataPanel.xaml`。
+- 验证：夹具生成脚本重跑通过；UI 回归按指示未重跑。
+
+## 2026-10-27 属性窗口信息区紧凑化
+- `View/SubView/MusicDetailsWindow.xaml`：移除"其他音乐信息"Expander，六项可选标签改为常显 3 列网格；最后目录/路径/创建时间/修改时间由会换行的 TextBlock 改为默认样式 `IsReadOnly` TextBox（单行不换行、可复制、不可编辑），维持 2×2 网格；整体列间距 14→10、区块间距 10→8。
+- `ViewModel/Controls/MusicMetadataEditorViewModel.cs`：删除仅服务于折叠状态的 `IsAdditionalExpanded`。
+- `Strings/*/Resources.resw`：删除不再使用的 `MusicAdditionalTags.Header`（七语言）。
+- `_tools/MusicMetadataRegression`、`_tools/MusicMetadataUiRegression`：适配无展开态断言；UI 夹具改为提取常显标签网格与文件信息区，新增 300 字符路径单行不换行与只读断言。
+- 验证：中间版本经元数据回归 42/42、UI 回归与 lvt 可见窗口几何实测（拦下样式未 `BasedOn` 丢模板、网格漏 `RowDefinitions` 两行重叠两个缺陷）；最终改默认样式后按指示未重跑回归。
+
+## 2026-10-27 文件夹重扫接入标题栏进度指示
+- `ViewModel/Pages/AddFolderViewModel.cs`、`Services/MusicDatabaseService.Scanning.cs`：重新扫描（含文件夹卡片入口）在标题栏进度指示器注册"正在重新扫描"条目；分母取扫描根现有歌曲行数（新增 `CountSongsInFolderAsync` 计数查询），百分比整数前进封顶 99、完成后移除，外部导入对账与空扫描根保持不定进度；复用 `LibraryRescanning` 键与既有七语言资源，无新增字符串。
+- `_tools/FolderScanRegression`：链接生产 ProgressCenter，断言重扫期间条目激活且为确定进度、完成后移除；全套回归通过。
+
+## 2026-10-27 修复歌曲属性窗口持续显示等待状态
+- `View/SubView/MusicDetailsWindow.xaml`：等待层和编辑区可见性改用 OneWay 绑定，响应标签补读结束及保存后的状态变化，修复新增标签后打开属性始终显示“正在处理保存”的回归。
+- `_tools/MusicMetadataUiRegression`：加入旧库不重扫、真实标签补读与 WinUI 可见性切换回归，覆盖保存失败与重试时的状态恢复。
+
+## 2026-10-26 减少 IR 准备分配与暂停留存
+- `PreparedCorrectionCache`：文件 IR 按内容、采样率、声道和布局复用只读系数，LRU 同时限制四套与 16 MiB；完整响应频谱按自动前级/旧版自动余量需要生成，缓存仅弱持有分析结果。
+- `ConvolutionTier`：单声道 IR 跨输出声道共享只读系数，保留各声道独立历史与 FFT 工作区；准备过程补充取消检查。
+- `PcmEffects`、`GaplessSource`、`PlaybackEngine`：暂停后在现有渲染屏障内清除已关闭的卷积引用，停用时清空缓存并阻止迟到任务重新填充；过期暂停淡出不再改写新一轮淡出状态。
+- `ImpulseResponse`：内容哈希与 WAV 解析使用同一只读文件句柄，保留原有路径 API，新增可取消流读取/重采样入口；DSP 默认值与 IPC 协议不变。
+- 验证：完整播放回归 360/360、发布版协议及真实共享输出通过；本机 96 kHz 长 IR 的 60 次切歌分配率 12.69→5.55 MiB/s，无缝播放工作集采样峰值 86.09→62.77 MiB；48 kHz 暂停关闭 DSP 后诊断 GC 托管堆 7.87→1.31 MiB，已重新发布 `Player/AudioPlayer.exe`。数字含采样/IPC 开销，不代表全部设备或格式；ASIO 本次未复测。
+
+## 2026-10-26 压限器接入共用峰值上限
+- `DynamicsProcessor`：采样峰值保护改用共用上限，默认仍为 −1 dB；旧的非默认上限现在同时影响压限器，IPC 字段与版本不变。
+- `DspSettingsControl`、ViewModel 与七语言资源：压限器移至峰值保护区域，三项任一启用即可编辑上限，并说明采样峰值与 True Peak 的区别。
+- 播放回归 354/354、真实 WinUI 编译绑定、七语言资源及 CRLF 检查通过；覆盖仅开启压限器、修改上限、关闭后保留数值及即时降低峰值，重新发布 `Player/AudioPlayer.exe`。
+
+## 2026-10-26 统一 DSP 峰值上限并补齐参数联动
+- `DspSettingsViewModel.Pcm`、`DspSettingsControl.xaml`：响度标准化与 True Peak 共用可输入的峰值上限，任一功能启用即可编辑；重采样目标随模式启用并区分目标/整数倍上限，Crossfeed 强度/截止频率统一双声道限制并显示自定义档位。
+- `LoudnessMeter`、`PcmEffects`：固定响度增益改用保存的峰值上限；保留默认 −1 dBTP、旧配置字段和 v7 协议，非默认旧上限现在也影响响度标准化；重新发布 `Player/AudioPlayer.exe`。
+- `PcmEffects`、`Session`、`PlaybackEngine.Gapless`：限幅缓冲按需创建；关闭 DSP/卷积取消在途准备并在音频线程退休渲染引用；无缝接管收敛到已转移滤波器，释放重复工作区并保留历史。
+- `FrameEventSubscription`：解绑失败或所有者回收后，原生 handler 在下一次源线程回调自行撤销，不强持有事件源；永久失败时节流重试，保留在途回调屏障和 HRESULT 语义。
+- `_tools/FrameAbiRegression`、界面与播放回归：覆盖失败恢复、真实 Rendering/Update/Draw 孤立 handler 回收、绘制会话引用计数、生产编译绑定与共享上限。
+- `_tools/DrawPathProbe --lifetime`、音频设备探针：5 分钟真实绘制和每 3 秒资源重建，补充自然 GC、进程内存/句柄及外部 GPU 计数；实际 WASAPI 共享、独占及兼容回退分别记录；已连接 FiiO ASIO 的 44.1/96/176.4 kHz 换率、一分钟切歌和长 IR/True Peak 无缝交接通过且未回退，模拟端峰值仍需外部设备测量。
+
+- 独立内存复测：48 kHz 双声道默认构造分配 25,912→17,288 B；96 kHz 六声道长 IR 无缝交接额外数组留存 37.1 MiB→0，500 个退休实例可回收；数字为标准 .NET 对象/数组测量，不等同于进程工作集降幅。
+- 验证：完整播放回归 353/353、真实帧 ABI 59 项及生产 PCM 编译绑定通过；Release x64 使用 `AppxSymbolPackageEnabled=false` 构建通过（本机 MSIX PDB 符号打包任务仍报参数错误）。
+
+## 2026-10-26 音乐可选标签与排序
+- 字段范围：专辑艺术家、流派、作曲者、作词者、指挥、目录编号；发行方因 ATL 7.18 的 WMA 直接写入无法读回而剔除，不引入扩展标签或自行适配。
+- `Model/Music.cs`、`Utils/AudioMetadataTags.cs`、`Services/MusicDatabaseService*`：补齐六项 ATL 直接标签的读取、持久化、旧库迁移和版本化延迟回写；缺失标签为空，存量曲目按需补读，不在启动时扫描全库。
+- `View/SubView/MusicDetailsWindow*`、`ViewModel/Controls/MusicMetadataEditorViewModel.cs`：属性窗口新增默认按内容展开的可选标签区域，草稿在保存成功后发布，关闭不提交标签编辑。
+- `Services/LibraryProjectionService.cs`、`ViewModel/AppViewModel.cs`、`Strings/*/Resources.resw`：新增字段参与搜索；新增专辑艺术家和流派排序，缺失专辑艺术家回退曲目艺术家，缺失流派排后并稳定排序。
+- `_tools/MusicMetadataRegression`、`_tools/FolderScanRegression`、`_tools/SharedStateRegression`：增加实际标签往返、迁移、队列保留、稀疏字段搜索和排序回归。
+
+## 2026-10-26 按采集结果减少 Draw 与指针投影分配
+- `Interop/CanvasDrawContext.cs`、`FrameEventSubscription.cs`：Draw、DrawingSession、layer 和中间目标会话改用作用域化原始 ABI；保留原生 HRESULT、主会话 EndDraw 所有权、在途回调屏障和弱所有者，保留原托管绘制 API 的兼容入口。
+- `NowPlayingCanvas`、高级歌词控件、桌面歌词及背景/歌词渲染器：接入同一绘制桥接；临时卸载解绑 Update/Draw，重载恢复，最终关闭排空回调后释放资源，保留页面缓存和 MVVM。
+- `PointerPointScope.cs`、`LyricsRenderCoordinator.cs`、`ValueTransition.cs`：位置和滚轮快照不创建 PointerPoint/Properties RCW；保留坐标、Handled、悬停、滚轮与 seek 入口，泛型相等比较消除过渡启动装箱，索引遍历消除每帧 IList 枚举器装箱。
+- `RenderLyricsChar.cs`：字符裁剪/模糊效果首次绘制时创建、随后复用；缓存退休时仅释放已创建资源，并允许设备/布局重建后重新创建。
+- `_tools/DrawPathProbe`、帧 ABI 回归：新增真实 WinUI/Win2D 精确线程分配计数、EventPipe 分配栈、96/144 DPI 像素对照、缓存重建和真实 Draw 自行解绑；指针使用 C# SendInput 自动驱动并逐事件核对正负滚轮和位置，不依赖 Computer Use。
+- 测量：标准 .NET 11 RC2 隔离宿主三轮稳定歌词场景，Draw+Update 约 952 B/帧降至 0 B/帧，旋转背景 1536→96 B/次；40 行歌词冷重建约 1.94→1.23–1.24 MB/次。原始指针 getter 重放及最终移动/滚轮回调体测得 0 B，不包含框架派发事件参数；首次资源创建、换行等仍有分配。扫描已有有界管线与真实 FFmpeg/SQLite 回归通过，本次不改扫描生产逻辑。
+- 验证：主程序 Debug/Release x64（含裁剪）0 错误，仍有项目/分析器/裁剪警告；ABI 两种配置各 47 项、完整歌词原生渲染、文字 87 项、原生像素/缓存及自动指针回归通过。文字测试依赖与生产对齐，并等待最终静态 Draw 后再检查临时卸载缓存身份。
+- 边界：数据仅指上述场景的托管分配，不等于原生/GPU 零分配；宿主不替代完整播放器 SatoriGC 发布进程，未做自然 Gen2/STW、长时间播放与 ARM64 测量。
+
+## 2026-10-26 修正整数 PCM 输出并补齐播放内核 DSP
+- `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和；整数/浮点输出的非有限值统一静音，24-bit 出口不再预先钳位而掩盖异常输入；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
+- `AudioPlayer/Decode`、`Playback`：增加普通 PCM 采样率策略、独立四倍 True Peak 估计/5ms 前瞻保护、长 IR 分级卷积和 1–8 声道逐曲响度（含后中置环绕权重）；处理曲尾、seek、无缝历史及可闻进度。DSD 路径、十段 EQ 和既有输出开关边界保持现状。
+- `BassPlayerIpc.Shared`、现有 DSP 设置页：设置 v7、管道 v4；新增重采样/保护/抖动与 Crossfeed 连续强度、截止频率，保留旧设置读取及默认旁路；更新七语言资源。
+- `TruePeakLimiter`：前瞻窗口内用 1ms 线性下降代替硬切增益，避免突发峰值到达前自行产生插值过冲；回归覆盖三个采样率和三类频率的脉冲叠加。
+- `_tools/PlaybackSwitchRegression`：增加 16 项真实解码/输出及 DSP 数学、生命周期、兼容和分配回归，并支持真实 NativeAOT 进程的无声卡 IPC 冒烟。发布时同步更新 `Player/AudioPlayer.exe`。
+- 兼容性：主程序和播放内核需同时更新；有限插值峰值估计不构成系统混音或任意 DAC 模拟输出的绝对峰值保证。
+
+## 2026-10-26 更新本地 CsWinRT 并修正固定 pressure 配对
+- `D:/code/classLib/cswinrt/CsWinRT/src/WinRT.Runtime/ObjectReference.cs`：固定 `GC_PRESSURE_BASE` 的 Add/Remove 成对禁用，修正旧包只禁用 Add、Dispose 仍执行 Remove 的不匹配；其他按类型大小计量的 pressure 保持原样。
+- `WinUIMusicPlayer.csproj` 及 11 个回归项目：统一引用 `2.3.2-prerelease.261026.1-nogcpressure`；包基于最新源码 `c28d756` 构建并发布到 `D:/nugetLocal`，保留上游 AssemblyVersion `2.3.1.0`。
+- 包内容：重新构建 runtime、源生成器、投影工具及 x86/x64 原生宿主；托管 runtime 为 AnyCPU，本机缺少 ARM64 编译器，未提供 ARM64 原生 WinRT.Host。
+- 验证：三个 runtime 目标构建 0 警告/0 错误；新旧 nupkg 的 IL 确认旧包只剩 Remove、新包固定 Add/Remove 均不存在，嵌入源码与 net8/net9 二进制均已核对；12 个引用的实际还原版本、XML 与 CRLF 检查通过。
+- 验证：主程序 Debug/Release x64（含裁剪）构建通过、仍有分析器/项目/裁剪警告；新包下 ABI Debug/Release 各 29 项、歌词原生渲染 141 帧、外观 Composition 和字体 99 项回归通过，测试输出 runtime 哈希均与新包一致。外观图片加载在沙箱内失败，相同二进制在沙箱外通过。
+- 性能边界：本次修正未配对的 Remove，没有进一步减少旧包已经禁用的固定 Add；未做自然 GC/Gen2/STW 对照采集，不宣称停顿进一步下降。
+
+## 2026-10-26 帧事件改用原始 ABI 订阅
+- `Interop/FrameEventSubscription.cs`：用源生成 COM 委托直接接收 Rendering/Win2D Update 指针，仅传递帧时间值；集中管理 token、源引用、异常 HRESULT、重复/回调内解绑及在途回调屏障。
+- `SharedAnimationClock.cs`：改用 ABI Rendering，保留 Stopwatch 和 100ms delta 上限；最后一项注销时解绑，分发期间注销不再移动活动项索引。
+- `NowPlayingCanvas`、`AdvanceLyricsCanvasControl`、`LyricsRenderCoordinator`、`CanvasLyricsRenderer`：生产 Update 改用 ABI，复用现有协调器、状态和 MVVM；临时卸载解绑、重载恢复，保留原帧率、暂停和 Draw 行为。
+- `CanvasLyricsRenderer`：关闭与 Update/Draw/设备资源重建共用屏障，排空回调后显式释放行与阴影资源并拆卸画布。
+- `_tools/FrameAbiRegression`、歌词/文字渲染回归：覆盖真实 WinUI/Win2D timing/线程对照、暂停/恢复、重订阅、跨线程与回调内解绑、失败/迟到回调、回调目标释放及宿主重载/关闭；文字回归分别断言临时卸载保留缓存和最终关闭释放资源。
+- 验证：主程序 Debug/Release x64 构建通过（含 Release 裁剪）；ABI 回归 Debug/Release 各 29 项、文字回归 87 项及完整歌词原生渲染回归通过，新增桥接无构建/裁剪警告。预热后各 10000 次桥接 Invoke 的当前线程托管分配为 0B；未做完整播放器长时间 Gen2/STW 采集。
+- 兼容性：按本次要求保留现有 CsWinRT pressure 补丁；Draw 与其他 WinRT 链路继续使用现有投影，不把此变更等同于全绘制链零分配或 Gen2 停顿已消除。
+
+## 2026-10-26 修复后台恢复后当前行翻译/发音持续模糊
+- `LyricsAnimator.cs`：当前值仍为 0、旧目标非零且无新延迟时，显式取消陈旧模糊过渡；保留首行字浮依赖的同值 `Start` 语义及正常模糊回零动画。
+- `_tools/LyricsRenderRegression/MotionChecks`：新增“暂停发布→零时间 Draw→跨行恢复”回归，验证恢复后的当前行模糊值和目标均归零。
+- 验证：新增回归在旧逻辑上稳定失败、修复后通过；完整 Win2D 歌词回归与主程序 x64 构建通过，未做托盘长时间人工复现。
+
 ## 2026-10-25 统计页时间范围新增全部时间
 - `StatsViewModel`、`StatsPage`：时间范围下拉在“过去一年”与“自定义”之间新增“全部时间”；总时长、曲目数、活跃天数、时段分布与 Top 歌曲/歌手/专辑覆盖全部历史记录（查询起点为 UTC 纪元下限）。
 - `StatsViewModel`：全部时间时热度图仍固定展示最近一年，但改为直接从快照每日计数筛选年度区间，不再重复查库。
@@ -35,7 +352,7 @@
 - `CustomFontStyle.xaml`、`ApplicationFontService`、窗口根节点与播放详情动画文字：程序字体默认 Segoe UI，统一普通文字与 WinUI 排版样式，切换时刷新已打开窗口，保留图标及显式字体。
 - `GeneralSettingsControl`、`LyricsSettingsControl`、`SettingsDialog`、偏好与七种语言资源：外观设置新增程序字体；独立歌词字体默认关闭，关闭时歌词跟随程序字体且下拉框置灰，开启后使用原有选择。
 - `SaveSettings`、设置恢复/快照：分别保存程序字体、歌词字体与开关，保留旧 `GlobalFont` 作为歌词选择；缺失或已卸载字体回退 Segoe UI，桌面歌词继续使用其已有独立字体。
-- `_tools/FontUiRegression`：40 项真实 WinUI 检查覆盖编译绑定、浅/深/跟随系统主题、独立字体保留及多窗口卸载；设置持久化回归、Debug x64 构建与七种语言资源键/CRLF 检查通过。未做完整播放器人工字形及高对比度验收。
+- `_tools/FontUiRegression`：41 项真实 WinUI 检查覆盖编译绑定、浅/深/跟随系统主题、独立字体保留及多窗口卸载；设置持久化回归、Debug x64 构建与七种语言资源键/CRLF 检查通过。未做完整播放器人工字形及高对比度验收。
 
 ## 2026-10-23 修复 Last.fm 真实上报成功后误报存储失败
 - `LastFmApiClient`：兼容真实服务端数字及数字字符串形式的成功数量、拒绝码与错误码；畸形/矛盾响应保留队列并归类响应错误，失败分支释放 JSON 文档。
@@ -74,7 +391,7 @@
 - `Services/LastFm`、`LastFmSettingsViewModel`、常规设置与七种语言资源：支持用户自备应用凭据、浏览器授权/本地解绑、正在播放、达标上报及持久化离线补报；凭据与 Session Key 使用 Windows PasswordVault。
 - `PlaybackCoordinator`、`RemotePlaybackService`、启动/退出协调器：复用实际播放确认与状态，隔离定位、暂停、缓冲、无缝重复和 WebDAV 恢复；保留现有本地统计口径，不修改音频引擎与 IPC。
 - `_tools/LastFmRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：增加网络/磁盘/生命周期回归、真实 WinUI 编译绑定和配置说明。默认关闭，授权成功后启用；解绑或更换应用凭据会清空待补报记录。
-- 验证：40 项 Last.fm 核心、15 项真实 WinUI 检查、84 项导航与 35 项 WebDAV 集成检查通过；七种语言资源键匹配、Debug x64 构建通过（0 错误，仍有项目既有警告）。未使用真实 Last.fm 账号联调，未做真实设备/WebDAV 服务器长时间试听与高对比度人工验收。
+- 验证：41 项 Last.fm 核心、15 项真实 WinUI 检查、84 项导航与 35 项 WebDAV 集成检查通过；七种语言资源键匹配、Debug x64 构建通过（0 错误，仍有项目既有警告）。未使用真实 Last.fm 账号联调，未做真实设备/WebDAV 服务器长时间试听与高对比度人工验收。
 
 ## 2026-10-23 修复首次播放等待解码库冷加载
 - `External/AudioPlayer/Decode/DecoderRuntime.cs`、`PlayerIpcService.cs`：启动时后台加载 FFmpeg 的四个原生库，与主界面初始化并行；解码依赖就绪后开放 IPC，避免已连接后的首次播放承担冷加载；提前监控客户端，启动中退出等待加载收尾且不发布就绪。

@@ -14,15 +14,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../ViewModel/Controls/DspSettingsViewModel.Playback.cs" />
+    <Compile Include="../../ViewModel/Controls/DspSettingsViewModel.Pcm.cs" />
     <Compile Include="../../Controls/WindowBackgroundImage.cs" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <None Include="../../View/SubView/Settings/GeneralSettingsControl.xaml"
           Link="Fixtures/GeneralSettingsControl.xaml" CopyToOutputDirectory="Always" />
     <None Include="../../View/SubView/Settings/DspSettingsControl.xaml" Link="Fixtures/DspSettingsControl.xaml" CopyToOutputDirectory="Always" />
+    <None Include="../../Strings/en/Resources.resw" Link="Fixtures/DspResources.resw" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>

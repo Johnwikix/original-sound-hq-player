@@ -26,6 +26,9 @@
     <Compile Include="../../Services/LibraryProjectionService.cs" />
     <Compile Include="../../Services/LibraryQueries.cs" />
     <Compile Include="../../State/LibraryState.cs" />
-    <Compile Include="../../State/BrowseState.cs" />
+    <Compile Include="../../State/BrowseState.cs;../../State/BrowsePagePosition.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../Model/AdditionalMusicMetadata.cs" />
   </ItemGroup>
 </Project>

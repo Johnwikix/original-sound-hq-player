@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.39292159428.1" />
+  <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.40992540404.1" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
@@ -85,6 +85,7 @@
 	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     <None Include="Libraries\WavPack\x64\wavpackdll.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="wavpackdll.dll" />
     <None Include="Libraries\WavPack\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\WavPack.txt" />
+    <None Update="Libraries\DevWinUI\LICENSE-StoreCarousel.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-StoreCarousel.txt" />
   </ItemGroup>
 
   <!--
@@ -121,7 +122,7 @@
     <PackageReference Include="LibNMeCab" Version="0.10.2" />
     <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />

@@ -7,6 +7,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Services/PlaybackStatsService.cs;../../Model/Stats/PlaybackHistory.cs;../../Model/Stats/StatsSnapshot.cs" />
     <Compile Include="../../Services/AddFolderService.cs" />
     <Compile Include="../../Services/ScanPipeline.cs" />
     <Compile Include="../../Services/InitialFileScan.cs" />
@@ -22,6 +23,7 @@
     <Compile Include="../../Services/FolderCommands.cs" />
     <Compile Include="../../Services/FolderAccessService.cs" />
     <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
+    <Compile Include="../../ViewModel/ProgressCenter.cs" />
     <Compile Include="../../Model/Folder.cs" />
     <Compile Include="../../Model/SubFolder.cs" />
     <Compile Include="../../Model/MusicLyrics.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyricsRecord.cs" />
@@ -32,5 +34,9 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../Model/AdditionalMusicMetadata.cs" />
+    <Compile Include="../../Services/MusicMetadataStorage.cs" />
   </ItemGroup>
 </Project>

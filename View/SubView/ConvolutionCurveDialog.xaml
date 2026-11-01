@@ -75,7 +75,7 @@
                     Maximum="20000"
                     Minimum="20"
                     SmallChange="1"
-                    SpinButtonPlacementMode="Compact"
+                    SpinButtonPlacementMode="Inline"
                     Value="{x:Bind ViewModel.Frequency, Mode=TwoWay}" />
                 <NumberBox
                     x:Name="GainInput"
@@ -85,7 +85,7 @@
                     Maximum="12"
                     Minimum="-12"
                     SmallChange="0.1"
-                    SpinButtonPlacementMode="Compact"
+                    SpinButtonPlacementMode="Inline"
                     Value="{x:Bind ViewModel.Gain, Mode=TwoWay}" />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">

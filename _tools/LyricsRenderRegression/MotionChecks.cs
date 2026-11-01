@@ -187,6 +187,40 @@ internal static class MotionChecks
             }
             Check(maxReopenDeviation < 4,
                 $"Restoring secondary rows must preserve the playing-line anchor (max deviation {maxReopenDeviation:0.##} px).");
+
+            // Regression: a paused Invalidate/Draw consumes a pending snapshot with
+            // UpdateCore(TimeSpan.Zero). That arms non-current blur transitions without
+            // advancing them. If playback enters one of those rows before the first
+            // resumed update, its zero-delay Start(0) must cancel the stale non-zero target.
+            PublishSettings(true, true);
+            position = 0;
+            UILyricsBus.Publish(Enumerable.Range(0, 8).Select(index => new LyricLine
+            {
+                StartMs = index * 1000,
+                EndMs = (index + 1) * 1000,
+                Words = [new LyricWord { Word = "Resume " + index, StartMs = index * 1000, DurationMs = 1000 }],
+                TransLateText = "Translation " + index,
+                PronunciationText = "Reading " + index,
+            }).ToList());
+            Draw();
+            lines = (List<RenderLyricsLine>)Lines.GetValue(coordinator)!;
+            var resumedFocus = lines[2];
+            Check(resumedFocus.BlurAmountTransition.Value == 0
+                && resumedFocus.BlurAmountTransition.IsTransitioning
+                && resumedFocus.BlurAmountTransition.TargetValue > 0,
+                "The paused draw must leave an armed, unadvanced non-current blur transition.");
+
+            position = 2000;
+            Update.Invoke(coordinator, [canvas, TimeSpan.FromSeconds(1.0 / 60)]);
+            for (int i = 0; i < 60; i++)
+                Update.Invoke(coordinator, [canvas, TimeSpan.FromSeconds(1.0 / 60)]);
+            Draw();
+            Check(resumedFocus.GetIsHighlighted(position),
+                "The resume regression must enter the row armed by the paused draw.");
+            Check(resumedFocus.BlurAmountTransition.Value == 0
+                && resumedFocus.BlurAmountTransition.TargetValue == 0
+                && !resumedFocus.BlurAmountTransition.IsTransitioning,
+                "Resuming into an armed row must cancel its stale blur target and keep the playing row sharp.");
         }
         finally
         {

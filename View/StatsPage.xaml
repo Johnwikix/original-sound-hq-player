@@ -24,7 +24,9 @@
         </Style>
     </Page.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid RowDefinitions="Auto,Auto,*">
         <Grid.ChildrenTransitions>
             <RepositionThemeTransition IsStaggeringEnabled="True" />
         </Grid.ChildrenTransitions>
@@ -613,5 +615,9 @@
                 <Grid Grid.Row="4" Height="32" />
             </Grid>
         </ScrollViewer>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

@@ -170,11 +170,13 @@ public partial class MusicDatabaseService
                 music.BitDepth = metadata.BitDepth;
                 music.BitRate = metadata.BitRate;
                 music.Duration = TimeSpan.FromMilliseconds(metadata.DurationMs);
+                if (metadata.AdditionalMetadata is { } tags) tags.ApplyTo(music);
                 music.UpdateTime = DateTime.Now;
                 // 仅更新元数据，不覆盖在 UI 上并发发生的收藏、统计和歌词偏移。
                 db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,SampleRate=?,Channel=?,BitDepth=?,BitRate=?,Duration=?,UpdateTime=? WHERE Id=?",
                     music.Title, music.Author, music.Album, music.TrackNumber, music.DiskNumber, music.Year, music.SampleRate, music.Channel,
                     music.BitDepth, music.BitRate, music.Duration, music.UpdateTime, music.Id);
+                if (metadata.AdditionalMetadata is { } additional) MusicMetadataStorage.Save(db, music.Id, additional);
                 result = music;
             }
             remote.MetadataState = status;

@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Shaders.Background;
 using ComputeSharp;
 using ComputeSharp.D2D1.WinUI;
@@ -41,6 +42,13 @@ namespace AnimatedWin2dControls.Renderer.Background
         }
 
         public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
+        {
+            using var scope = CanvasDrawingSessionScope.Borrow(ds);
+            Draw(control, scope.Context);
+        }
+
+        /// <summary>Draws through the scoped native session ABI.</summary>
+        public override void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
         {
             if (!Monitor.TryEnter(_gate, 0)) return;
             try

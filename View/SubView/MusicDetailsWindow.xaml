@@ -18,7 +18,7 @@
     </winex:WindowEx.SystemBackdrop>
 
     <Grid tool:ApplicationFont.IsEnabled="True">
-        <Grid Visibility="{x:Bind BoolToVisibility(IsLoading)}">
+        <Grid Visibility="{x:Bind BoolToVisibility(IsLoading), Mode=OneWay}">
             <ProgressRing
                 Width="100"
                 Height="100"
@@ -49,56 +49,118 @@
         <Grid
             Margin="0,44,0,0"
             RowDefinitions="*,Auto"
-            Visibility="{x:Bind BoolToNVisibility(IsLoading)}">
+            Visibility="{x:Bind BoolToNVisibility(IsLoading), Mode=OneWay}">
 
             <ScrollViewer
                 Grid.Row="0"
                 Padding="14,8,14,4"
                 VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="10">
+                <StackPanel Spacing="8">
                     <StackPanel Margin="12,0" Spacing="6">
-                        <StackPanel>
-                            <TextBlock
-                                x:Uid="TitleTextBlock"
-                                Margin="0,0,0,2"
-                                FontSize="12"
-                                Opacity="0.7" />
-                            <TextBox
-                                BorderThickness="0"
-                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                Text="{x:Bind MusicDetail.Title, Mode=TwoWay}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <StackPanel>
-                            <TextBlock
-                                x:Uid="AuthorTextBlock"
-                                Margin="0,0,0,2"
-                                FontSize="12"
-                                Opacity="0.7" />
-                            <TextBox
-                                BorderThickness="0"
-                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                Text="{x:Bind MusicDetail.Author, Mode=TwoWay}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <StackPanel>
-                            <TextBlock
-                                x:Uid="AlbumTextBlock"
-                                Margin="0,0,0,2"
-                                FontSize="12"
-                                Opacity="0.7" />
-                            <TextBox
-                                BorderThickness="0"
-                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                Text="{x:Bind MusicDetail.Album, Mode=TwoWay}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock
+                                    x:Uid="TitleTextBlock"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock
+                                    x:Uid="AuthorTextBlock"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Author, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock
+                                    x:Uid="AlbumTextBlock"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Album, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock
+                                    x:Uid="MusicTagAlbumArtist"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox
+                                    x:Uid="MusicTagAlbumArtistInput"
+                                    IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                                    Text="{x:Bind MetadataEditor.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock
+                                    x:Uid="MusicTagGenre"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox
+                                    x:Uid="MusicTagGenreInput"
+                                    IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                                    Text="{x:Bind MetadataEditor.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock
+                                    x:Uid="MusicTagComposer"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox
+                                    x:Uid="MusicTagComposerInput"
+                                    IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                                    Text="{x:Bind MetadataEditor.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock
+                                    x:Uid="MusicTagLyricist"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox
+                                    x:Uid="MusicTagLyricistInput"
+                                    IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                                    Text="{x:Bind MetadataEditor.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock
+                                    x:Uid="MusicTagConductor"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox
+                                    x:Uid="MusicTagConductorInput"
+                                    IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                                    Text="{x:Bind MetadataEditor.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="3">
+                                <TextBlock
+                                    x:Uid="MusicTagCatalogNumber"
+                                    Margin="0,0,0,2"
+                                    FontSize="12"
+                                    Opacity="0.7" />
+                                <TextBox
+                                    x:Uid="MusicTagCatalogNumberInput"
+                                    IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}"
+                                    Text="{x:Bind MetadataEditor.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
 
                     <Grid
                         Margin="12,0"
                         ColumnDefinitions="*,*,*,*"
-                        ColumnSpacing="14"
+                        ColumnSpacing="10"
                         RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
@@ -110,8 +172,8 @@
                                 IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind MusicDetail.Year, Mode=TwoWay}" />
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind MetadataEditor.Draft.Year, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="1">
                             <TextBlock
@@ -123,8 +185,8 @@
                                 IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind MusicDetail.DiskNumber, Mode=TwoWay}" />
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind MetadataEditor.Draft.DiskNumber, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2">
                             <TextBlock
@@ -136,8 +198,8 @@
                                 IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind MusicDetail.TrackNumber, Mode=TwoWay}" />
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind MetadataEditor.Draft.TrackNumber, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="3">
                             <TextBlock
@@ -150,7 +212,7 @@
                                 Maximum="10000"
                                 Minimum="-10000"
                                 SmallChange="100"
-                                SpinButtonPlacementMode="Compact"
+                                SpinButtonPlacementMode="Inline"
                                 Value="{x:Bind MusicDetail.LyricsOffsetMs, Mode=TwoWay}" />
                         </StackPanel>
                     </Grid>
@@ -158,7 +220,7 @@
                     <Grid
                         Margin="12,0"
                         ColumnDefinitions="*,*,*,*"
-                        ColumnSpacing="14"
+                        ColumnSpacing="10"
                         RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
@@ -195,9 +257,10 @@
                     </Grid>
 
                     <Grid
+                        x:Name="FileInfoSection"
                         Margin="12,0"
                         ColumnDefinitions="*,*"
-                        ColumnSpacing="14"
+                        ColumnSpacing="10"
                         RowDefinitions="Auto,Auto"
                         RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
@@ -206,11 +269,10 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="Wrap" />
+                            <TextBox
+                                x:Name="LastFolderInput"
+                                IsReadOnly="True"
+                                Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="1">
                             <TextBlock
@@ -218,11 +280,10 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind MusicDetail.Path, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="Wrap" />
+                            <TextBox
+                                x:Name="PathInput"
+                                IsReadOnly="True"
+                                Text="{x:Bind MusicDetail.Path, Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="0">
                             <TextBlock
@@ -230,10 +291,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <TextBox IsReadOnly="True" Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="1">
                             <TextBlock
@@ -241,10 +299,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBlock
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <TextBox IsReadOnly="True" Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}" />
                         </StackPanel>
                     </Grid>
 
@@ -402,7 +457,7 @@
                                         FontSize="80"
                                         Glyph="&#xE93C;"
                                         Opacity="0.3" />
-                                    <Image Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" Stretch="Uniform" />
+                                    <Image Source="{x:Bind AlbumCoverBitmap, Mode=OneWay}" Stretch="Uniform" />
                                 </Grid>
                             </Border>
                         </StackPanel>
@@ -451,9 +506,7 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="8">
-                    <Button
-                        x:Uid="SaveButton"
-                        IsEnabled="{x:Bind LyricsEditor.CanSaveFile, Mode=OneWay}">
+                    <Button x:Uid="SaveButton" IsEnabled="{x:Bind LyricsEditor.CanSaveFile, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout x:Name="ConfirmFlyout">
                                 <StackPanel>

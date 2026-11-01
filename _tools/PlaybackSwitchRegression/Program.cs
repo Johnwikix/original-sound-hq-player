@@ -30,10 +30,28 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--test-ir-memory")
+        {
+            RunIrMemoryTests();
+            Console.WriteLine($"IR memory: {_tests - _failures}/{_tests} passed");
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--startup-server") return StartupServer(args[1]);
         if (args.Length == 1 && args[0] == "--test-startup")
         {
             RunStartupTests();
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length == 2 && args[0] == "--test-published-pcm-player")
+        {
+            Run("NativeAOT player: DSP v7 handshake, settings, state and orderly shutdown", () => CheckPublishedPcmPlayer(args[1]));
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length == 1 && args[0] == "--test-pcm-dsp-upgrade")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunPcmDspUpgradeTests();
+            Console.WriteLine($"PCM DSP upgrade: {_tests - _failures}/{_tests} passed");
             return _failures == 0 ? 0 : 1;
         }
         if (args.Length == 1 && args[0] == "--measure-playback-memory")
@@ -142,6 +160,7 @@ internal static unsafe partial class Program
         RunBufferPolicyTests();
         RunAsioNotificationTests();
         RunEqualizerQTests();
+        RunPcmDspUpgradeTests();
         RunDspTests();
         RunPlaybackEffectsTests();
         RunConvolutionTests();

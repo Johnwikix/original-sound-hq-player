@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Impressionist;
 using AnimatedWin2dControls.Shaders.Background;
 using ComputeSharp.D2D1;
@@ -141,6 +142,13 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
+            using var scope = CanvasDrawingSessionScope.Borrow(ds);
+            Draw(control, scope.Context);
+        }
+
+        /// <summary>Draws through the scoped native session ABI.</summary>
+        public override void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
+        {
             if (!Monitor.TryEnter(_gate, 0)) return;
             try
             {
@@ -208,9 +216,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                     // 阻止异常逃逸出 Draw 被游戏循环转成 stowed exception（0xc000027b）闪退。
                     try
                     {
-                        using (var solveSession = _solveTarget!.CreateDrawingSession())
+                        using (var solveSession = CanvasDrawingSessionScope.Create(_solveTarget!))
                         {
-                            solveSession.DrawImage(_solveEffect);
+                            solveSession.Context.DrawImage(_solveEffect);
                         }
                     }
                     catch (Exception ex) { LogPassFailure("pass0-solve", control, ds, ex); return; }
@@ -227,9 +235,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // EndDraw 边界②（rotation 会话 Dispose）。
                 try
                 {
-                    using (var rotationSession = _rotationTarget!.CreateDrawingSession())
+                    using (var rotationSession = CanvasDrawingSessionScope.Create(_rotationTarget!))
                     {
-                        rotationSession.DrawImage(_rotationEffect);
+                        rotationSession.Context.DrawImage(_rotationEffect);
                     }
                 }
                 catch (Exception ex) { LogPassFailure("pass1-rotation", control, ds, ex); return; }
@@ -238,12 +246,12 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // EndDraw 边界③（blur 会话 Dispose）。
                 try
                 {
-                    using (var blurSession = _blurTarget!.CreateDrawingSession())
+                    using (var blurSession = CanvasDrawingSessionScope.Create(_blurTarget!))
                     {
                         // Soft blur contains partial alpha. Source-over on a reused
                         // target would accumulate older frames along the border.
-                        blurSession.Clear(Microsoft.UI.Colors.Transparent);
-                        blurSession.DrawImage(_blurEffect!);
+                        blurSession.Context.Clear(Microsoft.UI.Colors.Transparent);
+                        blurSession.Context.DrawImage(_blurEffect!);
                     }
                 }
                 catch (Exception ex) { LogPassFailure("pass2-blur", control, ds, ex); return; }
@@ -253,10 +261,10 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // EndDraw 边界④（upscale 会话 Dispose）。
                 try
                 {
-                    using (var upscaleSession = _upscaledTarget!.CreateDrawingSession())
+                    using (var upscaleSession = CanvasDrawingSessionScope.Create(_upscaledTarget!))
                     {
-                        upscaleSession.Clear(Microsoft.UI.Colors.Transparent);
-                        upscaleSession.DrawImage(_scaleEffect!);
+                        upscaleSession.Context.Clear(Microsoft.UI.Colors.Transparent);
+                        upscaleSession.Context.DrawImage(_scaleEffect!);
                     }
                 }
                 catch (Exception ex) { LogPassFailure("pass2.5-upscale", control, ds, ex); return; }
@@ -314,7 +322,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         /// Draw，否则会被游戏循环转成 stowed exception（0xc000027b）直接闪退。
         /// 错误详情仅在 Debug 构建写入日志（Release 零日志开销）。
         /// </summary>
-        private void LogPassFailure(string tag, ICanvasAnimatedControl control, CanvasDrawingSession ds, Exception ex)
+        private void LogPassFailure(string tag, ICanvasAnimatedControl control, CanvasDrawContext ds, Exception ex)
         {
             _targetDpi = 0f;
             #if DEBUG
@@ -324,7 +332,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         }
 
         /// <summary>一帧内全部 D2D 资源的 DPI/尺寸/格式与效果图绑定关系快照。</summary>
-        private string DumpGraphState(ICanvasAnimatedControl control, CanvasDrawingSession ds)
+        private string DumpGraphState(ICanvasAnimatedControl control, CanvasDrawContext ds)
         {
             try
             {

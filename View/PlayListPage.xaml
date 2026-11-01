@@ -15,6 +15,8 @@
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
     <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid>
         <Grid
             x:Name="EmptyGrid"
             Visibility="{x:Bind tool:BindUtils.BoolToVisibilityReConverter(ViewModel.HasPlayLists), Mode=OneWay}">
@@ -308,5 +310,9 @@
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
                     Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
             PlaySourceTag="PlayListSongsView" />
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

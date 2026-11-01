@@ -138,6 +138,9 @@ internal static class RegressionSuite
             var scan = vm.RescanFolderWithLoadingAsync(oldFolder.Id);
             await first.Task.WaitAsync(TimeSpan.FromSeconds(3));
             Check(vm.IsScanning, "busy state missing");
+            Check(appVm.Progress.IsActive && !appVm.Progress.IsIndeterminate && appVm.Progress.Percent >= 0
+                && appVm.Progress.DisplayText == ToolUtils.GetString("ProgressRescanning"),
+                "rescan did not register a determinate title-bar progress entry");
             Check((await database.GetMusicListAsync()).Count == 2, "publication preceded commit");
             Check(appVm.SongsSource.Count == 2 && vm.FolderList.Single().SongCount == 2, "progressive VM count missing");
             Check(!vm.AddFolderCommand.CanExecute(null), "add command enabled");
@@ -151,6 +154,7 @@ internal static class RegressionSuite
             ToolUtils.SlowFile.SetResult();
             await scan;
             Check(!vm.IsScanning && appVm.SongsSource.Count == 3, "final reconciliation/release failed");
+            Check(!appVm.Progress.IsActive, "rescan progress entry survived completion");
             Check(FolderCommands.RemoveFolderCommand.CanExecute(oldFolder), "command did not recover");
 
             var picker = new TaskCompletionSource<PickFolderResult?>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -486,7 +490,7 @@ internal static class RegressionSuite
 
     private static void ProbeAudio(string root)
     {
-        string nativeRoot = Path.GetFullPath("bin/x64/Debug/net11.0-windows10.0.26100.0/win-x64");
+        string nativeRoot = Path.GetFullPath("Libraries/FFmpeg/x64");
         Check(File.Exists(Path.Combine(nativeRoot, "avformat-63.dll")), "build native FFmpeg binaries first");
         FFmpeg.AutoGen.ffmpeg.RootPath = nativeRoot;
         string wav = Path.Combine(root, "音频.wav");

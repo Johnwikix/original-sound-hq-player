@@ -226,8 +226,9 @@ namespace WinUIMusicPlayer.Services
         /// 避免对同一范围做多遍重复扫描。
         /// </summary>
         public async Task<StatsSnapshot> GetStatsSnapshotAsync(
-            DateTime startUtc, DateTime endUtc, int songLimit = 10, int artistLimit = 5, int albumLimit = 5)
+            DateTime startUtc, DateTime endUtc, int songLimit = 10, int artistLimit = 5, int albumLimit = 5, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             long startTicks = startUtc.ToUniversalTime().Ticks;
             long endTicks = endUtc.ToUniversalTime().Ticks;
 
@@ -242,6 +243,7 @@ namespace WinUIMusicPlayer.Services
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
                 "GROUP BY Day, Hour",
                 startTicks, endTicks);
+            cancellationToken.ThrowIfCancellationRequested();
 
             int tracks = 0;
             double ms = 0;
@@ -268,9 +270,9 @@ namespace WinUIMusicPlayer.Services
             snapshot.ActiveDaysCount = snapshot.DailyCounts.Count;
             snapshot.TotalListeningSeconds = ms / 1000.0;
 
-            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit);
-            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit);
-            snapshot.TopAlbums = await BuildTopAlbumsAsync(startTicks, endTicks, albumLimit);
+            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit, cancellationToken);
+            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit, cancellationToken);
+            snapshot.TopAlbums = await BuildTopAlbumsAsync(startTicks, endTicks, albumLimit, cancellationToken);
 
             return snapshot;
         }
@@ -278,8 +280,9 @@ namespace WinUIMusicPlayer.Services
         /// <summary>
         /// 按本地日期聚合会话数（热度图用，可独立于统计时间范围查询）。
         /// </summary>
-        public async Task<Dictionary<DateTime, int>> GetDailyCountsAsync(DateTime startUtc, DateTime endUtc)
+        public async Task<Dictionary<DateTime, int>> GetDailyCountsAsync(DateTime startUtc, DateTime endUtc, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             long startTicks = startUtc.ToUniversalTime().Ticks;
             long endTicks = endUtc.ToUniversalTime().Ticks;
 
@@ -288,6 +291,7 @@ namespace WinUIMusicPlayer.Services
                 "SELECT strftime('%Y-%m-%d', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS Day, " +
                 "COUNT(*) AS Cnt FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? GROUP BY Day",
                 startTicks, endTicks);
+            cancellationToken.ThrowIfCancellationRequested();
             for (int i = 0; i < days.Count; i++)
             {
                 var d = days[i];
@@ -300,14 +304,16 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private async Task<List<SongPlayStat>> BuildTopSongsAsync(long startTicks, long endTicks, int topLimit)
+        private async Task<List<SongPlayStat>> BuildTopSongsAsync(long startTicks, long endTicks, int topLimit, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var rows = await Db.QueryAsync<SqlSongRow>(
                 "SELECT COALESCE(Title, '') AS Title, COALESCE(Author, '') AS Artist, COALESCE(MAX(Album), '') AS Album, " +
                 "MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
                 "GROUP BY Title, Artist ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
                 startTicks, endTicks, topLimit);
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = new List<SongPlayStat>(rows.Count);
             for (int i = 0; i < rows.Count; i++)
@@ -326,14 +332,16 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private async Task<List<ArtistPlayStat>> BuildTopArtistsAsync(long startTicks, long endTicks, int topLimit)
+        private async Task<List<ArtistPlayStat>> BuildTopArtistsAsync(long startTicks, long endTicks, int topLimit, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var rows = await Db.QueryAsync<SqlArtistRow>(
                 "SELECT COALESCE(Author, '') AS Artist, MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, " +
                 "SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
                 "GROUP BY Artist ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
                 startTicks, endTicks, topLimit);
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = new List<ArtistPlayStat>(rows.Count);
             for (int i = 0; i < rows.Count; i++)
@@ -350,14 +358,16 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private async Task<List<AlbumPlayStat>> BuildTopAlbumsAsync(long startTicks, long endTicks, int topLimit)
+        private async Task<List<AlbumPlayStat>> BuildTopAlbumsAsync(long startTicks, long endTicks, int topLimit, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var rows = await Db.QueryAsync<SqlAlbumRow>(
                 "SELECT COALESCE(Album, '') AS Album, MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, " +
                 "SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
                 "GROUP BY Album ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
                 startTicks, endTicks, topLimit);
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = new List<AlbumPlayStat>(rows.Count);
             for (int i = 0; i < rows.Count; i++)

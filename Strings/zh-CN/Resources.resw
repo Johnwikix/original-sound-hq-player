@@ -1750,7 +1750,7 @@
     <value>正在等待播放端状态，音效控件暂不可用。</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>声道与耳机效果仅支持双声道；EQ 和响度分析支持单声道与双声道。</value>
+    <value>当前布局旁路双声道效果；多声道卷积和响度分析仍按支持情况生效。</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>正在后台分析当前歌曲；暂以保守衰减播放，完成后平滑调整并缓存。</value>
@@ -1782,7 +1782,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>卷积校正</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>启用卷积校正</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>启用卷积校正</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>导入耳机或房间校正的 WAV 脉冲响应（IR）。支持单声道或双声道，最多 8192 个采样点；会按输出采样率重采样，重采样后也须在此限制内。DSD 位流输出时自动旁路。</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>导入 1–8 声道 WAV IR；单声道用于所有输出，其余必须与输出声道数一致。含重采样后最多 2 秒、每声道 262144 点、总输出 1048576 点。DSD 位流旁路。</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>脉冲响应文件</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>导入 WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>移除</value></data>
@@ -1793,10 +1793,10 @@
   <data name="DspIrBypass" xml:space="preserve"><value>卷积校正已旁路；已导入的文件和设置会保留。</value></data>
   <data name="DspIrLoading" xml:space="preserve"><value>正在加载并准备脉冲响应…</value></data>
   <data name="DspIrActive" xml:space="preserve"><value>卷积校正已生效。</value></data>
-  <data name="DspIrFailed" xml:space="preserve"><value>IR 无法用于当前输出：文件可能丢失、无效，或重采样后超过 8192 点。请重新导入。</value></data>
-  <data name="DspIrUnsupported" xml:space="preserve"><value>卷积校正仅支持单声道和双声道 PCM 输出。</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR 无法用于当前输出：文件丢失、无效、声道不匹配，或超过时长／抽头预算。请重新导入。</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>卷积支持 1–8 声道 PCM；IR 必须为单声道或与输出声道数一致。</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>卷积校正未生效。导入 IR 并启用校正后，将在 PCM 播放时应用。</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>导入失败。请选择有效的单声道或双声道 WAV（16/24/32 位 PCM 或 32/64 位浮点），最多 8192 点、4 MiB；原有配置已保留。</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>请选择符合声道、时长和抽头预算的有效 WAV IR。</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>合成频响</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ 与卷积合成频响图，横轴频率，纵轴分贝</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>左声道</value></data>
@@ -1854,16 +1854,16 @@
     <value>删除预设“{0}”？当前编辑的曲线会保留。</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>实验性 5.1 输出</value>
+    <value>5.1 输出</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>兼容的 5.1 PCM 曲目自动使用 WASAPI 独占，普通曲目保留原输出设置。ASIO 保持原模式，前六路须为左、右、中置、低音、左环绕、右环绕；失败回退立体声。不含 Atmos 对象渲染。</value>
+    <value>兼容的5.1 PCM曲目自动切换至WASAPI独占；其他曲目沿用原设置。ASIO模式不变，前六路为L、R、C、LFE、Ls、Rs。失败回退立体声；不渲染Atmos对象。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>优先 Atmos HDMI 直通（实验性）</value>
+    <value>优先 Atmos HDMI 直通</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>兼容曲目自动使用 WASAPI 独占，普通曲目保持原输出设置。支持 48 kHz 六声道 E-AC-3 / Atmos，不支持 TrueHD。直通时绕过应用音量和音效，请在功放调节音量。</value>
+    <value>兼容曲目自动切至WASAPI独占，其他曲目沿用原输出。支持48 kHz六声道E-AC-3 / Atmos，不支持TrueHD。直通绕过应用音量与音效，音量由功放调节。</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>实验性 E-AC-3 / Atmos HDMI 位流模式：已绕过应用音量和所有音效，请在功放上调节音量。回到 PCM 后恢复原设置。</value>
@@ -1935,6 +1935,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>部分功能需要完整许可。购买后可解锁，已保存的设置会保留。</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>卷积校正需要完整许可，购买后可解锁。</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>许可状态</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>已拥有完整版，全部功能可用。</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>无法通过 Microsoft Store 确认许可，完整版功能已锁定。</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>使用前请阅读</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>同意并继续</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>不同意并退出</value></data>
@@ -2128,6 +2131,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>无法读取远程资源，请检查连接后重试。</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>文件不存在或已被移动。</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>账号、密码或访问权限无效，请编辑来源重新连接。</value>
   </data>
@@ -2318,7 +2324,7 @@ SHA-256：{5}
     <value>压限器</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>压低响亮段落，通过补偿增益抬升安静段落。声道联动，输出采样峰值限制为 −1 dBFS。</value>
+    <value>压低响亮段落，通过补偿增益抬升安静段落。声道联动，采样峰值使用下方共用上限。</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>压缩阈值（dBFS）</value>
@@ -2507,4 +2513,145 @@ SHA-256：{5}
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>已加入上报队列 {0} 首；缺少歌曲或歌手信息 {1} 首。</value></data>
   <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>取消导入</value></data>
   <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>已取消继续导入；已入队的收藏会继续上报。</value></data>
+  <data name="DspPcmResample" xml:space="preserve"><value>PCM 重采样</value></data>
+  <data name="DspPcmResampleHelp" xml:space="preserve"><value>更改时从当前进度重新缓冲；DSD 位流旁路，设备不支持时沿用现有回退。</value></data>
+  <data name="DspPcmSourceRate" xml:space="preserve"><value>保持源采样率</value></data>
+  <data name="DspPcmFixedRate" xml:space="preserve"><value>指定采样率</value></data>
+  <data name="DspPcmIntegerRate" xml:space="preserve"><value>源采样率整数倍</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>目标采样率</value></data>
+  <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak 保护限幅</value></data>
+  <data name="DspTruePeakHelp" xml:space="preserve"><value>四倍插值检测与 5 ms 前瞻；作用于最终 PCM，不能约束系统混音或设备内部处理。</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>共用峰值上限（dB）</value></data>
+  <data name="DspPcmDither" xml:space="preserve"><value>整数输出 TPDF 抖动</value></data>
+  <data name="DspPcmDitherHelp" xml:space="preserve"><value>默认关闭。用于处理后降低位深；开启会改变样本，原始位透明播放应关闭。</value></data>
+  <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed 截止频率（Hz）</value></data>
+  <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed 强度（%）</value></data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>专辑艺术家</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>流派</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Text" xml:space="preserve">
+    <value>专辑艺术家</value>
+  </data>
+  <data name="MusicTagAlbumArtistInput.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagGenre.Text" xml:space="preserve">
+    <value>流派</value>
+  </data>
+  <data name="MusicTagGenreInput.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagComposer.Text" xml:space="preserve">
+    <value>作曲者</value>
+  </data>
+  <data name="MusicTagComposerInput.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagLyricist.Text" xml:space="preserve">
+    <value>作词者</value>
+  </data>
+  <data name="MusicTagLyricistInput.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagConductor.Text" xml:space="preserve">
+    <value>指挥</value>
+  </data>
+  <data name="MusicTagConductorInput.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Text" xml:space="preserve">
+    <value>目录编号</value>
+  </data>
+  <data name="MusicTagCatalogNumberInput.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍采样率上限</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>三项共用此上限：响度标准化限制源峰值估计，压限器限制音量处理前的采样峰值，True Peak 保护最终 PCM 的真峰值估计。</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>自定义</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>首页</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>首页</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>首页</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>换一批</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>从你的音乐中精选</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>开始播放</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>播放精选主题</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>播放这首歌曲</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>切换收藏</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>加入当前播放队列</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>上一个主题</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>下一个主题</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>最近常听</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>换个流派听听</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>正在准备你的音乐</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>从你的音乐开始</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>添加音乐文件夹，探索曲库中的旋律。随着收听和收藏，首页会逐渐了解你的偏好。</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>添加音乐文件夹</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音乐来源暂时不可用。请检查连接，或在音乐来源页面管理你的音乐。</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>重试</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>探索曲库</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>为你推荐</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>最近常听</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>换个流派听听</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>熟悉的旋律与新的发现，都在你的音乐库里。</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>重温最近认真听过的音乐。</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>让不同的流派，为今天带来一点变化。</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>因为你常听 {0}</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>来自你喜欢的流派：{0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>来自你的收藏</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>最近常听的旋律</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>发现曲库中的另一面</value></data>
+  <data name="HomeError" xml:space="preserve"><value>暂时无法更新推荐，请重试。</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>暂时无法播放这首音乐，请重试。</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>切换到另一个主题</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>切换收藏</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>播放这首歌曲</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>上一个主题</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>下一个主题</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>加入当前播放队列</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>上一组歌曲</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>上一组歌曲</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>下一组歌曲</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>下一组歌曲</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>暂无播放列表</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>添加到播放列表失败，请重试。</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>歌曲信息</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>音频属性</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>声道</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>格式</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>打开歌曲属性</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>打开文件位置</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>打开文件位置</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>在线匹配歌词</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>在线匹配歌词</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>在线匹配封面</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>在线匹配封面</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>保存到本地</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>保存到本地</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>编辑封面</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>编辑封面</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>文件信息</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>创作与发行</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>封面选项</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>封面选项</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>歌词操作</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>歌词操作</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>歌词</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>恢复旧 LRC</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>恢复旧 KRC</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>打开文件位置</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>在线匹配封面</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>编辑封面</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>保存到本地</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>从文件中重新获取元信息</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>在线匹配歌词</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>定位当前播放歌曲</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>定位当前播放歌曲</value></data>
 </root>

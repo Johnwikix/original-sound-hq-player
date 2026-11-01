@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
@@ -37,6 +38,7 @@ namespace WinUIMusicPlayer.ViewModel
         private bool _active;
         private long _requestedVersion;
         private Task _loadTask = Task.CompletedTask;
+        private CancellationTokenSource? _loadCancellation;
 
         public StatsViewModel(
             AppViewModel appViewModel,
@@ -117,6 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (!_active) return;
             _active = false;
             _requestedVersion++;
+            _loadCancellation?.Cancel();
             _statsService.StatsUpdated -= OnStatsUpdated;
             _debounceTimer?.Stop();
         }
@@ -154,6 +157,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void DebouncedLoad()
         {
             _requestedVersion++;
+            _loadCancellation?.Cancel();
             if (!_active) return;
             if (_debounceTimer is null)
             {
@@ -217,9 +221,11 @@ namespace WinUIMusicPlayer.ViewModel
                     DateTime today = DateTime.Now.Date;
                     var heatmapStart = today.AddDays(-364);
                     var heatmapEnd = today.AddDays(1).AddTicks(-1);
+                    using var request = new CancellationTokenSource();
+                    _loadCancellation = request;
                     try
                     {
-                        var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc);
+                        var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc, cancellationToken: request.Token);
                         if (!_active) return;
                         if (version != _requestedVersion) continue;
                         Dictionary<DateTime, int> dailyCounts;
@@ -241,7 +247,7 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                         else
                         {
-                            dailyCounts = await _statsService.GetDailyCountsAsync(heatmapStart, heatmapEnd);
+                            dailyCounts = await _statsService.GetDailyCountsAsync(heatmapStart, heatmapEnd, request.Token);
                         }
                         if (!_active) return;
                         if (version != _requestedVersion) continue;
@@ -256,11 +262,16 @@ namespace WinUIMusicPlayer.ViewModel
                         UpdateHourlySeries(snapshot.HourlyCounts);
                         ApplyHeatmap(dailyCounts, heatmapStart, heatmapEnd);
                     }
+                    catch (OperationCanceledException) when (request.IsCancellationRequested)
+                    {
+                        if (_active) continue;
+                    }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "加载播放统计失败");
                         if (_active && version != _requestedVersion) continue;
                     }
+                    finally { if (ReferenceEquals(_loadCancellation, request)) _loadCancellation = null; }
                     return;
                 }
             }

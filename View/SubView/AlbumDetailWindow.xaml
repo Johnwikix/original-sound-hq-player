@@ -52,7 +52,7 @@
                         VerticalAlignment="Top"
                         CornerRadius="10">
                         <Grid>
-                            <Image Canvas.ZIndex="1" Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" />
+                            <Image Canvas.ZIndex="1" Source="{x:Bind AlbumCoverBitmap, Mode=OneWay}" />
                             <Grid
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"

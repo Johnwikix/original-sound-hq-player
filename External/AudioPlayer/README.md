@@ -71,9 +71,9 @@ AudioPlayer.exe（NativeAOT 单文件，win-x64）
 退出停止接收计划并等待收尾，若原生打开超时，所有权仍留在任务内直到其返回。
 音频回调只衔接音源，不打开文件或释放会话；PCM 环容量与 float64 格式保持不变。
 
-**全程 float64**：解码（swr `AV_SAMPLE_FMT_DBL`）→ `PcmRing`（double 交织）→
+**普通 PCM 主链 float64**：解码（swr `AV_SAMPLE_FMT_DBL`）→ `PcmRing`（double 交织）→
 EQ/音量/淡入淡出（double 域）→ 出口按设备格式转换（float32/16/24/32 整型、
-DoP、DSD 位流）。中间处理噪声低于 -140dBFS，24bit 源全链路位透明。
+DoP、DSD 位流）。整数出口使用有符号 2^(n−1) 量化；位透明以关闭 DSP/变率/抖动、单位增益且输出精度兼容为前提，通过真实解码到输出字节验证。频带增强包含自身的中间数值格式，不属于原始样本直通路径。
 
 - **PCM**：FFmpeg 解码，采样精确进度（anchor + 环已播帧）
 - **Dolby Digital / Digital Plus 文件**：内置 AC-3/E-AC-3 解码，支持 M4A/MP4 内的
@@ -250,3 +250,8 @@ await client.StopAsync(id, cancellationToken);
 验证：`dotnet run --project _tools/StreamingRegression -c Release -- <AudioPlayer.exe> --play`。播放器 EXE 旁需放置四个 FFmpeg DLL；测试使用独立 IPC 名称、本地 HTTP/Range/TLS 服务器，`--play` 会向实际默认设备播放低音量测试音。TLS 测试需要 Windows 临时私钥容器访问权限。
 
 无缝播放与倍速/压限设置见 [DSP.md](DSP.md)。当前握手版本为 v3，管道名称保留 `_v2` 后缀；主程序与播放端需同步部署。
+
+
+## 2026-10-26 PCM DSP 更新
+
+修正整数 PCM 量化；增加普通 PCM 采样率策略、独立 True Peak 前瞻保护与可选 TPDF，补齐长 IR/1–8 声道卷积和逐曲响度，扩展 Crossfeed 强度及截止频率。默认保持原播放行为；DSD 位流继续旁路，十段 EQ 保持现状。DSP 设置 v7、Named Pipe 协议 v4，主程序与 Player/AudioPlayer.exe 必须同步更新。详细限制、延迟和回归命令见 DSP.md。

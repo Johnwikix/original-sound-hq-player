@@ -83,8 +83,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double currentX = horizontalPadding;
             double currentY = 0;
 
-            foreach (var line in lines)
+            // 每帧重排使用索引，避免 IList 枚举器装箱。调用方的 renderGate 持有列表所有权。
+            for (int i = 0; i < lines.Count; i++)
             {
+                var line = lines[i];
                 if (line == null) continue;
                 double actualWidth = 0;
                 line.TopLeftPosition = new Vector2((float)currentX, (float)currentY);

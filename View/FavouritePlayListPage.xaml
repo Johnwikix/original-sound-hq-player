@@ -36,7 +36,7 @@
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
-                    <controls:MusicListRowControl Music="{x:Bind Mode=OneWay}" ArtistInvoked="MusicRow_ArtistInvoked" AlbumInvoked="MusicRow_AlbumInvoked" />
+                    <controls:MusicListRowControl Music="{x:Bind Mode=OneWay}" SongInvoked="MusicRow_SongInvoked" ArtistInvoked="MusicRow_ArtistInvoked" AlbumInvoked="MusicRow_AlbumInvoked" />
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
@@ -77,5 +77,15 @@
                     TextWrapping="Wrap" />
             </StackPanel>
         </Grid>
+        <Border Style="{StaticResource FloatingLocateSurfaceStyle}">
+            <Button Margin="0"
+                x:Name="LocateCurrentTrackButton"
+                x:Uid="LocateCurrentTrackButton"
+                Style="{StaticResource FloatingLocateButtonStyle}"
+                Click="LocateCurrentTrackButton_Click"
+                IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.FavoriteSongs.Count), Mode=OneWay}">
+                <FontIcon FontSize="16" Glyph="&#xE81D;" />
+            </Button>
+        </Border>
     </Grid>
 </Page>

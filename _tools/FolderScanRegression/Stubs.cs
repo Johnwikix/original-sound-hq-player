@@ -54,6 +54,13 @@ namespace WinUIMusicPlayer.Model
         public string Title { get; set; } = "";
         public string Author { get; set; } = "";
         public string Album { get; set; } = "";
+        public string AlbumArtist { get; set; } = "";
+        public string Genre { get; set; } = "";
+        public string Composer { get; set; } = "";
+        public string Lyricist { get; set; } = "";
+        public string Conductor { get; set; } = "";
+        public string CatalogNumber { get; set; } = "";
+        public bool AdditionalMetadataRead { get; set; }
         public string FolderPath { get; set; } = "";
         public string LastLevelFolderPath { get; set; } = "";
         public string Extension { get; set; } = "";
@@ -83,9 +90,11 @@ namespace WinUIMusicPlayer.Utils
     {
         public static Action<Model.Music, string> WriteMetadata = (music, path) => File.WriteAllText(path, music.Title);
         public static bool LastPreserveLyrics;
+        public static Model.Music? LastWrittenMusic;
         public static void SaveMetaData(Model.Music music, string path, byte[]? cover, string? lyrics, bool preserveLyrics = false)
         {
             LastPreserveLyrics = preserveLyrics;
+            LastWrittenMusic = music;
             WriteMetadata(music, path);
         }
         public static string GetString(string key) => key;

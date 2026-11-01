@@ -29,9 +29,13 @@
                             x:Name="SearchAutoSuggestBox"
                             x:Uid="SearchMusic"
                             QueryIcon="Find"
+                            QuerySubmitted="Search_QuerySubmitted"
                             Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay}" />
                     </NavigationView.AutoSuggestBox>
                     <NavigationView.MenuItems>
+                        <NavigationViewItem Icon="Home" Tag="Home">
+                            <NavigationViewItem.Content><TextBlock x:Uid="HomeNav" /></NavigationViewItem.Content>
+                        </NavigationViewItem>
                         <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
                             <NavigationViewItem.Content>
                                 <TextBlock x:Uid="MusicSources" />
@@ -59,7 +63,7 @@
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
                     </NavigationView.MenuItems>
-                    <Frame x:Name="MainFrame" Background="Transparent" />
+                    <Frame CacheSize="0" x:Name="MainFrame" Background="Transparent" />
                 </NavigationView>
             </Grid>
             <Grid
@@ -503,29 +507,41 @@
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTip"
+                            Closed="CurrentPlayListTeachingTip_Closed"
                             IsLightDismissEnabled="True"
                             Target="{x:Bind CurrentPlayListButton}">
                             <TeachingTip.Content>
-                                <Grid Width="290">
+                                <Grid Width="290" RowDefinitions="Auto,*">
                                     <ListView
                                         x:Name="CurrentPlayListView"
+                                        Grid.Row="1"
                                         Width="290"
                                         MaxHeight="400"
-                                        Margin="0,24,0,0"
+                                        Margin="0,4,0,0"
                                         DoubleTapped="CurrentPlayListView_DoubleTapped"
                                         ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
                                         <ListView.ItemTemplate>
                                             <DataTemplate x:DataType="model:Music">
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    Margin="5"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind Title, Mode=OneWay}"
-                                                    TextTrimming="CharacterEllipsis" />
+                                                <Button Margin="5" Padding="0" MinHeight="0" MinWidth="0" HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                                                    Tag="{x:Bind}" Click="QueueTitle_Click"
+                                                    AutomationProperties.Name="{x:Bind Title, Mode=OneWay}">
+                                                    <TextBlock Text="{x:Bind Title, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                                </Button>
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
 
+                                    <Border Style="{StaticResource FloatingLocateSurfaceStyle}" Grid.Row="1">
+                                        <Button Margin="0"
+                                            x:Name="LocateCurrentTrackButton"
+                                            x:Uid="LocateCurrentTrackButton"
+                                            Style="{StaticResource FloatingLocateButtonStyle}"
+                                            Click="LocateCurrentTrackButton_Click"
+                                            IsEnabled="{x:Bind ViewModel.CanLocateCurrentTrack(ViewModel.AppViewModel.SelectedPlaybackMusic, ViewModel.AppViewModel.CurrentPlayingList.Count, ViewModel.State.Queue.Version), Mode=OneWay}">
+                                            <FontIcon FontSize="16" Glyph="&#xE81D;" />
+                                        </Button>
+                                    </Border>
                                     <Button
                                         x:Name="CloseButton"
                                         Width="24"
@@ -563,7 +579,7 @@
                 </Grid>
             </Grid>
         </Grid>
-        <Frame x:Name="PlayingFrame" Visibility="Collapsed" />
+        <Frame CacheSize="0" x:Name="PlayingFrame" Visibility="Collapsed" />
         <Grid
             x:Name="AppTitleBar"
             Height="40"

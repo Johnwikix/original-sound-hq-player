@@ -14,6 +14,20 @@ public sealed class PendingMetadataWrite
     public string Album { get; set; } = "";
     /// <summary>获取或设置艺术家。</summary>
     public string Author { get; set; } = "";
+    /// <summary>获取或设置专辑艺术家的写入快照。</summary>
+    public string AlbumArtist { get; set; } = "";
+    /// <summary>获取或设置流派的写入快照。</summary>
+    public string Genre { get; set; } = "";
+    /// <summary>获取或设置作曲者的写入快照。</summary>
+    public string Composer { get; set; } = "";
+    /// <summary>获取或设置作词者的写入快照。</summary>
+    public string Lyricist { get; set; } = "";
+    /// <summary>获取或设置指挥的写入快照。</summary>
+    public string Conductor { get; set; } = "";
+    /// <summary>获取或设置目录编号的写入快照。</summary>
+    public string CatalogNumber { get; set; } = "";
+    /// <summary>获取或设置标签快照版本；0 表示旧任务没有采集可选标签，回写时须保留原文件值。</summary>
+    public int MetadataVersion { get; set; }
     /// <summary>获取或设置曲序。</summary>
     public int TrackNumber { get; set; }
     /// <summary>获取或设置碟序。</summary>

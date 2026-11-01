@@ -10,10 +10,10 @@ using Windows.Services.Store;
 
 namespace WinUIMusicPlayer.Services;
 
-/// <summary>许可状态；受限表示 Store 返回非活跃许可，不限定为试用到期。</summary>
+/// <summary>许可状态；受限表示 Store 许可非活跃或无法确认（含非 Store 渠道）。</summary>
 public enum AppLicenseState
 {
-    /// <summary>非 Store 渠道或首次查询失败：不限制任何功能（fail-open）。</summary>
+    /// <summary>首次查询失败或 Store 不可用：无法确认许可，按受限处理（fail-closed）。</summary>
     StoreUnavailable,
     /// <summary>已购完整版。</summary>
     FullLicense,
@@ -23,8 +23,9 @@ public enum AppLicenseState
     LicenseInactive
 }
 
-/// <summary>Store 许可状态源：非活跃时按 LicensePolicy 限制功能；
-/// 非 Store 渠道和首次查询失败不限制；后续查询失败保持上次确认的状态。</summary>
+/// <summary>Store 许可状态源：非活跃或无法确认许可时按 LicensePolicy 限制功能；
+/// 许可按包身份（PFN）+ 账户判定、与签名渠道无关，查询失败即受限（fail-closed），
+/// 后续查询失败保持上次确认的状态。</summary>
 public sealed class LicenseService : IDisposable
 {
     private const string ProductId = "9NFW1RPPT999";
@@ -45,8 +46,8 @@ public sealed class LicenseService : IDisposable
     public AppLicenseState State { get; private set; } = AppLicenseState.StoreUnavailable;
     /// <summary>试用到期时间；仅 <see cref="AppLicenseState.TrialActive"/> 时有意义。</summary>
     public DateTimeOffset? TrialExpiration { get; private set; }
-    /// <summary>许可是否非活跃；具体功能应使用 IsFeatureRestricted 查询。</summary>
-    public bool IsRestricted => State == AppLicenseState.LicenseInactive;
+    /// <summary>许可非活跃或 Store 状态未知；具体功能应使用 IsFeatureRestricted 查询。</summary>
+    public bool IsRestricted => State is AppLicenseState.LicenseInactive or AppLicenseState.StoreUnavailable;
     public LicenseFeature RestrictedFeatures => IsRestricted ? LicensePolicy.RestrictedFeatures : LicenseFeature.None;
     public bool IsFeatureRestricted(LicenseFeature feature) => LicensePolicy.Contains(RestrictedFeatures, feature);
 
@@ -55,8 +56,9 @@ public sealed class LicenseService : IDisposable
     {
         LicensePolicy.ApplyOutputRestrictions(ref settings, RestrictedFeatures);
     }
-    /// <summary>试用期间及许可非活跃时均可购买。</summary>
-    public bool CanPurchase => State is AppLicenseState.TrialActive or AppLicenseState.LicenseInactive;
+    /// <summary>除已购完整版外均可发起商店购买；Store 状态未知时购买请求会强制刷新许可，
+    /// 账户已有许可或购买成功后即恢复完整版。</summary>
+    public bool CanPurchase => State is not AppLicenseState.FullLicense;
     /// <summary>试用剩余天数（不足一天按 1 计，到期为 0）；非试用期内为 null。</summary>
     public int? TrialRemainingDays => State == AppLicenseState.TrialActive && TrialExpiration is { } expiration
         ? Math.Max(0, (int)Math.Ceiling((expiration - _timeProvider.GetUtcNow()).TotalDays))
@@ -80,20 +82,19 @@ public sealed class LicenseService : IDisposable
     {
         if (_disposed || _refreshTimer != null) return;
         #if DEBUG
-        if (TryApplyDebugOverride()) { StartTimers(); return; }
+        if (TryApplyLicenseFileOverride()) { StartTimers(); return; }
         #endif
-        if (Package.Current.SignatureKind != PackageSignatureKind.Store)
-        {
-            _logger.LogInformation("包签名类型为 {Kind}，非 Store 渠道，许可门控不生效（fail-open）", Package.Current.SignatureKind);
-            return;
-        }
+        // 许可按包身份（PFN）+ 账户判定，与二进制签名无关：仓库 manifest 即 Store 发布者，
+        // 所有自建包与商店版同 PFN，已购机器上启动即为完整版。未签名包额外保留
+        // license.debug 自用入口；其余一律查询商店，查询失败按受限处理（fail-closed）。
+        if (Package.Current.SignatureKind == PackageSignatureKind.None && TryApplyLicenseFileOverride()) { StartTimers(); return; }
         try
         {
             EnsureContext();
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "StoreContext 初始化失败，许可门控不生效（fail-open）");
+            _logger.LogWarning(ex, "StoreContext 初始化失败，无法确认许可，按受限处理（fail-closed）");
             return;
         }
         StartTimers();
@@ -130,37 +131,42 @@ public sealed class LicenseService : IDisposable
         if (!_disposed && State == AppLicenseState.TrialActive) ApplyState(State, TrialExpiration);
     }
 
-    #if DEBUG
-    /// <summary>本地验证门控的 DEBUG 逃生门：读取 Documents\OriginalSoundPlayer\license.debug 文件
-    /// （内容 full/trial/expired，删除即恢复真实判定）。MsixPackage 调试激活不传递
-    /// launchSettings 环境变量，文件方式不依赖启动机制。</summary>
-    private bool TryApplyDebugOverride()
+    /// <summary>许可覆盖文件：读取 Documents\OriginalSoundPlayer\license.debug（内容 full/trial/expired，
+    /// 删除即恢复真实判定）。DEBUG 构建对任意包生效，便于随时模拟各许可状态；Release 仅对
+    /// 未签名包生效（本地 -Register 布局的自用完整版入口），开发者/企业签名的旁加载包与
+    /// Store 签名包均不读取。MsixPackage 调试激活不传递 launchSettings 环境变量，
+    /// 文件方式不依赖启动机制。</summary>
+    private bool TryApplyLicenseFileOverride()
     {
-        string? source = ReadLicenseDebugFile();
+        string? source = ReadLicenseFile();
         if (string.IsNullOrWhiteSpace(source)) return false;
         switch (source)
         {
             case "full":
-                _logger.LogInformation("DEBUG 覆盖许可状态：完整版");
+                _logger.LogInformation("许可覆盖文件：完整版");
                 ApplyState(AppLicenseState.FullLicense, null);
                 return true;
             case "trial":
                 var trialEnd = DateTimeOffset.Now.AddDays(3);
-                _logger.LogInformation("DEBUG 覆盖许可状态：试用中（{Expiration} 到期）", trialEnd);
+                _logger.LogInformation("许可覆盖文件：试用中（{Expiration} 到期）", trialEnd);
                 ApplyState(AppLicenseState.TrialActive, trialEnd);
                 return true;
             case "expired":
-                _logger.LogInformation("DEBUG 覆盖许可状态：试用已到期");
+                _logger.LogInformation("许可覆盖文件：试用已到期");
                 ApplyState(AppLicenseState.LicenseInactive, null);
                 return true;
             default:
-                _logger.LogWarning("DEBUG 许可覆盖值无效：{Value}（可用：full/trial/expired）", source);
+                _logger.LogWarning("许可覆盖文件值无效：{Value}（可用：full/trial/expired）", source);
                 return false;
         }
     }
 
-    private static string? ReadLicenseDebugFile()
+    /// <summary>测试注入点：非 null 时替代真实文件读取，回归不依赖开发机文档目录的实际文件。</summary>
+    internal Func<string?>? LicenseOverrideReader { get; set; }
+
+    private string? ReadLicenseFile()
     {
+        if (LicenseOverrideReader is { } reader) return reader();
         try
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -172,9 +178,8 @@ public sealed class LicenseService : IDisposable
             return null;
         }
     }
-    #endif
 
-    /// <summary>重查许可；失败时记录日志并保持当前状态（初始状态即 fail-open 的 StoreUnavailable）。</summary>
+    /// <summary>重查许可；失败时记录日志并保持当前状态（初始 Store 状态未知时按受限处理）。</summary>
     public async Task RefreshAsync()
     {
         // Store 回调可能来自后台；查询调度、快照和通知统一由 UI 线程维护。
@@ -294,7 +299,7 @@ public sealed class LicenseService : IDisposable
                 _logger.LogInformation("许可状态迁移：{Previous} → {State}，受限功能：{Features}", previous, next, RestrictedFeatures);
                 break;
             default:
-                _logger.LogInformation("许可状态迁移：{Previous} → {State}（fail-open）", previous, next);
+                _logger.LogInformation("许可状态迁移：{Previous} → {State}（Store 状态未知，按受限处理）", previous, next);
                 break;
         }
         RaiseStateChanged();

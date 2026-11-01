@@ -129,6 +129,8 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AudioConversionViewModel>();
                  services.AddHostedService<MetadataWriteService>();
                  services.AddTransient<INavigationService, NavigationService>();
+                 services.AddSingleton(sp => new LibraryNavigationService(
+                     () => sp.GetRequiredService<MainPage>(), sp.GetRequiredService<ILogger<LibraryNavigationService>>()));
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();
@@ -143,6 +145,9 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<MusicBrowseViewModel>();
                  services.AddSingleton<DesktopLyricsViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
+                 services.AddSingleton<IMusicDetailsEditorFactory, MusicDetailsEditorFactory>();
+                 services.AddSingleton<HomeViewModel>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Recommendations.HomeRecommendationService>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<LlmTranslationService>();

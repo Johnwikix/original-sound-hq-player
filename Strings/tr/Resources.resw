@@ -1748,7 +1748,7 @@
     <value>Oynatma durumu bekleniyor. Efekt denetimleri geçici olarak kullanılamıyor.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Kanal/kulaklık efektleri stereo gerektirir; EQ ve ses düzeyi analizi mono ve stereo destekler.</value>
+    <value>Bu düzende stereo efektler atlanır. Desteklenen çok kanallı evrişim ve ses yüksekliği analizi kullanılabilir.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Bu parça analiz ediliyor; ölçülen kazanç yumuşak biçimde uygulanıp önbelleğe alınana kadar temkinli zayıflatmayla çalınıyor.</value>
@@ -1780,7 +1780,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Evrişim düzeltmesi</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>Kulaklık veya oda düzeltmesi için WAV darbe yanıtı (IR) içe aktarın. Mono veya stereo; çıkış örnekleme hızına yeniden örnekleme öncesi ve sonrasında en fazla 8192 örnek. DSD bit akışı çıkışında otomatik olarak atlanır.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>1–8 kanallı WAV IR. Mono tüm çıkışlara uygulanır; diğer kanal sayıları çıkışla eşleşmelidir. Yeniden örnekleme sonrası da en fazla 2 sn, kanal başına 262144 ve tüm çıkışlarda toplam 1048576 tap. DSD atlanır.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Darbe yanıtı dosyası</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>WAV içe aktar…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Kaldır</value></data>
@@ -1791,10 +1791,10 @@
   <data name="DspIrBypass" xml:space="preserve"><value>Evrişim atlanıyor. İçe aktarılan dosya ve ayarlar korunur.</value></data>
   <data name="DspIrLoading" xml:space="preserve"><value>Darbe yanıtı yükleniyor ve hazırlanıyor…</value></data>
   <data name="DspIrActive" xml:space="preserve"><value>Evrişim düzeltmesi etkin.</value></data>
-  <data name="DspIrFailed" xml:space="preserve"><value>IR bu çıkış için kullanılamıyor: eksik veya geçersiz olabilir ya da yeniden örnekleme sonrasında 8192 örneği aşıyor olabilir. Başka bir IR içe aktarın.</value></data>
-  <data name="DspIrUnsupported" xml:space="preserve"><value>Evrişim yalnızca mono ve stereo PCM çıkışını destekler.</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR kullanılamıyor: dosya geçersiz, kanallar eşleşmiyor veya süre/tap sınırı aşıldı.</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>Evrişim 1–8 PCM kanalını destekler. IR mono olmalı veya çıkış kanallarıyla tam eşleşmelidir.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Evrişim etkin değil. PCM çalma sırasında uygulamak için bir IR içe aktarın ve düzeltmeyi etkinleştirin.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>İçe aktarma başarısız oldu. Geçerli bir mono veya stereo WAV seçin (16/24/32 bit PCM veya 32/64 bit float); en fazla 8192 örnek ve 4 MiB. Önceki yapılandırma korunur.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Kanal, süre ve tap sınırlarına uyan geçerli bir WAV IR seçin.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Birleşik frekans yanıtı</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ ve evrişim frekans yanıtı. Frekans Hz, kazanç dB cinsindendir.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Sol</value></data>
@@ -1852,16 +1852,16 @@
     <value>“{0}” hazır ayarı silinsin mi? Geçerli eğriniz korunur.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Deneysel 5.1 çıkış</value>
+    <value>5.1 çıkış</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Uyumlu 5.1 PCM parçaları otomatik olarak WASAPI özel modunu kullanır; diğer parçalar çıkış ayarlarınızı korur. ASIO, ilk altı çıkışında L, R, C, LFE, Ls, Rs ile ASIO modunda kalır. Hata durumunda stereoya geri dönülür. Atmos nesne işleme yapılmaz.</value>
+    <value>Uyumlu 5.1 PCM parçalar otomatik olarak WASAPI özel moduna geçer; diğerleri çıkış ayarlarını korur. ASIO modu değişmez; ilk 6 çıkış: L, R, C, LFE, Ls, Rs. Hata durumunda stereo; Atmos nesne işleme yok.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Atmos HDMI passthrough tercih et (deneysel)</value>
+    <value>Atmos HDMI passthrough tercih et</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Uyumlu parçalar otomatik olarak WASAPI özel modunu kullanır; diğer parçalar çıkış ayarlarınızı korur. 48 kHz, altı kanallı E-AC-3 / Atmos desteklenir; TrueHD desteklenmez. Passthrough uygulama ses düzeyini ve etkileri atlar; ses düzeyini alıcıda ayarlayın.</value>
+    <value>Uyumlu parçalar otomatik olarak WASAPI özel moduna geçer; diğerleri çıkışı korur. E-AC-3 / Atmos: 48 kHz, 6 kanal; TrueHD desteklenmez. Passthrough uygulama sesini ve efektleri atlar; ses alıcıdan ayarlanır.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Deneysel E-AC-3 / Atmos HDMI bit akışı modu: uygulama ses düzeyi ve tüm etkiler atlanır. Ses düzeyini alıcınızda ayarlayın. Kaydedilen ayarlar PCM ile devam eder.</value>
@@ -1933,6 +1933,9 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Bazı özellikler tam lisans gerektirir. Kilidini açmak için satın alın; kaydedilmiş ayarlarınız korunur.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Evrişim düzeltmesi tam lisans gerektirir. Kilidi açmak için satın alın.</value></data>
+  <data name="LicenseStatusHeader" xml:space="preserve"><value>Lisans durumu</value></data>
+  <data name="LicenseFull" xml:space="preserve"><value>Tam lisans etkin — tüm özellikler kullanılabilir.</value></data>
+  <data name="LicenseUnavailable" xml:space="preserve"><value>Lisans Microsoft Store üzerinden doğrulanamadı; tam sürüm özellikleri kilitli.</value></data>
   <data name="AgreementTitle" xml:space="preserve"><value>Başlamadan önce</value></data>
   <data name="AgreementAccept" xml:space="preserve"><value>Kabul et ve devam et</value></data>
   <data name="AgreementDecline" xml:space="preserve"><value>Reddet ve çık</value></data>
@@ -2126,6 +2129,9 @@
   <data name="WebDavErrorConnectionFailed" xml:space="preserve">
     <value>Uzak kaynak okunamıyor. Bağlantıyı denetleyin ve yeniden deneyin.</value>
   </data>
+  <data name="OpenLocationFileMissing" xml:space="preserve">
+    <value>Dosya mevcut değil veya taşınmış.</value>
+  </data>
   <data name="WebDavAuthenticationError" xml:space="preserve">
     <value>Kimlik bilgileri veya izinler geçersiz. Yeniden bağlanmak için kaynağı düzenleyin.</value>
   </data>
@@ -2316,7 +2322,7 @@ SHA-256: {5}
     <value>Kompresör / sınırlayıcı</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>Yüksek sesli bölümleri kısar ve telafi kazancıyla sessiz bölümleri yükseltir. Kanallar bağlantılıdır; örnek tepe noktaları −1 dBFS ile sınırlıdır.</value>
+    <value>Yüksek sesli bölümleri kısar ve telafi kazancıyla sessiz bölümleri yükseltir. Kanallar bağlantılıdır; örnek tepeleri aşağıdaki ortak sınırı kullanır.</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>Eşik (dBFS)</value>
@@ -2505,4 +2511,145 @@ SHA-256: {5}
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} parça sıraya alındı; {1} parçada ad veya sanatçı eksik.</value></data>
   <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
   <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>İçe aktarma iptal edildi; sıraya alınmış favoriler bildirilmeye devam edecek.</value></data>
+  <data name="DspPcmResample" xml:space="preserve"><value>PCM yeniden örnekleme</value></data>
+  <data name="DspPcmResampleHelp" xml:space="preserve"><value>Geçerli konumdan yeniden arabelleğe alır. DSD akışları atlanır; mevcut aygıt yedekleme davranışı korunur.</value></data>
+  <data name="DspPcmSourceRate" xml:space="preserve"><value>Kaynak örnekleme hızı</value></data>
+  <data name="DspPcmFixedRate" xml:space="preserve"><value>Sabit örnekleme hızı</value></data>
+  <data name="DspPcmIntegerRate" xml:space="preserve"><value>Kaynağın tam katı</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Hedef örnekleme hızı</value></data>
+  <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak koruması</value></data>
+  <data name="DspTruePeakHelp" xml:space="preserve"><value>Son PCM için 4× enterpolasyon ve 5 ms öngörü; sistem karıştırıcısı ve aygıt işlemesi kapsam dışıdır.</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Ortak tepe sınırı (dB)</value></data>
+  <data name="DspPcmDither" xml:space="preserve"><value>Tamsayı çıkışı TPDF dither</value></data>
+  <data name="DspPcmDitherHelp" xml:space="preserve"><value>Varsayılan kapalıdır. DSP sonrası bit derinliğini azaltmak için; bit saydam çalma için kapatın.</value></data>
+  <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed kesim frekansı (Hz)</value></data>
+  <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed yoğunluğu (%)</value></data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>Albüm sanatçısı</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>Tür</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Text" xml:space="preserve">
+    <value>Albüm sanatçısı</value>
+  </data>
+  <data name="MusicTagAlbumArtistInput.PlaceholderText" xml:space="preserve">
+    <value>Belirtilmemiş (isteğe bağlı)</value>
+  </data>
+  <data name="MusicTagGenre.Text" xml:space="preserve">
+    <value>Tür</value>
+  </data>
+  <data name="MusicTagGenreInput.PlaceholderText" xml:space="preserve">
+    <value>Belirtilmemiş (isteğe bağlı)</value>
+  </data>
+  <data name="MusicTagComposer.Text" xml:space="preserve">
+    <value>Besteci</value>
+  </data>
+  <data name="MusicTagComposerInput.PlaceholderText" xml:space="preserve">
+    <value>Belirtilmemiş (isteğe bağlı)</value>
+  </data>
+  <data name="MusicTagLyricist.Text" xml:space="preserve">
+    <value>Söz yazarı</value>
+  </data>
+  <data name="MusicTagLyricistInput.PlaceholderText" xml:space="preserve">
+    <value>Belirtilmemiş (isteğe bağlı)</value>
+  </data>
+  <data name="MusicTagConductor.Text" xml:space="preserve">
+    <value>Orkestra şefi</value>
+  </data>
+  <data name="MusicTagConductorInput.PlaceholderText" xml:space="preserve">
+    <value>Belirtilmemiş (isteğe bağlı)</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Text" xml:space="preserve">
+    <value>Katalog numarası</value>
+  </data>
+  <data name="MusicTagCatalogNumberInput.PlaceholderText" xml:space="preserve">
+    <value>Belirtilmemiş (isteğe bağlı)</value>
+  </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Tam sayı katı hız sınırı</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Bu ortak sınır; normalleştirmede tahmini kaynak tepe noktalarını, kompresörde ses düzeyinden önce örnek tepelerini ve True Peak ile son PCM gerçek tepe tahminlerini sınırlar.</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>Özel</value></data>
+  <data name="HomeNav.Text" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="HomeTitle.Text" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="HomeCombox.Content" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="HomeRefresh.Content" xml:space="preserve"><value>Seçimi yenile</value></data>
+  <data name="HomeFeatured.Text" xml:space="preserve"><value>MÜZİĞİNİZDEN</value></data>
+  <data name="HomePlay.Text" xml:space="preserve"><value>Dinlemeye başla</value></data>
+  <data name="HomePlayTheme.AutomationProperties.Name" xml:space="preserve"><value>Öne çıkan seçimi çal</value></data>
+  <data name="HomePlaySong.AutomationProperties.Name" xml:space="preserve"><value>Bu şarkıyı çal</value></data>
+  <data name="HomeFavorite.AutomationProperties.Name" xml:space="preserve"><value>Favoriyi değiştir</value></data>
+  <data name="HomeAddToQueue.AutomationProperties.Name" xml:space="preserve"><value>Geçerli çalma kuyruğuna ekle</value></data>
+  <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Önceki seçim</value></data>
+  <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Sonraki seçim</value></data>
+  <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Son zamanlarda sık dinlenenler</value></data>
+  <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Farklı türleri keşfet</value></data>
+  <data name="HomeLoading.Text" xml:space="preserve"><value>Müziğiniz hazırlanıyor</value></data>
+  <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Müziğinizle başlayın</value></data>
+  <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Bir müzik klasörü ekleyin. Dinledikleriniz ve favorileriniz önerilerinizi şekillendirsin.</value></data>
+  <data name="HomeAddFolder.Content" xml:space="preserve"><value>Müzik klasörü ekle</value></data>
+  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Müzik kaynaklarına erişilemiyor. Bağlantıyı kontrol edin veya kaynaklarınızı yönetin.</value></data>
+  <data name="HomeRetry.Content" xml:space="preserve"><value>Yeniden dene</value></data>
+  <data name="HomeExplore" xml:space="preserve"><value>Kitaplığınızı keşfedin</value></data>
+  <data name="HomeForYou" xml:space="preserve"><value>Sizin için</value></data>
+  <data name="HomeFamiliar" xml:space="preserve"><value>Son zamanlarda sık dinlenenler</value></data>
+  <data name="HomeDiscovery" xml:space="preserve"><value>Farklı türleri keşfet</value></data>
+  <data name="HomeFeaturedDescription" xml:space="preserve"><value>Tanıdık melodiler ve yeni keşifler, hepsi kitaplığınızdan.</value></data>
+  <data name="HomeFamiliarDescription" xml:space="preserve"><value>Son zamanlarda keyifle dinlediğiniz müziğe dönün.</value></data>
+  <data name="HomeDiscoveryDescription" xml:space="preserve"><value>Farklı türlerle gününüze çeşitlilik katın.</value></data>
+  <data name="HomeReasonArtist" xml:space="preserve"><value>{0} dinlediğiniz için</value></data>
+  <data name="HomeReasonGenre" xml:space="preserve"><value>Sevdiğiniz türden: {0}</value></data>
+  <data name="HomeReasonFavorite" xml:space="preserve"><value>Favorilerinizden</value></data>
+  <data name="HomeReasonFamiliar" xml:space="preserve"><value>Son zamanlarda sık dinlediğiniz</value></data>
+  <data name="HomeReasonExplore" xml:space="preserve"><value>Kitaplığınızın farklı bir yönünü keşfedin</value></data>
+  <data name="HomeError" xml:space="preserve"><value>Öneriler güncellenemedi. Yeniden deneyin.</value></data>
+  <data name="HomePlaybackError" xml:space="preserve"><value>Müzik çalınamadı. Yeniden deneyin.</value></data>
+  <data name="HomeFollowing.AutomationProperties.Name" xml:space="preserve"><value>Başka bir seçime geç</value></data>
+  <data name="HomeFavorite.ToolTipService.ToolTip" xml:space="preserve"><value>Favoriyi değiştir</value></data>
+  <data name="HomePlaySong.ToolTipService.ToolTip" xml:space="preserve"><value>Bu şarkıyı çal</value></data>
+  <data name="HomePrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Önceki seçim</value></data>
+  <data name="HomeNext.ToolTipService.ToolTip" xml:space="preserve"><value>Sonraki seçim</value></data>
+  <data name="HomeAddToQueue.ToolTipService.ToolTip" xml:space="preserve"><value>Geçerli çalma kuyruğuna ekle</value></data>
+  <data name="HomeShelfPrevious.AutomationProperties.Name" xml:space="preserve"><value>Önceki şarkılar</value></data>
+  <data name="HomeShelfPrevious.ToolTipService.ToolTip" xml:space="preserve"><value>Önceki şarkılar</value></data>
+  <data name="HomeShelfNext.AutomationProperties.Name" xml:space="preserve"><value>Sonraki şarkılar</value></data>
+  <data name="HomeShelfNext.ToolTipService.ToolTip" xml:space="preserve"><value>Sonraki şarkılar</value></data>
+  <data name="HomeNoPlaylists" xml:space="preserve"><value>Henüz çalma listesi yok</value></data>
+  <data name="HomePlaylistAddFailed" xml:space="preserve"><value>Şarkı çalma listesine eklenemedi. Lütfen tekrar deneyin.</value></data>
+  <data name="HomeSongTags.Text" xml:space="preserve"><value>Şarkı bilgileri</value></data>
+  <data name="HomeSongAudio.Text" xml:space="preserve"><value>Ses özellikleri</value></data>
+  <data name="HomeSongChannels.Text" xml:space="preserve"><value>Kanallar</value></data>
+  <data name="HomeSongFormat.Text" xml:space="preserve"><value>Biçim</value></data>
+  <data name="HomeSongOpen.AutomationProperties.HelpText" xml:space="preserve"><value>Şarkı özelliklerini aç</value></data>
+  <data name="HomeDetailsOpenLocation.AutomationProperties.Name" xml:space="preserve"><value>Dosya konumunu aç</value></data>
+  <data name="HomeDetailsOpenLocation.ToolTipService.ToolTip" xml:space="preserve"><value>Dosya konumunu aç</value></data>
+  <data name="HomeDetailsReadEmbedded.AutomationProperties.Name" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
+  <data name="HomeDetailsReadEmbedded.ToolTipService.ToolTip" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
+  <data name="HomeDetailsExportLyrics.AutomationProperties.Name" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
+  <data name="HomeDetailsExportLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
+  <data name="HomeDetailsRefreshLyrics.AutomationProperties.Name" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsRefreshLyrics.ToolTipService.ToolTip" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsFindCover.AutomationProperties.Name" xml:space="preserve"><value>Kapağı çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsFindCover.ToolTipService.ToolTip" xml:space="preserve"><value>Kapağı çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsExportCover.AutomationProperties.Name" xml:space="preserve"><value>Yerel diske kaydet</value></data>
+  <data name="HomeDetailsExportCover.ToolTipService.ToolTip" xml:space="preserve"><value>Yerel diske kaydet</value></data>
+  <data name="HomeDetailsChooseCover.AutomationProperties.Name" xml:space="preserve"><value>Kapağı düzenle</value></data>
+  <data name="HomeDetailsChooseCover.ToolTipService.ToolTip" xml:space="preserve"><value>Kapağı düzenle</value></data>
+  <data name="HomeDetailsFiles.Text" xml:space="preserve"><value>Dosya bilgileri</value></data>
+  <data name="HomeDetailsCredits.Header" xml:space="preserve"><value>Katkıda bulunanlar ve yayın</value></data>
+  <data name="HomeDetailsArtworkMenu.AutomationProperties.Name" xml:space="preserve"><value>Kapak seçenekleri</value></data>
+  <data name="HomeDetailsArtworkMenu.ToolTipService.ToolTip" xml:space="preserve"><value>Kapak seçenekleri</value></data>
+  <data name="HomeDetailsLyricsTools.AutomationProperties.Name" xml:space="preserve"><value>Şarkı sözü işlemleri</value></data>
+  <data name="HomeDetailsLyricsTools.ToolTipService.ToolTip" xml:space="preserve"><value>Şarkı sözü işlemleri</value></data>
+  <data name="HomeDetailsLyricsTab.Text" xml:space="preserve"><value>Şarkı sözleri</value></data>
+  <data name="HomeDetailsRestoreLrc.Text" xml:space="preserve"><value>Eski LRC dosyasını geri yükle</value></data>
+  <data name="HomeDetailsRestoreKrc.Text" xml:space="preserve"><value>Eski KRC dosyasını geri yükle</value></data>
+  <data name="HomeDetailsOpenLocation.Content" xml:space="preserve"><value>Dosya konumunu aç</value></data>
+  <data name="HomeDetailsFindCover.Text" xml:space="preserve"><value>Kapağı çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsChooseCover.Text" xml:space="preserve"><value>Kapağı düzenle</value></data>
+  <data name="HomeDetailsExportCover.Text" xml:space="preserve"><value>Yerel diske kaydet</value></data>
+  <data name="HomeDetailsReadEmbedded.Text" xml:space="preserve"><value>Meta verileri dosyadan al</value></data>
+  <data name="HomeDetailsRefreshLyrics.Text" xml:space="preserve"><value>Şarkı sözlerini çevrimiçi eşleştir</value></data>
+  <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Çalan parçayı bul</value></data>
+  <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Çalan parçayı bul</value></data>
 </root>

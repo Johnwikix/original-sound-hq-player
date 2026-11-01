@@ -1,8 +1,10 @@
+﻿#nullable enable annotations
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using AnimatedWin2dControls.Interop;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
@@ -36,6 +38,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private CanvasAnimatedControl? _canvas;
+        private FrameEventSubscription? _updateSubscription;
+        private FrameEventSubscription? _drawSubscription;
         private readonly LyricsRenderCoordinator _coordinator = new();
 
         private bool _pausedByVisibility;
@@ -148,8 +152,33 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             ctrl.UpdateCanvasPaused();
         }
 
+        private void AttachFrameEvents()
+        {
+            if (_canvas is null) return;
+            _updateSubscription ??= FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
+            try { _drawSubscription ??= FrameEventSubscription.SubscribeDraw(_canvas, OnCanvasDraw); }
+            catch
+            {
+                var update = _updateSubscription;
+                _updateSubscription = null;
+                update?.Dispose();
+                throw;
+            }
+        }
+
+        private void DetachFrameEvents()
+        {
+            var draw = _drawSubscription;
+            var update = _updateSubscription;
+            _drawSubscription = null;
+            _updateSubscription = null;
+            try { draw?.Dispose(); }
+            finally { update?.Dispose(); }
+        }
+
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
+            AttachFrameEvents();
             UpdateActiveState(_isActive);
         }
 
@@ -159,6 +188,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // removed from the visual tree when the page is hidden. Keep native
             // resources reusable; PrepareForShutdown owns final cleanup.
             _canvas?.Paused = true;
+            DetachFrameEvents();
             if (_coordinatorAttached)
             {
                 _coordinator.Detach();
@@ -200,8 +230,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void AttachCanvasEvents(CanvasAnimatedControl canvas)
         {
-            canvas.Update += OnCanvasUpdate;
-            canvas.Draw += OnCanvasDraw;
+            AttachFrameEvents();
             canvas.CreateResources += OnCanvasCreateResources;
             canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
             canvas.PointerMoved += OnCanvasPointerMoved;
@@ -212,8 +241,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void DetachCanvasEvents(CanvasAnimatedControl canvas)
         {
-            canvas.Update -= OnCanvasUpdate;
-            canvas.Draw -= OnCanvasDraw;
+            DetachFrameEvents();
             canvas.CreateResources -= OnCanvasCreateResources;
             canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
             canvas.PointerMoved -= OnCanvasPointerMoved;
@@ -225,17 +253,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnCanvasCreateResources(CanvasAnimatedControl sender, Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
             => _coordinator.OnCreateResources();
 
-        private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
+        private void OnCanvasUpdate(TimeSpan elapsedTime)
         {
             if (_isActive)
-                _coordinator.OnUpdate(sender, args);
+                _coordinator.OnUpdate(_canvas!, elapsedTime);
         }
 
-        private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
+        private void OnCanvasDraw(CanvasDrawContext ds)
         {
+            var sender = _canvas;
+            if (sender is null) return;
             if (!_isActive) return;
 
-            var ds = args.DrawingSession;
             ds.Clear(Microsoft.UI.Colors.Transparent);
             _coordinator.OnDraw(sender, ds);
         }

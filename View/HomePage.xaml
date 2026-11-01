@@ -1,0 +1,131 @@
+<Page
+    x:Class="WinUIMusicPlayer.View.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinUIMusicPlayer.View.Controls"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel"
+    xmlns:tools="using:WinUIMusicPlayer.Utils">
+    <Page.Resources>
+        <DataTemplate x:Key="SongTemplate" x:DataType="vm:HomeSong">
+            <controls:HomeSongItem x:Uid="HomeSongOpen" Background="Transparent" Width="160" Margin="0,0,12,4" Tag="{x:Bind}" IsTabStop="True"
+                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
+                PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
+                Invoked="Song_Invoked" LostFocus="Song_LostFocus">
+                <StackPanel Spacing="8">
+                    <controls:MusicCoverControl Music="{x:Bind Music}" Width="160" Height="160" />
+                    <TextBlock Text="{x:Bind Music.Title, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </controls:HomeSongItem>
+        </DataTemplate>
+    </Page.Resources>
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid KeyDown="Home_KeyDown">
+    <ContentControl x:Name="BrowseRoot" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+        Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
+        IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.IsInDetailMode), Mode=OneWay}">
+        <ContentControl.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></ContentControl.OpacityTransition>
+    <Grid RowDefinitions="Auto,*">
+        <Grid x:Name="HomeHeader" Margin="24,12,24,12" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock x:Uid="HomeTitle" FontSize="28" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="1" x:Name="RefreshButton" x:Uid="HomeRefresh" Command="{x:Bind ViewModel.RefreshCommand}"
+                VerticalAlignment="Center" Style="{StaticResource MenuButtonStyle}"
+                Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasContent), Mode=OneWay}" />
+        </Grid>
+        <ScrollViewer Grid.Row="1" x:Name="ContentScroll" ViewChanging="Content_ViewChanging" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasContent), Mode=OneWay}" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <StackPanel Margin="0,12,0,24" Padding="24,0,24,0" Spacing="24">
+                    <controls:FeaturedCarousel x:Name="Featured" ItemsSource="{x:Bind ViewModel.Themes, Mode=OneWay}"
+                        ThumbnailItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}">
+                        <controls:FeaturedCarousel.MainContent>
+                            <controls:HomeHeroCard x:Name="HomeHero" SlideFromRight="{x:Bind Featured.SlideFromRight, Mode=OneWay}"
+                                Theme="{x:Bind SelectedTheme(Featured.SelectedIndex, Featured.PageCount), Mode=OneWay}" />
+                        </controls:FeaturedCarousel.MainContent>
+                        <controls:FeaturedCarousel.PrimaryThumbnailTemplate>
+                            <DataTemplate x:DataType="vm:HomeSong">
+                                <controls:HomeSongItem x:Uid="HomeSongOpen" Tag="{x:Bind}" IsTabStop="True"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
+                                    PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
+                                    Invoked="Song_Invoked" LostFocus="Song_LostFocus">
+                                    <controls:HomeCarouselTile Song="{x:Bind}" IsPrimary="True" Tag="{x:Bind}" IsTabStop="False" />
+                                </controls:HomeSongItem>
+                            </DataTemplate>
+                        </controls:FeaturedCarousel.PrimaryThumbnailTemplate>
+                        <controls:FeaturedCarousel.ThumbnailTemplate>
+                            <DataTemplate x:DataType="vm:HomeSong">
+                                <controls:HomeSongItem x:Uid="HomeSongOpen" Tag="{x:Bind}" IsTabStop="True"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
+                                    PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
+                                    Invoked="Song_Invoked" LostFocus="Song_LostFocus">
+                                    <controls:HomeCarouselTile Song="{x:Bind}" Tag="{x:Bind}" IsTabStop="False" />
+                                </controls:HomeSongItem>
+                            </DataTemplate>
+                        </controls:FeaturedCarousel.ThumbnailTemplate>
+                    </controls:FeaturedCarousel>
+                    <controls:RecommendationShelf x:Name="SongsShelf" ItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}"
+                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging">
+                        <controls:RecommendationShelf.Header><TextBlock Text="{x:Bind ViewModel.SongsTitle, Mode=OneWay}" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
+                    </controls:RecommendationShelf>
+                    <controls:RecommendationShelf x:Name="FamiliarShelf" ItemsSource="{x:Bind ViewModel.Familiar, Mode=OneWay}"
+                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging" Visibility="{x:Bind ShowCount(ViewModel.Familiar.Count), Mode=OneWay}">
+                        <controls:RecommendationShelf.Header><TextBlock x:Uid="HomeFamiliarTitle" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
+                    </controls:RecommendationShelf>
+                    <controls:RecommendationShelf x:Name="DiscoveryShelf" ItemsSource="{x:Bind ViewModel.Discovery, Mode=OneWay}"
+                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging" Visibility="{x:Bind ShowCount(ViewModel.Discovery.Count), Mode=OneWay}">
+                        <controls:RecommendationShelf.Header><TextBlock x:Uid="HomeDiscoveryTitle" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
+                    </controls:RecommendationShelf>
+                </StackPanel>
+                <Canvas x:Name="PreviewLayer" SizeChanged="PreviewLayer_SizeChanged">
+                    <controls:HomeSongPreview x:Name="SongPreview" Visibility="Collapsed" Song="{x:Bind ViewModel.PreviewSong, Mode=OneWay}" ViewModel="{x:Bind ViewModel}"
+                        BringIntoViewRequested="Preview_BringIntoViewRequested" MenuStateChanged="Preview_MenuStateChanged" Tapped="Preview_Tapped" Invoked="Preview_Invoked"
+                        CloseAnimationCompleted="Preview_CloseAnimationCompleted"
+                        PointerEntered="Preview_PointerEntered" PointerExited="Preview_PointerExited"
+                        LostFocus="Song_LostFocus" KeyDown="Preview_KeyDown" />
+                </Canvas>
+            </Grid>
+        </ScrollViewer>
+        <StackPanel Grid.Row="1" x:Name="LoadingPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsLoading), Mode=OneWay}">
+            <ProgressRing Width="32" Height="32" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+            <TextBlock x:Uid="HomeLoading" />
+        </StackPanel>
+        <Grid Grid.Row="1" x:Name="EmptyLibraryGrid" AllowDrop="True" Background="Transparent" DragOver="Empty_DragOver" DragLeave="Empty_DragLeave" Drop="Empty_Drop"
+            Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsEmpty), Mode=OneWay}">
+            <StackPanel MaxWidth="520" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <Border Width="96" Height="96" CornerRadius="28" Background="{ThemeResource SubtleFillColorSecondaryBrush}" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE8D6;" FontSize="44" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                </Border>
+                <TextBlock x:Uid="HomeEmptyTitle" Margin="0,12,0,0" FontSize="28" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock x:Uid="HomeEmptySubtitle" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                <Button x:Uid="HomeAddFolder" Margin="0,12,0,0" HorizontalAlignment="Center" Command="{x:Bind ViewModel.AddFolderCommand}" Style="{StaticResource MenuButtonStyle}" />
+                <TextBlock x:Uid="AddFolderPageDragHint" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                <ProgressRing Width="24" Height="24" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsScanning), Mode=OneWay}" />
+            </StackPanel>
+            <Border x:Name="DropOverlay" Visibility="Collapsed" Margin="12" Background="{ThemeResource AccentFillColorTertiaryBrush}" BorderBrush="{ThemeResource AccentFillColorDefaultBrush}" BorderThickness="2" CornerRadius="12" IsHitTestVisible="False">
+                <TextBlock x:Uid="AddFolderPageDropOverlayText" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </Border>
+        </Grid>
+        <StackPanel Grid.Row="1" x:Name="UnavailablePanel" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsUnavailable), Mode=OneWay}">
+            <FontIcon Glyph="&#xE753;" FontSize="44" />
+            <TextBlock x:Uid="HomeUnavailable" TextAlignment="Center" TextWrapping="Wrap" />
+            <Button x:Uid="HomeRetry" Style="{StaticResource MenuButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}" HorizontalAlignment="Center" />
+        </StackPanel>
+        <InfoBar Grid.Row="1" IsOpen="{x:Bind HasText(ViewModel.ErrorMessage), Mode=OneWay}" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Severity="Warning" IsClosable="False" VerticalAlignment="Top" Margin="24,8,24,0">
+            <InfoBar.ActionButton><Button x:Uid="HomeRetry" Style="{StaticResource MenuButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}" /></InfoBar.ActionButton>
+        </InfoBar>
+    </Grid>
+    </ContentControl>
+    <controls:MusicDetailControl x:Name="DetailView" ViewModel="{x:Bind ViewModel.DetailPresentation, Mode=OneWay}"
+        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasDetails), Mode=OneWay}"
+        Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
+        IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}">
+        <controls:MusicDetailControl.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></controls:MusicDetailControl.OpacityTransition>
+    </controls:MusicDetailControl>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
+    </Grid>
+</Page>

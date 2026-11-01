@@ -95,6 +95,7 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await EnsurePendingMetadataLyricsColumnsAsync();
+                    await MusicMetadataStorage.EnsureSchemaAsync(_dbConnection);
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
                     Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
@@ -764,7 +765,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 var result = await BassPlayerIpc.Shared.AtomicSettingsFile.LoadAsync(path,
-                    SettingsJsonContext.Default.SaveSettings, static () => new(), static () => new(),
+                    SettingsJsonContext.Default.SaveSettings, SaveSettings.CreateForNewUser, SaveSettings.CreateForNewUser,
                     onReset: preserved => _logger.LogWarning("Settings.json 已恢复默认值，损坏文件保留在 {Path}", preserved));
                 _settingsReadFailed = false;
                 _lastSettingsBytes = JsonSerializer.SerializeToUtf8Bytes(result, SettingsJsonContext.Default.SaveSettings);

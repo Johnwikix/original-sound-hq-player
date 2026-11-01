@@ -9,7 +9,9 @@
     xmlns:sub="using:WinUIMusicPlayer.View.SubView.Settings"
     mc:Ignorable="d">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid>
+        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+<Grid RowDefinitions="Auto,*">
 
         <Grid Grid.Row="0">
             <StackPanel Orientation="Horizontal">
@@ -84,5 +86,9 @@
                 <sub:AboutSettingsControl />
             </controls:Case>
         </controls:SwitchPresenter>
+    </Grid>
+        </ContentControl>
+        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
     </Grid>
 </Page>

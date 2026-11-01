@@ -26,6 +26,23 @@ try
          "AppTheme":"Dark","AppWidth":1450,"DefualtEntry":"song","PlayOrPauseShortcut":["Ctrl","P"]}
         """;
     var defaults = JsonSerializer.Deserialize("{}", SettingsJsonContext.Default.SaveSettings)!;
+    var firstStartupPath = Path.Combine(directory, "FirstStartup.json");
+    var firstStartup = await AtomicSettingsFile.LoadAsync(firstStartupPath, SettingsJsonContext.Default.SaveSettings,
+        SaveSettings.CreateForNewUser, SaveSettings.CreateForNewUser);
+    Check(firstStartup.DefaultEntry == "Home" && File.Exists(firstStartupPath), "First-run factory persists the Home startup entry.");
+    var oldStartupPath = Path.Combine(directory, "ExistingStartup.json");
+    await File.WriteAllTextAsync(oldStartupPath, "{}");
+    var oldStartup = await AtomicSettingsFile.LoadAsync(oldStartupPath, SettingsJsonContext.Default.SaveSettings,
+        SaveSettings.CreateForNewUser, SaveSettings.CreateForNewUser);
+    Check(oldStartup.DefaultEntry == "AddFolder", "Existing files retain their old default even when the missing-file factory selects Home.");
+    Check(SaveSettings.CreateForNewUser().DefaultEntry == "Home", "First startup must use Home.");
+    Check(defaults.DefaultEntry == "AddFolder", "Existing settings without the old entry key retain their previous default.");
+    foreach (string entry in new[] { "AddFolder", "MusicBrowse", "PlayLists", "Stats", "Home" })
+    {
+        var savedEntry = JsonSerializer.Deserialize("{\"DefualtEntry\":\"" + entry + "\"}", SettingsJsonContext.Default.SaveSettings)!;
+        var persistedEntry = JsonSerializer.Deserialize(JsonSerializer.Serialize(savedEntry, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
+        Check(persistedEntry.DefaultEntry == entry, "Existing startup choice survives restart: " + entry);
+    }
     Check(!defaults.PreferDatabaseLyrics && defaults.LocalLyricsFormatOrder == "krc,qrc,lrc,ttml",
         "Old settings must retain files-first lyrics and the previous format order.");
     var lyricsSettings = new SaveSettings { PreferDatabaseLyrics = true, LocalLyricsFormatOrder = "ttml,lrc,qrc,krc", DesktopLyricsTaskbarLyricsWidth = 1024, IsDesktopLyricsPronunciationEnabled = false };

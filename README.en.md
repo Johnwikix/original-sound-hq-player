@@ -53,7 +53,7 @@ The app is becoming paid starting with v1.2.3.0 (Microsoft Store channel): insta
 - **5.1 multichannel PCM output**
 - **Atmos (E-AC-3/JOC) HDMI bitstream passthrough** (requires a compatible receiver)
 
-While restricted, your existing settings are never modified or erased — complete the purchase from the DSP/general-settings banner or the About page and your original settings take effect again automatically. Builds obtained outside the Microsoft Store (including compiling from source) are not subject to these restrictions.
+While restricted, your existing settings are never modified or erased — complete the purchase from the DSP/general-settings banner or the About page and your original settings take effect again automatically. Builds obtained outside the Microsoft Store (including compiling from source) cannot verify a Store license and are treated as unlicensed in the same way; use the Microsoft Store version to access the full-version features.
 
 ## 🌟 Features
 

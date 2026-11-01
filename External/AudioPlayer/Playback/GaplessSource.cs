@@ -17,6 +17,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     public RenderKind Kind => RenderKind.Pcm;
     public int SampleRate => _sampleRate;
     public int Channels => _channels;
+    public bool DitherEnabled => Current.DitherEnabled;
     public uint ChannelMask => _channelMask;
     public long SubmittedFrames => Interlocked.Read(ref _submitted);
 
@@ -47,13 +48,25 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         }
     }
 
+    /// <summary>与渲染及曲目交接使用同一屏障；控制端必须已暂停输出。</summary>
+    internal void RetireInactiveConvolution()
+    {
+        lock (_gate)
+        {
+            _current.Effects?.RetireInactiveConvolution();
+            _next?.Effects?.RetireInactiveConvolution();
+        }
+    }
+
     public void FillPcm(Span<double> buffer, int frames)
     {
         lock (_gate)
         {
-            int rendered = _current.RenderPcm(buffer, frames);
-            if (rendered < frames && _current.IsDrained && _next is { DecodeFailure: null } next
-                && (next.ReadyFrames >= next.InitialBufferFrames || next.InputEnded && next.ReadyFrames > 0))
+            bool join = !_current.TailStarted && _next is { DecodeFailure: null } pending
+                && pending.DspReady && (pending.ReadyFrames >= pending.InitialBufferFrames || pending.InputEnded && pending.ReadyFrames > 0);
+            int rendered = _current.RenderPcm(buffer, frames, drainTail: !join);
+            if (rendered < frames && (join ? _current.PcmInputDrained : _current.IsDrained) && _next is { DecodeFailure: null } next
+                && next.DspReady && (next.ReadyFrames >= next.InitialBufferFrames || next.InputEnded && next.ReadyFrames > 0))
             {
                 next.ContinueDspFrom(_current);
                 _next = null;

@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -33,6 +34,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
         {
+            using var scope = CanvasDrawingSessionScope.Borrow(ds);
+            Draw(resourceCreator, scope.Context);
+        }
+
+        /// <summary>Draws cached lyric resources in the current native session.</summary>
+        public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
+        {
             DrawSecondaryText(resourceCreator, ds);
             DrawPrimaryText(resourceCreator, ds);
         }
@@ -62,7 +70,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private float _playedR, _playedG, _playedB, _playedA;
         private float _unplayedR, _unplayedG, _unplayedB, _unplayedA;
 
-        private void DrawSecondaryText(ICanvasResourceCreator creator, CanvasDrawingSession ds)
+        private void DrawSecondaryText(ICanvasResourceCreator creator, CanvasDrawContext ds)
         {
             if (Line == null) return;
             // The host already translates the cached primary origin to its live position.
@@ -75,7 +83,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
         }
 
-        private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
+        private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
         {
             if (Line?.PrimaryTextLayout == null || Line.PrimaryTextRegions == null) return;
             if (Line.UnplayedComposite == null) return;
@@ -118,7 +126,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             }
         }
 
-        private void DrawFullLineRegion(CanvasDrawingSession ds)
+        private void DrawFullLineRegion(CanvasDrawContext ds)
         {
             if (Line?.PrimaryTextLayout == null || Line.RenderLyricsRegions == null) return;
 
@@ -142,7 +150,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             ds.DrawImage(region.FinalFillEffect);
         }
 
-        private void DrawSubLineRegions(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
+        private void DrawSubLineRegions(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
         {
             if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
 
@@ -363,7 +371,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             return playedWidth;
         }
 
-        private void DrawSingleCharacter(CanvasDrawingSession ds, int charIndex, ICanvasImage source)
+        private void DrawSingleCharacter(CanvasDrawContext ds, int charIndex, ICanvasImage source)
         {
             if (Line?.PrimaryRenderChars == null) return;
             if (charIndex >= Line.PrimaryRenderChars.Count) return;

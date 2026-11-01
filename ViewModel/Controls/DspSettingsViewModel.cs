@@ -63,15 +63,6 @@ public partial class DspSettingsViewModel : ObservableObject
         }
     }
 
-    public bool NormalizeLoudness
-    {
-        get => field;
-        set
-        {
-            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.LoudnessNormalization);
-        }
-    }
-
     /// <summary>NumberBox 输入非法时会推送 NaN，忽略该次写回，保留旧有效值。</summary>
     public double TargetLufs
     {
@@ -116,16 +107,6 @@ public partial class DspSettingsViewModel : ObservableObject
         set
         {
             if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Mono);
-        }
-    }
-
-    /// <summary>交叉馈送档位索引：0 关闭、1 轻度（0.2）、2 中度（0.4）。</summary>
-    public int CrossfeedIndex
-    {
-        get => field;
-        set
-        {
-            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Crossfeed);
         }
     }
 
@@ -246,7 +227,9 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool CrossfeedEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Crossfeed);
     public bool WidthEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.StereoWidth);
     /// <summary>DSP 页面是否存在被许可锁定的功能。</summary>
-    public bool LicenseRestricted { get => field; private set => SetProperty(ref field, value); }
+    public bool LicenseRestricted { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(PurchaseVisible)); } }
+    /// <summary>DSP 提示条购买按钮：仅在存在被锁功能且当前许可状态可购买（许可非活跃）时显示。</summary>
+    public bool PurchaseVisible => LicenseRestricted && AppViewModel.CanPurchaseLicense;
     /// <summary>顶部提示条级别：许可受限升为警告，其余保持信息级。</summary>
     public InfoBarSeverity InfoSeverity { get => field; private set => SetProperty(ref field, value); } = InfoBarSeverity.Informational;
     /// <summary>当前输出为立体声（或空闲未知）。</summary>
@@ -277,6 +260,8 @@ public partial class DspSettingsViewModel : ObservableObject
     {
         if (!_loaded) return;
         LicenseRestricted = _license.IsFeatureRestricted(LicenseFeature.AllDsp);
+        // 可购买性变化不必然改变 LicenseRestricted（如非活跃 → Store 状态未知），购买按钮可见性需独立重估。
+        OnPropertyChanged(nameof(PurchaseVisible));
         ApplyState(_lastState);
     });
 
@@ -332,6 +317,7 @@ public partial class DspSettingsViewModel : ObservableObject
         _syncing = true;
         DspSettings settings = AppSettings.Dsp.ToUnifiedGain();
         bool effectsActive = _available && settings.IsEnabled;
+        LoadPcmValues(settings, effectsActive);
         GaplessPlayback = settings.GaplessPlayback;
         PlaybackRate = settings.PlaybackRate;
         CompressorEnabled = effectsActive && settings.CompressorEnabled;
@@ -349,7 +335,7 @@ public partial class DspSettingsViewModel : ObservableObject
         Balance = settings.Balance * 100;
         SwapChannels = effectsActive && settings.SwapChannels;
         Mono = effectsActive && settings.Mono;
-        CrossfeedIndex = !effectsActive || settings.Crossfeed == 0 ? 0 : settings.Crossfeed <= 0.2 ? 1 : 2;
+        OnPropertyChanged(nameof(CrossfeedIndex));
         StereoWidth = settings.StereoWidth * 100;
         _syncing = false;
     }
@@ -375,6 +361,7 @@ public partial class DspSettingsViewModel : ObservableObject
         bool editabilityChanged = EffectsActive != effectsActive || _lastRestrictedFeatures != _license.RestrictedFeatures;
         EffectsActive = effectsActive;
         OnPropertyChanged(nameof(PlaybackRateEditable));
+        OnPropertyChanged(nameof(PcmConfigurationEditable));
         _lastRestrictedFeatures = _license.RestrictedFeatures;
         if (editabilityChanged)
         {
@@ -393,6 +380,7 @@ public partial class DspSettingsViewModel : ObservableObject
             RetryCorrectionCommand.NotifyCanExecuteChanged();
         }
         StereoSupported = available && state!.Value.Channels is 0 or 2;
+        RefreshPcmAvailability();
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
             : state.Value.RenderKind == 3 ? "DspAtmosBitstreamBypass"
@@ -446,6 +434,12 @@ public partial class DspSettingsViewModel : ObservableObject
         var saved = AppSettings.Dsp;
         var candidate = (saved with
         {
+            ResampleMode = (PcmResampleMode)ResampleModeIndex,
+            ResampleTargetRate = (uint)ResampleTargetIndex < PcmTargetRates.Length ? PcmTargetRates[ResampleTargetIndex] : saved.ResampleTargetRate,
+            TruePeakLimiterEnabled = TruePeakLimiterEnabled,
+            TruePeakCeilingDb = TruePeakCeilingDb,
+            DitherEnabled = DitherEnabled,
+            CrossfeedCutoffHz = CrossfeedCutoffHz,
             PlaybackRate = PlaybackRate,
             CompressorEnabled = CompressorEnabled,
             CompressorThresholdDb = CompressorThresholdDb,
@@ -458,7 +452,7 @@ public partial class DspSettingsViewModel : ObservableObject
             TargetLufs = double.IsFinite(TargetLufs) ? TargetLufs : AppSettings.Dsp.TargetLufs,
             HeadroomDb = double.IsFinite(HeadroomDb) ? HeadroomDb : AppSettings.Dsp.HeadroomDb,
             Balance = Balance / 100, SwapChannels = SwapChannels, Mono = Mono,
-            Crossfeed = CrossfeedIndex switch { 1 => 0.2, 2 => 0.4, _ => 0 },
+            Crossfeed = CrossfeedAmount / 100,
             StereoWidth = StereoWidth / 100
         }).Sanitize();
         AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(candidate, saved, _license.RestrictedFeatures);

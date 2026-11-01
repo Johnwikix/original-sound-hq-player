@@ -11,6 +11,13 @@ namespace WinUIMusicPlayer.Model
         public string Extension => System.IO.Path.GetExtension(Path).TrimStart('.');
         public string Title { get; init; } = "title";
         public string LastLevelFolderPath { get; init; } = "folder";
+        public string AlbumArtist { get; set; } = "";
+        public string Genre { get; set; } = "";
+        public string Composer { get; set; } = "";
+        public string Lyricist { get; set; } = "";
+        public string Conductor { get; set; } = "";
+        public string CatalogNumber { get; set; } = "";
+        public bool AdditionalMetadataRead { get; set; }
         public int DiskNumber { get; init; }
         public int TrackNumber { get; init; }
         public int Order { get; init; }

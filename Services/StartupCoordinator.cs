@@ -80,8 +80,6 @@ namespace WinUIMusicPlayer.Services
             await Task.WhenAll(
                 MusicDatabaseService.GetEqualizerSettingsAsync(),
                 MusicDatabaseService.GetSettingsAsync());
-            // ThemeType 初始即为 Default，恢复同值不会触发 setter；创建视图前显式解析实际主题。
-            appViewModel.UpdateCover();
             MusicDatabaseService.LoadWindowState();
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
             App.Services.GetRequiredService<PlaybackProgressService>().Attach(ipcService, App.MainWindow.DispatcherQueue);
@@ -126,6 +124,9 @@ namespace WinUIMusicPlayer.Services
             var folders = App.Services.GetRequiredService<AddFolderViewModel>();
             folders.Start();
             shutdown.RegisterStop(folders.StopAsync);
+            var home = App.Services.GetRequiredService<HomeViewModel>();
+            home.Start(App.MainWindow.DispatcherQueue);
+            shutdown.RegisterStop(home.StopAsync);
             App.MainWindow.InitializeTray();
             shutdown.RegisterCleanup(App.Services.GetRequiredService<PlaybackCommands>().Dispose);
             shutdown.RegisterCleanup(App.Services.GetRequiredService<OneShotPlaybackService>().Dispose);

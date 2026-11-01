@@ -164,32 +164,37 @@ namespace WinUIMusicPlayer.Utils
 
         /// <summary>
         /// 根据当前右键选中的曲目刷新需要读取音频内容的菜单项。
-        /// WebDAV 离线时将读取内容的操作置灰；播放入口保留以触发重新探活。
+        /// WebDAV 离线时将读取内容的操作置灰，播放入口保留以触发重新探活；
+        /// "打开文件位置"对远程曲目始终置灰（仅本地文件可在资源管理器定位）。
         /// </summary>
         public static void UpdateMusicMenuAvailability(
             ObservableCollection<MenuModel> options, IEnumerable<Music>? selected, Music? fallback = null)
         {
             bool hasSelection = false;
             bool hasOffline = false;
+            bool hasRemote = false;
             if (selected is not null)
             {
                 foreach (var music in selected)
                 {
                     if (music is null) continue;
                     hasSelection = true;
+                    hasRemote |= music.IsRemote;
                     hasOffline |= music.IsRemote && music.IsRemoteOffline;
                 }
             }
             if (!hasSelection && fallback is not null)
             {
                 hasSelection = true;
+                hasRemote = fallback.IsRemote;
                 hasOffline = fallback.IsRemote && fallback.IsRemoteOffline;
             }
 
             SetMenuEnabled(options, "Play", hasSelection);
             SetMenuEnabled(options, "ConvertAudio", hasSelection && !hasOffline);
             SetMenuEnabled(options, "ReGetLyrics", hasSelection && !hasOffline);
-            SetMenuEnabled(options, "OpenInExplorer", hasSelection && !hasOffline);
+            // "打开文件位置"只对本地曲目可用；远程曲目置灰，与行按钮的 CanEditFile 门控一致。
+            SetMenuEnabled(options, "OpenInExplorer", hasSelection && !hasRemote);
             SetMenuEnabled(options, "SendToUsbDevice", hasSelection && !hasOffline);
         }
 
@@ -321,6 +326,8 @@ namespace WinUIMusicPlayer.Utils
                 DiscNumber = music.DiskNumber,
                 Year = music.Year
             };
+            if (music.AdditionalMetadataRead)
+                AudioMetadataTags.Write(theTrack, AdditionalMusicMetadata.From(music));
             if (pic is not null)
             {
                 theTrack.EmbeddedPictures.Clear();
@@ -570,6 +577,7 @@ namespace WinUIMusicPlayer.Utils
             }
             var info = new AudioFileInfo
             {
+                AdditionalMetadata = track is null ? null : AudioMetadataTags.Read(track),
                 Title = string.IsNullOrWhiteSpace(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title,
                 Artist = string.IsNullOrWhiteSpace(track?.Artist) ? "未知艺术家" : track.Artist,
                 Album = string.IsNullOrWhiteSpace(track?.Album) ? "未知专辑" : track.Album,
@@ -906,21 +914,23 @@ namespace WinUIMusicPlayer.Utils
             return name;
         }
 
-        public static void OpenFileInExplorer(string filePath)
+        /// <summary>在资源管理器中定位文件；文件缺失或启动失败返回 false。</summary>
+        public static bool OpenFileInExplorer(string filePath)
         {
-            if (System.IO.File.Exists(filePath))
+            if (!System.IO.File.Exists(filePath))
             {
-                try
-                {
-                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"OpenFileInExplorer 打开资源管理器失败: {ex.Message}");
-                }
+                _logger.LogWarning($"OpenFileInExplorer 文件不存在: {filePath}");
+                return false;
             }
-            else
+            try
             {
+                Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"OpenFileInExplorer 打开资源管理器失败: {ex.Message}");
+                return false;
             }
         }
 
@@ -1066,6 +1076,7 @@ namespace WinUIMusicPlayer.Utils
                     CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                     UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                 };
+                AudioMetadataTags.Read(track).ApplyTo(music);
                 return (music, lyrics);
             }
             catch (Exception ex)
@@ -1095,6 +1106,7 @@ namespace WinUIMusicPlayer.Utils
                         CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                         UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
+                    wavFileInfo.AdditionalMetadata?.ApplyTo(music);
                     return (music, wavFileInfo.Lyrics);
                 }
                 catch (Exception innerEx)

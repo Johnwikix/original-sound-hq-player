@@ -61,17 +61,23 @@ namespace WinUIMusicPlayer.Services
         public event Action? StatsUpdated;
         public readonly List<TaskCompletionSource<StatsSnapshot>> Queries = [];
         public readonly List<(DateTime Start, DateTime End)> QueryRanges = [];
+        public readonly List<CancellationToken> QueryTokens = [];
         public int HeatmapQueries;
         public void Notify() => StatsUpdated?.Invoke();
-        public Task<StatsSnapshot> GetStatsSnapshotAsync(DateTime start, DateTime end)
+        public async Task<StatsSnapshot> GetStatsSnapshotAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            QueryTokens.Add(cancellationToken);
             QueryRanges.Add((start, end));
             var completion = new TaskCompletionSource<StatsSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
             Queries.Add(completion);
-            return completion.Task;
+            var result = await completion.Task;
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
         }
-        public Task<Dictionary<DateTime, int>> GetDailyCountsAsync(DateTime start, DateTime end)
+        public Task<Dictionary<DateTime, int>> GetDailyCountsAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             HeatmapQueries++;
             return Task.FromResult(new Dictionary<DateTime, int>());
         }

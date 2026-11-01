@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Helper;
@@ -31,6 +32,8 @@ public partial class AddFolderViewModel : ObservableObject
     private readonly ILogger<AddFolderViewModel> _logger;
     private readonly FolderAccessService _folderAccess;
     private Task? _initialLoad;
+    private Task? _folderLoadTask;
+    private CancellationTokenSource? _folderRead;
     private Task _operationTask = Task.CompletedTask;
     private bool _active;
     private bool _started;
@@ -55,21 +58,28 @@ public partial class AddFolderViewModel : ObservableObject
 
     public void Activate()
     {
-        if (_stopped) return;
+        if (_stopped || _active) return;
         Start();
         _active = true;
         _initialLoad = LoadFoldersAsync();
     }
 
-    public void Deactivate() => _active = false;
+    public void Deactivate()
+    {
+        _active = false;
+        if (IsScanning) return; // 已接受的扫描仍要等待读取/提交完成。
+        _folderLoadVersion++;
+        _folderRead?.Cancel();
+    }
 
     public async Task StopAsync()
     {
         _stopped = true;
         _active = false;
         _folderLoadVersion++;
+        if (!IsScanning) _folderRead?.Cancel();
         LibraryOperationGate.Changed -= OnOperationChanged;
-        if (_initialLoad is not null) await _initialLoad;
+        if (_folderLoadTask is not null) await _folderLoadTask;
         await _operationTask;
     }
 
@@ -91,28 +101,45 @@ public partial class AddFolderViewModel : ObservableObject
         else if (_active) _initialLoad = LoadFoldersAsync();
     }
 
-    private async Task LoadFoldersAsync()
+    private Task LoadFoldersAsync()
     {
-        try
+        _folderLoadVersion++;
+        if (_folderLoadTask is { IsCompleted: false }) return _folderLoadTask;
+        return _folderLoadTask = LoadFoldersCoreAsync();
+    }
+
+    private async Task LoadFoldersCoreAsync()
+    {
+        while (!_stopped)
         {
-            int version = ++_folderLoadVersion;
-            var folders = await _database.GetFoldersWithSongCountsAsync();
-            if (version != _folderLoadVersion) return;
-            FolderList.Clear();
-            foreach (var folder in folders)
+            int version = _folderLoadVersion;
+            using var request = new CancellationTokenSource();
+            _folderRead = request;
+            try
             {
-                if (folder.IsExternalImport)
+                var folders = await _database.GetFoldersWithSongCountsAsync(request.Token);
+                if (_stopped) return;
+                if (version != _folderLoadVersion) continue;
+                FolderList.Clear();
+                foreach (var folder in folders)
                 {
-                    // 显示名在展示层注入资源文案（库内不固化本地化文本，避免切换语言后过期）；
-                    // 哨兵路径不展示，业务逻辑一律走 IsExternalImport/Id。
-                    folder.Name = ToolUtils.GetString("ExternalImportsFolderName");
-                    folder.Path = string.Empty;
+                    if (folder.IsExternalImport)
+                    {
+                        folder.Name = ToolUtils.GetString("ExternalImportsFolderName");
+                        folder.Path = string.Empty;
+                    }
+                    FolderList.Add(folder);
                 }
-                FolderList.Add(folder);
+                SetVisualState(false);
+                return;
             }
-            SetVisualState(false);
+            catch (OperationCanceledException) when (request.IsCancellationRequested)
+            {
+                if (!_active && !IsScanning) return;
+            }
+            catch (Exception ex) { _logger.LogError(ex, "加载文件夹失败"); return; }
+            finally { if (ReferenceEquals(_folderRead, request)) _folderRead = null; }
         }
-        catch (Exception ex) { _logger.LogError(ex, "加载文件夹失败"); }
     }
 
     private void SetVisualState(bool loading)
@@ -155,12 +182,45 @@ public partial class AddFolderViewModel : ObservableObject
         }
     });
 
-    public Task RescanFolderWithLoadingAsync(int folderId) => RunOperationAsync(async () =>
+    public Task RescanFolderWithLoadingAsync(int folderId) => RunOperationAsync(() => RescanFolderWithProgressAsync(folderId));
+
+    private async Task RescanFolderWithProgressAsync(int folderId)
     {
         // Existing songs remain visible; new songs use the same committed-batch callback as adding.
         _needsReconcile = true;
-        await Task.Run(() => _database.RescanFolder(folderId, ApplyBatchAsync));
-    });
+        var folder = await _database.GetFolder(folderId);
+        if (folder is null) return;
+        var progress = _appViewModel.Progress;
+        // 分母取库内现有行数：重扫以复查既有文件为主，新增/缺失文件只让百分比近似；
+        // 外部导入虚拟行是哨兵路径且只做存在性对账，无计数回调，保持不定进度。
+        int total = folder.IsExternalImport ? 0 : await _database.CountSongsInFolderAsync(folder.Path);
+        progress.Begin(ProgressCenter.Keys.LibraryRescanning, ToolUtils.GetString("ProgressRescanning"));
+        if (total > 0) progress.Report(ProgressCenter.Keys.LibraryRescanning, 0);
+        long checkedCount = 0;
+        int lastPercent = 0;
+        var gate = new object();
+        try
+        {
+            await Task.Run(() => _database.RescanFolder(folderId, ApplyBatchAsync, count =>
+            {
+                // 枚举跳过与批次提交在不同线程推进计数；整数百分点前进才上报，避免逐文件派发 UI 更新。
+                int percent;
+                lock (gate)
+                {
+                    checkedCount += count;
+                    if (total == 0) return;
+                    percent = (int)Math.Min(99, checkedCount * 100 / total);
+                    if (percent <= lastPercent) return;
+                    lastPercent = percent;
+                }
+                progress.Report(ProgressCenter.Keys.LibraryRescanning, percent);
+            }));
+        }
+        finally
+        {
+            progress.Complete(ProgressCenter.Keys.LibraryRescanning);
+        }
+    }
 
     public Task RemoveFolderWithLoadingAsync(int folderId) => RunOperationAsync(async () =>
     {

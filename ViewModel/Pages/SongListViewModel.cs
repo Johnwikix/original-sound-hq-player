@@ -1,14 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -26,15 +24,13 @@ namespace WinUIMusicPlayer.ViewModel
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
         private MusicBrowseViewModel MusicBrowseViewModel { get; set; }
-        private SongListPage currentPage { get; set; }
-        private ILogger<SongListViewModel> _logger;
 
-        public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<SongListViewModel> logger)
+        public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
-            _logger = logger;
+            OpenInExplorerCommand = new RelayCommand(() => MusicCommands.OpenSourceCommand.Execute(SelectedMusic));
             InitalizeOption();
         }
 
@@ -77,14 +73,18 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void SetCurrentPage(SongListPage page)
+        public bool CanLocateCurrentTrack(Music? current, int itemCount)
+            => itemCount > 0 && CurrentTrackLookup.Find(AppViewModel.ListSongs, current) is not null;
+
+        public Music? LocateCurrentTrack()
         {
-            currentPage = page;
+            var target = CurrentTrackLookup.Find(AppViewModel.ListSongs, AppViewModel.SelectedPlaybackMusic);
+            if (target is not null) SelectedMusic = target;
+            return target;
         }
 
         public void ReceiveNavigation()
         {
-            UpdateMusicListView();
             AppViewModel.IsBackBtnEnable = false;
         }
 
@@ -97,23 +97,6 @@ namespace WinUIMusicPlayer.ViewModel
             return await MusicBrowseViewModel.AreUSureDeleteFromDisk();
         }
 
-
-        public void UpdateMusicListView()
-        {
-            try
-            {
-                if (AppViewModel.SelectedPlaybackMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
-                {
-                    SelectedMusic = m;
-                    currentPage?.OnScrollToMusic(m);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"UpdateMusicListView 滚动音乐失败: {ex.Message}");
-            }
-        }
 
         public async Task MusicListView_DoubleTappedAsync()
         {
@@ -176,25 +159,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        [RelayCommand]
-        public void OpenInExplorer()
-        {
-            if (SelectedMusic is not null)
-            {
-                var filePath = SelectedMusic.Path;
-                if (File.Exists(filePath))
-                {
-                    try
-                    {
-                        Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"OpenInExplorer 打开资源管理器时出错: {ex.Message}");
-                    }
-                }
-            }
-        }
+        // 统一入口：本地曲目在资源管理器定位，远程曲目打开来源浏览器（与列表行按钮同源）。
+        public IRelayCommand OpenInExplorerCommand { get; }
 
         public void AuthorTextBlock_Tapped(string artist)
         {
