@@ -1849,16 +1849,16 @@
     <value>¿Eliminar el preajuste «{0}»? Se conservará la curva actual.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Salida 5.1 experimental</value>
+    <value>Salida 5.1</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Las pistas PCM 5.1 compatibles usan WASAPI exclusivo automáticamente; las demás conservan la salida habitual. ASIO mantiene su modo con L, R, C, LFE, Ls, Rs en las primeras seis salidas. Si falla, se usa estéreo. Sin renderizado de objetos Atmos.</value>
+    <value>Las pistas PCM 5.1 compatibles cambian automáticamente a WASAPI exclusivo; las demás conservan su salida. ASIO no cambia; salidas 1–6: L, R, C, LFE, Ls, Rs. Si falla, se usa estéreo; sin objetos Atmos.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Preferir paso directo Atmos por HDMI (experimental)</value>
+    <value>Preferir paso directo Atmos por HDMI</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Las pistas compatibles usan WASAPI exclusivo automáticamente; las demás conservan la salida habitual. Admite E-AC-3 / Atmos de seis canales a 48 kHz, no TrueHD. El volumen y los efectos de la app se omiten; ajuste el volumen en el receptor.</value>
+    <value>Pistas compatibles: WASAPI exclusivo automático; otras conservan su salida. Admite E-AC-3 / Atmos (48 kHz, 6 canales), no TrueHD. El paso directo omite volumen/efectos de la app; ajuste el volumen en el receptor.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Modo bitstream HDMI E-AC-3 / Atmos experimental: se omiten el volumen y los efectos de la app. Ajuste el volumen en el receptor. Los ajustes se restauran al volver a PCM.</value>

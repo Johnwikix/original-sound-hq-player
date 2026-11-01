@@ -1849,16 +1849,16 @@
     <value>プリセット「{0}」を削除しますか？編集中のカーブは保持されます。</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>実験的な 5.1 出力</value>
+    <value>5.1 出力</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>対応する 5.1 PCM 曲は WASAPI 排他へ自動切替。他の曲は元の出力設定を使用します。ASIO は元のモードを維持し、先頭 6 出力は L、R、C、LFE、Ls、Rs が必要です。失敗時はステレオへ戻ります。Atmos オブジェクト描画は含みません。</value>
+    <value>対応する5.1 PCM曲はWASAPI排他へ自動切替、他の曲は出力設定を維持。ASIOは元のモードを維持し、出力1～6はL、R、C、LFE、Ls、Rsの順です。失敗時はステレオへ戻ります。Atmosオブジェクト描画は非対応。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Atmos HDMI パススルーを優先（試験的）</value>
+    <value>Atmos HDMI パススルーを優先</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>対応曲では WASAPI 排他モードに自動切替し、その他の曲は元の出力設定を使用します。48 kHz・6 チャンネル E-AC-3 / Atmos に対応（TrueHD 非対応）。パススルー中はアプリの音量と音響効果を適用しません。AV アンプで音量を調整してください。</value>
+    <value>対応曲はWASAPI排他へ自動切替、他の曲は出力設定を維持。48 kHz・6チャンネルのE-AC-3 / Atmosに対応（TrueHD非対応）。直通中はアプリの音量と音響効果を適用しません。音量はAVアンプで調整してください。</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>実験的な E-AC-3 / Atmos HDMI ビットストリーム：アプリの音量と音響効果は適用されません。アンプで音量を調整してください。PCM に戻ると設定が復元されます。</value>

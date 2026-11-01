@@ -1852,16 +1852,16 @@
     <value>“{0}” hazır ayarı silinsin mi? Geçerli eğriniz korunur.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Deneysel 5.1 çıkış</value>
+    <value>5.1 çıkış</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Uyumlu 5.1 PCM parçaları otomatik olarak WASAPI özel modunu kullanır; diğer parçalar çıkış ayarlarınızı korur. ASIO, ilk altı çıkışında L, R, C, LFE, Ls, Rs ile ASIO modunda kalır. Hata durumunda stereoya geri dönülür. Atmos nesne işleme yapılmaz.</value>
+    <value>Uyumlu 5.1 PCM parçalar otomatik olarak WASAPI özel moduna geçer; diğerleri çıkış ayarlarını korur. ASIO modu değişmez; ilk 6 çıkış: L, R, C, LFE, Ls, Rs. Hata durumunda stereo; Atmos nesne işleme yok.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Atmos HDMI passthrough tercih et (deneysel)</value>
+    <value>Atmos HDMI passthrough tercih et</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Uyumlu parçalar otomatik olarak WASAPI özel modunu kullanır; diğer parçalar çıkış ayarlarınızı korur. 48 kHz, altı kanallı E-AC-3 / Atmos desteklenir; TrueHD desteklenmez. Passthrough uygulama ses düzeyini ve etkileri atlar; ses düzeyini alıcıda ayarlayın.</value>
+    <value>Uyumlu parçalar otomatik olarak WASAPI özel moduna geçer; diğerleri çıkışı korur. E-AC-3 / Atmos: 48 kHz, 6 kanal; TrueHD desteklenmez. Passthrough uygulama sesini ve efektleri atlar; ses alıcıdan ayarlanır.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Deneysel E-AC-3 / Atmos HDMI bit akışı modu: uygulama ses düzeyi ve tüm etkiler atlanır. Ses düzeyini alıcınızda ayarlayın. Kaydedilen ayarlar PCM ile devam eder.</value>

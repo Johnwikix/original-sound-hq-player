@@ -1,3 +1,9 @@
+## 2026-11-01 精简设置页 5.1 与 Atmos 说明
+- `Strings/*/Resources.resw`：缩短七种语言的 5.1 与 Atmos 描述，保留输出行为、格式限制和音量提示。
+
+## 2026-11-01 设置页 5.1 与 Atmos 文案调整
+- `Strings/*/Resources.resw`：移除常规页 5.1 和 Atmos 项标题中的实验性标注，保留功能说明。
+
 ## 2026-10-31 修复高 DPI 缩放循环与三项 P2 问题
 - FeaturedCarousel：16:9 行高和主列分配改用父级测量宽度，避免将 DPI 舍入的 ActualWidth 反写布局及图片固有尺寸干扰主列；修复边框缩放 LayoutCycleException、画面停滞与缺图后进入动画中止。
 - MainPage.LibraryNavigation：跨链导航先关闭页内歌曲详情、取消待显示请求和旧返回回调，再由目标页更新返回状态，覆盖主 Frame 已在曲库的情况。

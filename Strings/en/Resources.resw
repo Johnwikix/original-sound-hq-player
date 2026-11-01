@@ -1852,16 +1852,16 @@
     <value>Delete preset “{0}”? Your current curve will be kept.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Experimental 5.1 output</value>
+    <value>5.1 output</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Compatible 5.1 PCM tracks automatically use WASAPI exclusive; other tracks keep your output settings. ASIO stays in ASIO mode with L, R, C, LFE, Ls, Rs on its first six outputs. Failure falls back to stereo. No Atmos object rendering.</value>
+    <value>Compatible 5.1 PCM tracks auto-switch to WASAPI exclusive; others keep output. ASIO mode remains; outputs 1–6: L, R, C, LFE, Ls, Rs. Failure falls back to stereo; no Atmos object rendering.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Prefer Atmos HDMI passthrough (experimental)</value>
+    <value>Prefer Atmos HDMI passthrough</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Compatible tracks automatically use WASAPI exclusive; other tracks keep your output settings. Supports 48 kHz, six-channel E-AC-3 / Atmos, not TrueHD. Passthrough bypasses app volume and effects; adjust volume on the receiver.</value>
+    <value>Compatible tracks auto-switch to WASAPI exclusive; others keep current output. Supports 48 kHz, 6-channel E-AC-3 / Atmos, not TrueHD. Passthrough bypasses app volume and effects; use receiver volume.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimental E-AC-3 / Atmos HDMI bitstream mode: app volume and all effects are bypassed. Adjust volume on your receiver. Saved settings resume with PCM.</value>

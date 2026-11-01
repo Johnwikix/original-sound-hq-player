@@ -1854,16 +1854,16 @@
     <value>删除预设“{0}”？当前编辑的曲线会保留。</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>实验性 5.1 输出</value>
+    <value>5.1 输出</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>兼容的 5.1 PCM 曲目自动使用 WASAPI 独占，普通曲目保留原输出设置。ASIO 保持原模式，前六路须为左、右、中置、低音、左环绕、右环绕；失败回退立体声。不含 Atmos 对象渲染。</value>
+    <value>兼容的5.1 PCM曲目自动切换至WASAPI独占；其他曲目沿用原设置。ASIO模式不变，前六路为L、R、C、LFE、Ls、Rs。失败回退立体声；不渲染Atmos对象。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>优先 Atmos HDMI 直通（实验性）</value>
+    <value>优先 Atmos HDMI 直通</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>兼容曲目自动使用 WASAPI 独占，普通曲目保持原输出设置。支持 48 kHz 六声道 E-AC-3 / Atmos，不支持 TrueHD。直通时绕过应用音量和音效，请在功放调节音量。</value>
+    <value>兼容曲目自动切至WASAPI独占，其他曲目沿用原输出。支持48 kHz六声道E-AC-3 / Atmos，不支持TrueHD。直通绕过应用音量与音效，音量由功放调节。</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>实验性 E-AC-3 / Atmos HDMI 位流模式：已绕过应用音量和所有音效，请在功放上调节音量。回到 PCM 后恢复原设置。</value>

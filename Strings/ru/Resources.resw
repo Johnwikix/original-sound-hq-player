@@ -1849,16 +1849,16 @@
     <value>Удалить пресет «{0}»? Текущая кривая сохранится.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Экспериментальный вывод 5.1</value>
+    <value>Вывод 5.1</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Совместимые треки PCM 5.1 автоматически используют WASAPI Exclusive; остальные сохраняют обычные настройки. ASIO сохраняет свой режим: первые шесть выходов L, R, C, LFE, Ls, Rs. При ошибке используется стерео. Без рендеринга объектов Atmos.</value>
+    <value>Совместимые треки PCM 5.1 автоматически переходят на WASAPI Exclusive; остальные сохраняют настройки. ASIO без изменений; выходы 1–6: L, R, C, LFE, Ls, Rs. При сбое — стерео. Без рендеринга объектов Atmos.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Предпочитать Atmos по HDMI (экспериментально)</value>
+    <value>Предпочитать Atmos по HDMI</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Совместимые треки автоматически используют WASAPI Exclusive; остальные сохраняют обычные настройки вывода. Поддерживается E-AC-3 / Atmos: 48 кГц, 6 каналов, без TrueHD. Громкость и эффекты приложения обходятся; регулируйте громкость на ресивере.</value>
+    <value>Совместимые треки автоматически используют WASAPI Exclusive; остальные сохраняют вывод. E-AC-3 / Atmos: 48 кГц, 6 каналов; без TrueHD. Прямой вывод обходит громкость и эффекты приложения; громкость — на ресивере.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Экспериментальный битстрим E-AC-3 / Atmos HDMI: громкость и эффекты приложения обходятся. Регулируйте громкость на ресивере. При возврате к PCM настройки возобновляются.</value>

@@ -1849,16 +1849,16 @@
     <value>Preset „{0}“ löschen? Die aktuelle Kurve bleibt erhalten.</value>
   </data>
   <data name="ExperimentalSurround51Title" xml:space="preserve">
-    <value>Experimentelle 5.1-Ausgabe</value>
+    <value>5.1-Ausgabe</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Kompatible 5.1-PCM-Titel nutzen automatisch WASAPI exklusiv; andere behalten die Ausgabeeinstellungen. ASIO bleibt im ASIO-Modus (L, R, C, LFE, Ls, Rs auf den ersten sechs Ausgängen). Bei Fehlern Stereo. Kein Atmos-Objektrendering.</value>
+    <value>Kompatible 5.1-PCM-Titel wechseln automatisch zu WASAPI exklusiv; andere behalten ihre Ausgabe. ASIO-Modus unverändert; Ausgänge 1–6: L, R, C, LFE, Ls, Rs. Bei Fehlern Stereo; kein Atmos-Objektrendering.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Atmos-HDMI-Passthrough bevorzugen (experimentell)</value>
+    <value>Atmos-HDMI-Passthrough bevorzugen</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Kompatible Titel nutzen automatisch WASAPI exklusiv; andere behalten Ihre Ausgabeeinstellungen. Unterstützt E-AC-3 / Atmos mit 48 kHz und sechs Kanälen, kein TrueHD. Lautstärke und Effekte der App werden umgangen; Lautstärke am Receiver regeln.</value>
+    <value>Kompatible Titel nutzen automatisch WASAPI exklusiv; andere behalten ihre Ausgabe. E-AC-3 / Atmos: 48 kHz, 6 Kanäle; kein TrueHD. Passthrough umgeht App-Lautstärke und Effekte; Lautstärke am Receiver regeln.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimenteller E-AC-3 / Atmos HDMI-Bitstream: App-Lautstärke und alle Effekte werden umgangen. Lautstärke am Receiver regeln. Gespeicherte Einstellungen gelten wieder bei PCM.</value>
