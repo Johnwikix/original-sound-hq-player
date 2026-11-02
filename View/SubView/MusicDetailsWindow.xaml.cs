@@ -74,9 +74,9 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void setWindow()
         {
-            // 不超过主窗口的最小尺寸（MainWindow MinWidth/MinHeight 960×720）；控件在更窄时自动紧凑。
+            // 默认 900×675（低于主窗口最小尺寸）；控件宽 <810 或高 <540 才进入紧凑布局。
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 720, 960, App.MainWindow.AppWindow, this.AppWindow);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 675, 900, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
         }
 
