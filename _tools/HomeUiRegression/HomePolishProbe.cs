@@ -112,7 +112,6 @@ internal sealed partial class HomePolishWindow : Window
         Add(buttons, "OpenFromPreview", OpenFromPreview);
         Add(buttons, "VerifyDetails", CheckDetails);
         Add(buttons, "Secondary", CheckSecondaryLifetimes);
-        Add(buttons, "WindowIO", CheckWindowReaderThreading);
         Add(buttons, "Universal", CheckUniversalDetails);
         Add(buttons, "DetailsTiming", CheckDetailsTiming);
         Add(buttons, "CarouselEdges", CheckCarouselEdges);

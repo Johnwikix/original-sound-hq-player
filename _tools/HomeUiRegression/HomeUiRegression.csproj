@@ -26,9 +26,9 @@
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../Model/AdditionalMusicMetadata.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs;../../Model/PendingMetadataWrite.cs" />
     <Compile Include="../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsFilePolicy.cs" />
-    <Compile Include="../../Helper/ConnectedAnimationScope.cs;../../Services/WindowArtworkSession.cs;../../Services/ApplicationTasks.cs;../../Services/EditorSessions.cs;../../Services/IMusicDetailsEditorFactory.cs;../../Services/MusicDetailsEditorFactory.cs;../../Services/MusicMetadataStorage.cs" />
+    <Compile Include="../../Helper/ConnectedAnimationScope.cs;../../Services/ApplicationTasks.cs;../../Services/EditorSessions.cs;../../Services/IMusicDetailsEditorFactory.cs;../../Services/MusicDetailsEditorFactory.cs;../../Services/MusicMetadataStorage.cs;../../Services/AlbumTagEdit.cs" />
     <Compile Include="../../ViewModel/Controls/MusicDetailsViewModel.cs;../../Model/MusicDetailsRequest.cs" />
-    <Compile Include="../../ViewModel/Controls/MusicMetadataEditorViewModel.cs;../../ViewModel/Controls/LyricsEditorViewModel.cs;../../ViewModel/Controls/MusicDetailsEditorViewModel.cs" />
+    <Compile Include="../../ViewModel/Controls/MusicMetadataEditorViewModel.cs;../../ViewModel/Controls/LyricsEditorViewModel.cs;../../ViewModel/Controls/MusicDetailsEditorViewModel.cs;../../ViewModel/Controls/AlbumDetailsViewModel.cs" />
     <Compile Include="../../Model/Recommendations/*.cs;../../Services/Recommendations/*.cs;../../Services/MusicDatabaseService.Recommendations.cs" />
     <Compile Include="../../ViewModel/Pages/HomeViewModel.cs;../../Services/AppLifecycle.cs;../../Model/Music.cs;../../Model/BulkObservableCollection.cs;../../State/LibraryState.cs;../../Utils/ArtistHelper.cs" />
     <Compile Include="../../View/HomePage.xaml.cs;../../View/Controls/FeaturedCarousel.xaml.cs;../../View/Controls/HomeHeroCard.xaml.cs;../../View/Controls/MusicCoverControl.xaml.cs" />
@@ -38,6 +38,8 @@
     <Page Include="../../View/Controls/HomeCarouselTile.xaml" Link="View/Controls/HomeCarouselTile.xaml" />
     <Page Include="../../View/Controls/RecommendationShelf.xaml" Link="View/Controls/RecommendationShelf.xaml" />
     <Compile Include="../../View/Controls/HomeSongItem.cs;../../View/Controls/MusicDetailControl.xaml.cs" />
+    <Compile Include="../../View/Controls/AlbumDetailControl.xaml.cs" />
+    <Page Include="../../View/Controls/AlbumDetailControl.xaml" Link="View/Controls/AlbumDetailControl.xaml" />
     <Page Include="../../View/Controls/MusicDetailControl.xaml" Link="View/Controls/MusicDetailControl.xaml" />
     <Page Include="../../View/Controls/HomeSongPreview.xaml" Link="View/Controls/HomeSongPreview.xaml" />
     <Compile Include="../../View/Controls/CarouselLighting.cs" />

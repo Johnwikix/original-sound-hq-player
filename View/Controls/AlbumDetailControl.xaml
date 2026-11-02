@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.Controls.AlbumDetailControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel">
+    <UserControl.Resources>
+        <Style x:Key="PropertyCaption" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Thickness x:Key="PivotHeaderItemMargin">0,0,24,0</Thickness>
+        <DataTemplate x:Key="WrappedActionText"><TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" /></DataTemplate>
+    </UserControl.Resources>
+    <Grid x:Name="DetailRoot" RowDefinitions="*,Auto" Padding="32,16,32,20" Background="Transparent">
+        <Grid x:Name="HeroLayout" Grid.Row="0" ColumnDefinitions="280,36,*" RowDefinitions="*,0">
+            <ScrollViewer x:Name="IdentityScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Hidden" IsTabStop="False">
+                <Grid x:Name="IdentityLayout" RowDefinitions="Auto,Auto" ColumnDefinitions="280,*">
+                    <Grid x:Name="ArtworkRegion" Width="280" Height="280" Grid.ColumnSpan="2" HorizontalAlignment="Left">
+                        <Border x:Name="CoverHost" Width="280" Height="280" CornerRadius="10" HorizontalAlignment="Left">
+                            <Grid Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                                <FontIcon
+                                    x:Name="CoverPlaceholder"
+                                    Glyph="&#xE93C;"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="84"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Visibility="{x:Bind CoverPlaceholderVisibility(ViewModel.CoverPreview), Mode=OneWay}" />
+                                <Image x:Name="CoverPreviewImage" Source="{x:Bind ViewModel.CoverPreview, Mode=OneWay}" Stretch="UniformToFill" />
+                            </Grid>
+                        </Border>
+                        <Button x:Name="ArtworkMenuButton" x:Uid="HomeDetailsArtworkMenu" Width="36" Height="36" MinWidth="36" MinHeight="36" Padding="9"
+                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" CornerRadius="18"
+                            Background="{ThemeResource ControlFillColorSecondaryBrush}" Style="{StaticResource HomeSongActionButtonStyle}">
+                            <FontIcon Glyph="&#xE70F;" FontSize="16" />
+                            <Button.Flyout><MenuFlyout x:Name="CoverMenu">
+                                <MenuFlyoutItem x:Uid="HomeDetailsFindCover" Command="{x:Bind ViewModel.FindCoverCommand, Mode=OneWay}" />
+                                <MenuFlyoutItem x:Uid="HomeDetailsChooseCover" Command="{x:Bind ViewModel.ChooseCoverCommand, Mode=OneWay}" />
+                                <MenuFlyoutItem x:Uid="HomeDetailsExportCover" Command="{x:Bind ViewModel.ExportCoverCommand, Mode=OneWay}" />
+                            </MenuFlyout></Button.Flyout>
+                        </Button>
+                    </Grid>
+                    <StackPanel x:Name="HeroText" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,20,0,0" Spacing="8">
+                        <TextBlock x:Name="AlbumTitleText" Text="{x:Bind Text(ViewModel.Draft.Album), Mode=OneWay}" FontSize="26" FontWeight="SemiBold"
+                            TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True" />
+                        <TextBlock Text="{x:Bind Text(ViewModel.HeroArtist), Mode=OneWay}" FontSize="15" TextTrimming="CharacterEllipsis"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True" />
+                        <TextBlock x:Name="SummaryText" Text="{x:Bind ViewModel.Summary, Mode=OneWay}" FontSize="13" TextTrimming="CharacterEllipsis"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True" />
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+            <Grid x:Name="WorkspaceViewport" Grid.Column="2" MinWidth="0" MinHeight="0" SizeChanged="PivotViewport_SizeChanged">
+                <Pivot x:Name="WorkspaceTabs" Padding="0" SelectedIndex="0">
+                    <PivotItem Margin="0">
+                        <PivotItem.Header><TextBlock x:Uid="AlbumDetailsInfoTab" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
+                        <ScrollViewer x:Name="DetailScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollMode="Enabled" VerticalScrollBarVisibility="Auto" IsTabStop="False">
+                            <StackPanel Spacing="24" Padding="0,12,0,24">
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Uid="AuthorTextBlock" Style="{StaticResource PropertyCaption}" />
+                                    <TextBlock Text="{x:Bind Text(ViewModel.TrackArtists), Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Uid="AlbumTextBlock" Style="{StaticResource PropertyCaption}" />
+                                    <TextBox x:Name="AlbumInput"
+                                        IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Album.IsRemote, ViewModel.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Draft.Album, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Uid="MusicTagAlbumArtist" Style="{StaticResource PropertyCaption}" />
+                                        <TextBox x:Name="AlbumArtistInput" x:Uid="MusicTagAlbumArtistInput"
+                                            IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Album.IsRemote, ViewModel.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="4">
+                                        <TextBlock x:Uid="MusicTagGenre" Style="{StaticResource PropertyCaption}" />
+                                        <TextBox x:Name="GenreInput" x:Uid="MusicTagGenreInput"
+                                            IsReadOnly="{x:Bind TagsReadOnly(ViewModel.Album.IsRemote, ViewModel.IsLoading), Mode=OneWay}" Text="{x:Bind ViewModel.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel Spacing="4">
+                                    <TextBlock x:Uid="YearTextBlock" Style="{StaticResource PropertyCaption}" />
+                                    <NumberBox x:Name="YearInput" Minimum="0" SmallChange="1" SpinButtonPlacementMode="Inline" HorizontalAlignment="Stretch"
+                                        IsEnabled="{x:Bind ViewModel.CanEditTags, Mode=OneWay}" Value="{x:Bind ViewModel.Draft.Year, Mode=TwoWay}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </PivotItem>
+                    <PivotItem Margin="0">
+                        <PivotItem.Header><TextBlock x:Uid="AlbumDetailsTracksTab" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
+                        <Grid Padding="0,12,0,8">
+                            <ListView x:Name="TrackList" SelectionMode="None" IsItemClickEnabled="False" HorizontalContentAlignment="Stretch"
+                                ItemsSource="{x:Bind ViewModel.Tracks, Mode=OneWay}">
+                                <ListView.Header>
+                                    <Grid x:Name="TrackHeader" ColumnDefinitions="64,*,*,64" ColumnSpacing="12" Padding="12,0,12,4">
+                                        <TextBlock x:Uid="TrackNumberBox" Style="{StaticResource PropertyCaption}" TextWrapping="Wrap" />
+                                        <TextBlock x:Uid="TitleTextBlock" Grid.Column="1" Style="{StaticResource PropertyCaption}" TextWrapping="Wrap" />
+                                        <TextBlock x:Uid="AuthorTextBlock" Grid.Column="2" Style="{StaticResource PropertyCaption}" TextWrapping="Wrap" />
+                                        <TextBlock x:Uid="DurationTextBlock" Grid.Column="3" Style="{StaticResource PropertyCaption}" TextAlignment="Right" TextWrapping="Wrap" />
+                                    </Grid>
+                                </ListView.Header>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:AlbumTrackItem">
+                                        <Grid ColumnDefinitions="64,*,*,64" ColumnSpacing="12" Padding="12,7" MinHeight="36">
+                                            <TextBlock Text="{x:Bind Number}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind Title}" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Artist}" TextTrimming="CharacterEllipsis"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind Artist}" />
+                                            <TextBlock Grid.Column="3" Text="{x:Bind Duration}" TextAlignment="Right" TextTrimming="CharacterEllipsis"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </PivotItem>
+                </Pivot>
+            </Grid>
+        </Grid>
+        <Grid x:Name="FooterBar" Grid.Row="1" Margin="0,16,0,0" ColumnDefinitions="280,36,*">
+            <Grid x:Name="FooterButtons" Grid.Column="2" ColumnDefinitions="*,*" ColumnSpacing="10" MaxWidth="520" HorizontalAlignment="Right">
+                <Button x:Name="SaveFileButton" x:Uid="SaveButton" Style="{StaticResource HomeSongActionButtonStyle}" ContentTemplate="{StaticResource WrappedActionText}"
+                    HorizontalAlignment="Stretch" IsEnabled="{x:Bind ViewModel.CanSaveFile, Mode=OneWay}">
+                    <Button.Flyout><Flyout x:Name="ConfirmFlyout">
+                        <StackPanel Spacing="12" MaxWidth="360">
+                            <TextBlock x:Uid="ConfirmFlyout" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Uid="ConfirmButton" Style="{StaticResource HomeSongActionButtonStyle}" Click="Confirm_Click" Command="{x:Bind ViewModel.SaveFileCommand, Mode=OneWay}" />
+                                <Button x:Uid="CancelButton" Style="{StaticResource HomeSongActionButtonStyle}" Click="Cancel_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Flyout></Button.Flyout>
+                </Button>
+                <Button x:Name="SaveDatabaseButton" x:Uid="SaveToDataBase" Grid.Column="1" Style="{StaticResource PrimarySaveStyle}" ContentTemplate="{StaticResource WrappedActionText}"
+                    HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.SaveDatabaseCommand, Mode=OneWay}" />
+            </Grid>
+        </Grid>
+        <StackPanel x:Name="FeedbackLayer" Grid.Row="0" VerticalAlignment="Top" Spacing="8">
+            <InfoBar x:Name="ErrorInfo" IsOpen="{x:Bind HasText(ViewModel.Error), Mode=OneWay}"
+                Message="{x:Bind ViewModel.Error, Mode=OneWay}" Severity="Error" IsClosable="False">
+                <InfoBar.ActionButton><Button x:Uid="HomeRetry" Style="{StaticResource HomeSongActionButtonStyle}"
+                    Command="{x:Bind ViewModel.LoadCommand, Mode=OneWay}" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.LoadFailed), Mode=OneWay}" /></InfoBar.ActionButton>
+            </InfoBar>
+        </StackPanel>
+    </Grid>
+</UserControl>

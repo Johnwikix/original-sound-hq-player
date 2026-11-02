@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>処理中...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>アルバムのプロパティ</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>アルバムの詳細</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>保存処理を行っています、しばらくお待ちください...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>オンラインでジャケットを照合</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>ローカルに保存</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>ジャケットを編集</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>タイトル</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>年</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>アルバム内の全ての音楽にメタ情報を保存しますか？</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>ファイルに書き込む</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>閉じる</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>音楽の詳細</value>
@@ -2663,4 +2639,7 @@ SHA-256: {5}
   <data name="HomeReasonAudio" xml:space="preserve"><value>音楽スタイルが似ています</value></data>
   <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fmの類似推薦</value></data>
   <data name="AnalysisScope" xml:space="preserve"><value>ローカルファイルと完全にキャッシュされたWebDAVの曲のみが対象です。音声はダウンロードしません。CPU 1コアの稼働率10%を目安に実行し、待機時に分析プロセスを終了します。</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>アルバム情報</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>曲目</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} 個のファイルに書き込めませんでした: {1}</value></data>
 </root>

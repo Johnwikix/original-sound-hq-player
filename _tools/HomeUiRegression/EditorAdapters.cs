@@ -16,6 +16,8 @@ internal sealed class FixtureEditorFactory(MusicDatabaseService database, AppVie
     public MusicDetailsEditorViewModel Create(Music music)
         => new(music, database, new LyricsEditorViewModel(music, database, new(), Online, Tasks), Sessions, this,
             NullLogger<MusicDetailsEditorViewModel>.Instance);
+    public AlbumDetailsViewModel CreateAlbum(Music album)
+        => new(album, app, database, Sessions, this, NullLogger<AlbumDetailsViewModel>.Instance);
     public async Task<byte[]?> ReadCoverAsync(Music music, CancellationToken token)
     {
         CoverReads++;
@@ -42,6 +44,11 @@ namespace WinUIMusicPlayer.Services
         public Task EditorSaveGate { get; set; } = Task.CompletedTask;
         public bool FailEditorSave { get; set; }
         public int EditorSavesStarted;
+        /// <summary>专辑写入桩中应视为写入失败的路径（模拟文件占用），其余路径直接成功。</summary>
+        public HashSet<string> AlbumFailPaths { get; } = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>专辑写入前的可控等待，用于复现关闭与在途写入的真实时序。</summary>
+        public Task AlbumWriteGate { get; set; } = Task.CompletedTask;
+        public int AlbumWriteStarted;
         public async Task<AdditionalMusicMetadata?> ReadAdditionalMetadataAsync(Music music, CancellationToken token)
         {
             await Task.Yield();
@@ -71,6 +78,60 @@ namespace WinUIMusicPlayer.Services
                     LyricsSchemaVersion = 2, MetadataVersion = 1, Genre = music.Genre, AlbumArtist = music.AlbumArtist,
                     Composer = music.Composer, Lyricist = music.Lyricist, Conductor = music.Conductor, CatalogNumber = music.CatalogNumber });
             });
+        }
+        /// <summary>专辑文件写入桩：不触碰真实文件，按 AlbumFailPaths 模拟占用失败并复刻真实提交语义。</summary>
+        public async Task<IReadOnlyList<string>> WriteAlbumTagsAsync(IReadOnlyList<Music> tracks, AlbumTagEdit edit, CancellationToken token)
+        {
+            await Task.Yield();
+            await AlbumWriteGate;
+            token.ThrowIfCancellationRequested();
+            List<string> failed = [];
+            foreach (var music in tracks)
+            {
+                AlbumWriteStarted++;
+                if (AlbumFailPaths.Contains(music.Path)) { failed.Add(music.Path); continue; }
+                await _dbConnection.RunInTransactionAsync(db =>
+                {
+                    db.Execute("UPDATE Music SET Album=?,Year=?,UpdateTime=? WHERE Id=?",
+                        edit.Album ?? music.Album, edit.Year ?? music.Year, DateTime.Now, music.Id);
+                    if (edit.AlbumArtist is not null || edit.Genre is not null)
+                        db.Execute("UPDATE Music SET AlbumArtist=?,Genre=?,AdditionalMetadataRead=1 WHERE Id=?",
+                            edit.AlbumArtist ?? music.AlbumArtist, edit.Genre ?? music.Genre, music.Id);
+                });
+                if (edit.Album is { } album) music.Album = album;
+                if (edit.Year is { } year) music.Year = year;
+                if (edit.AlbumArtist is { } albumArtist) music.AlbumArtist = albumArtist;
+                if (edit.Genre is { } genre) music.Genre = genre;
+                music.AdditionalMetadataRead = true;
+            }
+            return failed;
+        }
+        /// <summary>专辑仅数据库保存桩：与真实实现同样只更新已读取可选标签的曲目。</summary>
+        public async Task SaveAlbumTagsAsync(IReadOnlyList<Music> tracks, AlbumTagEdit edit, CancellationToken token)
+        {
+            await Task.Yield();
+            token.ThrowIfCancellationRequested();
+            await _dbConnection.RunInTransactionAsync(db =>
+            {
+                foreach (var music in tracks)
+                {
+                    if (edit.Album is not null || edit.Year is not null)
+                        db.Execute("UPDATE Music SET Album=?,Year=? WHERE Id=?", edit.Album ?? music.Album, edit.Year ?? music.Year, music.Id);
+                    if (edit.AlbumArtist is not null || edit.Genre is not null)
+                        db.Execute("UPDATE Music SET AlbumArtist=?,Genre=? WHERE Id=? AND AdditionalMetadataRead=1",
+                            edit.AlbumArtist ?? music.AlbumArtist, edit.Genre ?? music.Genre, music.Id);
+                }
+            });
+            foreach (var music in tracks)
+            {
+                if (edit.Album is { } album) music.Album = album;
+                if (edit.Year is { } year) music.Year = year;
+                if ((edit.AlbumArtist is not null || edit.Genre is not null) && music.AdditionalMetadataRead)
+                {
+                    if (edit.AlbumArtist is { } albumArtist) music.AlbumArtist = albumArtist;
+                    if (edit.Genre is { } genre) music.Genre = genre;
+                }
+            }
         }
     }
 }

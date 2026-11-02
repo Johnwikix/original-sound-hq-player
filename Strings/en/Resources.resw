@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>Processing...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>Album Properties</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>Album Details</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>Processing changes, please wait...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>Match Cover Online</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>Save to Local</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>Edit Cover</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>Title</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>Year</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>Are you sure you want to save metadata to all songs in this album?</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>Write File</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>Close</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>Music Details</value>
@@ -2663,4 +2639,7 @@ SHA-256: {5}
   <data name="HomeReasonAudio" xml:space="preserve"><value>Similar musical style</value></data>
   <data name="HomeReasonCommunity" xml:space="preserve"><value>Similar on Last.fm</value></data>
   <data name="AnalysisScope" xml:space="preserve"><value>Only local files and fully cached WebDAV tracks are analyzed; no audio is downloaded. Analysis targets a 10% duty cycle on one CPU core and the worker exits when idle.</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Album Info</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Tracks</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} file(s) could not be written: {1}</value></data>
 </root>

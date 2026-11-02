@@ -1,3 +1,19 @@
+## 2026-11-02 修复专辑曲目表头裁切与列错位
+- `View/Controls/AlbumDetailControl.xaml`：表头移入曲目列表共用滚动视口，统一表头与行的列宽及内边距，清除行容器默认偏移；编号和时长列加宽，所有表头支持本地化长文本换行。
+- `_tools/HomeUiRegression`：新增真实 WinUI 曲目布局回归（`--album-track-layout`），覆盖七种语言、浅/深色、640/900/1200 DIP、单曲/长列表/空列表与滚动到底。
+
+## 2026-11-02 专辑属性窗口现代化重设计
+- `View/Controls/AlbumDetailControl.xaml(.cs)`（新增）：专辑属性布局：280px 封面 hero（紧凑 240/堆叠 112，断点同歌曲窗口 810/540/760）、「专辑信息/曲目」双页签（专辑名/专辑艺术家/流派/年份 + 只读曲目列表，多艺术家逐曲可见）、底部写入文件/保存到数据库、InfoBar 错误反馈；确认弹窗改用 `ConfirmFlyout.Text`，修复原 `SaveConfirm` 键早已缺失导致的空白确认文本。
+- `View/SubView/AlbumDetailWindow.xaml(.cs)`：窗口薄壳化（标题栏+忙碌环+Esc 关窗，默认 900×675，最小 640×560），编辑会话改由工厂创建；删除窗口内封面会话、文件选择器与保存流程。
+- `ViewModel/Controls/AlbumDetailsViewModel.cs`（新增）：专辑级编辑会话：草稿只在保存成功后发布到全部曲目（取消不再污染内存）、只写用户改动的字段、封面仅在更换后重嵌（此前每次保存都重写全部曲目封面）、远程专辑字段只读且两个保存入口真实禁用、单曲占用不中断其余曲目并保留窗口重试。
+- `Services/MusicDatabaseService.Album.cs`、`Services/AlbumTagEdit.cs`（新增）：专辑标签批量写入（`AudioFileWriteGate` + 独占探测 + 全量可选标签回读入库）与仅数据库保存（可选标签只更新已读取曲目，未读旧条目保持懒读）；写入批次开始后跑完，关窗由退出屏障排空。
+- `Services/IMusicDetailsEditorFactory.cs`、`Services/MusicDetailsEditorFactory.cs`：新增 `CreateAlbum` 复用编辑宿主的封面/选择器边界。
+- `Services/WindowArtworkSession.cs`：删除（最后一个消费者迁移到编辑宿主路径）。
+- `Style/BtnStyle.xaml`、`View/Controls/MusicDetailControl.xaml`：`PrimarySaveStyle` 收编到应用级字典，两个详情控件共用。
+- `Strings/*/Resources.resw`：新增 `AlbumDetailsInfoTab`、`AlbumDetailsTracksTab`、`AlbumDetailsWriteFailed`，删除 `AlbumDetailWindow.Title` 等 8 个孤儿键。
+- `_tools/HomeUiRegression`：删除封面会话专项检查，新增专辑会话回归（草稿隔离、变更字段传播、可选标签懒读门槛、部分失败重试、关闭排空）。
+- 行为变化：保存只写改动字段（此前无条件重写全部曲目的专辑名/年份/封面）；远程专辑保存不再静默无效；部分文件失败保留窗口可重试（此前报错后直接关窗）。
+
 ## 2026-11-02 详情布局阈值 810/540，属性窗口 900×675
 - `View/Controls/MusicDetailControl.xaml.cs`：紧凑/堆叠宽度断点 900→810，矮窗口高度断点 640→540（极窄堆叠 760 不变）。
 - `View/SubView/MusicDetailsWindow.xaml.cs`：默认窗口尺寸 960×720→900×675，低于主窗口最小尺寸且保持完整布局。

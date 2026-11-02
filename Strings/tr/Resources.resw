@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>İşleniyor...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>Albüm özellikleri</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>Albüm ayrıntıları</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>Değişiklikler işleniyor, lütfen bekleyin...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>Kapağı çevrimiçi eşleştir</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>Yerel diske kaydet</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>Kapağı düzenle</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>Başlık</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>Yıl</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>Meta veriler bu albümdeki tüm şarkılara kaydedilsin mi?</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>Dosyaya yaz</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>Kapat</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>Müzik ayrıntıları</value>
@@ -2663,4 +2639,7 @@ SHA-256: {5}
   <data name="HomeReasonAudio" xml:space="preserve"><value>Benzer müzik tarzı</value></data>
   <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fm benzer önerileri</value></data>
   <data name="AnalysisScope" xml:space="preserve"><value>Yalnızca yerel dosyalar ve tamamen önbelleğe alınmış WebDAV parçaları analiz edilir; ses indirilmez. Bir CPU çekirdeğinde %10 çalışma oranı hedeflenir ve analiz işlemi boşta kaldığında kapanır.</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Albüm bilgileri</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Parçalar</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} dosya yazılamadı: {1}</value></data>
 </root>

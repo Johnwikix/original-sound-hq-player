@@ -291,6 +291,67 @@
         </Setter>
     </Style>
 
+    <!--  属性窗口底部主操作按钮（保存到数据库）：强调色填充与标准按钮同尺寸。  -->
+    <Style x:Key="PrimarySaveStyle" TargetType="Button" BasedOn="{StaticResource HomeSongActionButtonStyle}">
+        <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="MinWidth" Value="44" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid
+                        x:Name="Root"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter
+                            x:Name="ContentPresenter"
+                            Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup
+                                x:Name="CommonStates"
+                                animations:FluentAnimation.PointerOver="Root"
+                                animations:FluentAnimation.Pressed="Root">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource AccentFillColorSecondaryBrush}" />
+                                        <Setter Target="Root.BorderBrush" Value="{ThemeResource AccentFillColorSecondaryBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource AccentFillColorTertiaryBrush}" />
+                                        <Setter Target="Root.BorderBrush" Value="{ThemeResource AccentFillColorTertiaryBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource ControlFillColorDisabledBrush}" />
+                                        <Setter Target="Root.BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!--  任务栏封面按钮使用与普通菜单按钮相反的悬停明暗方向。  -->
     <Style x:Key="TaskbarCoverPlayPauseButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />

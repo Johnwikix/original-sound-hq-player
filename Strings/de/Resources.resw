@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>Wird verarbeitet...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>Albumeigenschaften</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>Albumdetails</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>Speichervorgang läuft, bitte warten...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>Online-Cover-Abgleich</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>Lokal speichern</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>Cover bearbeiten</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>Titel</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>Jahr</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>Metadaten wirklich für alle Titel im Album speichern?</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>In Datei schreiben</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>Schließen</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>Musikdetails</value>
@@ -2663,4 +2639,7 @@ SHA-256: {5}
   <data name="HomeReasonAudio" xml:space="preserve"><value>Ähnlicher Musikstil</value></data>
   <data name="HomeReasonCommunity" xml:space="preserve"><value>Ähnlich auf Last.fm</value></data>
   <data name="AnalysisScope" xml:space="preserve"><value>Nur lokale Dateien und vollständig zwischengespeicherte WebDAV-Titel werden analysiert, ohne Audio herunterzuladen. Ziel sind 10 % Arbeitsanteil eines CPU-Kerns; bei Leerlauf wird der Analyseprozess beendet.</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Albuminformationen</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Titel</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} Datei(en) konnten nicht geschrieben werden: {1}</value></data>
 </root>

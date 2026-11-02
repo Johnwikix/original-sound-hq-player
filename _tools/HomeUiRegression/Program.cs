@@ -134,6 +134,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             App.MainWindow = window;
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 820));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
+            if (Environment.GetCommandLineArgs().Contains("--album-track-layout"))
+            {
+                await CheckAlbumTrackLayoutAsync(window);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             await CheckSourceCommandAsync(window);
             if (Environment.GetCommandLineArgs().Contains("--source-command"))
             {
@@ -857,6 +863,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(((FeaturedCarousel)page.FindName("Featured")).ItemsSource!.Count > 0 && home.PlaySongCommand.CanExecute(home.Songs[0]),
                 "reloaded page restarts compiled tracking and commands");
             await EditorCoverChecks.RunAsync(data, app, Check);
+            await AlbumDetailsChecks.RunAsync(data, app, Check);
             // Exercise the actual page fields and production editor state machines against SQLite.
             var editCard = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
             var editMusic = ((HomeSong)editCard.Tag).Music;
