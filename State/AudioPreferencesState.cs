@@ -1,11 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using Windows.UI;
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
-using Microsoft.UI.Xaml;
-using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
-using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 
 namespace WinUIMusicPlayer.State;
 

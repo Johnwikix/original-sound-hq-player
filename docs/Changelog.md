@@ -1,3 +1,11 @@
+## 2026-11-02 修复许可恢复、试用到期及来源命令回归
+- `AppViewModel.OutputPreferences`、`MusicDatabaseService`：启动恢复直接写入共享偏好，受限时拒绝修改 DSD、5.1、Atmos 的开启和关闭值；许可覆盖仅用于 IPC，不写回已保存偏好。
+- `LicenseService`：按已知期限在本地结束试用，查询失败和迟到的过期缓存不能延长试用；已确认完整版在查询失败时继续保留。
+- `SettingsSnapshotFactory.Audio`、`_tools/LicenseRegression`：直接验证生产 ViewModel、快照捕获和文件保存，覆盖全部开关组合、异步许可查询、受限保存与购买恢复，以及到期边界和缓存时序。
+- `_tools/MusicMetadataRegression`、`HomeUiRegression`、`WebDavTreeUiRegression`：补齐 `OpenSourceCommand` 适配器，新增来源按钮绑定与复用回归。
+- `WinUIMusicPlayer.csproj`：默认文件扫描排除回归工程与产物，避免运行 UI 回归后其资源混入主包造成冲突。
+- 兼容性：保留磁盘上仍存在的偏好；旧版本已经覆盖写盘的值无法自动还原。
+
 ## 2026-11-01 Store 状态未知时保留购买入口，许可卡片移至音频可视化下方
 - `Services/LicenseService.cs`：`CanPurchase` 改为除已购完整版外均为 true——查询失败（StoreUnavailable）时发起购买会顺带强制刷新许可，账户已有许可或购买成功即恢复完整版；通用设置/DSP 横幅购买按钮随同恢复显示。
 - `View/SubView/Settings/AboutSettingsControl.xaml`：许可状态卡片移至音频可视化卡片下方。

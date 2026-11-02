@@ -54,6 +54,7 @@ namespace WinUIMusicPlayer.Services
         public static ICommand PlayCommand => null!;
         public static ICommand UpdateFavouriteCommand => null!;
         public static ICommand AddToPlayListCommand => null!;
+        public static ICommand OpenSourceCommand { get; } = new CommunityToolkit.Mvvm.Input.RelayCommand<WinUIMusicPlayer.Model.Music>(_ => { });
     }
 }
 namespace WinUIMusicPlayer.Services.WebDav

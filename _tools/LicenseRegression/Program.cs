@@ -7,7 +7,11 @@ using WinUIMusicPlayer.Services;
 
 var ui = new TestUiContext();
 SynchronizationContext.SetSynchronizationContext(ui);
+if (args.Contains("--startup")) { ui.Run(StartupPreferenceChecks.RunAsync()); return; }
+if (args.Contains("--expiry")) { ui.Run(TrialExpiryChecks.RunAsync()); return; }
 ui.Run(RunTestsAsync());
+ui.Run(StartupPreferenceChecks.RunAsync());
+ui.Run(TrialExpiryChecks.RunAsync());
 
 static void Check(bool condition, string message)
 {

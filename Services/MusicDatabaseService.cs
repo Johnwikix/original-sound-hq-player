@@ -1232,9 +1232,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
                 AppViewModel.SpectralEnhancement = (int)audio.SpectralEnhancement;
-                AppViewModel.IsDopEnabled = audio.IsDopEnabled;
-                AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
-                AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;
+                AppViewModel.RestoreOutputPreferences(audio);
                 AppViewModel.AtmosEndpointId = audio.AtmosEndpointId ?? "";
                 AppViewModel.IsFadeEnabled = audio.IsFadeEnabled;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;

@@ -134,6 +134,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             App.MainWindow = window;
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 820));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
+            await CheckSourceCommandAsync(window);
+            if (Environment.GetCommandLineArgs().Contains("--source-command"))
+            {
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             var page = new HomePage { RequestedTheme = ElementTheme.Light,
                 Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 243, 243, 243)) };
             window.Content = page;

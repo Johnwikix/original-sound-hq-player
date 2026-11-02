@@ -144,6 +144,8 @@ namespace WinUIMusicPlayer.Services
             m.IsFavorite = !m.IsFavorite;
         });
         public static ICommand AddToPlayListCommand { get; } = new RelayCommand(() => { });
+        public static Music? LastOpenedSource { get; private set; }
+        public static ICommand OpenSourceCommand { get; } = new RelayCommand<Music>(music => LastOpenedSource = music);
         public static void OnLyricsOffsetChanged(Music music, int value) { }
     }
     public partial class MusicDatabaseService
