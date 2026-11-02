@@ -23,6 +23,7 @@
                 <ResourceDictionary>
                     <FontFamily x:Key="UntamedFontFamily">ms-appx:///Assets/Fonts/UntamedFluentIcons.ttf#Untamed Fluent Icons</FontFamily>
                 </ResourceDictionary>
+                <ResourceDictionary Source="/Themes/Generic.xaml" />
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
             <x:Double x:Key="ContentDialogMaxWidth">1200</x:Double>

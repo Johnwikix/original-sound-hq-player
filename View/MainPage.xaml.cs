@@ -1,4 +1,4 @@
-using DevWinUI;
+using WinUIMusicPlayer.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;

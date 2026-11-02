@@ -10,7 +10,8 @@
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DevWinUI" Version="10.8.0" />
+    <Compile Include="../../Controls/AutoScrollView.cs;../../Controls/RedirectVisualView.cs;../../Controls/CompositionShadow*.cs" />
+    <Page Include="../../Themes/Generic.xaml" Link="Themes/Generic.xaml" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
     <Compile Include="../../View/MusicDetailsPanel.xaml.cs;../../View/Controls/MusicListRowControl.xaml.cs;../../Helper/ListViewInteraction.cs;../../Helper/MusicDetailsPresenter.cs;../../Helper/CurrentTrackLookup.cs" />
     <Page Include="../../View/MusicDetailsPanel.xaml" Link="View/MusicDetailsPanel.xaml" />

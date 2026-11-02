@@ -228,7 +228,7 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 | [H.NotifyIcon.WinUI](https://github.com/HavenDV/H.NotifyIcon) | 系统托盘图标 | MIT |
 | [WinUIEx](https://github.com/dotMorten/WinUIEx) | WinUI 窗口功能扩展 | MIT |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM 框架 | MIT |
-| [DevWinUI](https://github.com/ghost1372/DevWinUI) | WinUI 扩展组件 | MIT |
+| [DevWinUI](https://github.com/ghost1372/DevWinUI) | 本地移植的滚动、阴影控件及轮播动效 | MIT |
 | [atldotnet（z440.atl.core）](https://github.com/Zeugma440/atldotnet) | 多种音频格式元数据读取 | MIT |
 | [FFmpeg](https://ffmpeg.org/)（9.0.1 音频最小化构建） | 音频解码/重采样/转码（主程序与播放进程共用同一套 DLL） | LGPL-2.1+ |
 | [FFmpeg.AutoGen](https://github.com/FFmpeg/FFmpeg.AutoGen) | FFmpeg 的 .NET 绑定 | MIT |

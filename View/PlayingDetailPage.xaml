@@ -10,7 +10,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dev="using:DevWinUI"
+    xmlns:localControls="using:WinUIMusicPlayer.Controls"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
@@ -91,7 +91,7 @@
                         TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
-                    <dev:AutoScrollView
+                    <localControls:AutoScrollView
                         Margin="0"
                         Padding="0"
                         HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
@@ -110,13 +110,13 @@
                             TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="NoWrap" />
-                    </dev:AutoScrollView>
+                    </localControls:AutoScrollView>
                     <StackPanel
                         Grid.Row="1"
                         Margin="0,0,0,2"
                         Opacity="0.8"
                         Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneWay}">
-                        <dev:AutoScrollView
+                        <localControls:AutoScrollView
                             Margin="0"
                             Padding="0"
                             HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
@@ -134,8 +134,8 @@
                                 TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                                 TextTrimming="CharacterEllipsis"
                                 TextWrapping="NoWrap" />
-                        </dev:AutoScrollView>
-                        <dev:AutoScrollView
+                        </localControls:AutoScrollView>
+                        <localControls:AutoScrollView
                             Margin="0"
                             Padding="0"
                             HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
@@ -153,7 +153,7 @@
                                 TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                                 TextTrimming="CharacterEllipsis"
                                 TextWrapping="NoWrap" />
-                        </dev:AutoScrollView>
+                        </localControls:AutoScrollView>
                     </StackPanel>
                     <StackPanel
                         x:Name="PlayingDetailInfoPanel"

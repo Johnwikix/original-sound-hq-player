@@ -180,6 +180,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var initialThemes = home.Themes;
             var carousel = (FeaturedCarousel)page.FindName("Featured");
             carousel.AutoShuffle = false; // 手动导航断言需要确定时序，自动轮播单独验证。
+            if (Environment.GetCommandLineArgs().Contains("--local-controls"))
+            {
+                await CheckLocalControlsAsync(window, home.Songs[0].Music);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--recommendation-slots"))
             {
                 var ids = home.Songs.Concat(home.Familiar).Concat(home.Discovery).Concat(home.FeaturedSongs).Concat(home.CardSongs).Select(x => x.Music.Id).ToArray();

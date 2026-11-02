@@ -232,7 +232,7 @@ If you find OriginalSound HI-FI Player helpful, consider buying the developer a 
 | [H.NotifyIcon.WinUI](https://github.com/HavenDV/H.NotifyIcon) | System tray icon | MIT |
 | [WinUIEx](https://github.com/dotMorten/WinUIEx) | WinUI window extensions | MIT |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM framework | MIT |
-| [DevWinUI](https://github.com/ghost1372/DevWinUI) | WinUI extension components | MIT |
+| [DevWinUI](https://github.com/ghost1372/DevWinUI) | Locally maintained scrolling, shadow controls and carousel animations | MIT |
 | [atldotnet (z440.atl.core)](https://github.com/Zeugma440/atldotnet) | Audio format metadata reading | MIT |
 | [FFmpeg](https://ffmpeg.org/) (9.0.1 minimal audio build) | Audio decoding/resampling/conversion (one shared DLL set for both processes) | LGPL-2.1+ |
 | [FFmpeg.AutoGen](https://github.com/FFmpeg/FFmpeg.AutoGen) | .NET bindings for FFmpeg | MIT |

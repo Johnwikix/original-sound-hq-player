@@ -1,3 +1,10 @@
+## 2026-11-02 完整移植 DevWinUI 滚动与阴影控件并移除包依赖
+- `Controls/AutoScrollView.cs`、`RedirectVisualView.cs`、`CompositionShadow*.cs`、`Themes/Generic.xaml`：从 DevWinUI 10.8.0 完整移植两个控件及必要辅助实现，保留滚动、字形阴影、圆角/圆形裁剪、呼吸动画和图像边缘取色；补齐卸载/重载、换模板及迟到异步结果清理。
+- `View/*`、`DesktopLyrics/TextBlockLyricsRenderer.cs`、`App.xaml`、`WinUIMusicPlayer.csproj`：改用本地控件并移除 DevWinUI 包与无用命名空间，保持已有绑定、悬停交互和页面布局。
+- `Libraries/DevWinUI`、`README*`：记录固定来源、完整 API 与本地调整，保留并随输出分发 MIT 许可。
+- `_tools/LocalControlsUiRegression`、`HomeUiRegression`、`ManualLocationUiRegression`：增加真实合成控件回归，移除回归工程中的 DevWinUI 包和同名适配器。
+- 验证：主项目构建、38 项控件 UI 回归、19 项实际列表行集成通过；首页全量预览收起断言及导航夹具缺少适配器在 HEAD 基线同样失败，详见 `Libraries/DevWinUI/README.md`。
+
 ## 2026-11-02 修复 Windows 10 云母样式变透明
 - `ThemeStyleHelper`、`SolidColorSystemBackdrop`：云母不受支持时改为跟随窗口明暗主题的不透明底色，保留已保存的云母选择；样式切换和关闭时释放画刷并解绑主题事件。
 - `_tools/FontUiRegression`：使用真实 WinUI 窗口和合成画刷覆盖不支持云母、主题切换、透明样式切换、重连及关闭清理；Windows 10 实机显示待验收。

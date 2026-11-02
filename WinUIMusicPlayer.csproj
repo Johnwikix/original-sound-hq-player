@@ -87,6 +87,7 @@
 	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     <None Include="Libraries\WavPack\x64\wavpackdll.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="wavpackdll.dll" />
     <None Include="Libraries\WavPack\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\WavPack.txt" />
+    <None Update="Libraries\DevWinUI\LICENSE-Controls.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-Controls.txt" />
     <None Update="Libraries\DevWinUI\LICENSE-StoreCarousel.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-StoreCarousel.txt" />
   </ItemGroup>
 
@@ -113,7 +114,6 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.ColorPicker" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
-    <PackageReference Include="DevWinUI" Version="10.8.0" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />

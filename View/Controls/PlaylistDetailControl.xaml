@@ -6,7 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dev="using:DevWinUI"
+    xmlns:localControls="using:WinUIMusicPlayer.Controls"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View.Controls"
@@ -71,7 +71,7 @@
                 </Grid>
             </Border>
             <Grid Grid.Column="1" Width="Auto" RowDefinitions="Auto,*,*,Auto">
-                <dev:AutoScrollView
+                <localControls:AutoScrollView
                     Grid.Row="0"
                     Margin="20,0,10,0"
                     IsPlaying="False"
@@ -85,8 +85,8 @@
                         IsTextSelectionEnabled="True"
                         Text="{x:Bind ViewModel.Title, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis" />
-                </dev:AutoScrollView>
-                <dev:AutoScrollView
+                </localControls:AutoScrollView>
+                <localControls:AutoScrollView
                     Grid.Row="1"
                     Margin="20,0,10,0"
                     VerticalAlignment="Bottom"
@@ -100,7 +100,7 @@
                         IsTextSelectionEnabled="True"
                         Text="{x:Bind ViewModel.SecondTitle, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis" />
-                </dev:AutoScrollView>
+                </localControls:AutoScrollView>
                 <TextBlock
                     x:Name="ThirdTitleTextBlock"
                     Grid.Row="2"
