@@ -97,7 +97,8 @@ public partial class CompositionShadow : Control
 
     /// <summary>Identifies the BlurRadius dependency property.</summary>
     public static readonly DependencyProperty BlurRadiusProperty = DependencyProperty.Register(
-        nameof(BlurRadius), typeof(double), typeof(CompositionShadow), new PropertyMetadata(9d, OnShadowChanged));
+        nameof(BlurRadius), typeof(double), typeof(CompositionShadow), new PropertyMetadata(9d,
+            static (sender, args) => ((CompositionShadow)sender).DropShadow.BlurRadius = (float)(double)args.NewValue));
 
     /// <summary>Gets or sets the shadow color. The default is black.</summary>
     public Color Color
@@ -108,7 +109,8 @@ public partial class CompositionShadow : Control
 
     /// <summary>Identifies the Color dependency property.</summary>
     public static readonly DependencyProperty ColorProperty = DependencyProperty.Register(
-        nameof(Color), typeof(Color), typeof(CompositionShadow), new PropertyMetadata(Colors.Black, OnShadowChanged));
+        nameof(Color), typeof(Color), typeof(CompositionShadow), new PropertyMetadata(Colors.Black,
+            static (sender, args) => ((CompositionShadow)sender).DropShadow.Color = (Color)args.NewValue));
 
     /// <summary>Gets or sets the horizontal shadow offset in DIPs.</summary>
     public double OffsetX
@@ -119,7 +121,7 @@ public partial class CompositionShadow : Control
 
     /// <summary>Identifies the OffsetX dependency property.</summary>
     public static readonly DependencyProperty OffsetXProperty = DependencyProperty.Register(
-        nameof(OffsetX), typeof(double), typeof(CompositionShadow), new PropertyMetadata(0d, OnShadowChanged));
+        nameof(OffsetX), typeof(double), typeof(CompositionShadow), new PropertyMetadata(0d, OnOffsetChanged));
 
     /// <summary>Gets or sets the vertical shadow offset in DIPs.</summary>
     public double OffsetY
@@ -130,7 +132,7 @@ public partial class CompositionShadow : Control
 
     /// <summary>Identifies the OffsetY dependency property.</summary>
     public static readonly DependencyProperty OffsetYProperty = DependencyProperty.Register(
-        nameof(OffsetY), typeof(double), typeof(CompositionShadow), new PropertyMetadata(0d, OnShadowChanged));
+        nameof(OffsetY), typeof(double), typeof(CompositionShadow), new PropertyMetadata(0d, OnOffsetChanged));
 
     /// <summary>Gets or sets the depth offset in DIPs.</summary>
     public double OffsetZ
@@ -141,7 +143,7 @@ public partial class CompositionShadow : Control
 
     /// <summary>Identifies the OffsetZ dependency property.</summary>
     public static readonly DependencyProperty OffsetZProperty = DependencyProperty.Register(
-        nameof(OffsetZ), typeof(double), typeof(CompositionShadow), new PropertyMetadata(0d, OnShadowChanged));
+        nameof(OffsetZ), typeof(double), typeof(CompositionShadow), new PropertyMetadata(0d, OnOffsetChanged));
 
     /// <summary>Gets or sets the shadow opacity. The default is 1.</summary>
     public double ShadowOpacity
@@ -152,7 +154,8 @@ public partial class CompositionShadow : Control
 
     /// <summary>Identifies the ShadowOpacity dependency property.</summary>
     public static readonly DependencyProperty ShadowOpacityProperty = DependencyProperty.Register(
-        nameof(ShadowOpacity), typeof(double), typeof(CompositionShadow), new PropertyMetadata(1d, OnShadowChanged));
+        nameof(ShadowOpacity), typeof(double), typeof(CompositionShadow), new PropertyMetadata(1d,
+            static (sender, args) => ((CompositionShadow)sender).DropShadow.Opacity = (float)(double)args.NewValue));
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate()
@@ -163,8 +166,17 @@ public partial class CompositionShadow : Control
         if (IsLoaded) AttachShadow();
     }
 
-    private static void OnShadowChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) =>
-        ((CompositionShadow)sender).UpdateShadow();
+    private static void OnOffsetChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        // 只写变化的属性，避免无关 DP 读取及回写 BlurRadius 导致呼吸动画停止。
+        var shadow = ((CompositionShadow)sender).DropShadow;
+        var offset = shadow.Offset;
+        float value = (float)(double)args.NewValue;
+        if (args.Property == OffsetXProperty) offset.X = value;
+        else if (args.Property == OffsetYProperty) offset.Y = value;
+        else offset.Z = value;
+        shadow.Offset = offset;
+    }
 
     private void UpdateShadow()
     {

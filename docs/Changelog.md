@@ -1,3 +1,7 @@
+## 2026-11-02 修复阴影属性更新中断呼吸动画
+- `Controls/CompositionShadow.cs`：按变更属性更新合成阴影，颜色、偏移和透明度变化不再中断呼吸动画，也不覆盖调用方设置的其他原生值。
+- `_tools/LocalControlsUiRegression/Program.cs`：增加呼吸中属性更新、异步取色和原生值保留回归；嵌套卸载测试分别等待内外层的 Unloaded，不修改生产卸载逻辑。
+
 ## 2026-11-02 完整移植 DevWinUI 滚动与阴影控件并移除包依赖
 - `Controls/AutoScrollView.cs`、`RedirectVisualView.cs`、`CompositionShadow*.cs`、`Themes/Generic.xaml`：从 DevWinUI 10.8.0 完整移植两个控件及必要辅助实现，保留滚动、字形阴影、圆角/圆形裁剪、呼吸动画和图像边缘取色；补齐卸载/重载、换模板及迟到异步结果清理。
 - `View/*`、`DesktopLyrics/TextBlockLyricsRenderer.cs`、`App.xaml`、`WinUIMusicPlayer.csproj`：改用本地控件并移除 DevWinUI 包与无用命名空间，保持已有绑定、悬停交互和页面布局。

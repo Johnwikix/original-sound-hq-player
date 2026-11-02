@@ -73,17 +73,26 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
     private static T? Field<T>(object instance, string name) where T : class =>
         (T?)typeof(CompositionShadow).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(instance);
 
-    private static async Task RemoveAsync(StackPanel panel, FrameworkElement element)
+    private static async Task RemoveAsync(StackPanel panel, FrameworkElement element, FrameworkElement? descendant = null)
     {
         var unloaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var descendantUnloaded = descendant is null ? null : new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnUnloaded(object sender, RoutedEventArgs args) => unloaded.TrySetResult();
+        void OnDescendantUnloaded(object sender, RoutedEventArgs args) => descendantUnloaded!.TrySetResult();
         element.Unloaded += OnUnloaded;
+        if (descendant is not null) descendant.Unloaded += OnDescendantUnloaded;
         try
         {
             panel.Children.Remove(element);
             await unloaded.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            // 外层事件不是子树的清理屏障；嵌套资源需等待自己的 Unloaded。
+            if (descendantUnloaded is not null) await descendantUnloaded.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
-        finally { element.Unloaded -= OnUnloaded; }
+        finally
+        {
+            element.Unloaded -= OnUnloaded;
+            if (descendant is not null) descendant.Unloaded -= OnDescendantUnloaded;
+        }
     }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
@@ -100,6 +109,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             window.AppWindow.Show(false);
             await Wait(() => host.IsLoaded, "window load");
             await ScrollTests(panel, window);
+            await BreathingPropertyTests(panel);
             await ShadowTests(panel, window);
             await EdgeColorTests(panel);
             Check(!typeof(AutoScrollView).Assembly.GetReferencedAssemblies().Any(name => name.Name!.StartsWith("DevWinUI")), "No DevWinUI assembly dependency");
@@ -114,6 +124,60 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             window?.Close();
             Exit();
         }
+    }
+
+    private async Task BreathingPropertyTests(StackPanel panel)
+    {
+        var shadow = new CompositionShadow { Content = new Border { Width = 80, Height = 40 }, IsBreathing = true };
+        panel.Children.Add(shadow);
+        await Wait(() => shadow.IsLoaded && shadow.DropShadow.TryGetAnimationController("BlurRadius") is not null, "breathing property test load");
+        var animation = Field<ScalarKeyFrameAnimation>(shadow, "_breathAnimation");
+        bool StillBreathing() => shadow.IsBreathing
+            && shadow.DropShadow.TryGetAnimationController("BlurRadius") is not null
+            && Field<ScalarKeyFrameAnimation>(shadow, "_breathAnimation") == animation;
+
+        shadow.Color = Colors.Red;
+        await Task.Delay(50);
+        Check(StillBreathing() && shadow.DropShadow.Color == Colors.Red, "Color changes preserve the running breathing animation");
+        shadow.OffsetX = 3;
+        Check(StillBreathing() && shadow.DropShadow.Offset.X == 3, "OffsetX changes preserve the running breathing animation");
+        shadow.OffsetY = 5;
+        Check(StillBreathing() && shadow.DropShadow.Offset.Y == 5, "OffsetY changes preserve the running breathing animation");
+        shadow.OffsetZ = 7;
+        Check(StillBreathing() && shadow.DropShadow.Offset.Z == 7, "OffsetZ changes preserve the running breathing animation");
+        shadow.ShadowOpacity = 0.4;
+        Check(StillBreathing() && shadow.DropShadow.Opacity == 0.4f, "Opacity changes preserve the running breathing animation");
+
+        string path = Path.Combine(AppContext.BaseDirectory, "breathing-edge-blue.png");
+        await CreateImage(path, Colors.Blue);
+        shadow.ImageSourceForEdgeColor = path;
+        shadow.UseEdgeColorFromImage = true;
+        await Wait(() => shadow.Color == Colors.Blue, "breathing image color");
+        Check(StillBreathing(), "Asynchronous edge color updates preserve breathing");
+        shadow.StopBreath();
+
+        shadow.DropShadow.Offset = new Vector3(12, 13, 14);
+        shadow.DropShadow.BlurRadius = 18;
+        shadow.DropShadow.Opacity = 0.45f;
+        shadow.Color = Colors.Green;
+        Check(shadow.DropShadow.Offset == new Vector3(12, 13, 14)
+            && shadow.DropShadow.BlurRadius == 18 && shadow.DropShadow.Opacity == 0.45f,
+            "Color changes preserve unrelated caller-configured native values");
+        shadow.OffsetX = 4;
+        Check(shadow.DropShadow.Offset == new Vector3(4, 13, 14)
+            && shadow.DropShadow.BlurRadius == 18 && shadow.DropShadow.Opacity == 0.45f,
+            "OffsetX changes preserve the other native axes, blur and opacity");
+        shadow.OffsetY = 6;
+        Check(shadow.DropShadow.Offset == new Vector3(4, 6, 14), "OffsetY changes preserve the other native axes");
+        shadow.OffsetZ = 8;
+        Check(shadow.DropShadow.Offset == new Vector3(4, 6, 8), "OffsetZ changes preserve the other native axes");
+        shadow.ShadowOpacity = 0.3;
+        Check(shadow.DropShadow.BlurRadius == 18 && shadow.DropShadow.Offset == new Vector3(4, 6, 8),
+            "Opacity changes preserve unrelated native blur and offset");
+        shadow.BlurRadius = 21;
+        Check(shadow.DropShadow.BlurRadius == 21 && shadow.DropShadow.Opacity == 0.3f
+            && shadow.DropShadow.Offset == new Vector3(4, 6, 8), "Explicit blur changes update only the native blur radius");
+        await RemoveAsync(panel, shadow);
     }
 
     private async Task ScrollTests(StackPanel panel, Window window)
@@ -190,12 +254,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         Check(inner.DropShadow.Offset == new Vector3(3, 5, 2) && inner.DropShadow.BlurRadius == 12, "Shadow dependency properties update native values");
         await Task.Delay(150);
         await WindowCapture.CaptureAsync(window, "glyph-shadow.png");
-        await RemoveAsync(panel, outer);
+        await RemoveAsync(panel, outer, inner);
         Check(inner.DropShadow.Mask is null, "Unload detaches the shared mask without disposing it");
         panel.Children.Add(outer);
         await Wait(() => inner.IsLoaded, "glyph reload");
         Check(inner.Mask == glyph && outer.Mask == glyph, "Reload restores custom masks");
-        await RemoveAsync(panel, outer);
+        await RemoveAsync(panel, outer, inner);
 
         var content = new Border { Width = 150, Height = 90, Background = new SolidColorBrush(Colors.CornflowerBlue) };
         var shadow = new CompositionShadow { Content = content, Width = 150, Height = 90, UseCornerRadius = true, CornerRadius = 18 };
