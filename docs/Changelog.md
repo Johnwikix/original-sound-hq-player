@@ -1,3 +1,6 @@
+## 2026-11-02 属性窗口复用页内详情布局统一 UI
+- `View/SubView/MusicDetailsWindow.xaml(.cs)`：内容改为宿主 `MusicDetailControl`，标签/歌词/文件页签、封面菜单、播放收藏入队和底部保存按钮与页内详情层完全一致；标签/歌词/封面/保存全部走 `IMusicDetailsEditorFactory` + `MusicDetailsViewModel`，删除窗口内重复的编辑器装配、封面会话、选择器与保存流程。默认尺寸 1000×760（≥960 触发完整并排布局），最小 640×560，支持 Esc 关窗；保存完成或曲目移出曲库时自动关窗。
+
 ## 2026-11-02 修复阴影属性更新中断呼吸动画
 - `Controls/CompositionShadow.cs`：按变更属性更新合成阴影，颜色、偏移和透明度变化不再中断呼吸动画，也不覆盖调用方设置的其他原生值。
 - `_tools/LocalControlsUiRegression/Program.cs`：增加呼吸中属性更新、异步取色和原生值保留回归；嵌套卸载测试分别等待内外层的 Unloaded，不修改生产卸载逻辑。
