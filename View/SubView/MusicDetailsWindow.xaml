@@ -17,8 +17,21 @@
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
 
-    <Grid tool:ApplicationFont.IsEnabled="True" RowDefinitions="48,*" KeyDown="Root_KeyDown">
-        <Grid x:Name="MusicDetailTitleBar" />
-        <controls:MusicDetailControl x:Name="DetailView" Grid.Row="1" />
+    <Grid tool:ApplicationFont.IsEnabled="True" RowDefinitions="44,*" KeyDown="Root_KeyDown">
+        <Grid x:Name="MusicDetailTitleBar">
+            <StackPanel Margin="18,0,0,0" VerticalAlignment="Center" Orientation="Horizontal" Spacing="12">
+                <TextBlock
+                    x:Uid="MusicDetailTitleBar"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    Style="{StaticResource CaptionTextBlockStyle}" />
+                <ProgressRing
+                    Width="16"
+                    Height="16"
+                    VerticalAlignment="Center"
+                    IsActive="{x:Bind ViewModel.Editor.IsBusy, Mode=OneWay}" />
+            </StackPanel>
+        </Grid>
+        <controls:MusicDetailControl x:Name="DetailView" Grid.Row="1" ShowHeader="False" />
     </Grid>
 </winex:WindowEx>

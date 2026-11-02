@@ -1,3 +1,7 @@
+## 2026-11-02 属性窗口按窗口形态微调详情布局
+- `View/Controls/MusicDetailControl.xaml.cs`：新增 `ShowHeader` 属性，供独立窗口关闭内建标题行。
+- `View/SubView/MusicDetailsWindow.xaml(.cs)`：标题“歌曲属性”回到应用标题栏（维持原 16px Caption 字号）并旁挂忙碌指示环；默认尺寸收敛为主窗口最小尺寸 960×720，内容与标题栏间距收紧为控件自身内边距。
+
 ## 2026-11-02 属性窗口复用页内详情布局统一 UI
 - `View/SubView/MusicDetailsWindow.xaml(.cs)`：内容改为宿主 `MusicDetailControl`，标签/歌词/文件页签、封面菜单、播放收藏入队和底部保存按钮与页内详情层完全一致；标签/歌词/封面/保存全部走 `IMusicDetailsEditorFactory` + `MusicDetailsViewModel`，删除窗口内重复的编辑器装配、封面会话、选择器与保存流程。默认尺寸 1000×760（≥960 触发完整并排布局），最小 640×560，支持 Esc 关窗；保存完成或曲目移出曲库时自动关窗。
 

@@ -13,6 +13,10 @@ public sealed partial class MusicDetailControl : UserControl
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel), typeof(MusicDetailsViewModel), typeof(MusicDetailControl), new PropertyMetadata(null, ViewModelChanged));
     public MusicDetailsViewModel? ViewModel { get => (MusicDetailsViewModel?)GetValue(ViewModelProperty); set => SetValue(ViewModelProperty, value); }
+    /// <summary>是否显示内建标题行；独立窗口把标题放到应用标题栏时关闭。</summary>
+    public static readonly DependencyProperty ShowHeaderProperty = DependencyProperty.Register(
+        nameof(ShowHeader), typeof(bool), typeof(MusicDetailControl), new PropertyMetadata(true, ShowHeaderChanged));
+    public bool ShowHeader { get => (bool)GetValue(ShowHeaderProperty); set => SetValue(ShowHeaderProperty, value); }
     public MusicDetailsEditorViewModel? Editor => ViewModel?.Editor;
     public WinUIMusicPlayer.Model.Music? Music => ViewModel?.Music;
     /// <summary>获取共享封面动画的目的元素。</summary>
@@ -29,6 +33,8 @@ public sealed partial class MusicDetailControl : UserControl
         SizeChanged += OnSizeChanged;
         Unloaded += OnUnloaded;
     }
+    private static void ShowHeaderChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+        => ((MusicDetailControl)sender).HeaderBar.Visibility = (bool)args.NewValue ? Visibility.Visible : Visibility.Collapsed;
     private static void ViewModelChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (MusicDetailControl)sender;

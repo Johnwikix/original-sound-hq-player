@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.View.SubView
                 ViewModel.CloseRequested += CloseRequested;
                 ViewModel.Start();
                 DetailView.ViewModel = ViewModel;
+                Bindings.Update();
             }
             catch (Exception exception)
             {
@@ -73,9 +74,9 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void setWindow()
         {
-            // 宽度按 MusicDetailControl ≥960 的并排布局取整；更窄会退化为紧凑/堆叠视图。
+            // 不超过主窗口的最小尺寸（MainWindow MinWidth/MinHeight 960×720）；控件在更窄时自动紧凑。
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 760, 1000, App.MainWindow.AppWindow, this.AppWindow);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 720, 960, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
         }
 
@@ -117,6 +118,7 @@ namespace WinUIMusicPlayer.View.SubView
                 viewModel.CloseRequested -= CloseRequested;
                 viewModel.BeginClose();
                 DetailView.ViewModel = null;
+                Bindings.StopTracking();
                 // StopAsync 自行观察异常；EditorSessions 保留退出屏障直到真实工作完成。
                 _ = viewModel.StopAsync();
             }
