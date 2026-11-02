@@ -56,8 +56,8 @@ public sealed partial class MusicDetailControl : UserControl
     {
         // 矮窗口优先保留侧栏，避免封面占去编辑区的垂直空间；极窄时才继续堆叠。
         bool shortWindow = args.NewSize.Height < 640;
-        bool stacked = args.NewSize.Width < 960 && (!shortWindow || args.NewSize.Width < 760);
-        bool compact = args.NewSize.Width < 960 || shortWindow;
+        bool stacked = args.NewSize.Width < 900 && (!shortWindow || args.NewSize.Width < 760);
+        bool compact = args.NewSize.Width < 900 || shortWindow;
         double gutter = compact ? 24 : 32;
         double coverSize = stacked ? 112 : compact ? 200 : 240;
         double columnGap = compact ? 24 : 36;

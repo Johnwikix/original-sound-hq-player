@@ -1,3 +1,6 @@
+## 2026-11-02 降低详情布局紧凑阈值
+- `View/Controls/MusicDetailControl.xaml.cs`：紧凑/堆叠的宽度断点 960→900（同步保持堆叠⊆紧凑），默认 960×720 属性窗口（控件约 944 宽）不再进入紧凑模式；高度 640 与极窄 760 断点不变。
+
 ## 2026-11-02 属性窗口按窗口形态微调详情布局
 - `View/Controls/MusicDetailControl.xaml.cs`：新增 `ShowHeader` 属性，供独立窗口关闭内建标题行。
 - `View/SubView/MusicDetailsWindow.xaml(.cs)`：标题“歌曲属性”回到应用标题栏（维持原 16px Caption 字号）并旁挂忙碌指示环；默认尺寸收敛为主窗口最小尺寸 960×720，内容与标题栏间距收紧为控件自身内边距。
