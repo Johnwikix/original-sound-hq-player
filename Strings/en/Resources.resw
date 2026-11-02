@@ -2563,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Make room for your music</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Add a music folder to explore your library. Your listening and favorites will shape future picks.</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>Add music folder</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Your music sources are unavailable. Check the connection or manage your music sources.</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>Your music sources are unavailable. Check the connection or manage your music sources.</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>Retry</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>Explore your library</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>Made for you</value></data>
@@ -2660,4 +2660,5 @@ SHA-256: {5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Scroll to zoom. Left/Right to pan, Up/Down to zoom, Home to reset. Double-click to seek the playing track.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Reset view</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spectrum options</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>No new recommendations yet. Songs with titles already in Favorites or playlists are excluded. Add more music and try again.</value></data>
 </root>

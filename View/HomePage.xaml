@@ -109,7 +109,7 @@
         </Grid>
         <StackPanel Grid.Row="1" x:Name="UnavailablePanel" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsUnavailable), Mode=OneWay}">
             <FontIcon Glyph="&#xE753;" FontSize="44" />
-            <TextBlock x:Uid="HomeUnavailable" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock x:Name="UnavailableMessageText" Text="{x:Bind ViewModel.UnavailableMessage, Mode=OneWay}" TextAlignment="Center" TextWrapping="Wrap" />
             <Button x:Uid="HomeRetry" Style="{StaticResource MenuButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}" HorizontalAlignment="Center" />
         </StackPanel>
         <InfoBar Grid.Row="1" IsOpen="{x:Bind HasText(ViewModel.ErrorMessage), Mode=OneWay}" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Severity="Warning" IsClosable="False" VerticalAlignment="Top" Margin="24,8,24,0">

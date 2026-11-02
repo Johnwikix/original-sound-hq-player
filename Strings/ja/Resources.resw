@@ -2563,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>あなたの音楽から始めよう</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>音楽フォルダーを追加して、ライブラリを楽しみましょう。再生履歴とお気に入りをもとにおすすめを作成します。</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>音楽フォルダーを追加</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音楽ソースを利用できません。接続を確認するか、音楽ソースのページで管理してください。</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>音楽ソースを利用できません。接続を確認するか、音楽ソースのページで管理してください。</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>再試行</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>ライブラリを探索</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>あなたへのおすすめ</value></data>
@@ -2660,4 +2660,5 @@ SHA-256: {5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>ホイールで拡大縮小。左右キーで移動、上下キーで拡大縮小、Homeでリセット。ダブルクリックで再生中の曲をシークします。</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>表示をリセット</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>スペクトル設定</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>新しいおすすめはありません。お気に入りやプレイリストと同名の曲は除外します。曲を追加して再度お試しください。</value></data>
 </root>

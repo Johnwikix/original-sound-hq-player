@@ -1,3 +1,9 @@
+## 2026-11-02 推荐排除收藏、歌单及同名副本
+- `HomeRecommendationService`：最爱和播放列表继续作为偏好样本，轮播、侧卡、主推荐、探索与常听统一排除已收录歌曲及同名副本（去首尾空白、忽略大小写，不依赖歌手、路径或专辑）。
+- `HomeRecommendationService`：排除发生在候选池截断前，栏目配额按可推荐候选计算；没有新候选时不回填已收录歌曲，其余候选保留风格相关性、歌手/专辑多样性与批次随机扰动。
+- `HomeViewModel`、`HomePage`、全部语言资源：区分“暂无新的推荐”和“来源不可用”，代码取词使用独立资源键。
+- 按用户要求未继续运行构建、测试或额外验证；此前融合版本的验证数据在 `docs/HomeRecommendationsPlan.md` 中保留并标注。
+
 ## 2026-11-02 修复频谱 MP3 尾标签兼容与详情退出保留
 - `External/AudioAnalysisWorker/SpectrogramDecoder.cs`、`Player/AudioAnalysisWorker.exe`：对解码无效包进行有界恢复并正确排空，兼容被 MP3 demuxer 当作音频包的 Lyrics3 尾标签；保留有效音频结果，I/O 与其他解码错误仍报告失败，已重新发布 worker。
 - `View/Controls/MusicDetailControl.xaml(.cs)`、`SpectrogramControl.xaml(.cs)`：退出/替换上下文时停止全部嵌套 x:Bind 监听，显式清空频谱子上下文和原生按钮命令；卸载释放图形资源，重新加载恢复命令绑定。

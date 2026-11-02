@@ -2563,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Начните со своей музыки</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Добавьте папку с музыкой. Прослушивания и избранное помогут подобрать музыку для вас.</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>Добавить папку с музыкой</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Источники музыки недоступны. Проверьте подключение или настройки источников.</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>Источники музыки недоступны. Проверьте подключение или настройки источников.</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>Повторить</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>Исследуйте медиатеку</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>Для вас</value></data>
@@ -2660,4 +2660,5 @@ SHA-256: {5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Колесо — масштаб. Влево/вправо — сдвиг, вверх/вниз — масштаб, Home — сброс. Двойной щелчок — переход в текущем треке.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Сбросить вид</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Настройки спектра</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Новых рекомендаций пока нет. Треки с названиями из избранного или плейлистов исключены. Добавьте музыку и попробуйте снова.</value></data>
 </root>

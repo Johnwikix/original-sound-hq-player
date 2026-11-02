@@ -2563,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Müziğinizle başlayın</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Bir müzik klasörü ekleyin. Dinledikleriniz ve favorileriniz önerilerinizi şekillendirsin.</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>Müzik klasörü ekle</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Müzik kaynaklarına erişilemiyor. Bağlantıyı kontrol edin veya kaynaklarınızı yönetin.</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>Müzik kaynaklarına erişilemiyor. Bağlantıyı kontrol edin veya kaynaklarınızı yönetin.</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>Yeniden dene</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>Kitaplığınızı keşfedin</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>Sizin için</value></data>
@@ -2660,4 +2660,5 @@ SHA-256: {5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Tekerlek ile yakınlaştırın. Sol/Sağ kaydırır, Yukarı/Aşağı yakınlaştırır, Home sıfırlar. Çalan parçada aramak için çift tıklayın.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Görünümü sıfırla</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spektrum seçenekleri</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Henüz yeni öneri yok. Favorilerde veya çalma listelerinde aynı adı taşıyan şarkılar hariç tutulur. Daha fazla müzik ekleyip yeniden deneyin.</value></data>
 </root>

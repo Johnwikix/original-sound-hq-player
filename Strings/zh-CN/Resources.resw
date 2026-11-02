@@ -2565,7 +2565,7 @@ SHA-256：{5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>从你的音乐开始</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>添加音乐文件夹，探索曲库中的旋律。随着收听和收藏，首页会逐渐了解你的偏好。</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>添加音乐文件夹</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音乐来源暂时不可用。请检查连接，或在音乐来源页面管理你的音乐。</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>音乐来源暂时不可用。请检查连接，或在音乐来源页面管理你的音乐。</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>重试</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>探索曲库</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>为你推荐</value></data>
@@ -2662,4 +2662,5 @@ SHA-256：{5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>滚轮缩放，左右键平移，上下键缩放，Home 重置；双击跳转当前歌曲。</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>重置视图</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>频谱选项</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>暂无新的推荐。收藏和播放列表中的同名歌曲不再重复推荐；可以添加更多音乐后再试。</value></data>
 </root>

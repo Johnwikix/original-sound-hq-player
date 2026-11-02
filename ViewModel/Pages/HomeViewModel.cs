@@ -157,6 +157,8 @@ public sealed class HomeViewModel : ObservableObject
     public bool IsEmpty { get; private set => SetProperty(ref field, value); }
     /// <summary>获取有库但没有可推荐候选的状态。</summary>
     public bool IsUnavailable { get; private set => SetProperty(ref field, value); }
+    /// <summary>区分来源离线与排除已收藏/歌单歌曲后没有新候选。</summary>
+    public string UnavailableMessage { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("HomeUnavailable");
     /// <summary>获取是否显示已有推荐内容。</summary>
     public bool HasContent => Songs.Count > 0;
     /// <summary>获取当前是否有足够独立候选展示精选。</summary>
@@ -479,6 +481,8 @@ public sealed class HomeViewModel : ObservableObject
                     Publish(result);
                     IsLoading = false;
                     IsUnavailable = !HasContent;
+                    if (IsUnavailable)
+                        UnavailableMessage = ToolUtils.GetString(snapshot.Any(track => track.IsAvailable) ? "HomeNoNewRecommendations" : "HomeUnavailable");
                     ErrorMessage = "";
                     _publishedDay = now.Date;
                 }

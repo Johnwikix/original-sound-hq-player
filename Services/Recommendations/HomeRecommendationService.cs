@@ -43,6 +43,7 @@ public sealed class HomeRecommendationService
         var features = new List<Features>(tracks.Count);
         var genreCache = new Dictionary<string, string[]>(StringComparer.Ordinal);
         var albumKeys = new Dictionary<(string Artist, string Album), string>();
+        var collectedTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         bool hasPreference = false;
         foreach (var track in tracks)
         {
@@ -71,6 +72,8 @@ public sealed class HomeRecommendationService
                 ? CommunitySignals.TrackKey(string.Join(";", artistNames), track.Title) : "";
             var item = new Features(track, artistNames, genreNames, albumKey, recordingKey);
             features.Add(item);
+            if ((track.IsFavorite || track.IsInPlaylist) && !string.IsNullOrWhiteSpace(track.Title))
+                collectedTitles.Add(track.Title.Trim());
             Increment(artistSupport, artistNames);
             Increment(genreSupport, genreNames);
             listening.TryGetValue(track.Id, out var listened);
@@ -113,12 +116,16 @@ public sealed class HomeRecommendationService
         var explore = new PriorityQueue<Candidate, (double, int)>();
         var familiar = new PriorityQueue<Candidate, (double, int)>();
         var genreRepresentatives = new Dictionary<string, Candidate>(StringComparer.OrdinalIgnoreCase);
+        int candidateCount = 0;
         uint seed = unchecked((uint)(nowUtc.Date.Ticks / TimeSpan.TicksPerDay) * 16777619u ^ (uint)batch * 2246822519u);
         foreach (var item in features)
         {
             token.ThrowIfCancellationRequested();
             var track = item.Track;
-            if (!track.IsAvailable) continue;
+            // 收集偏好后再排除，且在截断候选池之前处理所有同名副本。
+            if (!track.IsAvailable || track.IsFavorite || track.IsInPlaylist
+                || (!string.IsNullOrWhiteSpace(track.Title) && collectedTitles.Contains(track.Title.Trim()))) continue;
+            candidateCount++;
             listening.TryGetValue(track.Id, out var listened);
             double a = Match(artists, artistSupport, item.Artists, artistMax);
             double g = Match(genres, genreSupport, item.Genres, genreMax);
@@ -144,13 +151,13 @@ public sealed class HomeRecommendationService
             double strongest = Math.Max(content, Math.Max(acoustic, remote));
             double blended = evidenceWeight > 0 ? (MetadataWeight * content + AudioWeight * acoustic + CommunityWeight * remote) / evidenceWeight : 0;
             double affinity = StrongestSourceWeight * strongest + (1 - StrongestSourceWeight) * blended;
-            double score = hasPreference ? .86 * affinity + (track.IsFavorite || track.IsInPlaylist ? .06 : 0) + .05 * novelty + .03 * jitter : jitter;
+            double score = hasPreference ? .86 * affinity + .05 * novelty + .03 * jitter : jitter;
             if (listened is { LastPlayedTicks: > 0 })
             {
                 double age = Math.Max(0, (nowUtc.Ticks - listened.LastPlayedTicks) / (double)TimeSpan.TicksPerDay);
                 score -= .05 * Math.Max(0, 1 - age);
             }
-            var reason = track.IsFavorite ? RecommendationReason.Favorite : a > 0 && a >= g
+            var reason = a > 0 && a >= g
                 ? RecommendationReason.Artist : g > 0 ? RecommendationReason.Genre : RecommendationReason.Explore;
             string detail = reason == RecommendationReason.Artist ? Best(artists, item.Artists) :
                 reason == RecommendationReason.Genre ? Best(genres, item.Genres) : "";
@@ -179,11 +186,11 @@ public sealed class HomeRecommendationService
         var seen = new HashSet<int>();
         var recordings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         // 全页共享排除集合：常听、精选、主栏、探索分别分配独立曲目。
-        var familiarSongs = Select(Drain(familiar), Math.Min(PageSize, features.Count / 4), token, seen, recordings, hasPreference);
-        int mainReserve = Math.Min(PageSize, Math.Max(1, features.Count - familiarSongs.Count));
-        int featuredCount = Math.Min(5, Math.Max(0, features.Count - familiarSongs.Count - mainReserve));
+        var familiarSongs = Select(Drain(familiar), Math.Min(PageSize, candidateCount / 4), token, seen, recordings, hasPreference);
+        int mainReserve = Math.Min(PageSize, Math.Max(1, candidateCount - familiarSongs.Count));
+        int featuredCount = Math.Min(5, Math.Max(0, candidateCount - familiarSongs.Count - mainReserve));
         var featured = Select(pool, featuredCount, token, seen, recordings, hasPreference);
-        int cardCount = Math.Min(3, Math.Max(0, features.Count - familiarSongs.Count - featured.Count - mainReserve));
+        int cardCount = Math.Min(3, Math.Max(0, candidateCount - familiarSongs.Count - featured.Count - mainReserve));
         var cards = Select(pool, cardCount, token, seen, recordings, hasPreference);
         var songs = Select(pool, PageSize, token, seen, recordings, hasPreference);
         // 同曲版本很多时，源文件数不能代表独立录音数，至少保留一个主栏入口。

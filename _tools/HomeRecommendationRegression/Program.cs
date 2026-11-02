@@ -93,9 +93,10 @@ var audioScores = new Dictionary<int,float> { [79] = 1 };
 var enhanced = service.Build(library,[],now,0,default,audioScores,
     new CommunitySignals(new Dictionary<string,float>(StringComparer.OrdinalIgnoreCase) { ["Artist 18"] = 1 }, new Dictionary<string,float>()));
 Check(enhanced.Songs.Concat(enhanced.Featured ?? []).Concat(enhanced.Cards ?? []).Any(x => x.Reason is RecommendationReason.Audio or RecommendationReason.Community), "real optional signals participate in ranking and explanations");
-var versions = Enumerable.Range(1,40).Select(id => new RecommendationTrack(id,["Artist"],"Album","Artist","Rock",2020,true,true,0,"Same recording")).ToArray();
+var versions = Enumerable.Range(1,40).Select(id => new RecommendationTrack(id,["Artist"],"Album","Artist","Rock",2020,false,true,0,"Same recording")).ToArray();
 var onlyVersions = service.Build(versions,[new(){MusicId=1,Weight=1,Count=1}],now,0,default);
 Check(onlyVersions.Songs.Count==1 && onlyVersions.Familiar.Count==0, "a library consisting of versions keeps a primary playback entry");
+checks += OwnedTrackRegression.Run(service, now);
 checks += TasteRegression.Run(service, now);
 checks += await CommunitySeedRegression.RunAsync(now);
 foreach (int size in new[] { 10000, 100000 })
