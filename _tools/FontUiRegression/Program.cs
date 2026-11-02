@@ -153,7 +153,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             service.Dispose();
             service.Apply(segoe.FontFamily);
             Check(((FontFamily)Resources["ContentControlThemeFontFamily"]).Source == "Consolas", "Disposed service accepted a late font change.");
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_checks} checks; real WinUIEx WindowContent wrapper preserves Light/Dark/Default on font registration, live changes and reattachment with Mica/Acrylic; new page theme/foreground, compiled font bindings, icon/explicit-font preservation, independent ordinary/desktop lyrics, cleanup, serialization and cached ContentDialog fonts.");
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_checks} checks; unsupported Mica uses an opaque real composition brush with live theme updates, explicit transparency switching, reconnect and close cleanup; real WinUIEx WindowContent wrapper preserves Light/Dark/Default on font registration, live changes and reattachment with Mica/Acrylic; new page theme/foreground, compiled font bindings, icon/explicit-font preservation, independent ordinary/desktop lyrics, cleanup, serialization and cached ContentDialog fonts.");
         }
         catch (Exception ex)
         {

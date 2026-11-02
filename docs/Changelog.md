@@ -1,3 +1,7 @@
+## 2026-11-02 修复 Windows 10 云母样式变透明
+- `ThemeStyleHelper`、`SolidColorSystemBackdrop`：云母不受支持时改为跟随窗口明暗主题的不透明底色，保留已保存的云母选择；样式切换和关闭时释放画刷并解绑主题事件。
+- `_tools/FontUiRegression`：使用真实 WinUI 窗口和合成画刷覆盖不支持云母、主题切换、透明样式切换、重连及关闭清理；Windows 10 实机显示待验收。
+
 ## 2026-11-02 组件级布局诊断、分析设置及统一缓存
 - `UiLayoutDiagnostics`、`App`、页面/轮播控件：布局异常记录当前页面、组件类型与名称、父级路径、最近256条尺寸/测量记录及有界可视树；后台落盘，限流并保留20份；开启原生布局追踪供调试器和转储分析。
 - `FeaturedCarousel`、`HomeHeroCard`、`HomeCarouselTile`：按父级测量约束更新响应式布局，跳过重复尺寸计算，固定拼贴列宽，移除 SizeChanged 中反写标题布局的反馈路径；原报告的偶发异常尚未复现。
