@@ -2260,7 +2260,7 @@
     <value>Usa la subcarpeta WebDav de la ubicación de caché indicada arriba.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Las portadas y WebDAV comparten esta carpeta. Al cambiarla, la caché se crea según se necesita y se conservan los archivos anteriores.</value>
+    <value>Carpeta compartida para portadas, audio WebDAV y cachés de características musicales y sonoridad. La nueva ubicación se llena según sea necesario; se conservan los archivos anteriores.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>No se puede establecer una conexión HTTPS segura. Comprueba el certificado del NAS y la configuración TLS.</value>
@@ -2652,4 +2652,15 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Guardar la letra lrc en el dispositivo local</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Localizar pista actual</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Localizar pista actual</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Análisis musical en segundo plano</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Analiza el timbre, el ritmo y otras características para descubrir canciones de estilo similar y mejorar las recomendaciones de inicio.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Completados {0} / encontrados {1} · en cola {2} · fallidos {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Esperando nueva música</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Análisis desactivado</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Comprobando archivos aptos</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Analizando</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Análisis interrumpido; se reintentará</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Estilo musical similar</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Similar en Last.fm</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Solo se analizan archivos locales y pistas WebDAV completamente en caché, sin descargar audio. El objetivo es un ciclo de trabajo del 10 % de un núcleo de CPU; el proceso se cierra cuando está inactivo.</value></data>
 </root>

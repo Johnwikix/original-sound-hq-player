@@ -127,7 +127,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await database.CreateTableAsync<PendingMetadataWrite>();
             await data.Lyrics.InitializeAsync(path);
             var editorFactory = new FixtureEditorFactory(data, app);
-            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory, editorFactory.Sessions);
+            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory, editorFactory.Sessions, new FixtureEnrichment(), new FixtureEnrichment());
             using var services = new ServiceCollection().AddSingleton(home).BuildServiceProvider();
             App.Services = services;
             window = new Window();
@@ -169,7 +169,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Wait(() => home.HasContent && !home.IsLoading);
             Check(((ScrollViewer)page.FindName("ContentScroll")).Visibility == Visibility.Visible && !home.IsEmpty,
                 "first imported batch replaces empty state before overall scanning completes");
-            Check(home.Familiar.Count == 20 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
+            Check(home.Familiar.Count == 10 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
                 "real SQLite history and canonical music objects reach the shipping page");
             Check(!home.PlaySongCommand.CanExecute(home.Songs[0]), "play remains guarded until engine and lifecycle are ready");
             app.State.Lifecycle.TransitionTo(AppPhase.Initializing);
@@ -180,6 +180,16 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var initialThemes = home.Themes;
             var carousel = (FeaturedCarousel)page.FindName("Featured");
             carousel.AutoShuffle = false; // 手动导航断言需要确定时序，自动轮播单独验证。
+            if (Environment.GetCommandLineArgs().Contains("--recommendation-slots"))
+            {
+                var ids = home.Songs.Concat(home.Familiar).Concat(home.Discovery).Concat(home.FeaturedSongs).Concat(home.CardSongs).Select(x => x.Music.Id).ToArray();
+                Check(ids.Distinct().Count() == ids.Length, "shipping page keeps featured, familiar, primary and discovery recordings disjoint");
+                Check(home.Themes.Count == 5 && home.CardSongs.Count == 3 && ReferenceEquals(carousel.ThumbnailItemsSource, home.CardSongs), "shipping thumbnail binding uses independent side cards and five disjoint carousel tracks");
+                home.ShowPreview(home.FeaturedSongs[0]);
+                Check(ReferenceEquals(home.PreviewSong, home.FeaturedSongs[0]), "featured cards retain preview interaction after decoupling shelves");
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--interactive"))
             {
                 window.Title = "Home Carousel interaction fixture";

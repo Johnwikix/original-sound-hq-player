@@ -91,7 +91,8 @@ internal static class FavoriteFixRegression
         await Task.WhenAll(localEdit!, playback!, databaseRead!, addedMusic!);
         check(largestBatch <= 512 && batches >= 5, "Import held a full-library transaction instead of committing bounded pages.");
         check(interleaved, "Favorite saving, playback enqueue or library reads could not complete between pages.");
-        await Until(() => f.Service.Status.FavoritePendingCount == 0 && f.Service.Status.PendingCount == 0);
+        // 2050条真实SQLite持久提交不设15秒机器性能门槛；旧版本在当前磁盘也超时。
+        await Until(() => f.Service.Status.FavoritePendingCount == 0 && f.Service.Status.PendingCount == 0, 60);
         check(!f.Http.Loved("Song 1"), "A later duplicate file overwrote a new mid-import unlove.");
         check(!f.Http.Loved("New during import"), "The import ignored its initial ID bound and included later library additions.");
         check(await f.Db.ExecuteScalarAsync<int>("SELECT [Order] FROM Music WHERE Id = 2050") == 2050,
@@ -176,9 +177,9 @@ internal static class FavoriteFixRegression
 
     private const string ApiKey = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static LastFmTrack Track(int id) => new("Song " + id, "Artist", "", 180);
-    private static async Task Until(Func<bool> condition)
+    private static async Task Until(Func<bool> condition, int seconds = 15)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(seconds));
         while (!condition()) await Task.Delay(5, timeout.Token);
     }
 

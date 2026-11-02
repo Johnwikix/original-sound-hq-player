@@ -1,3 +1,20 @@
+## 2026-11-02 组件级布局诊断、分析设置及统一缓存
+- `UiLayoutDiagnostics`、`App`、页面/轮播控件：布局异常记录当前页面、组件类型与名称、父级路径、最近256条尺寸/测量记录及有界可视树；后台落盘，限流并保留20份；开启原生布局追踪供调试器和转储分析。
+- `FeaturedCarousel`、`HomeHeroCard`、`HomeCarouselTile`：按父级测量约束更新响应式布局，跳过重复尺寸计算，固定拼贴列宽，移除 SizeChanged 中反写标题布局的反馈路径；原报告的偶发异常尚未复现。
+- `AudioAnalysisSettingsControl`、`GeneralSettingsControl`、全部语言资源：分析开关移至通用→高级，说明音色/节奏特征如何改善推荐，展开后显示输入范围、资源策略与实时进度。
+- `AnalysisRepository`、`LoudnessScanner`、设置 IPC：特征缓存和响度缓存统一到设置→关于的缓存根目录下 `Analysis/Features.db`、`Analysis/Loudness`；旧主库特征按需迁移，开关与曲库保留；更换根目录按需重建，旧目录文件保留。
+- `CacheSizeCalculator`：缓存总量包含分析子目录；`AudioAnalysisWorker.csproj` 使用项目图标；重新发布两个独立程序。`PlayerIpcService` 启动失败输出完整异常栈。
+- 验证、路径与限制见 `docs/HomeRecommendationsPlan.md`；原生追踪输出到调试器/转储，组件日志标记近期变化候选，不自动认定根因。
+
+## 2026-11-02 校准 DSP 后台分析、推荐去重与 Last.fm 增强
+- `Services/AudioAnalysis`、`External/AudioAnalysisWorker`、`Player/AudioAnalysisWorker.exe`：独立校准 DSP 默认路线，FIR/FFT/频谱 SIMD、固定缓冲；仅分析本地和完整有效 WebDAV 缓存，有界队列、10% CPU 占空比、取消等待及空闲/批次结束退出。
+- `RemoteAudioCache`、`MusicDatabaseService.Analysis`：完整缓存只读租约、文件版本校验及原始特征持久化；缓存 LRU 时间戳不触发重新分析。
+- `HomeRecommendationService`、`HomeViewModel`、`HomePage`：轮播、侧卡和三栏共享去重，各自独立集合与播放队列，融合校准音频及社区相似信号；小曲库减少展示项。
+- `LastFmService.Recommendations`、`LastFmRecommendationService`：后台有界相似艺术家/歌曲缓存，复用身份取消和网络请求槽；断开或关闭后立即排除社区信号，首页不等待网络。
+- `AudioAnalysisSettingsControl`、`AnalysisSettingsViewModel`、全部语言资源：可展开分析开关及已完成/已发现/排队/失败和当前曲目进度，合并 UI 通知并解绑订阅。
+- 兼容性：分析开关新增缺省开启，存量安装首次升级同样启用，可在通用设置关闭；不修改 AudioPlayer 播放实现或 IPC。通用独立实现。
+- 验证与资源边界见 `docs/HomeRecommendationsPlan.md`；完整 Last.fm 测试的2050条持久提交等待预算调整为60秒，原始提交在当前磁盘同样超过原15秒预算。
+
 ## 2026-11-02 修复许可恢复、试用到期及来源命令回归
 - `AppViewModel.OutputPreferences`、`MusicDatabaseService`：启动恢复直接写入共享偏好，受限时拒绝修改 DSD、5.1、Atmos 的开启和关闭值；许可覆盖仅用于 IPC，不写回已保存偏好。
 - `LicenseService`：按已知期限在本地结束试用，查询失败和迟到的过期缓存不能延长试用；已确认完整版在查询失败时继续保留。

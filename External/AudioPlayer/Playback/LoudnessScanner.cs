@@ -10,6 +10,19 @@ namespace AudioPlayer.Playback;
 internal static class LoudnessScanner
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
+    private static readonly object CacheGate = new();
+    private sealed record CacheLocation(string Directory);
+    private static CacheLocation? _location;
+    /// <summary>跟随主程序缓存位置；切换目录不重建音频会话。</summary>
+    internal static void ConfigureCacheRoot(string root)
+    {
+        string directory = Path.GetFullPath(Path.Combine(root, "Analysis", "Loudness"));
+        lock (CacheGate)
+        {
+            if (!string.Equals(_location?.Directory, directory, StringComparison.OrdinalIgnoreCase))
+                _location = new CacheLocation(directory);
+        }
+    }
 
     internal static Task<LoudnessMeasurement?> ScanAsync(string path, int rate, int channels,
         int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null, PlaybackSource? source = null, uint channelMask = 0)
@@ -37,7 +50,8 @@ internal static class LoudnessScanner
             ? $"http|{source!.ResourceId}|{remoteVersion}"
             : $"file|{file!.FullName.ToUpperInvariant()}|{length}|{modified}";
         string key = $"v3|{identity}|{rate}|{channels}|{channelMask}|{dsdRate}|{dsdGain}";
-        string directory = cacheDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        var location = Volatile.Read(ref _location);
+        string directory = cacheDirectory ?? location?.Directory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WinUIMusicPlayer", "LoudnessCache");
         string cache = Path.Combine(directory, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key))) + ".bin");
         try
@@ -88,13 +102,20 @@ internal static class LoudnessScanner
             if (result is null) return null;
             try
             {
-                Directory.CreateDirectory(directory);
-                string temporary = cache + ".tmp";
-                using (var output = new BinaryWriter(File.Create(temporary)))
+                lock (CacheGate)
                 {
-                    output.Write(2); output.Write(result.IntegratedLufs); output.Write(result.SamplePeak); output.Write(result.TruePeak);
+                    // 设置切换后，在途分析仍可用于播放，但不能在旧目录发布迟到缓存。
+                    if (cacheDirectory is not null || ReferenceEquals(location, _location))
+                    {
+                        Directory.CreateDirectory(directory);
+                        string temporary = cache + ".tmp";
+                        using (var output = new BinaryWriter(File.Create(temporary)))
+                        {
+                            output.Write(2); output.Write(result.IntegratedLufs); output.Write(result.SamplePeak); output.Write(result.TruePeak);
+                        }
+                        File.Move(temporary, cache, true);
+                    }
                 }
-                File.Move(temporary, cache, true);
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }

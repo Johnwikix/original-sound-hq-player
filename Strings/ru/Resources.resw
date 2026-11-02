@@ -2260,7 +2260,7 @@
     <value>Используется подпапка WebDav в расположении кэша, указанном выше.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Обложки и WebDAV используют эту папку. После изменения кэш создаётся по мере необходимости, прежние файлы сохраняются.</value>
+    <value>Общая папка для обложек, аудио WebDAV и кэша музыкальных признаков и громкости. Новое расположение заполняется по мере необходимости; старые файлы сохраняются.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>Не удалось установить защищённое HTTPS-соединение. Проверьте сертификат NAS и настройки TLS.</value>
@@ -2652,4 +2652,15 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Сохранить текст песни lrc на локальное устройство</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Найти текущую композицию</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Найти текущую композицию</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Фоновый анализ музыки</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Анализирует тембр, ритм и другие характеристики, чтобы находить похожие по стилю песни и улучшать рекомендации на главной странице.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Готово {0} / найдено {1} · в очереди {2} · ошибок {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Ожидание новых композиций</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Анализ отключён</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Проверка доступных файлов</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Анализ</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Анализ прерван; повтор позже</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Похожий музыкальный стиль</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Похожие на Last.fm</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Анализируются только локальные файлы и полностью кэшированные треки WebDAV, без загрузки аудио. Целевая доля работы одного ядра ЦП — 10 %; в простое процесс анализа завершается.</value></data>
 </root>

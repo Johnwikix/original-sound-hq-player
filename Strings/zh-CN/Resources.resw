@@ -2262,7 +2262,7 @@
     <value>跟随上方缓存位置，自动存放在 WebDav 子目录。</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>封面与 WebDAV 共用此目录；更改后按需建立缓存，旧文件保留。</value>
+    <value>封面、WebDAV 音频及音乐风格/响度分析缓存共用此目录；更改后按需建立缓存，旧目录文件保留。</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>无法建立 HTTPS 安全连接。请检查 NAS 证书和 TLS 设置。</value>
@@ -2654,4 +2654,15 @@ SHA-256：{5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>定位当前播放歌曲</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>定位当前播放歌曲</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>后台音乐分析</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>分析音乐的音色、节奏等特征，帮助发现风格相近的歌曲，改善首页推荐。</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>已完成 {0} / 已发现 {1} · 排队 {2} · 失败 {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>等待新增曲目</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>分析已关闭</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>正在检查可分析文件</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>正在分析</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>分析中断，稍后重试</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>音乐风格相似</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fm 相似推荐</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>仅分析本地文件和已完整缓存的 WebDAV 曲目，不下载音频。以单核 10% CPU 占空比在后台运行，空闲时退出分析进程。</value></data>
 </root>

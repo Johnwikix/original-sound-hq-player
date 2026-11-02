@@ -2260,7 +2260,7 @@
     <value>Yukarıdaki önbellek konumunun WebDav alt klasörünü kullanır.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Kapaklar ve WebDAV bu klasörü paylaşır. Değiştirmek, önbellekleri isteğe bağlı oluşturur ve mevcut dosyaları korur.</value>
+    <value>Kapaklar, WebDAV sesi, müzik özellikleri ve ses yüksekliği önbellekleri için ortak klasör. Yeni konum gerektiğinde doldurulur; eski konumdaki dosyalar korunur.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>Güvenli HTTPS bağlantısı kurulamıyor. NAS sertifikasını ve TLS ayarlarını denetleyin.</value>
@@ -2652,4 +2652,15 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Çalan parçayı bul</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Çalan parçayı bul</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Arka planda müzik analizi</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Benzer tarzdaki şarkıları keşfetmek ve ana sayfa önerilerini iyileştirmek için tını, ritim ve diğer müzik özelliklerini analiz eder.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Tamamlanan {0} / bulunan {1} · sırada {2} · başarısız {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Yeni müzik bekleniyor</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Analiz kapalı</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Uygun dosyalar denetleniyor</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Analiz ediliyor</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Analiz kesildi; yeniden denenecek</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Benzer müzik tarzı</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fm benzer önerileri</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Yalnızca yerel dosyalar ve tamamen önbelleğe alınmış WebDAV parçaları analiz edilir; ses indirilmez. Bir CPU çekirdeğinde %10 çalışma oranı hedeflenir ve analiz işlemi boşta kaldığında kapanır.</value></data>
 </root>

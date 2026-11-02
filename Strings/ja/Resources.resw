@@ -2260,7 +2260,7 @@
     <value>上で指定したキャッシュ保存先の WebDav サブフォルダーを使用します。</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>カバーと WebDAV で共通のフォルダーを使います。変更後は必要に応じてキャッシュを作成し、以前のファイルは保持します。</value>
+    <value>カバー、WebDAV音声、音楽特徴量・ラウドネスのキャッシュで共用します。変更後は必要に応じて作成し、旧フォルダーのファイルは保持します。</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>HTTPS の安全な接続を確立できません。NAS の証明書と TLS 設定を確認してください。</value>
@@ -2652,4 +2652,15 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>歌詞lrcをローカルに保存する</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>再生中の曲を表示</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>再生中の曲を表示</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>バックグラウンド音楽分析</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>音色やリズムなどを分析して、似たスタイルの曲を見つけ、ホームのおすすめを改善します。</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>完了 {0} / 検出 {1} · 待機 {2} · 失敗 {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>新しい曲を待機中</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>分析は無効です</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>分析可能なファイルを確認中</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>分析中</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>分析が中断されました。後で再試行します</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>音楽スタイルが似ています</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fmの類似推薦</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>ローカルファイルと完全にキャッシュされたWebDAVの曲のみが対象です。音声はダウンロードしません。CPU 1コアの稼働率10%を目安に実行し、待機時に分析プロセスを終了します。</value></data>
 </root>

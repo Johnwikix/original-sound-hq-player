@@ -40,6 +40,8 @@ public struct IpcSetting
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
     public string? AtmosEndpointId;
+    /// <summary>Gets the application cache root; null preserves legacy player behavior.</summary>
+    public string? CacheRoot;
 }
 
 public struct UpdateEqRequest

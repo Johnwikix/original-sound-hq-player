@@ -139,6 +139,31 @@ public sealed class LastFmApiClient : IDisposable
         }
     }
 
+    /// <summary>读取有界社区相似结果；不创建远程播放项或修改用户收藏。</summary>
+    public async Task<List<LastFmSimilarity>> SimilarAsync(LastFmCredentials credentials, string artist, string? title, CancellationToken token)
+    {
+        bool tracks = !string.IsNullOrEmpty(title);
+        var parameters = new Dictionary<string, string> { ["artist"] = artist, ["limit"] = "40", ["autocorrect"] = "0" };
+        if (tracks) parameters["track"] = title!;
+        using var reply = await RequestAsync(credentials, tracks ? "track.getSimilar" : "artist.getSimilar", parameters, null, token).ConfigureAwait(false);
+        var result = new List<LastFmSimilarity>(40);
+        var parent = reply.RootElement.GetProperty(tracks ? "similartracks" : "similarartists");
+        if (!parent.TryGetProperty(tracks ? "track" : "artist", out var items)) return result;
+        if (items.ValueKind == JsonValueKind.Object) Add(items);
+        else if (items.ValueKind == JsonValueKind.Array)
+            foreach (var item in items.EnumerateArray()) { if (result.Count >= 40) break; Add(item); }
+        else if (items.ValueKind != JsonValueKind.String && items.ValueKind != JsonValueKind.Null) throw new JsonException();
+        return result;
+        void Add(JsonElement item)
+        {
+            string name = item.GetProperty("name").GetString() ?? "";
+            string owner = tracks ? item.GetProperty("artist").GetProperty("name").GetString() ?? "" : name;
+            if (name.Length is 0 or > 1024 || owner.Length is 0 or > 1024) return;
+            if (!double.TryParse(item.GetProperty("match").ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double match) || !double.IsFinite(match) || match < 0) return;
+            result.Add(new(owner, tracks ? name : "", (float)(tracks ? match / (1 + match) : Math.Clamp(match, 0, 1))));
+        }
+    }
+
     private static int ReadInteger(JsonElement value)
     {
         // Last.fm's live JSON uses numbers here; older responses and clients also use strings.

@@ -17,12 +17,13 @@ public sealed class HomeRecommendationService
         "Неизвестный альбом", "Неизвестный жанр", "Unbekannter Künstler", "Unbekanntes Album", "Unbekanntes Genre",
         "Artista desconocido", "Álbum desconocido", "Género desconocido", "Bilinmiyor", "Bilinmeyen Sanatçı", "Bilinmeyen Albüm", "Bilinmeyen Tür"
     ];
-    private sealed record Features(RecommendationTrack Track, string[] Artists, string[] Genres, string AlbumKey);
+    private readonly record struct Features(RecommendationTrack Track, string[] Artists, string[] Genres, string AlbumKey, string RecordingKey);
     private readonly record struct Candidate(Features Features, double Score, RecommendationReason Reason, string Detail);
 
     /// <summary>从固定快照生成三个栏目；同一天、同一批次和输入产生相同结果。</summary>
     public HomeRecommendation Build(IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history,
-        DateTime nowUtc, int batch, CancellationToken token)
+        DateTime nowUtc, int batch, CancellationToken token,
+        IReadOnlyDictionary<int, float>? audio = null, CommunitySignals? community = null)
     {
         token.ThrowIfCancellationRequested();
         var listening = new Dictionary<int, HomeListening>(history.Count);
@@ -32,17 +33,35 @@ public sealed class HomeRecommendationService
         var albums = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         var years = new Dictionary<int, double>();
         var features = new List<Features>(tracks.Count);
+        var genreCache = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        var albumKeys = new Dictionary<(string Artist, string Album), string>();
         bool hasPreference = false;
         foreach (var track in tracks)
         {
             token.ThrowIfCancellationRequested();
             if (track.Id <= 0) continue;
             var artistNames = FilterArtists(track.Artists);
-            var genreNames = SplitGenres(track.Genre);
-            string albumKey = IsKnown(track.Album.AsSpan())
-                ? string.Concat(IsKnown(track.AlbumArtist.AsSpan()) ? track.AlbumArtist.Trim() :
-                    artistNames.Length > 0 ? artistNames[0] : "", "\u001f", track.Album.Trim()) : "";
-            var item = new Features(track, artistNames, genreNames, albumKey);
+            string rawGenre = track.Genre ?? "";
+            if (!genreCache.TryGetValue(rawGenre, out var genreNames))
+            {
+                genreNames = SplitGenres(rawGenre);
+                genreCache.Add(rawGenre, genreNames);
+            }
+            string albumKey = "";
+            if (IsKnown(track.Album.AsSpan()))
+            {
+                var albumIdentity = (IsKnown(track.AlbumArtist.AsSpan()) ? track.AlbumArtist.Trim() :
+                    artistNames.Length > 0 ? artistNames[0] : "", track.Album.Trim());
+                if (!albumKeys.TryGetValue(albumIdentity, out var cachedAlbumKey))
+                {
+                    cachedAlbumKey = string.Concat(albumIdentity.Item1, "\u001f", albumIdentity.Item2);
+                    albumKeys.Add(albumIdentity, cachedAlbumKey);
+                }
+                albumKey = cachedAlbumKey;
+            }
+            string recordingKey = artistNames.Length > 0 && IsKnown(track.Title.AsSpan())
+                ? CommunitySignals.TrackKey(string.Join(";", artistNames), track.Title) : "";
+            var item = new Features(track, artistNames, genreNames, albumKey, recordingKey);
             features.Add(item);
             listening.TryGetValue(track.Id, out var listened);
             double strength = Math.Log(1 + Math.Max(0, listened?.Weight ?? 0)) + (track.IsFavorite ? 2 : 0);
@@ -77,11 +96,23 @@ public sealed class HomeRecommendationService
             double repeat = Math.Min(1, Math.Log(1 + Math.Max(0, listened?.Weight ?? 0)) / 3);
             double novelty = 1 / (1 + (listened?.Count ?? 0) + Math.Log(1 + Math.Max(0, track.PlayCount)) * .15);
             double score = hasPreference ? .65 * content + .15 * repeat + (track.IsFavorite ? .12 : 0) + .08 * jitter : jitter;
+            double acoustic = audio?.GetValueOrDefault(track.Id) ?? 0;
+            double remote = 0;
+            if (community is not null)
+                foreach (string artist in item.Artists)
+                {
+                    remote = Math.Max(remote, community.Artists.GetValueOrDefault(artist));
+                    if (track.Title.Length > 0) remote = Math.Max(remote, community.Tracks.GetValueOrDefault(CommunitySignals.TrackKey(artist, track.Title)));
+                }
+            // 可用时融合；缺失向量/断网沿用本地评分，不产生远程不可播放项。
+            score += .22 * acoustic + .13 * remote;
             if (listened is not null && nowUtc.Ticks - listened.LastPlayedTicks < TimeSpan.TicksPerDay) score *= .75;
             var reason = track.IsFavorite ? RecommendationReason.Favorite : a > 0 && a * .45 >= g * .30
                 ? RecommendationReason.Artist : g > 0 ? RecommendationReason.Genre : RecommendationReason.Explore;
             string detail = reason == RecommendationReason.Artist ? Best(artists, item.Artists) :
                 reason == RecommendationReason.Genre ? Best(genres, item.Genres) : "";
+            if (remote > .6 && remote > acoustic) { reason = RecommendationReason.Community; detail = ""; }
+            else if (acoustic > .65) { reason = RecommendationReason.Audio; detail = ""; }
             Offer(ranked, new(item, score, reason, detail));
             var discovery = new Candidate(item, .6 * novelty + .4 * jitter, RecommendationReason.Explore, "");
             Offer(explore, discovery);
@@ -97,26 +128,37 @@ public sealed class HomeRecommendationService
         var exploration = Drain(explore);
         Merge(exploration, Drain(representatives));
         Merge(pool, exploration);
-        var songs = Select(pool, exploration, PageSize, token);
         var seen = new HashSet<int>();
-        foreach (var song in songs) seen.Add(song.MusicId);
-        // 流派栏目优先补充主栏未出现且具有真实流派标签的歌曲。
+        var recordings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // 全页共享排除集合：常听、精选、主栏、探索分别分配独立曲目。
+        var familiarSongs = Select(Drain(familiar), null, Math.Min(PageSize, features.Count / 4), token, seen, recordings);
+        int mainReserve = Math.Min(PageSize, Math.Max(1, features.Count - familiarSongs.Count));
+        int featuredCount = Math.Min(5, Math.Max(0, features.Count - familiarSongs.Count - mainReserve));
+        var featured = Select(pool, exploration, featuredCount, token, seen, recordings);
+        int cardCount = Math.Min(3, Math.Max(0, features.Count - familiarSongs.Count - featured.Count - mainReserve));
+        var cards = Select(pool, exploration, cardCount, token, seen, recordings);
+        var songs = Select(pool, exploration, PageSize, token, seen, recordings);
+        // 同曲版本很多时，源文件数不能代表独立录音数，至少保留一个主栏入口。
+        if (songs.Count == 0)
+        {
+            var donor = featured.Count > 0 ? featured : familiarSongs;
+            if (donor.Count > 0) { songs.Add(donor[0]); donor.RemoveAt(0); }
+        }
         var discoveryPool = new List<Candidate>();
-        if (genreRepresentatives.Count > 1)
+        if (genreRepresentatives.Count > 1 || audio is { Count: > 0 } ||
+            community is { Artists.Count: > 0 } or { Tracks.Count: > 0 })
             foreach (var item in exploration)
-                if (item.Features.Genres.Length > 0 && !seen.Contains(item.Features.Track.Id))
+                if ((item.Features.Genres.Length > 0 || audio?.ContainsKey(item.Features.Track.Id) == true) && !seen.Contains(item.Features.Track.Id))
                 {
                     double unfamiliar = genreMax > 0 ? 1 - Match(genres, item.Features.Genres, genreMax) : 0;
                     discoveryPool.Add(item with { Score = item.Score + .4 * unfamiliar });
                 }
-        return new(songs, Select(Drain(familiar), null, PageSize, token),
-            Select(discoveryPool, null, PageSize, token), !hasPreference);
+        return new(songs, familiarSongs, Select(discoveryPool, null, PageSize, token, seen, recordings), !hasPreference, featured, cards);
     }
 
-    private static List<RecommendedSong> Select(List<Candidate> pool, List<Candidate>? exploration, int count, CancellationToken token)
+    private static List<RecommendedSong> Select(List<Candidate> pool, List<Candidate>? exploration, int count, CancellationToken token, HashSet<int> selected, HashSet<string> recordings)
     {
         var result = new List<RecommendedSong>(count);
-        var selected = new HashSet<int>();
         var artists = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var albums = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var genres = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -131,7 +173,7 @@ public sealed class HomeRecommendationService
                 foreach (var candidate in candidates)
                 {
                     var f = candidate.Features;
-                    if (selected.Contains(f.Track.Id)) continue;
+                    if (selected.Contains(f.Track.Id) || (f.RecordingKey.Length > 0 && recordings.Contains(f.RecordingKey))) continue;
                     int artistCount = MaxCount(artists, f.Artists);
                     int albumCount = f.AlbumKey.Length > 0 ? albums.GetValueOrDefault(f.AlbumKey) : 0;
                     if (relax < 2 && artistCount >= (relax == 0 ? 2 : 3)) continue;
@@ -151,6 +193,7 @@ public sealed class HomeRecommendationService
             }
             var item = chosen.Features;
             selected.Add(item.Track.Id);
+            if (item.RecordingKey.Length > 0) recordings.Add(item.RecordingKey);
             result.Add(new(item.Track.Id, chosen.Reason, chosen.Detail));
             Increment(artists, item.Artists);
             Increment(genres, item.Genres);
@@ -193,6 +236,10 @@ public sealed class HomeRecommendationService
 
     private static string[] FilterArtists(string[] values)
     {
+        bool unchanged = true;
+        foreach (string value in values)
+            if (!IsKnown(value.AsSpan()) || value.AsSpan().Trim().Length != value.Length) { unchanged = false; break; }
+        if (unchanged) return values;
         var result = new List<string>(values.Length);
         foreach (string value in values)
             if (IsKnown(value.AsSpan())) result.Add(value.Trim());

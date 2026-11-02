@@ -58,7 +58,7 @@ public class PlayerIpcService : IDisposable
             await completed.ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
-        catch (Exception ex) { Console.WriteLine($"Server error: {ex.Message}"); }
+        catch (Exception ex) { Console.Error.WriteLine($"Audio IPC server failed: {ex}"); }
         finally
         {
             _stop.Cancel();

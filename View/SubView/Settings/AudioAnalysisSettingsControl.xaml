@@ -1,0 +1,25 @@
+<UserControl x:Class="WinUIMusicPlayer.View.SubView.Settings.AudioAnalysisSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:tool="using:WinUIMusicPlayer.Utils">
+<controls:SettingsExpander x:Name="AudioAnalysisExpander" AutomationProperties.AutomationId="AudioAnalysisExpander"
+                    Header="{x:Bind tool:ToolUtils.GetString('AnalysisTitle')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('AnalysisDescription')}">
+                    <controls:SettingsExpander.Content>
+                        <ToggleSwitch x:Name="AnalysisEnabled" MinWidth="0" VerticalAlignment="Center" AutomationProperties.AutomationId="AudioAnalysisEnabled"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('AnalysisTitle')}"
+                            IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
+                    </controls:SettingsExpander.Content>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard ContentAlignment="Left" HorizontalContentAlignment="Stretch">
+                            <StackPanel Spacing="8" HorizontalAlignment="Stretch" >
+                                <TextBlock Text="{x:Bind tool:ToolUtils.GetString('AnalysisScope')}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock x:Name="AnalysisStatus" Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" TextWrapping="Wrap" />
+                                <ProgressBar x:Name="AnalysisProgress" Minimum="0" Maximum="{x:Bind ViewModel.Total, Mode=OneWay}"
+                                    Value="{x:Bind ViewModel.Completed, Mode=OneWay}" AutomationProperties.AutomationId="AudioAnalysisProgress" />
+                                <TextBlock x:Name="AnalysisCurrent" Text="{x:Bind ViewModel.CurrentText, Mode=OneWay}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+</UserControl>

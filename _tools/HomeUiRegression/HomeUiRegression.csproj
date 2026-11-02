@@ -52,4 +52,5 @@
     <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />
     <Content Include="../../Strings/en/Resources.resw" Link="home-resources.resw" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+<ItemGroup><Compile Include="../../Services/UiLayoutDiagnostics.cs" /></ItemGroup>
 </Project>

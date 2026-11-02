@@ -43,6 +43,10 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     private TimeSpan _shufflePausedRemaining;
     private double _countdownFraction = 1;
     private int _index;
+    private double _layoutWidth = double.NaN;
+    private double _layoutColumnGap = double.NaN;
+    private double _layoutTileGap = double.NaN;
+    private int _layoutTiles = -1;
     private bool _slideFromRight = true;
     private bool _pointerInside;
     private bool _focusInside;
@@ -105,6 +109,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     public FeaturedCarousel()
     {
         InitializeComponent();
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         // Composition 的非环境光数量受限，整组封面复用一盏聚光处理悬停和按压。
@@ -216,6 +221,7 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
     /// <inheritdoc />
     protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
     {
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Measure(this, availableSize);
         if (LayoutGrid is not null && double.IsFinite(availableSize.Width))
         {
             // 使用父级分配的测量宽度；ActualWidth 已经经过 DPI 舍入，反写行列会形成一像素的布局循环。
@@ -242,7 +248,11 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         bool split = ThumbnailVisibility == Visibility.Visible;
         bool lowerRow = SecondaryItem is not null;
         bool lowerPair = TertiaryItem is not null;
-        double rowGap = lowerRow ? ThumbnailGrid.ColumnSpacing : 0;
+        int tiles = split ? lowerPair ? 3 : lowerRow ? 2 : 1 : 0;
+        double columnGap = LayoutGrid.ColumnSpacing;
+        double tileGap = ThumbnailGrid.ColumnSpacing;
+        if (_layoutWidth == width && _layoutColumnGap == columnGap && _layoutTileGap == tileGap && _layoutTiles == tiles) return;
+        double rowGap = lowerRow ? tileGap : 0;
         double mainWidth = width;
         double thumbnailWidth = 0;
         if (split)
@@ -257,7 +267,8 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         LayoutGrid.RowDefinitions[0].Height = new GridLength(mainWidth / aspectRatio);
         // 分栏时主图使用分配宽度，避免图片的固有尺寸改变 Star 列的最小期望宽度和舍入结果。
         LayoutGrid.ColumnDefinitions[0].Width = split ? new GridLength(mainWidth) : new GridLength(1, GridUnitType.Star);
-        LayoutGrid.ColumnDefinitions[1].Width = split ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        // 两列均由本次测量宽度决定，图片和长标题的期望尺寸不能再反过来撑宽 Star 列。
+        LayoutGrid.ColumnDefinitions[1].Width = new GridLength(thumbnailWidth);
         ThumbnailGrid.RowSpacing = rowGap;
         ThumbnailGrid.RowDefinitions[0].Height = new GridLength(thumbnailWidth / aspectRatio);
         ThumbnailGrid.RowDefinitions[1].Height = lowerRow ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
@@ -275,6 +286,10 @@ public sealed partial class FeaturedCarousel : UserControl, INotifyPropertyChang
         Grid.SetColumnSpan(SecondaryShadowHost, TertiaryItem is null ? 2 : 1);
         Grid.SetColumn(TertiaryThumbnail, 1);
         Grid.SetRow(TertiaryThumbnail, 1);
+        _layoutWidth = width;
+        _layoutColumnGap = columnGap;
+        _layoutTileGap = tileGap;
+        _layoutTiles = tiles;
     }
     private void Notify([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new(name));
     private void NotifyNavigation()

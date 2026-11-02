@@ -48,6 +48,7 @@ public sealed partial class HomePage : Page
     {
         ViewModel = App.Services.GetRequiredService<HomeViewModel>();
         InitializeComponent();
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
         NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         _openPreviewTimer = DispatcherQueue.CreateTimer();
         _openPreviewTimer.IsRepeating = false;

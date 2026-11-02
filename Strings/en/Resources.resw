@@ -2260,7 +2260,7 @@
     <value>Uses the WebDav subfolder of the cache location above.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Covers and WebDAV share this folder. Changing it creates caches on demand and keeps existing files.</value>
+    <value>Shared by covers, WebDAV audio, musical feature and loudness caches. A new location is populated on demand; files in the old location are retained.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>Cannot establish a secure HTTPS connection. Check the NAS certificate and TLS settings.</value>
@@ -2652,4 +2652,15 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Save the lyrics LRC to local</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Locate current track</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Locate current track</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Background music analysis</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Analyze timbre, rhythm and other musical features to discover songs with a similar style and improve home recommendations.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Completed {0} / discovered {1} · queued {2} · failed {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Waiting for new music</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Analysis disabled</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Checking eligible files</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Analyzing</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Analysis interrupted; will retry</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Similar musical style</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Similar on Last.fm</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Only local files and fully cached WebDAV tracks are analyzed; no audio is downloaded. Analysis targets a 10% duty cycle on one CPU core and the worker exits when idle.</value></data>
 </root>

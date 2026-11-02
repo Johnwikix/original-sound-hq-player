@@ -80,6 +80,22 @@ try
     Check(Math.Abs(signals.Single(x => x.MusicId == 6).Weight - .5) < .00001, "exactly fifty percent is a qualified positive signal");
 }
 finally { await db.CloseAsync(); File.Delete(path); }
+var combined = personalized.Songs.Concat(personalized.Familiar).Concat(personalized.Discovery).Concat(personalized.Featured ?? []).Concat(personalized.Cards ?? []).ToArray();
+Check(combined.Select(x => x.MusicId).Distinct().Count() == combined.Length, "all shelves and featured slots share one exclusion set");
+Check((personalized.Featured?.Count ?? 0) == 5, "ample library provides five independent featured slots");
+Check(personalized.Cards?.Count == 3, "side cards are allocated independently from all carousel pages");
+var duplicateLibrary = library.Concat([new RecommendationTrack(100, ["Artist 1"], "Other", "Artist 1", "Pop", 2020, false, true, 0, "Same"),
+    new RecommendationTrack(101, ["Artist 1"], "Other", "Artist 1", "Pop", 2020, false, true, 0, "Same")]).ToArray();
+var duplicates = service.Build(duplicateLibrary,[],now,0,default);
+Check(duplicates.Songs.Concat(duplicates.Familiar).Concat(duplicates.Discovery).Concat(duplicates.Featured ?? []).Concat(duplicates.Cards ?? []).Count(x => x.MusicId is 100 or 101) <= 1,
+    "same artist and title versions cannot occupy different page slots");
+var audioScores = new Dictionary<int,float> { [79] = 1 };
+var enhanced = service.Build(library,[],now,0,default,audioScores,
+    new CommunitySignals(new Dictionary<string,float>(StringComparer.OrdinalIgnoreCase) { ["Artist 18"] = 1 }, new Dictionary<string,float>()));
+Check(enhanced.Songs.Concat(enhanced.Featured ?? []).Concat(enhanced.Cards ?? []).Any(x => x.Reason is RecommendationReason.Audio or RecommendationReason.Community), "real optional signals participate in ranking and explanations");
+var versions = Enumerable.Range(1,40).Select(id => new RecommendationTrack(id,["Artist"],"Album","Artist","Rock",2020,true,true,0,"Same recording")).ToArray();
+var onlyVersions = service.Build(versions,[new(){MusicId=1,Weight=1,Count=1}],now,0,default);
+Check(onlyVersions.Songs.Count==1 && onlyVersions.Familiar.Count==0, "a library consisting of versions keeps a primary playback entry");
 foreach (int size in new[] { 10000, 100000 })
 {
     var large = new RecommendationTrack[size];

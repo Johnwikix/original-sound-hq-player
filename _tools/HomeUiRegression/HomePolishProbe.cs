@@ -40,7 +40,7 @@ internal sealed partial class RegressionApplication
         var stats = new PlaybackStatsService();
         var editors = new FixtureEditorFactory(data, app);
         var home = new HomeViewModel(app, data, stats, new HomeRecommendationService(), new PlaybackCoordinator(app, stats),
-            new AddFolderViewModel(), new WebDavLibraryService(), NullLogger<HomeViewModel>.Instance, editors, editors.Sessions);
+            new AddFolderViewModel(), new WebDavLibraryService(), NullLogger<HomeViewModel>.Instance, editors, editors.Sessions, new FixtureEnrichment(), new FixtureEnrichment());
         var services = new ServiceCollection().AddSingleton(home).AddSingleton(app).AddSingleton(data)
             .AddSingleton<EditorSessions>(editors.Sessions).AddSingleton<IMusicDetailsEditorFactory>(editors)
             .AddSingleton<LibraryNavigationService>().BuildServiceProvider();
@@ -138,6 +138,8 @@ internal sealed partial class HomePolishWindow : Window
         }
         else { Grid.SetRow(_host, 1); _root.Children.Add(_host); }
         Content = _root;
+        if (Environment.GetEnvironmentVariable("HOME_POLISH_LAYOUT_DIAGNOSTICS") == "1")
+            WinUIMusicPlayer.Services.UiLayoutDiagnostics.Initialize(_output, () => Content, _ => { });
         _root.Loaded += async (_, _) => await Run("ready", async () =>
         {
             _page = CreatePage(); _host.Content = _page;
@@ -145,6 +147,13 @@ internal sealed partial class HomePolishWindow : Window
             ((FeaturedCarousel)_page.FindName("Featured")).AutoShuffle = false;
             await Task.Delay(800);
             Sample("warm");
+            if (Environment.GetEnvironmentVariable("HOME_POLISH_RESIZE_AUTO") == "1")
+            {
+                await CheckResizeStress();
+                File.WriteAllText(Path.Combine(_output,"resize-auto-result.txt"),"PASS: 1806 resize/layout changes.");
+                DispatcherQueue.TryEnqueue(Close);
+            }
+
             if (Environment.GetEnvironmentVariable("HOME_POLISH_AUTOMEMORY") == "1")
             {
                 for (int i = 0; i < 3; i++) { await Stress(); await Collect(); }

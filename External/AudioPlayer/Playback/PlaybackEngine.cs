@@ -914,6 +914,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 || ExperimentalSurround51 != s.ExperimentalSurround51
                 || ExperimentalAtmosPassthrough != s.ExperimentalAtmosPassthrough || AtmosEndpointId != s.AtmosEndpointId
                 || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
+            if (!string.IsNullOrWhiteSpace(s.CacheRoot)) LoudnessScanner.ConfigureCacheRoot(s.CacheRoot);
             OutputMode = s.OutputMode ?? "DirectSound";
             BassOutputDeviceId = s.BassOutputDeviceId;
             WasapiEndpointId = s.WasapiEndpointId;

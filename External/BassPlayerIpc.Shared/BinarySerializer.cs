@@ -120,6 +120,14 @@ public static class BinarySerializer
         dest[offset++] = s.ExperimentalAtmosPassthrough ? (byte)1 : (byte)0;
         offset += WriteString(dest[offset..], s.AtmosEndpointId);
         dest[offset++] = (byte)s.SpectralEnhancement;
+        if (s.CacheRoot is not null)
+        {
+            int length = Encoding.UTF8.GetByteCount(s.CacheRoot);
+            if (length > IpcConstants.MaxPayloadSize - IpcSettingSize - 4) throw new ArgumentException("Cache path exceeds IPC capacity.");
+            BinaryPrimitives.WriteInt32LittleEndian(dest[offset..], length);
+            offset += 4;
+            offset += Encoding.UTF8.GetBytes(s.CacheRoot.AsSpan(), dest[offset..]);
+        }
         return offset;
     }
 
@@ -154,6 +162,14 @@ public static class BinarySerializer
         {
             s.SpectralEnhancement = (SpectralEnhancementMode)src[offset++];
             if (!Enum.IsDefined(s.SpectralEnhancement)) throw new ArgumentException("Invalid enhancement mode.");
+        }
+        if (offset < src.Length)
+        {
+            if (src.Length - offset < 4) throw new ArgumentException("Truncated cache root.");
+            int length = BinaryPrimitives.ReadInt32LittleEndian(src[offset..]);
+            offset += 4;
+            if (length < 0 || length != src.Length - offset) throw new ArgumentException("Invalid cache root length.");
+            s.CacheRoot = Encoding.UTF8.GetString(src.Slice(offset, length));
         }
         return s;
     }

@@ -406,6 +406,8 @@
 
                 <TextBlock x:Uid="Advanced" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <settings:AudioAnalysisSettingsControl />
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="FolderWatchEnabled" TextWrapping="Wrap" />

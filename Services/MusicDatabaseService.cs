@@ -92,6 +92,8 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.CreateTableAsync<WebDavSource>();
                     await _dbConnection.CreateTableAsync<RemoteTrack>();
                     await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
+                    Analysis = new WinUIMusicPlayer.Services.AudioAnalysis.AnalysisRepository(_dbConnection, () => AppSettings.MusicCoverCache);
+                    await Analysis.InitializeAsync();
                     await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await EnsurePendingMetadataLyricsColumnsAsync();

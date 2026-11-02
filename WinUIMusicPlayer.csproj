@@ -74,7 +74,9 @@
   <ItemGroup>
 	<!-- 独立播放进程（AOT 单文件，仓库内为发布产物暂存）：与应用主程序、ffmpeg DLL 同铺应用根，
 	     AutoGen 默认按 exe 目录定位 DLL，无需任何路径适配 -->
-	<None Include="Player\*.exe" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+	<None Remove="Player\AudioAnalysisWorker.exe" />
+    <None Include="Player\AudioAnalysisWorker.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="AudioAnalysisWorker.exe" />
+    <None Include="Player\*.exe" Exclude="Player\AudioAnalysisWorker.exe" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
 	<None Include="Player\*.dll" Exclude="Player\wavpackdll.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
 
 	<!-- FFmpeg 9.0.1 shared DLL（单套分发，全程序唯一样本）：主程序进程内转码与独立播放进程
@@ -398,5 +400,12 @@
       <_SatoriNormalizedRuntimeAsset Remove="@(_SatoriNormalizedRuntimeAsset)" />
       <_SatoriNormalizedCopyLocal Remove="@(_SatoriNormalizedCopyLocal)" />
     </ItemGroup>
+  </Target>
+  <ItemGroup>
+    <AnalysisWorkerSources Include="External\AudioAnalysisWorker\*.cs;External\AudioAnalysisWorker\*.csproj;Services\AudioAnalysis\Core\*.cs;Assets\icon.ico" />
+  </ItemGroup>
+  <Target Name="PublishAudioAnalysisWorker" BeforeTargets="PrepareForBuild"
+          Condition="'$(Platform)' == 'x64'" Inputs="@(AnalysisWorkerSources)" Outputs="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.exe">
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioAnalysisWorker\AudioAnalysisWorker.csproj&quot; -c Release -r win-x64 -p:UseSharedCompilation=false -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
   </Target>
 </Project>

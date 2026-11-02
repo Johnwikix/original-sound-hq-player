@@ -432,6 +432,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 break;
             case nameof(state.Preferences.MusicCoverCache):
                 AppSettings.MusicCoverCache = state.Preferences.MusicCoverCache;
+                if (state.Lifecycle.IsReady) AppSettings.OnOutputSettingsUpdated();
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();

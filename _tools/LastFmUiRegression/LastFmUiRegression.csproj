@@ -17,7 +17,7 @@
   <ItemGroup>
     <Page Include="../../View/SubView/Settings/LastFmSettingsControl.xaml" Link="LastFmSettingsControl.xaml" />
     <Compile Include="../../View/SubView/Settings/LastFmSettingsControl.xaml.cs" Link="LastFmSettingsControl.xaml.cs" />
-    <Compile Include="../../ViewModel/Pages/LastFmSettingsViewModel.cs;../../Services/LastFm/*.cs;../../Services/AppLifecycle.cs;../../State/PlaybackState.cs" Exclude="../../Services/LastFm/SqliteLastFmHistorySource.cs" />
+    <Compile Include="../../ViewModel/Pages/LastFmSettingsViewModel.cs;../../Services/LastFm/*.cs;../../Services/AppLifecycle.cs;../../State/PlaybackState.cs" Exclude="../../Services/LastFm/SqliteLastFmHistorySource.cs;../../Services/LastFm/LastFmRecommendationService.cs" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
