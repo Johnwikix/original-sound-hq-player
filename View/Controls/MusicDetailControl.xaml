@@ -81,7 +81,7 @@
                 </Grid>
             </ScrollViewer>
             <Grid x:Name="WorkspaceViewport" Grid.Column="2" MinWidth="0" MinHeight="0" SizeChanged="PivotViewport_SizeChanged">
-            <Pivot x:Name="WorkspaceTabs" Padding="0" SelectedIndex="0">
+            <Pivot x:Name="WorkspaceTabs" Padding="0" SelectedIndex="0" SelectionChanged="WorkspaceTabs_SelectionChanged">
                 <PivotItem Margin="0">
                     <PivotItem.Header><TextBlock x:Uid="HomeSongTags" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
                     <ScrollViewer x:Name="DetailScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollMode="Enabled" VerticalScrollBarVisibility="Auto" IsTabStop="False">
@@ -264,6 +264,10 @@
                             </Grid>
                         </StackPanel>
                     </ScrollViewer>
+                </PivotItem>
+                <PivotItem x:Name="SpectrumTab" Margin="0">
+                    <PivotItem.Header><TextBlock x:Uid="SpectrumTab" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
+                    <controls:SpectrogramControl x:Name="SpectrumView" ViewModel="{x:Bind ViewModel.Spectrogram, Mode=OneWay}" />
                 </PivotItem>
             </Pivot>
             </Grid>

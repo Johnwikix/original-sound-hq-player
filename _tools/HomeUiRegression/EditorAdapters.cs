@@ -13,11 +13,14 @@ internal sealed class FixtureEditorFactory(MusicDatabaseService database, AppVie
     internal LyricsOnlineSearch Online { get; } = new();
     internal Task CoverGate { get; set; } = Task.CompletedTask;
     internal int CoverReads;
+    internal ISpectrogramService? SpectrumSource { get; set; }
     public MusicDetailsEditorViewModel Create(Music music)
         => new(music, database, new LyricsEditorViewModel(music, database, new(), Online, Tasks), Sessions, this,
             NullLogger<MusicDetailsEditorViewModel>.Instance);
     public AlbumDetailsViewModel CreateAlbum(Music album)
         => new(album, app, database, Sessions, this, NullLogger<AlbumDetailsViewModel>.Instance);
+    public SpectrogramViewModel CreateSpectrogram(Music music)
+        => new(music, app, SpectrumSource ?? new FixtureSpectrogramService(), NullLogger<SpectrogramViewModel>.Instance);
     public async Task<byte[]?> ReadCoverAsync(Music music, CancellationToken token)
     {
         CoverReads++;

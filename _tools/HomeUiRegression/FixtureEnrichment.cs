@@ -6,5 +6,10 @@ internal sealed class FixtureEnrichment : IAudioRecommendationSource, ICommunity
     public event Action? ResultsChanged { add { } remove { } }
     public event Action? Changed { add { } remove { } }
     public CommunitySignals Snapshot => CommunitySignals.Empty;
-    public Task<Dictionary<int,float>> GetScoresAsync(IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history, CancellationToken token) => Task.FromResult(new Dictionary<int,float>());
+    public IReadOnlyList<RecommendationTrack> LastTracks { get; private set; } = [];
+    public Task<Dictionary<int,float>> GetScoresAsync(IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history, CancellationToken token)
+    {
+        LastTracks = tracks;
+        return Task.FromResult(new Dictionary<int,float>());
+    }
 }

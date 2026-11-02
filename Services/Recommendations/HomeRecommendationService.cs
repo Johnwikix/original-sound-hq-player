@@ -10,6 +10,12 @@ public sealed class HomeRecommendationService
 {
     private const int CandidateLimit = 200;
     private const int PageSize = 20;
+    private const double MetadataWeight = .25;
+    private const double AudioWeight = .50;
+    private const double CommunityWeight = .25;
+    private const double StrongestSourceWeight = .60;
+    private const double RelevanceTolerance = .12;
+    private const double MinimumDiscoveryAffinity = .25;
     private static readonly string[] UnknownNames =
     [
         "未知", "未知艺术家", "未知专辑", "未知流派", "Unknown", "Unknown Artist", "Unknown Album", "Unknown Genre",
@@ -18,7 +24,7 @@ public sealed class HomeRecommendationService
         "Artista desconocido", "Álbum desconocido", "Género desconocido", "Bilinmiyor", "Bilinmeyen Sanatçı", "Bilinmeyen Albüm", "Bilinmeyen Tür"
     ];
     private readonly record struct Features(RecommendationTrack Track, string[] Artists, string[] Genres, string AlbumKey, string RecordingKey);
-    private readonly record struct Candidate(Features Features, double Score, RecommendationReason Reason, string Detail);
+    private readonly record struct Candidate(Features Features, double Score, double Affinity, RecommendationReason Reason, string Detail);
 
     /// <summary>从固定快照生成三个栏目；同一天、同一批次和输入产生相同结果。</summary>
     public HomeRecommendation Build(IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history,
@@ -32,6 +38,8 @@ public sealed class HomeRecommendationService
         var genres = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         var albums = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         var years = new Dictionary<int, double>();
+        var artistSupport = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var genreSupport = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var features = new List<Features>(tracks.Count);
         var genreCache = new Dictionary<string, string[]>(StringComparer.Ordinal);
         var albumKeys = new Dictionary<(string Artist, string Album), string>();
@@ -63,8 +71,10 @@ public sealed class HomeRecommendationService
                 ? CommunitySignals.TrackKey(string.Join(";", artistNames), track.Title) : "";
             var item = new Features(track, artistNames, genreNames, albumKey, recordingKey);
             features.Add(item);
+            Increment(artistSupport, artistNames);
+            Increment(genreSupport, genreNames);
             listening.TryGetValue(track.Id, out var listened);
-            double strength = Math.Log(1 + Math.Max(0, listened?.Weight ?? 0)) + (track.IsFavorite ? 2 : 0);
+            double strength = RecommendationEvidence.Strength(track, listened);
             if (strength <= 0) continue;
             hasPreference = true;
             Add(artists, artistNames, strength);
@@ -73,7 +83,32 @@ public sealed class HomeRecommendationService
             if (track.Year is >= 1000 and <= 2999) years[track.Year / 10] = years.GetValueOrDefault(track.Year / 10) + strength;
         }
 
-        double artistMax = Maximum(artists), genreMax = Maximum(genres), albumMax = Maximum(albums), yearMax = Maximum(years);
+        double artistMax = ProfileMaximum(artists, artistSupport), genreMax = ProfileMaximum(genres, genreSupport);
+        double albumMax = Maximum(albums), yearMax = Maximum(years);
+        bool hasAudio = false;
+        bool hasCommunity = false;
+        bool audioAvailable = audio is { Count: > 0 };
+        bool communityAvailable = community is { Artists.Count: > 0 } or { Tracks.Count: > 0 };
+        if (audioAvailable || communityAvailable)
+        {
+            foreach (var item in features)
+            {
+                if (!item.Track.IsAvailable) continue;
+                if (audioAvailable && !hasAudio && ReadSignal(audio, item.Track.Id) > 0) hasAudio = true;
+                if (communityAvailable && !hasCommunity && community is not null)
+                    foreach (string artist in item.Artists)
+                        if (ReadSignal(community.Artists, artist) > 0 || (community.Tracks.Count > 0
+                            && ReadSignal(community.Tracks, CommunitySignals.TrackKey(artist, item.Track.Title)) > 0))
+                        {
+                            hasCommunity = true;
+                            break;
+                        }
+                if ((!audioAvailable || hasAudio) && (!communityAvailable || hasCommunity)) break;
+            }
+        }
+        hasPreference |= hasAudio || hasCommunity;
+        double evidenceWeight = (artistMax > 0 || genreMax > 0 || albumMax > 0 || yearMax > 0 ? MetadataWeight : 0)
+            + (hasAudio ? AudioWeight : 0) + (hasCommunity ? CommunityWeight : 0);
         var ranked = new PriorityQueue<Candidate, (double, int)>();
         var explore = new PriorityQueue<Candidate, (double, int)>();
         var familiar = new PriorityQueue<Candidate, (double, int)>();
@@ -85,41 +120,54 @@ public sealed class HomeRecommendationService
             var track = item.Track;
             if (!track.IsAvailable) continue;
             listening.TryGetValue(track.Id, out var listened);
-            double a = Match(artists, item.Artists, artistMax), g = Match(genres, item.Genres, genreMax);
+            double a = Match(artists, artistSupport, item.Artists, artistMax);
+            double g = Match(genres, genreSupport, item.Genres, genreMax);
             double album = albumMax > 0 && item.AlbumKey.Length > 0 ? albums.GetValueOrDefault(item.AlbumKey) / albumMax : 0;
             double year = yearMax > 0 && track.Year > 0 ? years.GetValueOrDefault(track.Year / 10) / yearMax : 0;
-            double availableWeight = (artistMax > 0 && item.Artists.Length > 0 ? .45 : 0) +
-                (genreMax > 0 && item.Genres.Length > 0 ? .30 : 0) +
-                (albumMax > 0 && item.AlbumKey.Length > 0 ? .15 : 0) + (yearMax > 0 && track.Year > 0 ? .10 : 0);
-            double content = availableWeight > 0 ? (.45 * a + .30 * g + .15 * album + .10 * year) / Math.Sqrt(availableWeight) : 0;
+            double availableWeight = (artistMax > 0 && item.Artists.Length > 0 ? .42 : 0) +
+                (genreMax > 0 && item.Genres.Length > 0 ? .43 : 0) +
+                (albumMax > 0 && item.AlbumKey.Length > 0 ? .12 : 0) + (yearMax > 0 && track.Year > 0 ? .03 : 0);
+            // 年代/专辑只是辅助证据，缺标签时不能把仅同年发行放大为完整风格匹配。
+            double content = (.42 * a + .43 * g + .12 * album + .03 * year) / Math.Max(.65, availableWeight);
             double jitter = RandomScore(track.Id, seed);
-            double repeat = Math.Min(1, Math.Log(1 + Math.Max(0, listened?.Weight ?? 0)) / 3);
-            double novelty = 1 / (1 + (listened?.Count ?? 0) + Math.Log(1 + Math.Max(0, track.PlayCount)) * .15);
-            double score = hasPreference ? .65 * content + .15 * repeat + (track.IsFavorite ? .12 : 0) + .08 * jitter : jitter;
-            double acoustic = audio?.GetValueOrDefault(track.Id) ?? 0;
+            double repeat = RecommendationEvidence.Strength(false, listened) / 3;
+            double novelty = 1 / (1 + Math.Max(0, listened?.Count ?? 0) + Math.Log(1 + Math.Max(0, track.PlayCount)) * .15);
+            double acoustic = ReadSignal(audio, track.Id);
             double remote = 0;
-            if (community is not null)
+            if (hasCommunity && community is not null)
                 foreach (string artist in item.Artists)
                 {
-                    remote = Math.Max(remote, community.Artists.GetValueOrDefault(artist));
-                    if (track.Title.Length > 0) remote = Math.Max(remote, community.Tracks.GetValueOrDefault(CommunitySignals.TrackKey(artist, track.Title)));
+                    remote = Math.Max(remote, ReadSignal(community.Artists, artist));
+                    if (track.Title.Length > 0) remote = Math.Max(remote, ReadSignal(community.Tracks, CommunitySignals.TrackKey(artist, track.Title)));
                 }
-            // 可用时融合；缺失向量/断网沿用本地评分，不产生远程不可播放项。
-            score += .22 * acoustic + .13 * remote;
-            if (listened is not null && nowUtc.Ticks - listened.LastPlayedTicks < TimeSpan.TicksPerDay) score *= .75;
-            var reason = track.IsFavorite ? RecommendationReason.Favorite : a > 0 && a * .45 >= g * .30
+            // 强音频/社区匹配可以独立召回陌生歌手；交叉印证再加权，缺失来源不填造负反馈。
+            double strongest = Math.Max(content, Math.Max(acoustic, remote));
+            double blended = evidenceWeight > 0 ? (MetadataWeight * content + AudioWeight * acoustic + CommunityWeight * remote) / evidenceWeight : 0;
+            double affinity = StrongestSourceWeight * strongest + (1 - StrongestSourceWeight) * blended;
+            double score = hasPreference ? .86 * affinity + (track.IsFavorite || track.IsInPlaylist ? .06 : 0) + .05 * novelty + .03 * jitter : jitter;
+            if (listened is { LastPlayedTicks: > 0 })
+            {
+                double age = Math.Max(0, (nowUtc.Ticks - listened.LastPlayedTicks) / (double)TimeSpan.TicksPerDay);
+                score -= .05 * Math.Max(0, 1 - age);
+            }
+            var reason = track.IsFavorite ? RecommendationReason.Favorite : a > 0 && a >= g
                 ? RecommendationReason.Artist : g > 0 ? RecommendationReason.Genre : RecommendationReason.Explore;
             string detail = reason == RecommendationReason.Artist ? Best(artists, item.Artists) :
                 reason == RecommendationReason.Genre ? Best(genres, item.Genres) : "";
-            if (remote > .6 && remote > acoustic) { reason = RecommendationReason.Community; detail = ""; }
-            else if (acoustic > .65) { reason = RecommendationReason.Audio; detail = ""; }
-            Offer(ranked, new(item, score, reason, detail));
-            var discovery = new Candidate(item, .6 * novelty + .4 * jitter, RecommendationReason.Explore, "");
-            Offer(explore, discovery);
-            foreach (string genre in item.Genres)
-                if (!genreRepresentatives.TryGetValue(genre, out var previous) || discovery.Score > previous.Score)
-                    genreRepresentatives[genre] = discovery;
-            if (listened is { Count: > 0 }) Offer(familiar, new(item, repeat + .05 * jitter, RecommendationReason.Familiar, ""));
+            if (remote >= .4 && remote >= content && remote > acoustic) { reason = RecommendationReason.Community; detail = ""; }
+            else if (acoustic >= .4 && acoustic >= content) { reason = RecommendationReason.Audio; detail = ""; }
+            Offer(ranked, new(item, score, affinity, reason, detail));
+            double discoveryScore = hasPreference ? .80 * affinity + .15 * novelty + .05 * jitter : .6 * novelty + .4 * jitter;
+            var discovery = new Candidate(item, discoveryScore, affinity, reason, detail);
+            // 在截断候选之前排除已听曲目，防止大量高分老歌占满探索候选池。
+            if (track.PlayCount == 0 && listened is not { Count: > 0 } && (!hasPreference || affinity >= MinimumDiscoveryAffinity))
+            {
+                Offer(explore, discovery);
+                foreach (string genre in item.Genres)
+                    if (!genreRepresentatives.TryGetValue(genre, out var previous) || discovery.Score > previous.Score)
+                        genreRepresentatives[genre] = discovery;
+            }
+            if (listened is { Count: > 0 }) Offer(familiar, new(item, .75 * repeat + .20 * affinity + .05 * jitter, affinity, RecommendationReason.Familiar, ""));
         }
 
         var representatives = new PriorityQueue<Candidate, (double, int)>();
@@ -131,13 +179,13 @@ public sealed class HomeRecommendationService
         var seen = new HashSet<int>();
         var recordings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         // 全页共享排除集合：常听、精选、主栏、探索分别分配独立曲目。
-        var familiarSongs = Select(Drain(familiar), null, Math.Min(PageSize, features.Count / 4), token, seen, recordings);
+        var familiarSongs = Select(Drain(familiar), Math.Min(PageSize, features.Count / 4), token, seen, recordings, hasPreference);
         int mainReserve = Math.Min(PageSize, Math.Max(1, features.Count - familiarSongs.Count));
         int featuredCount = Math.Min(5, Math.Max(0, features.Count - familiarSongs.Count - mainReserve));
-        var featured = Select(pool, exploration, featuredCount, token, seen, recordings);
+        var featured = Select(pool, featuredCount, token, seen, recordings, hasPreference);
         int cardCount = Math.Min(3, Math.Max(0, features.Count - familiarSongs.Count - featured.Count - mainReserve));
-        var cards = Select(pool, exploration, cardCount, token, seen, recordings);
-        var songs = Select(pool, exploration, PageSize, token, seen, recordings);
+        var cards = Select(pool, cardCount, token, seen, recordings, hasPreference);
+        var songs = Select(pool, PageSize, token, seen, recordings, hasPreference);
         // 同曲版本很多时，源文件数不能代表独立录音数，至少保留一个主栏入口。
         if (songs.Count == 0)
         {
@@ -145,18 +193,17 @@ public sealed class HomeRecommendationService
             if (donor.Count > 0) { songs.Add(donor[0]); donor.RemoveAt(0); }
         }
         var discoveryPool = new List<Candidate>();
-        if (genreRepresentatives.Count > 1 || audio is { Count: > 0 } ||
-            community is { Artists.Count: > 0 } or { Tracks.Count: > 0 })
+        if (hasPreference || genreRepresentatives.Count > 1)
             foreach (var item in exploration)
-                if ((item.Features.Genres.Length > 0 || audio?.ContainsKey(item.Features.Track.Id) == true) && !seen.Contains(item.Features.Track.Id))
+                if (!seen.Contains(item.Features.Track.Id) && (!hasPreference || item.Affinity >= MinimumDiscoveryAffinity)
+                    && item.Features.Track.PlayCount == 0 && listening.GetValueOrDefault(item.Features.Track.Id) is not { Count: > 0 })
                 {
-                    double unfamiliar = genreMax > 0 ? 1 - Match(genres, item.Features.Genres, genreMax) : 0;
-                    discoveryPool.Add(item with { Score = item.Score + .4 * unfamiliar });
+                    discoveryPool.Add(item);
                 }
-        return new(songs, familiarSongs, Select(discoveryPool, null, PageSize, token, seen, recordings), !hasPreference, featured, cards);
+        return new(songs, familiarSongs, Select(discoveryPool, PageSize, token, seen, recordings, hasPreference), !hasPreference, featured, cards);
     }
 
-    private static List<RecommendedSong> Select(List<Candidate> pool, List<Candidate>? exploration, int count, CancellationToken token, HashSet<int> selected, HashSet<string> recordings)
+    private static List<RecommendedSong> Select(List<Candidate> pool, int count, CancellationToken token, HashSet<int> selected, HashSet<string> recordings, bool personalized)
     {
         var result = new List<RecommendedSong>(count);
         var artists = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -165,20 +212,29 @@ public sealed class HomeRecommendationService
         while (result.Count < count)
         {
             token.ThrowIfCancellationRequested();
-            List<Candidate> candidates = exploration is not null && result.Count is 2 or 7 or 11 or 15 ? exploration : pool;
+            double bestAffinity = 0;
+            if (personalized)
+                foreach (var candidate in pool)
+                    if (!selected.Contains(candidate.Features.Track.Id)
+                        && (candidate.Features.RecordingKey.Length == 0 || !recordings.Contains(candidate.Features.RecordingKey)))
+                        bestAffinity = Math.Max(bestAffinity, candidate.Affinity);
+            double relevanceFloor = Math.Max(0, bestAffinity - RelevanceTolerance);
             Candidate? best = null;
             for (int relax = 0; relax < 3 && best is null; relax++)
             {
                 double score = double.NegativeInfinity;
-                foreach (var candidate in candidates)
+                foreach (var candidate in pool)
                 {
                     var f = candidate.Features;
                     if (selected.Contains(f.Track.Id) || (f.RecordingKey.Length > 0 && recordings.Contains(f.RecordingKey))) continue;
+                    if (personalized && candidate.Affinity < relevanceFloor) continue;
                     int artistCount = MaxCount(artists, f.Artists);
                     int albumCount = f.AlbumKey.Length > 0 ? albums.GetValueOrDefault(f.AlbumKey) : 0;
                     if (relax < 2 && artistCount >= (relax == 0 ? 2 : 3)) continue;
                     if (relax == 0 && albumCount >= 1) continue;
-                    double adjusted = candidate.Score - .28 * MaxCount(genres, f.Genres) - .18 * artistCount - .24 * albumCount;
+                    // 只在相关性接近的候选中分散歌手/专辑；不累计惩罚用户喜欢的整个流派。
+                    double genrePenalty = (personalized ? .008 : .06) * Math.Min(2, MaxCount(genres, f.Genres));
+                    double adjusted = candidate.Score - genrePenalty - .045 * Math.Min(4, artistCount) - .08 * Math.Min(3, albumCount);
                     if (adjusted > score || (adjusted == score && f.Track.Id < best?.Features.Track.Id))
                     {
                         score = adjusted;
@@ -188,7 +244,6 @@ public sealed class HomeRecommendationService
             }
             if (best is not { } chosen)
             {
-                if (candidates != pool) { exploration = null; continue; }
                 break;
             }
             var item = chosen.Features;
@@ -255,13 +310,22 @@ public sealed class HomeRecommendationService
         foreach (double value in values.Values) max = Math.Max(value, max);
         return max;
     }
-    private static double Match(Dictionary<string, double> profile, string[] values, double max)
+    private static double ProfileMaximum(Dictionary<string, double> profile, Dictionary<string, int> support)
+    {
+        double max = 0;
+        foreach (var pair in profile) max = Math.Max(max, pair.Value / Math.Sqrt(Math.Max(1, support.GetValueOrDefault(pair.Key))));
+        return max;
+    }
+    private static double Match(Dictionary<string, double> profile, Dictionary<string, int> support, string[] values, double max)
     {
         if (max <= 0 || values.Length == 0) return 0;
         double score = 0;
-        foreach (string value in values) score += profile.GetValueOrDefault(value) / max;
+        foreach (string value in values)
+            score += Math.Sqrt(Math.Clamp(profile.GetValueOrDefault(value) / Math.Sqrt(Math.Max(1, support.GetValueOrDefault(value))) / max, 0, 1));
         return score / values.Length;
     }
+    private static double ReadSignal<TKey>(IReadOnlyDictionary<TKey, float>? signals, TKey key) where TKey : notnull =>
+        signals is not null && signals.TryGetValue(key, out float value) ? RecommendationEvidence.Signal(value) : 0;
     private static string Best(Dictionary<string, double> profile, string[] values)
     {
         string result = "";

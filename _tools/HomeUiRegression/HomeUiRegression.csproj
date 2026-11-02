@@ -39,6 +39,11 @@
     <Page Include="../../View/Controls/RecommendationShelf.xaml" Link="View/Controls/RecommendationShelf.xaml" />
     <Compile Include="../../View/Controls/HomeSongItem.cs;../../View/Controls/MusicDetailControl.xaml.cs" />
     <Compile Include="../../View/Controls/AlbumDetailControl.xaml.cs" />
+    <Compile Include="../../View/Controls/SpectrogramControl.xaml.cs;../../ViewModel/Controls/SpectrogramViewModel.cs;../../Services/ISpectrogramService.cs;../../Services/AudioAnalysis/Core/SpectrogramData.cs" />
+    <Compile Include="../../Services/SpectrogramService.cs;../../Services/AudioAnalysis/SpectrogramWorkerClient.cs;../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs" />
+    <Content Include="../../Player/AudioAnalysisWorker.exe" Link="AudioAnalysisWorker.exe" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../Libraries/FFmpeg/x64/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Page Include="../../View/Controls/SpectrogramControl.xaml" Link="View/Controls/SpectrogramControl.xaml" />
     <Page Include="../../View/Controls/AlbumDetailControl.xaml" Link="View/Controls/AlbumDetailControl.xaml" />
     <Page Include="../../View/Controls/MusicDetailControl.xaml" Link="View/Controls/MusicDetailControl.xaml" />
     <Page Include="../../View/Controls/HomeSongPreview.xaml" Link="View/Controls/HomeSongPreview.xaml" />

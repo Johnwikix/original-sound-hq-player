@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -2644,4 +2644,22 @@ SHA-256：{5}
   <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>专辑信息</value></data>
   <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>曲目</value></data>
   <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} 个文件未能写入：{1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>频谱分析</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>重置视图</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>频谱选项</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>声道</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>合并</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>左声道</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>右声道</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>频率分辨率（FFT）</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>强度下限（dBFS）</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>强度上限（dBFS）</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>正在分析音频…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>完整缓存后可查看此歌曲的频谱。</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>暂时无法分析此歌曲，请重试。</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>立体声下混</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>音频声谱图</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>滚轮缩放，左右键平移，上下键缩放，Home 重置；双击跳转当前歌曲。</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>重置视图</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>频谱选项</value></data>
 </root>

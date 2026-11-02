@@ -929,6 +929,7 @@ namespace WinUIMusicPlayer.Services
             {
                 AppData.AllPlayListMusics = mappings;
                 AppViewModel.RefreshPlayListSummaries();
+                PublishRecommendationPreferencesChanged();
             });
         }
 
@@ -1425,6 +1426,7 @@ namespace WinUIMusicPlayer.Services
                 // The library connection is ready before Last.fm starts. Resolve only at this legacy
                 // command boundary, avoiding a constructor cycle with the borrowed library store.
                 await App.Services.GetRequiredService<LastFmService>().SaveFavoriteAsync(change);
+                PublishRecommendationPreferencesChanged();
             }
             catch (Exception ex)
             {

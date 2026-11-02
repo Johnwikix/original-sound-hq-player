@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -2642,4 +2642,22 @@ SHA-256: {5}
   <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>アルバム情報</value></data>
   <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>曲目</value></data>
   <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} 個のファイルに書き込めませんでした: {1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>スペクトル</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>表示をリセット</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>スペクトル設定</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>チャンネル</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>合成</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>左</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>右</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>周波数分解能（FFT）</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>最小レベル（dBFS）</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>最大レベル（dBFS）</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>音声を解析中…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>表示するには音声ファイル全体のキャッシュが必要です。</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>この曲を解析できませんでした。再試行してください。</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>ステレオダウンミックス</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>音声スペクトログラム</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>ホイールで拡大縮小。左右キーで移動、上下キーで拡大縮小、Homeでリセット。ダブルクリックで再生中の曲をシークします。</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>表示をリセット</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>スペクトル設定</value></data>
 </root>

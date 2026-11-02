@@ -226,77 +226,11 @@ public sealed class AudioAnalysisService(MusicDatabaseService database, RemoteAu
             await database.Analysis.PrepareCacheAsync().ConfigureAwait(false);
             int revision = database.Analysis.CacheRevision;
             string? root = database.Analysis.CacheRootPath;
-            var result = await BuildScoresAsync(tracks, history, token).ConfigureAwait(false);
-            return revision == database.Analysis.CacheRevision && string.Equals(root, database.Analysis.CacheRootPath, StringComparison.OrdinalIgnoreCase) ? result : [];
+            var result = await AudioPreferenceScorer.ScoreAsync(database.Analysis, tracks, history, token, () => _enabled).ConfigureAwait(false);
+            return _enabled && revision == database.Analysis.CacheRevision
+                && string.Equals(root, database.Analysis.CacheRootPath, StringComparison.OrdinalIgnoreCase) ? result : [];
         }
         finally { _index.Release(); }
-    }
-    private async Task<Dictionary<int, float>> BuildScoresAsync(IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history, CancellationToken token)
-    {
-        var scores = new Dictionary<int, float>();
-        if (!_enabled) return scores;
-        var weights = new Dictionary<int, double>();
-        foreach (var row in history) if (row.Weight > 0) weights[row.MusicId] = Math.Log(1 + row.Weight);
-        var visible = new HashSet<int>();
-        foreach (var track in tracks)
-        {
-            visible.Add(track.Id);
-            if (track.IsFavorite) weights[track.Id] = weights.GetValueOrDefault(track.Id) + 2;
-        }
-        if (weights.Count == 0) return scores;
-        var mean = new double[128]; var squares = new double[128]; var scale = new double[128];
-        var clips = new float[384]; var vector = new float[128]; var profile = new float[128];
-        int count = 0;
-        int pass = 0;
-        VisitAnalysisVector visitor = Process;
-        for (; pass < 3; pass++)
-        {
-            int after = 0;
-            while (true)
-            {
-                token.ThrowIfCancellationRequested();
-                if (!_enabled) return [];
-                int next = await database.Analysis.VisitVectorsAsync(after, visitor, token).ConfigureAwait(false);
-                if (next == after) break;
-                after = next;
-            }
-            if (pass == 0)
-            {
-                if (count < 16) return scores;
-                for (int i = 0; i < 128; i++) scale[i] = Math.Sqrt(Math.Max(0, squares[i] / count));
-            }
-            if (pass == 1)
-            {
-                if (FeatureMath.Dot(profile, profile) <= 1e-12f) return scores;
-                FeatureMath.Normalize(profile);
-            }
-        }
-        return scores;
-        void Process(int musicId, ReadOnlySpan<float> raw)
-        {
-            if (!visible.Contains(musicId)) return;
-            foreach (float value in raw) if (!float.IsFinite(value)) return;
-            if (pass == 0)
-            {
-                count++;
-                for (int i = 0; i < 128; i++)
-                {
-                    double value = ((double)raw[i] + raw[128 + i] + raw[256 + i]) / 3;
-                    double delta = value - mean[i];
-                    mean[i] += delta / count;
-                    squares[i] += delta * (value - mean[i]);
-                }
-                return;
-            }
-            if (pass == 1 && !weights.ContainsKey(musicId)) return;
-            FeatureMath.Calibrate(raw, mean, scale, clips, vector);
-            if (pass == 1)
-            {
-                double weight = weights[musicId];
-                for (int i = 0; i < 128; i++) profile[i] += (float)(vector[i] * weight);
-            }
-            else scores[musicId] = Math.Clamp(FeatureMath.Dot(vector, profile), 0, 1);
-        }
     }
     /// <summary>停止入口、取消、等待扫描及进程释放后才允许数据库收尾。</summary>
     public Task StopAsync()

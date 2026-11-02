@@ -96,6 +96,8 @@ Check(enhanced.Songs.Concat(enhanced.Featured ?? []).Concat(enhanced.Cards ?? []
 var versions = Enumerable.Range(1,40).Select(id => new RecommendationTrack(id,["Artist"],"Album","Artist","Rock",2020,true,true,0,"Same recording")).ToArray();
 var onlyVersions = service.Build(versions,[new(){MusicId=1,Weight=1,Count=1}],now,0,default);
 Check(onlyVersions.Songs.Count==1 && onlyVersions.Familiar.Count==0, "a library consisting of versions keeps a primary playback entry");
+checks += TasteRegression.Run(service, now);
+checks += await CommunitySeedRegression.RunAsync(now);
 foreach (int size in new[] { 10000, 100000 })
 {
     var large = new RecommendationTrack[size];

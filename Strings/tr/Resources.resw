@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -2642,4 +2642,22 @@ SHA-256: {5}
   <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Albüm bilgileri</value></data>
   <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Parçalar</value></data>
   <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} dosya yazılamadı: {1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>Spektrum</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>Görünümü sıfırla</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>Spektrum seçenekleri</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>Kanal</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>Birleşik</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>Sol</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>Sağ</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>Frekans çözünürlüğü (FFT)</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>En düşük düzey (dBFS)</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>En yüksek düzey (dBFS)</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>Ses analiz ediliyor…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>Spektrumu görmek için ses dosyasının tamamı önbelleğe alınmalıdır.</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>Bu parça analiz edilemedi. Yeniden deneyin.</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>Stereo karışım</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Ses spektrogramı</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Tekerlek ile yakınlaştırın. Sol/Sağ kaydırır, Yukarı/Aşağı yakınlaştırır, Home sıfırlar. Çalan parçada aramak için çift tıklayın.</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Görünümü sıfırla</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spektrum seçenekleri</value></data>
 </root>

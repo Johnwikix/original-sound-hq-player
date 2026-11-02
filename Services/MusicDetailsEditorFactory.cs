@@ -28,6 +28,11 @@ public sealed class MusicDetailsEditorFactory(IServiceProvider services) : IMusi
     }
 
     /// <inheritdoc/>
+    public SpectrogramViewModel CreateSpectrogram(Music music)
+        => new(music, services.GetRequiredService<AppViewModel>(), services.GetRequiredService<ISpectrogramService>(),
+            services.GetRequiredService<ILogger<SpectrogramViewModel>>(), services.GetRequiredService<PlaybackCommands>().SeekCommand);
+
+    /// <inheritdoc/>
     public AlbumDetailsViewModel CreateAlbum(Music album)
         => new(album, services.GetRequiredService<AppViewModel>(), services.GetRequiredService<MusicDatabaseService>(),
             services.GetRequiredService<EditorSessions>(), new EditorHost(services),

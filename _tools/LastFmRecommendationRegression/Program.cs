@@ -29,7 +29,8 @@ try
     await nowPlaying;
     handler.Hold=false;
     await account.SetEnabledAsync(true);
-    var enrichment=new LastFmRecommendationService(account,new MusicDatabaseService(),NullLogger<LastFmRecommendationService>.Instance);
+    var database=new MusicDatabaseService();
+    var enrichment=new LastFmRecommendationService(account,database,NullLogger<LastFmRecommendationService>.Instance);
     enrichment.Start();enrichment.Start();
     try
     {
@@ -37,10 +38,25 @@ try
         while(enrichment.Snapshot.Tracks.Count==0)await Task.Delay(20,deadline.Token);
         Check(enrichment.Snapshot.Artists.Count==40 && enrichment.Snapshot.Tracks.ContainsKey(CommunitySignals.TrackKey("Other","Song")),"background cache publishes bounded community signals");
         Check(handler.InvalidRequests==2,"unlisted artist and track seeds do not block valid community results");
+        Check(database.PreferenceSubscribers==1,"enrichment starts with exactly one preference subscription");
+        int reads=database.SeedReads;
+        handler.Hold=true;
+        handler.Entered=new(TaskCreationOptions.RunContinuationsAsynchronously);
+        handler.Release=new(TaskCreationOptions.RunContinuationsAsynchronously);
+        database.NotifyPreferencesChanged();
+        Check(enrichment.Snapshot.Artists.Count==0,"changed playlist preferences immediately invalidate old community influence");
+        await handler.Entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        database.NotifyPreferencesChanged();
+        handler.Hold=false;
+        handler.Release.TrySetResult();
+        using(var refreshDeadline=new CancellationTokenSource(TimeSpan.FromSeconds(8)))
+            while(database.SeedReads<reads+2 || enrichment.Snapshot.Artists.Count==0)await Task.Delay(20,refreshDeadline.Token);
+        Check(database.SeedReads>=reads+2,"preference change during an in-flight batch is retried without a six-hour stale cache");
         await account.SetEnabledAsync(false);
         Check(enrichment.Snapshot.Artists.Count==0 && enrichment.Snapshot.Tracks.Count==0,"disabled account immediately clears recommendation influence");
     }
     finally {await enrichment.StopAsync();await enrichment.StopAsync();}
+    Check(database.PreferenceSubscribers==0,"enrichment stop detaches preference notifications");
     Check(true,"enrichment stop is idempotent and drains requests");
 }
 finally {await account.StopAsync();}
@@ -56,6 +72,7 @@ sealed class Handler:HttpMessageHandler
     public bool Hold;
     public int InvalidRequests;
     public TaskCompletionSource Entered=new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource Release=new(TaskCreationOptions.RunContinuationsAsynchronously);
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
     {
         var values=(await request.Content!.ReadAsStringAsync(token)).Split('&').Select(x=>x.Split('=',2)).ToDictionary(x=>WebUtility.UrlDecode(x[0]),x=>WebUtility.UrlDecode(x[1]));
@@ -63,7 +80,7 @@ sealed class Handler:HttpMessageHandler
         if(method.Contains("getSimilar"))
         {
             if(values["limit"]!="40" || values["autocorrect"]!="0")throw new Exception("unbounded API query");
-            if(Hold){Entered.TrySetResult();await Task.Delay(Timeout.Infinite,token);}
+            if(Hold){Entered.TrySetResult();await Release.Task.WaitAsync(token);}
         }
         if(method.Contains("getSimilar") && values["artist"]=="Unknown Seed")
         {
@@ -84,7 +101,15 @@ namespace WinUIMusicPlayer.Services
 {
     public sealed class MusicDatabaseService
     {
-        public Task<List<Seed>> GetRecommendationSeedsAsync()=>Task.FromResult(new List<Seed>{new(){Artist="Unknown Seed",Title="Missing"},new()});
+        public event Action? RecommendationPreferencesChanged;
+        public int PreferenceSubscribers=>RecommendationPreferencesChanged?.GetInvocationList().Length??0;
+        public int SeedReads;
+        public void NotifyPreferencesChanged() => RecommendationPreferencesChanged?.Invoke();
+        public Task<List<Seed>> GetRecommendationSeedsAsync()
+        {
+            Interlocked.Increment(ref SeedReads);
+            return Task.FromResult(new List<Seed>{new(){Artist="Unknown Seed",Title="Missing"},new()});
+        }
         public sealed class Seed{public string Artist{get;set;}="Artist";public string Title{get;set;}="Seed";}
     }
 }

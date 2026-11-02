@@ -9,6 +9,7 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.AudioAnalysis;
 using WinUIMusicPlayer.Services.WebDav;
 using WinUIMusicPlayer.ViewModel;
+if (args.Length > 0 && args[0] == "--taste-only") { await AudioTasteRegression.RunAsync(); return; }
 if (args.Length > 0 && args[0] == "--scale") { await ScaleRegression.RunAsync(); return; }
 if (args.Length > 0 && args[0] == "--cache-only") { await CacheLocationRegression.RunAsync(); return; }
 int checks = 0;

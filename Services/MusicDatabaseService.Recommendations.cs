@@ -1,33 +1,47 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model.Recommendations;
 using WinUIMusicPlayer.Services.Recommendations;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Services;
 
 public partial class MusicDatabaseService
 {
+    /// <summary>明确偏好已持久化并在UI线程发布；消费者延后到下次推荐应用。</summary>
+    public event Action? RecommendationPreferencesChanged;
+
+    private void PublishRecommendationPreferencesChanged()
+    {
+        var dispatcher = App.MainWindow?.DispatcherQueue;
+        if (dispatcher is null) return;
+        if (dispatcher.HasThreadAccess) RecommendationPreferencesChanged?.Invoke();
+        else dispatcher.TryEnqueue(() => RecommendationPreferencesChanged?.Invoke());
+    }
+
+    /// <summary>只读取用户歌单的去重成员；不读取当前播放队列。</summary>
+    public async Task<HashSet<int>> GetRecommendationPlaylistIdsAsync(CancellationToken token)
+    {
+        await WhenInitialized.WaitAsync(token);
+        var ids = await _dbConnection.QueryScalarsAsync<int>(
+            "SELECT DISTINCT pm.MusicId FROM PlayListMusic pm JOIN PlayList p ON p.Id=pm.PlayListId WHERE pm.MusicId>0").ConfigureAwait(false);
+        token.ThrowIfCancellationRequested();
+        return new HashSet<int>(ids);
+    }
+
     /// <summary>读取首页所需的有限窗口收听摘要，不触发曲库扫描。</summary>
     public async Task<List<HomeListening>> GetHomeListeningAsync(DateTime nowUtc, CancellationToken token)
     {
         await WhenInitialized.WaitAsync(token);
         return await HomeListeningQuery.ReadAsync(_dbConnection, nowUtc, PlaybackStatsService.QualifiedRatio, token);
     }
-    /// <summary>只读取最多八条本地偏好种子，供后台社区增强使用。</summary>
-    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(RecommendationSeed))]
-    public async Task<List<RecommendationSeed>> GetRecommendationSeedsAsync()
+    /// <summary>收藏、用户歌单和有效收听共用正向偏好，选择最多八位不同艺术家。</summary>
+    public async Task<List<CommunitySeed>> GetRecommendationSeedsAsync()
     {
         await WhenInitialized;
-        return await _dbConnection.QueryAsync<RecommendationSeed>(
-            "SELECT Title, Author AS Artist FROM Music WHERE IsFavorite=1 OR PlayCount>0 ORDER BY IsFavorite DESC,PlayCount DESC,Id LIMIT 8");
-    }
-    /// <summary>有界种子的后台值快照。</summary>
-    public sealed class RecommendationSeed
-    {
-        public string Artist { get; set; } = "";
-        public string Title { get; set; } = "";
+        var candidates = await CommunitySeedQuery.ReadAsync(_dbConnection, DateTime.UtcNow, PlaybackStatsService.QualifiedRatio, CancellationToken.None).ConfigureAwait(false);
+        return CommunitySeedQuery.Select(candidates, ArtistHelper.GetArtistNames);
     }
 }

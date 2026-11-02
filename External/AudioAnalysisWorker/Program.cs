@@ -8,6 +8,11 @@ ffmpeg.RootPath = AppContext.BaseDirectory;
 ffmpeg.av_log_set_level(ffmpeg.AV_LOG_QUIET);
 using var process = Process.GetCurrentProcess();
 try { process.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { }
+if (args.Length == 1 && args[0] == "--spectrogram")
+{
+    Environment.ExitCode = SpectrogramWorker.Run();
+    return;
+}
 DspExtractor? extractor = null;
 float[]? input = null, scratch = null;
 while (true)

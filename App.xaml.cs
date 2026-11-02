@@ -146,6 +146,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<DesktopLyricsViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<IMusicDetailsEditorFactory, MusicDetailsEditorFactory>();
+                 services.AddSingleton<ISpectrogramService, SpectrogramService>();
                  services.AddSingleton<WinUIMusicPlayer.Services.AudioAnalysis.AudioAnalysisService>();
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmRecommendationService>();
                  services.AddSingleton<WinUIMusicPlayer.Services.AudioAnalysis.IAudioAnalysisSettingsSource>(sp => sp.GetRequiredService<WinUIMusicPlayer.Services.AudioAnalysis.AudioAnalysisService>());

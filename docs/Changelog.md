@@ -1,3 +1,24 @@
+## 2026-11-02 修复频谱 MP3 尾标签兼容与详情退出保留
+- `External/AudioAnalysisWorker/SpectrogramDecoder.cs`、`Player/AudioAnalysisWorker.exe`：对解码无效包进行有界恢复并正确排空，兼容被 MP3 demuxer 当作音频包的 Lyrics3 尾标签；保留有效音频结果，I/O 与其他解码错误仍报告失败，已重新发布 worker。
+- `View/Controls/MusicDetailControl.xaml(.cs)`、`SpectrogramControl.xaml(.cs)`：退出/替换上下文时停止全部嵌套 x:Bind 监听，显式清空频谱子上下文和原生按钮命令；卸载释放图形资源，重新加载恢复命令绑定。
+- `View/Controls/SpectrogramControl.xaml.cs`：色阶高端改为红色，拉开中高强度色差；高对比度模式继续使用灰阶。
+- `_tools/SpectrogramRegression`、`_tools/HomeUiRegression`：增加合成 Lyrics3 尾标签回归及真实列表标题入口的内存探针；RIVER.mp3 在三种 FFT 分辨率下通过。18 次详情进出后，原先保留的 18 个频谱 VM 降为 0，控件/Canvas/位图弱引用均回收；结果缓存按既定上限保留，采样 GC/Trim 仅用于探针。
+
+## 2026-11-02 以最爱和用户歌单重建风格推荐
+- `RecommendationEvidence`、`HomeViewModel`、`MusicDatabaseService*`：最爱与用户歌单去重成员共用明确正向偏好，持久化后通知；刷新/重进首页应用，保持当前卡片与播放队列稳定。
+- `AudioPreferenceScorer`、`AudioTasteProfile`：三遍流式校准后从最多64个正向样本拟合最多8个兴趣中心，避免不同喜欢风格互相冲淡，沿用已有音频特征缓存。
+- `HomeRecommendationService`：元数据、音频与社区两级融合；相关性优先约束歌手/专辑多样性，移除同流派累计大额扣分和主推荐固定随机插入，探索优先未听的相近风格。
+- `CommunitySeedQuery`、`LastFmRecommendationService`：从有效收听/最爱/歌单选8位不同歌手并拆分合唱，保留16次请求上界；偏好变化清除旧缓存，拒绝在途旧偏好结果，增加无敏感信息的刷新日志。
+- `_tools/HomeRecommendationRegression`、`AudioAnalysisRegression`、`LastFmRecommendationRegression`、`HomeUiRegression`：覆盖偏好类型、多兴趣、歌单去重与增删、缺失/异常信号、并发失效及退出解绑；对照场景、结果和限制见 `docs/HomeRecommendationsPlan.md`。
+
+## 2026-11-02 歌曲详情声谱图
+- `View/Controls/MusicDetailControl.xaml(.cs)`、`SpectrogramControl.xaml(.cs)`：新增频谱页签，Win2D 按需绘制整曲声谱、刻度和强度色阶，Composition 跟随共享播放状态移动游标；支持缩放、平移、悬停读数、双击跳转及声道/分辨率/强度设置，不提供图片导出。
+- `ViewModel/Controls/SpectrogramViewModel.cs`、详情宿主与编辑工厂：按页签可见性启动/取消，状态和命令留在 ViewModel；详情对象与播放对象分离，关闭排空实际任务并拒绝迟到结果。
+- `Services/SpectrogramService.cs`、`Services/AudioAnalysis/SpectrogramWorkerClient.cs`：原采样率只读分析，完整远程缓存租约、文件版本校验和最多 16 MiB 结果缓存，取消后等待子进程真实退出再释放输入。
+- `External/AudioAnalysisWorker`、`Services/AudioAnalysis/Core/Spectrogram*.cs`、`Player/AudioAnalysisWorker.exe`：同一 exe 新增独立 `--spectrogram` 模式，逐窗 Hann STFT 与时间列功率平均，左右声道在频域合并，保留原推荐分析协议；已重新发布 worker。
+- `Strings/*/Resources.resw`、`_tools/SpectrogramRegression`、`_tools/HomeUiRegression`：七种语言本地化；覆盖原生高频/反相/静音、旧协议、缓存、取消及真实 WinUI 绑定、绘图与生命周期回归。
+- 验证：主项目 Debug x64、原生及频谱 UI 专项通过；额外首页整套 UI 回归在预览翻页检查失败，未包含本次改动的 HEAD 基线同样复现。音频设备输出、跨屏 DPI 与系统高对比度切换未实测。
+
 ## 2026-11-02 修复专辑曲目表头裁切与列错位
 - `View/Controls/AlbumDetailControl.xaml`：表头移入曲目列表共用滚动视口，统一表头与行的列宽及内边距，清除行容器默认偏移；编号和时长列加宽，所有表头支持本地化长文本换行。
 - `_tools/HomeUiRegression`：新增真实 WinUI 曲目布局回归（`--album-track-layout`），覆盖七种语言、浅/深色、640/900/1200 DIP、单曲/长列表/空列表与滚动到底。

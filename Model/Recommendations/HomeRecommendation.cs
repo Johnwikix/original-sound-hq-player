@@ -5,7 +5,7 @@ namespace WinUIMusicPlayer.Model.Recommendations;
 
 /// <summary>保存一次推荐计算使用的不可变曲目字段，不向后台传递可变的 Music。</summary>
 public sealed record RecommendationTrack(int Id, string[] Artists, string Album, string AlbumArtist,
-    string Genre, int Year, bool IsFavorite, bool IsAvailable, int PlayCount, string Title = "");
+    string Genre, int Year, bool IsFavorite, bool IsAvailable, int PlayCount, string Title = "", bool IsInPlaylist = false);
 
 /// <summary>保存按曲目聚合的有效收听信号；时间均为 UTC ticks。</summary>
 public sealed class HomeListening

@@ -17,6 +17,7 @@ public sealed class LastFmRecommendationService(LastFmService account, MusicData
     private long _revision = -1;
     private DateTime _retryAt;
     private bool _started;
+    private long _preferencesRevision;
     /// <summary>获取当前账户的快照；断开/关闭后立即返回空。</summary>
     public CommunitySignals Snapshot => account.Status is { Enabled: true, IsAuthenticated: true } status && status.Revision == Volatile.Read(ref _revision)
         ? Volatile.Read(ref _snapshot) : CommunitySignals.Empty;
@@ -30,9 +31,21 @@ public sealed class LastFmRecommendationService(LastFmService account, MusicData
             if (_started || _stop.IsCancellationRequested) return;
             _started = true;
             account.Changed += AccountChanged;
+            database.RecommendationPreferencesChanged += PreferencesChanged;
             _loop = Task.Run(LoopAsync);
             Wake();
         }
+    }
+    private void PreferencesChanged()
+    {
+        lock (_gate)
+        {
+            _preferencesRevision++;
+            _retryAt = default;
+            Volatile.Write(ref _snapshot, CommunitySignals.Empty);
+        }
+        Changed?.Invoke();
+        Wake();
     }
     private void AccountChanged(LastFmStatus status)
     {
@@ -60,7 +73,12 @@ public sealed class LastFmRecommendationService(LastFmService account, MusicData
                 await _wake.WaitAsync(TimeSpan.FromMinutes(5), _stop.Token).ConfigureAwait(false);
                 var status = account.Status;
                 if (!status.Enabled || !status.IsAuthenticated) continue;
-                lock (_gate) if (DateTime.UtcNow < _retryAt) continue;
+                long preferencesRevision;
+                lock (_gate)
+                {
+                    if (DateTime.UtcNow < _retryAt) continue;
+                    preferencesRevision = _preferencesRevision;
+                }
                 long revision = status.Revision;
                 try
                 {
@@ -90,11 +108,13 @@ public sealed class LastFmRecommendationService(LastFmService account, MusicData
                     lock (_gate)
                     {
                         if (account.Status.Revision != revision || !account.Status.Enabled) continue;
+                        if (preferencesRevision != _preferencesRevision) continue;
                         Volatile.Write(ref _revision, revision);
                         Volatile.Write(ref _snapshot, new(artists, tracks));
                         _retryAt = DateTime.UtcNow.AddHours(seeds.Count == 0 ? 0 : 6);
                     }
                     Changed?.Invoke();
+                    logger.LogInformation("Last.fm recommendation cache refreshed: {Seeds} seeds, {Artists} artists, {Tracks} tracks.", seeds.Count, artists.Count, tracks.Count);
                 }
                 catch (OperationCanceledException) when (!_stop.IsCancellationRequested)
                 {
@@ -102,7 +122,8 @@ public sealed class LastFmRecommendationService(LastFmService account, MusicData
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    logger.LogDebug("Last.fm enrichment postponed: {Type}", ex.GetType().Name);
+                    logger.LogWarning("Last.fm recommendation refresh postponed: {Type}, API code {Code}.",
+                        ex.GetType().Name, ex is LastFmApiException apiError ? apiError.Code : (int?)null);
                     lock (_gate) if (account.Status.Revision == revision) _retryAt = DateTime.UtcNow.AddMinutes(30);
                 }
             }
@@ -125,6 +146,7 @@ public sealed class LastFmRecommendationService(LastFmService account, MusicData
         {
             if (_stopTask is not null) return _stopTask;
             account.Changed -= AccountChanged;
+            database.RecommendationPreferencesChanged -= PreferencesChanged;
             _stop.Cancel();
             return _stopTask = FinishAsync();
         }

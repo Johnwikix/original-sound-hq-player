@@ -103,7 +103,7 @@ public sealed class HomeViewModel : ObservableObject
         {
             var editor = _editors.Create(song.Music);
             presentation = new MusicDetailsViewModel(editor, _app, _database, _editorSessions, _logger,
-                song.PlayCommand, song, song.Reason);
+                song.PlayCommand, song, _editors.CreateSpectrogram(song.Music), song.Reason);
             presentation.Start();
         }
         catch (Exception ex)
@@ -224,6 +224,7 @@ public sealed class HomeViewModel : ObservableObject
         _statistics.StatsUpdated += HistoryChanged;
         _analysis.ResultsChanged += EnrichmentChanged;
         _community.Changed += EnrichmentChanged;
+        _database.RecommendationPreferencesChanged += InvalidateForNextVisit;
         _folders.PropertyChanged += FoldersChanged;
         _remote.SourceAvailabilityChanged += SourceChanged;
     }
@@ -268,6 +269,7 @@ public sealed class HomeViewModel : ObservableObject
             _statistics.StatsUpdated -= HistoryChanged;
             _analysis.ResultsChanged -= EnrichmentChanged;
             _community.Changed -= EnrichmentChanged;
+            _database.RecommendationPreferencesChanged -= InvalidateForNextVisit;
             _folders.PropertyChanged -= FoldersChanged;
             _remote.SourceAvailabilityChanged -= SourceChanged;
         }
@@ -431,6 +433,7 @@ public sealed class HomeViewModel : ObservableObject
                     var snapshot = _snapshot;
                     if (_snapshotVersion != version)
                     {
+                        var playlistIds = await _database.GetRecommendationPlaylistIdsAsync(token);
                         snapshot = new RecommendationTrack[_app.SongsSource.Count];
                         for (int i = 0; i < snapshot.Length; i++)
                         {
@@ -438,7 +441,7 @@ public sealed class HomeViewModel : ObservableObject
                             if (revision != _revision || version != _app.State.Library.Version) break;
                             var m = _app.SongsSource[i];
                             snapshot[i] = new(m.Id, ArtistHelper.GetArtistNames(m.Author), m.Album, m.AlbumArtist,
-                                m.Genre, m.Year, m.IsFavorite, m.IsPlayable, m.PlayCount, m.Title);
+                                m.Genre, m.Year, m.IsFavorite, m.IsPlayable, m.PlayCount, m.Title, playlistIds.Contains(m.Id));
                             if (i % 512 == 511) await Task.Yield();
                         }
                         if (revision != _revision || version != _app.State.Library.Version) { _dirty = true; continue; }

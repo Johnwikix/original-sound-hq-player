@@ -2,6 +2,7 @@
 <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><NuGetAudit>false</NuGetAudit></PropertyGroup>
 <ItemGroup>
 <Compile Include="../../Services/Recommendations/RecommendationSources.cs;../../Services/Recommendations/RecommendationSignals.cs" />
+<Compile Include="../../Services/Recommendations/RecommendationEvidence.cs" />
 <Compile Include="../../Services/AppLifecycle.cs" />
 <Compile Include="../../Services/AudioAnalysis/*.cs;../../Services/AudioAnalysis/Core/*.cs;../../Model/Recommendations/HomeRecommendation.cs" />
 <Compile Include="../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs" />

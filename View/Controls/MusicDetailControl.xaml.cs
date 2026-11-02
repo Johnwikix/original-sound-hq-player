@@ -31,6 +31,7 @@ public sealed partial class MusicDetailControl : UserControl
         InitializeComponent();
         CoordinatedElements = [HeroText];
         SizeChanged += OnSizeChanged;
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
     private static void ShowHeaderChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
@@ -38,6 +39,11 @@ public sealed partial class MusicDetailControl : UserControl
     private static void ViewModelChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (MusicDetailControl)sender;
+        if (args.OldValue is MusicDetailsViewModel old) old.Spectrogram.SetActive(false);
+        // 清空/替换中间节点之前移除全部嵌套监听，避免生成绑定继续保留旧的 Spectrogram 等子 VM。
+        control.Bindings?.StopTracking();
+        // x:Bind 遇到空的中间 ViewModel 时会跳过目标赋值，退出详情必须显式清空子视图上下文。
+        control.SpectrumView.ViewModel = control.ViewModel?.Spectrogram;
         control.DismissMenus();
         control.Artwork.Music = control.Music;
         control.CoverPreviewImage.Source = null;
@@ -46,12 +52,25 @@ public sealed partial class MusicDetailControl : UserControl
         control.IdentityScroll.ChangeView(null, 0, null, true);
         control.DetailScroll.ChangeView(null, 0, null, true);
         control.FileScroll.ChangeView(null, 0, null, true);
-        control.Bindings?.Update();
+        if (control.ViewModel is not null) control.Bindings?.Update();
         if (control.ViewModel is null) control.ActivityIndicator.IsActive = false;
     }
     private void Confirm_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
     private void Cancel_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
-    private void OnUnloaded(object sender, RoutedEventArgs args) => DismissMenus();
+    private void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        Bindings.Update();
+        UpdateSpectrumActive();
+    }
+    private void OnUnloaded(object sender, RoutedEventArgs args)
+    {
+        ViewModel?.Spectrogram.SetActive(false);
+        Bindings.StopTracking();
+        DismissMenus();
+    }
+    private void WorkspaceTabs_SelectionChanged(object sender, SelectionChangedEventArgs args) => UpdateSpectrumActive();
+    private void UpdateSpectrumActive()
+        => ViewModel?.Spectrogram.SetActive(IsLoaded && ReferenceEquals(WorkspaceTabs.SelectedItem, SpectrumTab));
     private void OnSizeChanged(object sender, SizeChangedEventArgs args)
     {
         // 矮窗口优先保留侧栏，避免封面占去编辑区的垂直空间；极窄时才继续堆叠。

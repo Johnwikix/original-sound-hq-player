@@ -163,7 +163,9 @@ namespace WinUIMusicPlayer.Services
             if (await _dbConnection.Table<PlayListMusic>().Where(item => item.PlayListId == playlistId && item.MusicId == musicId).FirstOrDefaultAsync() is not null) return;
             var last = await _dbConnection.Table<PlayListMusic>().Where(item => item.PlayListId == playlistId).OrderByDescending(item => item.Order).FirstOrDefaultAsync();
             await _dbConnection.InsertAsync(new PlayListMusic { PlayListId = playlistId, MusicId = musicId, Order = (last?.Order ?? 0) + 1 });
+            NotifyRecommendationPreferencesChanged();
         }
+        public void NotifyRecommendationPreferencesChanged() => RecommendationPreferencesChanged?.Invoke();
         public int QueriesStarted;
         public Task WhenInitialized { get { QueriesStarted++; return _initialized; } set => _initialized = value; }
         public MusicDatabaseService(SQLiteAsyncConnection database)
@@ -191,7 +193,7 @@ namespace WinUIMusicPlayer.Services
             await Task.Yield();
         }
     }
-    public sealed class WebDavLibraryService
+    public sealed partial class WebDavLibraryService
     {
         public event Action<int, bool>? SourceAvailabilityChanged;
         public void Notify(int id, bool offline) => SourceAvailabilityChanged?.Invoke(id, offline);
@@ -222,6 +224,8 @@ namespace WinUIMusicPlayer.ViewModel
         public bool CanPublishState => State.Lifecycle.Phase != Services.AppPhase.Stopping;
         public bool CanStartPlayback => IsInitialized && IsPlaybackEngineReady;
         public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
+        public bool IsPlaying { get; set => SetProperty(ref field, value); }
+        public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); }
         public Visibility LibraryEmptyVisibility { get; set; } = Visibility.Collapsed;
         public void NotifySongsSourceChanged() => SongsSourceChanged?.Invoke();
         public event Action? SongsSourceChanged;

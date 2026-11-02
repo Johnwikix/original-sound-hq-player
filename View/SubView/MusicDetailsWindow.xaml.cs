@@ -56,10 +56,11 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 var app = App.Services.GetRequiredService<AppViewModel>();
-                var editor = App.Services.GetRequiredService<IMusicDetailsEditorFactory>().Create(music);
+                var factory = App.Services.GetRequiredService<IMusicDetailsEditorFactory>();
+                var editor = factory.Create(music);
                 ViewModel = new MusicDetailsViewModel(editor, app, App.Services.GetRequiredService<MusicDatabaseService>(),
                     App.Services.GetRequiredService<EditorSessions>(), App.GetLogger<MusicDetailsViewModel>(),
-                    MusicCommands.DetailsPlayCommand, new MusicDetailsRequest(music, AppData.CurrentPage));
+                    MusicCommands.DetailsPlayCommand, new MusicDetailsRequest(music, AppData.CurrentPage), factory.CreateSpectrogram(music));
                 ViewModel.CloseRequested += CloseRequested;
                 ViewModel.Start();
                 DetailView.ViewModel = ViewModel;

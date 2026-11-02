@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.Controls.SpectrogramControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8" Padding="0,12,0,8">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Text="{x:Bind ViewModel.TechnicalInfo, Mode=OneWay}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <Button x:Name="ResetButton" x:Uid="SpectrumReset" Command="{x:Bind ViewModel.ResetViewCommand, Mode=OneWay}" Padding="8" Background="Transparent">
+                    <FontIcon Glyph="&#xE777;" FontSize="16" />
+                </Button>
+                <Button x:Uid="SpectrumOptions" Padding="8" Background="Transparent">
+                    <FontIcon Glyph="&#xE713;" FontSize="16" />
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel Spacing="12" Width="240">
+                                <ComboBox x:Uid="SpectrumChannel" HorizontalAlignment="Stretch" SelectedIndex="{x:Bind ViewModel.Channel, Mode=TwoWay}">
+                                    <ComboBoxItem x:Uid="SpectrumCombined" />
+                                    <ComboBoxItem x:Uid="SpectrumLeft" />
+                                    <ComboBoxItem x:Uid="SpectrumRight" />
+                                </ComboBox>
+                                <ComboBox x:Uid="SpectrumResolution" HorizontalAlignment="Stretch" SelectedIndex="{x:Bind ViewModel.ResolutionIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="2048" /><ComboBoxItem Content="4096" /><ComboBoxItem Content="8192" />
+                                </ComboBox>
+                                <NumberBox x:Uid="SpectrumMinimum" Minimum="-160" Maximum="{x:Bind ViewModel.MinimumDbCeiling, Mode=OneWay}" SmallChange="10" SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.MinimumDb, Mode=TwoWay}" />
+                                <NumberBox x:Uid="SpectrumMaximum" Minimum="{x:Bind ViewModel.MaximumDbFloor, Mode=OneWay}" Maximum="0" SmallChange="10" SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.MaximumDb, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+        </Grid>
+        <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Value="{x:Bind ViewModel.Progress, Mode=OneWay}"
+            Visibility="{x:Bind BusyVisibility(ViewModel.IsBusy), Mode=OneWay}" />
+        <Grid Grid.Row="2" x:Name="ChartHost" MinHeight="100" Background="Transparent" IsTabStop="True" x:Uid="SpectrumChart"
+            PointerMoved="Chart_PointerMoved" PointerExited="Chart_PointerExited" PointerWheelChanged="Chart_PointerWheelChanged"
+            PointerPressed="Chart_PointerPressed" PointerReleased="Chart_PointerReleased" PointerCaptureLost="Chart_PointerCaptureLost"
+            DoubleTapped="Chart_DoubleTapped" KeyDown="Chart_KeyDown">
+            <Border x:Name="PlaybackCursor" Width="2" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"
+                Background="{ThemeResource AccentFillColorDefaultBrush}" Visibility="Collapsed" />
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="320" Margin="24">
+                <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" TextAlignment="Center" />
+                <Button x:Name="RetryButton" x:Uid="HomeRetry" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RetryCommand, Mode=OneWay}"
+                    Visibility="{x:Bind RetryVisibility(ViewModel.IsBusy, ViewModel.Status), Mode=OneWay}" />
+            </StackPanel>
+        </Grid>
+        <TextBlock Grid.Row="3" Text="{x:Bind ViewModel.Inspection, Mode=OneWay}" FontSize="12" MinHeight="18" TextTrimming="CharacterEllipsis" />
+    </Grid>
+</UserControl>
