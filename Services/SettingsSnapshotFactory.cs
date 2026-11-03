@@ -1,5 +1,4 @@
 using System.Text.Json;
-using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -8,7 +7,7 @@ using WinUIMusicPlayer.State;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>UI 到持久化的快照适配边界；读取共享状态，数据库写入不反向读 VM。</summary>
-public sealed class SettingsSnapshotFactory(AppState state)
+public sealed partial class SettingsSnapshotFactory(AppState state)
 {
     public SaveSettings CaptureGeneral(SaveSettings baseline, bool audioMigrated, bool correctionsMigrated)
     {
@@ -121,25 +120,4 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.IsMusicInfoVisible = state.Preferences.IsMusicInfoVisible;
         return newSettings;
     }
-
-    // 在 UI 线程读取偏好一次；后台序列化期间不再访问 ViewModel。
-    public AudioPreferences CaptureAudio() => new()
-    {
-        Dsp = AppSettings.Dsp,
-        OutputMode = AppSettings.OutputMode,
-        Latency = state.Preferences.Latency,
-        BassOutputDeviceId = AppSettings.BassOutputDeviceId,
-        WasapiEndpointId = AppSettings.WasapiEndpointId,
-        BassASIODeviceId = AppSettings.BassASIODeviceId,
-        DeviceFriendlyName = AppSettings.DeviceName,
-        IsFadeEnabled = state.Preferences.IsFadeEnabled,
-        SpectralEnhancement = (SpectralEnhancementMode)state.Preferences.Audio.SpectralEnhancement,
-        IsDopEnabled = state.Preferences.Audio.IsDopEnabled,
-        ExperimentalSurround51 = state.Preferences.Audio.ExperimentalSurround51,
-        ExperimentalAtmosPassthrough = state.Preferences.Audio.ExperimentalAtmosPassthrough,
-        AtmosEndpointId = state.Preferences.Audio.AtmosEndpointId,
-        DsdGain = state.Preferences.DsdGain,
-        DsdPcmFreq = state.Preferences.DsdPcmFreq
-    };
-
 }

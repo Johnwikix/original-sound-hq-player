@@ -23,7 +23,14 @@ internal static unsafe partial class Program
             using var timeout = new CancellationTokenSource(15000);
             using (var client = PipeCommandClient.ConnectAsync("OriginalSound_Audio_Control_v2_" + scope, timeout.Token).GetAwaiter().GetResult())
             {
-                byte[] payload = new byte[DspProtocol.SettingsSize], response = new byte[512];
+                byte[] response = new byte[512];
+                string cacheRoot = Path.Combine(AppContext.BaseDirectory, "ipc-cache", string.Join(Path.DirectorySeparatorChar,
+                    Enumerable.Repeat(new string('音', 64), 12)));
+                byte[] settings = new byte[BinarySerializer.IpcSettingSize + 4 + System.Text.Encoding.UTF8.GetByteCount(cacheRoot)];
+                int settingSize = BinarySerializer.WriteIpcSetting(settings, new() { OutputMode = "DirectSound", CacheRoot = cacheRoot });
+                Require(settingSize > IpcConstants.MaxRequestSize && client.RequestAsync(CommandId.UpdateSettings, settings.AsSpan(0, settingSize), response).GetAwaiter().GetResult().Type == MessageTypeId.Success,
+                    "NativeAOT player rejected long Unicode cache location");
+                byte[] payload = new byte[DspProtocol.SettingsSize];
                 DspProtocol.WriteSettings(payload, new() { ResampleMode = PcmResampleMode.IntegerMultiple,
                     ResampleTargetRate = 192000, TruePeakLimiterEnabled = true, DitherEnabled = true, CrossfeedCutoffHz = 1200 });
                 Require(client.RequestAsync(CommandId.UpdateDsp, payload, response).GetAwaiter().GetResult().Type == MessageTypeId.Success,

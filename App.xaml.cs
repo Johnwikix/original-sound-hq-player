@@ -146,6 +146,13 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<DesktopLyricsViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<IMusicDetailsEditorFactory, MusicDetailsEditorFactory>();
+                 services.AddSingleton<ISpectrogramService, SpectrogramService>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.AudioAnalysis.AudioAnalysisService>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmRecommendationService>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.AudioAnalysis.IAudioAnalysisSettingsSource>(sp => sp.GetRequiredService<WinUIMusicPlayer.Services.AudioAnalysis.AudioAnalysisService>());
+                 services.AddSingleton<WinUIMusicPlayer.ViewModel.Pages.AnalysisSettingsViewModel>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Recommendations.IAudioRecommendationSource>(sp => sp.GetRequiredService<WinUIMusicPlayer.Services.AudioAnalysis.AudioAnalysisService>());
+                 services.AddSingleton<WinUIMusicPlayer.Services.Recommendations.ICommunityRecommendationSource>(sp => sp.GetRequiredService<WinUIMusicPlayer.Services.LastFm.LastFmRecommendationService>());
                  services.AddSingleton<HomeViewModel>();
                  services.AddSingleton<WinUIMusicPlayer.Services.Recommendations.HomeRecommendationService>();
                  services.AddSingleton<FolderAccessService>();
@@ -202,6 +209,8 @@ namespace WinUIMusicPlayer
             this.InitializeComponent();
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
+            UiLayoutDiagnostics.Initialize(LogDirectory, () => MainWindow?.Content,
+                message => _logger.LogWarning("{Diagnostic}", message));
             UnhandledException += App_UnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             //AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
@@ -263,6 +272,7 @@ namespace WinUIMusicPlayer
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
             var exception = e.Exception;
+            if (exception is LayoutCycleException) UiLayoutDiagnostics.Capture(exception);
             var errorMessage = new StringBuilder();
             errorMessage.AppendLine($"未处理异常发生：");
             errorMessage.AppendLine($"异常类型：{exception.GetType().FullName}");

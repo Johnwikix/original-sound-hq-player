@@ -24,28 +24,43 @@ public sealed partial class HomeCarouselTile : UserControl
     public HomeCarouselTile()
     {
         InitializeComponent();
-        SizeChanged += OnSizeChanged;
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
+
     }
     private static void SongChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var tile = (HomeCarouselTile)sender;
         tile.Artwork.Music = tile.Song?.Music;
     }
-    private static void LayoutChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((HomeCarouselTile)sender).UpdateLayoutMode();
-    private void OnSizeChanged(object sender, SizeChangedEventArgs args) => UpdateLayoutMode();
-    private void UpdateLayoutMode()
+    private double _measureWidth = double.NaN;
+    private double _measureHeight = double.NaN;
+    private bool _measurePrimary;
+    private static void LayoutChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args) => ((HomeCarouselTile)sender).InvalidateMeasure();
+    /// <inheritdoc />
+    protected override Size MeasureOverride(Size availableSize)
     {
-        bool compact = ActualWidth < 230 || ActualHeight < 90;
-        TitleText.FontSize = compact ? 14 : IsPrimary ? 24 : 16;
-        TitleText.Margin = new Thickness(ActualWidth < 180 || ActualHeight < 90 ? 8 : IsPrimary ? 32 : 16);
-        TitleText.VerticalAlignment = IsPrimary ? VerticalAlignment.Center : VerticalAlignment.Bottom;
-        TitleText.HorizontalAlignment = HorizontalAlignment.Left;
-        TitleText.MaxLines = ActualHeight < 64 ? 1 : 2;
-        TitleText.Visibility = ActualHeight < 32 ? Visibility.Collapsed : Visibility.Visible;
-        TitleText.MaxWidth = System.Math.Max(0, ActualWidth - TitleText.Margin.Left - TitleText.Margin.Right);
-        Shade.EndPoint = IsPrimary ? new Point(1, 0) : new Point(.25, 1);
-        ShadeStart.Offset = IsPrimary ? 0 : .2;
-        ShadeStart.Color = IsPrimary ? Color.FromArgb(184, 0, 0, 0) : Color.FromArgb(0, 0, 0, 0);
-        ShadeEnd.Color = IsPrimary ? Color.FromArgb(0, 0, 0, 0) : Color.FromArgb(184, 0, 0, 0);
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Measure(this, availableSize);
+        if (double.IsFinite(availableSize.Width) && double.IsFinite(availableSize.Height) &&
+            (_measureWidth != availableSize.Width || _measureHeight != availableSize.Height || _measurePrimary != IsPrimary))
+        {
+            double width = availableSize.Width;
+            double height = availableSize.Height;
+            bool compact = width < 230 || height < 90;
+            TitleText.FontSize = compact ? 14 : IsPrimary ? 24 : 16;
+            TitleText.Margin = new Thickness(width < 180 || height < 90 ? 8 : IsPrimary ? 32 : 16);
+            TitleText.VerticalAlignment = IsPrimary ? VerticalAlignment.Center : VerticalAlignment.Bottom;
+            TitleText.HorizontalAlignment = HorizontalAlignment.Left;
+            TitleText.MaxLines = height < 64 ? 1 : 2;
+            TitleText.Visibility = height < 32 ? Visibility.Collapsed : Visibility.Visible;
+            TitleText.MaxWidth = System.Math.Max(0, width - TitleText.Margin.Left - TitleText.Margin.Right);
+            Shade.EndPoint = IsPrimary ? new Point(1, 0) : new Point(.25, 1);
+            ShadeStart.Offset = IsPrimary ? 0 : .2;
+            ShadeStart.Color = IsPrimary ? Color.FromArgb(184, 0, 0, 0) : Color.FromArgb(0, 0, 0, 0);
+            ShadeEnd.Color = IsPrimary ? Color.FromArgb(0, 0, 0, 0) : Color.FromArgb(184, 0, 0, 0);
+            _measureWidth = width;
+            _measureHeight = height;
+            _measurePrimary = IsPrimary;
+        }
+        return base.MeasureOverride(availableSize);
     }
 }

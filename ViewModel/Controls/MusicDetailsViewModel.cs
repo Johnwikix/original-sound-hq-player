@@ -26,6 +26,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
     private Task? _stopTask;
     private bool _started, _closing;
     public MusicDetailsEditorViewModel Editor { get; }
+    public SpectrogramViewModel Spectrogram { get; }
     public Music Music => Editor.Music;
     public string Reason { get; }
     public ICommand PlayCommand { get; }
@@ -37,9 +38,10 @@ public sealed class MusicDetailsViewModel : ObservableObject
 
     public MusicDetailsViewModel(MusicDetailsEditorViewModel editor, AppViewModel app,
         MusicDatabaseService database, EditorSessions sessions, ILogger logger,
-        ICommand playCommand, object? playParameter, string reason = "")
+        ICommand playCommand, object? playParameter, SpectrogramViewModel spectrogram, string reason = "")
     {
         Editor = editor;
+        Spectrogram = spectrogram;
         _app = app;
         _database = database;
         _sessions = sessions;
@@ -120,6 +122,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
     {
         if (_closing) return;
         _closing = true;
+        Spectrogram.BeginClose();
         Editor.Saved -= EditorSaved;
         _app.SongsSourceChanged -= LibraryChanged;
         _app.PropertyChanged -= AppChanged;
@@ -132,7 +135,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
     private async Task StopCoreAsync()
     {
         BeginClose();
-        try { await Task.WhenAll(_playlistTask, Editor.StopAsync()); }
+        try { await Task.WhenAll(_playlistTask, Editor.StopAsync(), Spectrogram.StopAsync()); }
         catch (Exception exception) { _logger.LogError(exception, "结束歌曲详情会话失败"); }
         finally
         {

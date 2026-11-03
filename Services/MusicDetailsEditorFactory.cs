@@ -26,6 +26,17 @@ public sealed class MusicDetailsEditorFactory(IServiceProvider services) : IMusi
         return new MusicDetailsEditorViewModel(music, database, lyrics, services.GetRequiredService<EditorSessions>(),
             new EditorHost(services), services.GetRequiredService<ILogger<MusicDetailsEditorViewModel>>());
     }
+
+    /// <inheritdoc/>
+    public SpectrogramViewModel CreateSpectrogram(Music music)
+        => new(music, services.GetRequiredService<AppViewModel>(), services.GetRequiredService<ISpectrogramService>(),
+            services.GetRequiredService<ILogger<SpectrogramViewModel>>(), services.GetRequiredService<PlaybackCommands>().SeekCommand);
+
+    /// <inheritdoc/>
+    public AlbumDetailsViewModel CreateAlbum(Music album)
+        => new(album, services.GetRequiredService<AppViewModel>(), services.GetRequiredService<MusicDatabaseService>(),
+            services.GetRequiredService<EditorSessions>(), new EditorHost(services),
+            services.GetRequiredService<ILogger<AlbumDetailsViewModel>>());
     private sealed class EditorHost(IServiceProvider services) : IMusicDetailsEditorHost
     {
         public async Task<byte[]?> ReadCoverAsync(Music music, CancellationToken token)

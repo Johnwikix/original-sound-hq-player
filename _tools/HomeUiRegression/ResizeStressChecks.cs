@@ -25,6 +25,7 @@ internal sealed partial class HomePolishWindow
         var missing = new Music { Id = 990038, Path = "resize-missing.flac", Title = "No cover during resize" };
         var oldThemes = _home.Themes;
         var oldFamiliar = _home.Familiar;
+        var oldCards = _home.CardSongs;
         var oldDiscovery = _home.Discovery;
         var oldPaneMode = _resizeNavigationHost?.PaneDisplayMode;
         bool oldAuto = featured.AutoShuffle;
@@ -101,6 +102,16 @@ internal sealed partial class HomePolishWindow
                 }
                 ResizeStressNative.SendMessage(_hwnd, 0x0232, 0, 0); // WM_EXITSIZEMOVE.
             }
+            for (int count = 0; count <= 3; count++)
+            {
+                typeof(HomeViewModel).GetProperty(nameof(HomeViewModel.CardSongs))!.SetValue(_home, oldCards.Take(count).ToList());
+                for (int width = 350; width <= 1500; width += 7)
+                {
+                    AppWindow.Resize(new SizeInt32(width, 700));
+                    await Task.Delay(12);
+                    Record("card-count-" + count);
+                }
+            }
             Assert(step == 1806 && callbacks < step * 12, $"continuous resize settles without layout cycles ({step} steps, {callbacks} size callbacks)");
             bool heartbeat = false;
             DispatcherQueue.TryEnqueue(() => heartbeat = true);
@@ -123,6 +134,7 @@ internal sealed partial class HomePolishWindow
             typeof(HomeViewModel).GetProperty(nameof(HomeViewModel.Familiar))!.SetValue(_home, oldFamiliar);
             typeof(HomeViewModel).GetProperty(nameof(HomeViewModel.Discovery))!.SetValue(_home, oldDiscovery);
             featured.AutoShuffle = oldAuto;
+            typeof(HomeViewModel).GetProperty(nameof(HomeViewModel.CardSongs))!.SetValue(_home, oldCards);
             _root.RowDefinitions.Remove(footer);
             for (int i = 0; i < _songs.Length; i++)
             {

@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>Procesando...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>Propiedades del álbum</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>Detalles del álbum</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>Procesando guardado, por favor espere...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>Emparejar portada en línea</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>Guardar en disco local</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>Editar portada</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>Título</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>Año</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>¿Está seguro de guardar la metainformación en todas las músicas del álbum?</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>Escribe en el archivo</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>Cerrar</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>Detalles de la música</value>
@@ -2260,7 +2236,7 @@
     <value>Usa la subcarpeta WebDav de la ubicación de caché indicada arriba.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Las portadas y WebDAV comparten esta carpeta. Al cambiarla, la caché se crea según se necesita y se conservan los archivos anteriores.</value>
+    <value>Carpeta compartida para portadas, audio WebDAV y cachés de características musicales y sonoridad. La nueva ubicación se llena según sea necesario; se conservan los archivos anteriores.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>No se puede establecer una conexión HTTPS segura. Comprueba el certificado del NAS y la configuración TLS.</value>
@@ -2587,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Empieza con tu música</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Añade una carpeta de música. Tus escuchas y favoritos darán forma a las recomendaciones.</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>Añadir carpeta de música</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Tus fuentes de música no están disponibles. Comprueba la conexión o administra las fuentes.</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>Tus fuentes de música no están disponibles. Comprueba la conexión o administra las fuentes.</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>Reintentar</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>Explora tu biblioteca</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>Para ti</value></data>
@@ -2652,4 +2628,40 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Guardar la letra lrc en el dispositivo local</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Localizar pista actual</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Localizar pista actual</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Análisis musical en segundo plano</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Analiza el timbre, el ritmo y otras características para descubrir canciones de estilo similar y mejorar las recomendaciones de inicio.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Completados {0} / encontrados {1} · en cola {2} · fallidos {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Esperando nueva música</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Análisis desactivado</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Comprobando archivos aptos</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Analizando</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Análisis interrumpido; se reintentará</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Estilo musical similar</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Similar en Last.fm</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Solo se analizan archivos locales y pistas WebDAV completamente en caché, sin descargar audio. El objetivo es un ciclo de trabajo del 10 % de un núcleo de CPU; el proceso se cierra cuando está inactivo.</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Información del álbum</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Pistas</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>No se pudo escribir en {0} archivo(s): {1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>Espectro</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>Restablecer vista</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>Opciones del espectro</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>Canal</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>Combinado</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>Izquierdo</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>Derecho</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>Resolución de frecuencia (FFT)</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>Nivel mínimo (dBFS)</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>Nivel máximo (dBFS)</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>Analizando audio…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>Se necesita el archivo de audio completo en caché.</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>No se pudo analizar la pista. Vuelve a intentarlo.</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>Mezcla estéreo</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Espectrograma de audio</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Rueda para ampliar el tiempo, Mayús+rueda para ampliar la frecuencia. Arrastra para desplazar; Izquierda/Derecha desplaza el tiempo, Arriba/Abajo amplía la frecuencia, Inicio restablece. Doble clic para buscar en la pista actual.</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Restablecer vista</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Opciones del espectro</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Modo opaco (desactivar para transparencia de niveles bajos)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Modo opaco</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Rueda: ampliar tiempo · Mayús+rueda: ampliar frecuencia · Arrastrar: desplazar</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>No hay nuevas recomendaciones. Se excluyen las canciones cuyos títulos ya están en Favoritos o listas. Añade más música e inténtalo de nuevo.</value></data>
 </root>

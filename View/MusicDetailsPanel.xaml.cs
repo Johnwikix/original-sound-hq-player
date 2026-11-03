@@ -30,10 +30,11 @@ public sealed partial class MusicDetailsPanel : UserControl
         try
         {
             var app = App.Services.GetRequiredService<AppViewModel>();
-            var editor = App.Services.GetRequiredService<IMusicDetailsEditorFactory>().Create(request.Music);
+            var factory = App.Services.GetRequiredService<IMusicDetailsEditorFactory>();
+            var editor = factory.Create(request.Music);
             ViewModel = new MusicDetailsViewModel(editor, app, App.Services.GetRequiredService<MusicDatabaseService>(),
                 App.Services.GetRequiredService<EditorSessions>(), App.GetLogger<MusicDetailsPanel>(),
-                MusicCommands.DetailsPlayCommand, request);
+                MusicCommands.DetailsPlayCommand, request, factory.CreateSpectrogram(request.Music));
             ViewModel.CloseRequested += CloseRequested;
             ViewModel.Start();
             app.IsBackBtnEnable = true;

@@ -1,3 +1,144 @@
+## 2026-11-03 降低Instrumental版本推荐权重
+- `Services/Recommendations/RecommendationFeatures.cs`、`HomeRecommendationService.cs`：标题含Instrumental（忽略大小写）的歌曲展示权重乘0.25，作用于各推荐栏目及有界召回，并与既有降权叠加；保留训练偏好和候选不足时的推荐资格。
+- `_tools/HomeRecommendationRegression/InstrumentalRegression.cs`：补充大小写、来源召回、随机回退、常听、探索、训练保留及纯伴奏曲库用例；按用户要求未构建或运行测试。
+
+## 2026-11-03 最近常听加入近期展示降权
+- `Services/Recommendations/HomeRecommendationService.cs`：最近常听复用最近三批0.15/0.35/0.6曝光降权，同录音版本共享；保留有效收听基础评分、收藏/歌单不额外降权和小曲库复用资格。
+- `_tools/HomeRecommendationRegression/BatchVariationRegression.cs`：补充常听连续换批、相同输入可复现、单首常听保留和同录音版本降权用例；按用户要求未构建或运行测试。
+
+## 2026-11-03 修复换一批推荐高度重复
+- `Services/Recommendations/HomeRecommendationService.cs`：批次随机值参与相近分数选择；最近三批曝光按0.15/0.35/0.6衰减展示分，同录音版本共享衰减；不足时保留复用资格，常听与偏好训练不降权。
+- `ViewModel/Pages/HomeViewModel.cs`：传递已发布批次快照，后台重算沿用同一批次的曝光输入，失败或取消不消耗曝光历史。
+- `_tools/HomeRecommendationRegression/BatchVariationRegression.cs`：新增不同来源分数的连续批次重合率、可复现性、小曲库、同录音版本和常听隔离回归；最终改动按用户要求未继续构建或运行验证。
+
+## 2026-11-03 频谱不透明开关
+- `ViewModel/Controls/SpectrogramViewModel.cs`、`View/Controls/SpectrogramControl.xaml`、`Strings/*/Resources.resw`：低响度透明仍默认启用，ToggleButton 改为未选中=透明、选中=不透明，并同步七语言提示。
+- `View/Controls/MusicDetailControl.xaml(.cs)`：四个歌曲操作移出标题滚动区，固定为左栏底栏；紧凑/高 DPI 等效尺寸下长标题只挤压可滚动内容，不再裁剪按钮，操作栏继续参与协调进入动画。
+- `_tools/HomeUiRegression`：覆盖开关反向绑定及 760×420 长标题布局中最右侧按钮和固定底栏的几何可见性。
+
+## 2026-11-03 频谱透明默认启用与可见缩放提示
+- `ViewModel/Controls/SpectrogramViewModel.cs`、`View/Controls/SpectrogramControl.xaml`：低响度透明模式改为默认启用，ToggleButton 点击后关闭；技术信息下方直接显示滚轮时间缩放、Shift+滚轮频率缩放和拖动平移说明。
+- `Strings/*/Resources.resw`、`_tools/HomeUiRegression`：补齐七语言可见提示，覆盖默认启用、反向关闭及提示文本回归；DPI/长标题左侧按钮布局按需求暂未修改。
+
+## 2026-11-03 频谱二维缩放与低响度透明模式
+- `View/Controls/SpectrogramControl.xaml(.cs)`：频谱右缘与上方按钮组对齐；滚轮缩放时间轴、Shift+滚轮缩放频率轴，拖动支持二维平移，频率刻度和悬停读数随视口更新；新增低响度透明切换，-120 dBFS 及以下全透明、至 0 dBFS 线性恢复不透明。
+- `ViewModel/Controls/SpectrogramViewModel.cs`、`Strings/*/Resources.resw`：增加独立纵向视口、透明度状态及七语言交互提示，重置同时恢复两个坐标轴。
+- `_tools/HomeUiRegression`：新增右缘几何、纵向锚点/平移/重置、透明度像素和真实 ToggleButton 双向绑定回归。
+
+## 2026-11-03 取消跨流派栏的未听硬限制
+- `Services/Recommendations/HomeRecommendationService.cs`：换个流派听听允许已听歌曲，已听权重乘0.5，并与收藏/歌单的0.1系数叠加；常听不降权。
+- `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`：新增全曲库已听、播放次数与历史不同步、未听优先及第三栏真实可见性回归；完整232首快照3个批次的第三栏由0首恢复至20首。
+- `docs/RecommendationAlgorithmResearch.md`、`docs/HomeRecommendationsPlan.md`：补记此次漏测的完整快照场景与最新栏目/留出结果。
+
+## 2026-11-03 TF-IDF与音频近邻推荐、收藏软降权
+- `ContentKnnProfile`、`NeighborScoring`、`AudioNeighborProfile`：艺术家/流派TF-IDF与声学余弦item-kNN替换原元数据权重和8中心聚类，共用64种子/5近邻的有界加权求和。
+- `HomeRecommendationService`、`RecommendationRankFusion`：来源内召回后等权RRF融合，缺失来源不进入零分均值；收藏/歌单及同名副本保留资格并乘0.1，常听与训练偏好不降权。
+- `_tools/HomeRecommendationRegression`、`AudioAnalysisRegression`、`HomeUiRegression`：新增手算向量、融合、软降权及真实SQLite/WinUI回归，保留旧版基线和可复现留出评估工具。
+- `docs/RecommendationAlgorithmResearch.md`：新增开源调研、参数、失败候选、分组/时间留出结果和局限；小样本改善不等同在线效果，时间留出新曲仍未召回。
+
+## 2026-11-03 修复最近常听与跨流派推荐回退
+- `Services/Recommendations/HomeRecommendationService.cs`：最近常听允许收藏/歌单歌曲并按有效收听排序；恢复独立的跨流派探索候选与配额，主推荐继续排除已收录歌曲及同名副本。
+- `ViewModel/Pages/HomeViewModel.cs`、`View/HomePage.xaml`：仅有常听时仍展示首页，隐藏空主推荐，保留共享播放命令。
+- `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`：修正旧回归的栏目预期，增加收藏回听、探索配额、去重及真实WinUI绑定检查。
+- `docs/HomeRecommendationsPlan.md`：列明实际向量、输入参数、固定权重和质量验证局限，补充implicit/LightFM/SAR及内容近邻方案调研。
+
+## 2026-11-02 推荐排除收藏、歌单及同名副本
+- `HomeRecommendationService`：最爱和播放列表继续作为偏好样本，轮播、侧卡、主推荐、探索与常听统一排除已收录歌曲及同名副本（去首尾空白、忽略大小写，不依赖歌手、路径或专辑）。
+- `HomeRecommendationService`：排除发生在候选池截断前，栏目配额按可推荐候选计算；没有新候选时不回填已收录歌曲，其余候选保留风格相关性、歌手/专辑多样性与批次随机扰动。
+- `HomeViewModel`、`HomePage`、全部语言资源：区分“暂无新的推荐”和“来源不可用”，代码取词使用独立资源键。
+- 按用户要求未继续运行构建、测试或额外验证；此前融合版本的验证数据在 `docs/HomeRecommendationsPlan.md` 中保留并标注。
+
+## 2026-11-02 修复频谱 MP3 尾标签兼容与详情退出保留
+- `External/AudioAnalysisWorker/SpectrogramDecoder.cs`、`Player/AudioAnalysisWorker.exe`：对解码无效包进行有界恢复并正确排空，兼容被 MP3 demuxer 当作音频包的 Lyrics3 尾标签；保留有效音频结果，I/O 与其他解码错误仍报告失败，已重新发布 worker。
+- `View/Controls/MusicDetailControl.xaml(.cs)`、`SpectrogramControl.xaml(.cs)`：退出/替换上下文时停止全部嵌套 x:Bind 监听，显式清空频谱子上下文和原生按钮命令；卸载释放图形资源，重新加载恢复命令绑定。
+- `View/Controls/SpectrogramControl.xaml.cs`：色阶高端改为红色，拉开中高强度色差；高对比度模式继续使用灰阶。
+- `_tools/SpectrogramRegression`、`_tools/HomeUiRegression`：增加合成 Lyrics3 尾标签回归及真实列表标题入口的内存探针；RIVER.mp3 在三种 FFT 分辨率下通过。18 次详情进出后，原先保留的 18 个频谱 VM 降为 0，控件/Canvas/位图弱引用均回收；结果缓存按既定上限保留，采样 GC/Trim 仅用于探针。
+
+## 2026-11-02 以最爱和用户歌单重建风格推荐
+- `RecommendationEvidence`、`HomeViewModel`、`MusicDatabaseService*`：最爱与用户歌单去重成员共用明确正向偏好，持久化后通知；刷新/重进首页应用，保持当前卡片与播放队列稳定。
+- `AudioPreferenceScorer`、`AudioTasteProfile`：三遍流式校准后从最多64个正向样本拟合最多8个兴趣中心，避免不同喜欢风格互相冲淡，沿用已有音频特征缓存。
+- `HomeRecommendationService`：元数据、音频与社区两级融合；相关性优先约束歌手/专辑多样性，移除同流派累计大额扣分和主推荐固定随机插入，探索优先未听的相近风格。
+- `CommunitySeedQuery`、`LastFmRecommendationService`：从有效收听/最爱/歌单选8位不同歌手并拆分合唱，保留16次请求上界；偏好变化清除旧缓存，拒绝在途旧偏好结果，增加无敏感信息的刷新日志。
+- `_tools/HomeRecommendationRegression`、`AudioAnalysisRegression`、`LastFmRecommendationRegression`、`HomeUiRegression`：覆盖偏好类型、多兴趣、歌单去重与增删、缺失/异常信号、并发失效及退出解绑；对照场景、结果和限制见 `docs/HomeRecommendationsPlan.md`。
+
+## 2026-11-02 歌曲详情声谱图
+- `View/Controls/MusicDetailControl.xaml(.cs)`、`SpectrogramControl.xaml(.cs)`：新增频谱页签，Win2D 按需绘制整曲声谱、刻度和强度色阶，Composition 跟随共享播放状态移动游标；支持缩放、平移、悬停读数、双击跳转及声道/分辨率/强度设置，不提供图片导出。
+- `ViewModel/Controls/SpectrogramViewModel.cs`、详情宿主与编辑工厂：按页签可见性启动/取消，状态和命令留在 ViewModel；详情对象与播放对象分离，关闭排空实际任务并拒绝迟到结果。
+- `Services/SpectrogramService.cs`、`Services/AudioAnalysis/SpectrogramWorkerClient.cs`：原采样率只读分析，完整远程缓存租约、文件版本校验和最多 16 MiB 结果缓存，取消后等待子进程真实退出再释放输入。
+- `External/AudioAnalysisWorker`、`Services/AudioAnalysis/Core/Spectrogram*.cs`、`Player/AudioAnalysisWorker.exe`：同一 exe 新增独立 `--spectrogram` 模式，逐窗 Hann STFT 与时间列功率平均，左右声道在频域合并，保留原推荐分析协议；已重新发布 worker。
+- `Strings/*/Resources.resw`、`_tools/SpectrogramRegression`、`_tools/HomeUiRegression`：七种语言本地化；覆盖原生高频/反相/静音、旧协议、缓存、取消及真实 WinUI 绑定、绘图与生命周期回归。
+- 验证：主项目 Debug x64、原生及频谱 UI 专项通过；额外首页整套 UI 回归在预览翻页检查失败，未包含本次改动的 HEAD 基线同样复现。音频设备输出、跨屏 DPI 与系统高对比度切换未实测。
+
+## 2026-11-02 修复专辑曲目表头裁切与列错位
+- `View/Controls/AlbumDetailControl.xaml`：表头移入曲目列表共用滚动视口，统一表头与行的列宽及内边距，清除行容器默认偏移；编号和时长列加宽，所有表头支持本地化长文本换行。
+- `_tools/HomeUiRegression`：新增真实 WinUI 曲目布局回归（`--album-track-layout`），覆盖七种语言、浅/深色、640/900/1200 DIP、单曲/长列表/空列表与滚动到底。
+
+## 2026-11-02 专辑属性窗口现代化重设计
+- `View/Controls/AlbumDetailControl.xaml(.cs)`（新增）：专辑属性布局：280px 封面 hero（紧凑 240/堆叠 112，断点同歌曲窗口 810/540/760）、「专辑信息/曲目」双页签（专辑名/专辑艺术家/流派/年份 + 只读曲目列表，多艺术家逐曲可见）、底部写入文件/保存到数据库、InfoBar 错误反馈；确认弹窗改用 `ConfirmFlyout.Text`，修复原 `SaveConfirm` 键早已缺失导致的空白确认文本。
+- `View/SubView/AlbumDetailWindow.xaml(.cs)`：窗口薄壳化（标题栏+忙碌环+Esc 关窗，默认 900×675，最小 640×560），编辑会话改由工厂创建；删除窗口内封面会话、文件选择器与保存流程。
+- `ViewModel/Controls/AlbumDetailsViewModel.cs`（新增）：专辑级编辑会话：草稿只在保存成功后发布到全部曲目（取消不再污染内存）、只写用户改动的字段、封面仅在更换后重嵌（此前每次保存都重写全部曲目封面）、远程专辑字段只读且两个保存入口真实禁用、单曲占用不中断其余曲目并保留窗口重试。
+- `Services/MusicDatabaseService.Album.cs`、`Services/AlbumTagEdit.cs`（新增）：专辑标签批量写入（`AudioFileWriteGate` + 独占探测 + 全量可选标签回读入库）与仅数据库保存（可选标签只更新已读取曲目，未读旧条目保持懒读）；写入批次开始后跑完，关窗由退出屏障排空。
+- `Services/IMusicDetailsEditorFactory.cs`、`Services/MusicDetailsEditorFactory.cs`：新增 `CreateAlbum` 复用编辑宿主的封面/选择器边界。
+- `Services/WindowArtworkSession.cs`：删除（最后一个消费者迁移到编辑宿主路径）。
+- `Style/BtnStyle.xaml`、`View/Controls/MusicDetailControl.xaml`：`PrimarySaveStyle` 收编到应用级字典，两个详情控件共用。
+- `Strings/*/Resources.resw`：新增 `AlbumDetailsInfoTab`、`AlbumDetailsTracksTab`、`AlbumDetailsWriteFailed`，删除 `AlbumDetailWindow.Title` 等 8 个孤儿键。
+- `_tools/HomeUiRegression`：删除封面会话专项检查，新增专辑会话回归（草稿隔离、变更字段传播、可选标签懒读门槛、部分失败重试、关闭排空）。
+- 行为变化：保存只写改动字段（此前无条件重写全部曲目的专辑名/年份/封面）；远程专辑保存不再静默无效；部分文件失败保留窗口可重试（此前报错后直接关窗）。
+
+## 2026-11-02 详情布局阈值 810/540，属性窗口 900×675
+- `View/Controls/MusicDetailControl.xaml.cs`：紧凑/堆叠宽度断点 900→810，矮窗口高度断点 640→540（极窄堆叠 760 不变）。
+- `View/SubView/MusicDetailsWindow.xaml.cs`：默认窗口尺寸 960×720→900×675，低于主窗口最小尺寸且保持完整布局。
+
+## 2026-11-02 降低详情布局紧凑阈值
+- `View/Controls/MusicDetailControl.xaml.cs`：紧凑/堆叠的宽度断点 960→900（同步保持堆叠⊆紧凑），默认 960×720 属性窗口（控件约 944 宽）不再进入紧凑模式；高度 640 与极窄 760 断点不变。
+
+## 2026-11-02 属性窗口按窗口形态微调详情布局
+- `View/Controls/MusicDetailControl.xaml.cs`：新增 `ShowHeader` 属性，供独立窗口关闭内建标题行。
+- `View/SubView/MusicDetailsWindow.xaml(.cs)`：标题“歌曲属性”回到应用标题栏（维持原 16px Caption 字号）并旁挂忙碌指示环；默认尺寸收敛为主窗口最小尺寸 960×720，内容与标题栏间距收紧为控件自身内边距。
+
+## 2026-11-02 属性窗口复用页内详情布局统一 UI
+- `View/SubView/MusicDetailsWindow.xaml(.cs)`：内容改为宿主 `MusicDetailControl`，标签/歌词/文件页签、封面菜单、播放收藏入队和底部保存按钮与页内详情层完全一致；标签/歌词/封面/保存全部走 `IMusicDetailsEditorFactory` + `MusicDetailsViewModel`，删除窗口内重复的编辑器装配、封面会话、选择器与保存流程。默认尺寸 1000×760（≥960 触发完整并排布局），最小 640×560，支持 Esc 关窗；保存完成或曲目移出曲库时自动关窗。
+
+## 2026-11-02 修复阴影属性更新中断呼吸动画
+- `Controls/CompositionShadow.cs`：按变更属性更新合成阴影，颜色、偏移和透明度变化不再中断呼吸动画，也不覆盖调用方设置的其他原生值。
+- `_tools/LocalControlsUiRegression/Program.cs`：增加呼吸中属性更新、异步取色和原生值保留回归；嵌套卸载测试分别等待内外层的 Unloaded，不修改生产卸载逻辑。
+
+## 2026-11-02 完整移植 DevWinUI 滚动与阴影控件并移除包依赖
+- `Controls/AutoScrollView.cs`、`RedirectVisualView.cs`、`CompositionShadow*.cs`、`Themes/Generic.xaml`：从 DevWinUI 10.8.0 完整移植两个控件及必要辅助实现，保留滚动、字形阴影、圆角/圆形裁剪、呼吸动画和图像边缘取色；补齐卸载/重载、换模板及迟到异步结果清理。
+- `View/*`、`DesktopLyrics/TextBlockLyricsRenderer.cs`、`App.xaml`、`WinUIMusicPlayer.csproj`：改用本地控件并移除 DevWinUI 包与无用命名空间，保持已有绑定、悬停交互和页面布局。
+- `Libraries/DevWinUI`、`README*`：记录固定来源、完整 API 与本地调整，保留并随输出分发 MIT 许可。
+- `_tools/LocalControlsUiRegression`、`HomeUiRegression`、`ManualLocationUiRegression`：增加真实合成控件回归，移除回归工程中的 DevWinUI 包和同名适配器。
+- 验证：主项目构建、38 项控件 UI 回归、19 项实际列表行集成通过；首页全量预览收起断言及导航夹具缺少适配器在 HEAD 基线同样失败，详见 `Libraries/DevWinUI/README.md`。
+
+## 2026-11-02 修复 Windows 10 云母样式变透明
+- `ThemeStyleHelper`、`SolidColorSystemBackdrop`：云母不受支持时改为跟随窗口明暗主题的不透明底色，保留已保存的云母选择；样式切换和关闭时释放画刷并解绑主题事件。
+- `_tools/FontUiRegression`：使用真实 WinUI 窗口和合成画刷覆盖不支持云母、主题切换、透明样式切换、重连及关闭清理；Windows 10 实机显示待验收。
+
+## 2026-11-02 组件级布局诊断、分析设置及统一缓存
+- `UiLayoutDiagnostics`、`App`、页面/轮播控件：布局异常记录当前页面、组件类型与名称、父级路径、最近256条尺寸/测量记录及有界可视树；后台落盘，限流并保留20份；开启原生布局追踪供调试器和转储分析。
+- `FeaturedCarousel`、`HomeHeroCard`、`HomeCarouselTile`：按父级测量约束更新响应式布局，跳过重复尺寸计算，固定拼贴列宽，移除 SizeChanged 中反写标题布局的反馈路径；原报告的偶发异常尚未复现。
+- `AudioAnalysisSettingsControl`、`GeneralSettingsControl`、全部语言资源：分析开关移至通用→高级，说明音色/节奏特征如何改善推荐，展开后显示输入范围、资源策略与实时进度。
+- `AnalysisRepository`、`LoudnessScanner`、设置 IPC：特征缓存和响度缓存统一到设置→关于的缓存根目录下 `Analysis/Features.db`、`Analysis/Loudness`；旧主库特征按需迁移，开关与曲库保留；更换根目录按需重建，旧目录文件保留。
+- `CacheSizeCalculator`：缓存总量包含分析子目录；`AudioAnalysisWorker.csproj` 使用项目图标；重新发布两个独立程序。`PlayerIpcService` 启动失败输出完整异常栈。
+- 验证、路径与限制见 `docs/HomeRecommendationsPlan.md`；原生追踪输出到调试器/转储，组件日志标记近期变化候选，不自动认定根因。
+
+## 2026-11-02 校准 DSP 后台分析、推荐去重与 Last.fm 增强
+- `Services/AudioAnalysis`、`External/AudioAnalysisWorker`、`Player/AudioAnalysisWorker.exe`：独立校准 DSP 默认路线，FIR/FFT/频谱 SIMD、固定缓冲；仅分析本地和完整有效 WebDAV 缓存，有界队列、10% CPU 占空比、取消等待及空闲/批次结束退出。
+- `RemoteAudioCache`、`MusicDatabaseService.Analysis`：完整缓存只读租约、文件版本校验及原始特征持久化；缓存 LRU 时间戳不触发重新分析。
+- `HomeRecommendationService`、`HomeViewModel`、`HomePage`：轮播、侧卡和三栏共享去重，各自独立集合与播放队列，融合校准音频及社区相似信号；小曲库减少展示项。
+- `LastFmService.Recommendations`、`LastFmRecommendationService`：后台有界相似艺术家/歌曲缓存，复用身份取消和网络请求槽；断开或关闭后立即排除社区信号，首页不等待网络。
+- `AudioAnalysisSettingsControl`、`AnalysisSettingsViewModel`、全部语言资源：可展开分析开关及已完成/已发现/排队/失败和当前曲目进度，合并 UI 通知并解绑订阅。
+- 兼容性：分析开关新增缺省开启，存量安装首次升级同样启用，可在通用设置关闭；不修改 AudioPlayer 播放实现或 IPC。通用独立实现。
+- 验证与资源边界见 `docs/HomeRecommendationsPlan.md`；完整 Last.fm 测试的2050条持久提交等待预算调整为60秒，原始提交在当前磁盘同样超过原15秒预算。
+
+## 2026-11-02 修复许可恢复、试用到期及来源命令回归
+- `AppViewModel.OutputPreferences`、`MusicDatabaseService`：启动恢复直接写入共享偏好，受限时拒绝修改 DSD、5.1、Atmos 的开启和关闭值；许可覆盖仅用于 IPC，不写回已保存偏好。
+- `LicenseService`：按已知期限在本地结束试用，查询失败和迟到的过期缓存不能延长试用；已确认完整版在查询失败时继续保留。
+- `SettingsSnapshotFactory.Audio`、`_tools/LicenseRegression`：直接验证生产 ViewModel、快照捕获和文件保存，覆盖全部开关组合、异步许可查询、受限保存与购买恢复，以及到期边界和缓存时序。
+- `_tools/MusicMetadataRegression`、`HomeUiRegression`、`WebDavTreeUiRegression`：补齐 `OpenSourceCommand` 适配器，新增来源按钮绑定与复用回归。
+- `WinUIMusicPlayer.csproj`：默认文件扫描排除回归工程与产物，避免运行 UI 回归后其资源混入主包造成冲突。
+- 兼容性：保留磁盘上仍存在的偏好；旧版本已经覆盖写盘的值无法自动还原。
+
 ## 2026-11-01 Store 状态未知时保留购买入口，许可卡片移至音频可视化下方
 - `Services/LicenseService.cs`：`CanPurchase` 改为除已购完整版外均为 true——查询失败（StoreUnavailable）时发起购买会顺带强制刷新许可，账户已有许可或购买成功即恢复完整版；通用设置/DSP 横幅购买按钮随同恢复显示。
 - `View/SubView/Settings/AboutSettingsControl.xaml`：许可状态卡片移至音频可视化卡片下方。

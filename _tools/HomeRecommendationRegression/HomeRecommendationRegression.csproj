@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Model/Recommendations/HomeRecommendation.cs;../../Services/Recommendations/*.cs;../../Model/StartupEntry.cs" />
+    <Compile Include="../../Services/AudioAnalysis/AudioPreferenceScorer.cs;../../Services/AudioAnalysis/AudioNeighborProfile.cs;../../Services/AudioAnalysis/AnalysisRepository.cs;../../Services/AudioAnalysis/Core/FeatureMath.cs" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
   </ItemGroup>
 </Project>

@@ -10,6 +10,12 @@ public interface IMusicDetailsEditorFactory
 {
     /// <summary>创建尚未启动读取的编辑会话。</summary>
     MusicDetailsEditorViewModel Create(Music music);
+
+    /// <summary>创建尚未启动的声谱图会话，与详情页一起排空。</summary>
+    SpectrogramViewModel CreateSpectrogram(Music music);
+
+    /// <summary>创建尚未启动读取的专辑级编辑会话。</summary>
+    AlbumDetailsViewModel CreateAlbum(Music album);
 }
 
 /// <summary>隔离属性编辑器的文件选择、封面来源及全库通知边界。</summary>

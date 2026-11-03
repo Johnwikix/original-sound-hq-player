@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -35,6 +36,8 @@ public sealed class HomeViewModel : ObservableObject
     private readonly MusicDatabaseService _database;
     private readonly PlaybackStatsService _statistics;
     private readonly HomeRecommendationService _recommendations;
+    private readonly IAudioRecommendationSource _analysis;
+    private readonly ICommunityRecommendationSource _community;
     private readonly PlaybackCoordinator _playback;
     private readonly AddFolderViewModel _folders;
     private readonly WebDavLibraryService _remote;
@@ -49,6 +52,8 @@ public sealed class HomeViewModel : ObservableObject
     private bool _started, _active, _stopped, _running, _deferredRefresh, _dirty = true, _historyDirty = true;
     private long _revision, _snapshotVersion = -1;
     private int _batch;
+    private int _publishedBatch = -1;
+    private HomeRecommendation[] _recentRecommendations = [];
     private DateTime _historyDay, _publishedDay;
     private RecommendationTrack[] _snapshot = [];
     private List<HomeListening> _history = [];
@@ -56,6 +61,10 @@ public sealed class HomeViewModel : ObservableObject
 
     /// <summary>获取主题快照；列表整体替换，不修改已经播放的队列。</summary>
     public List<HomeTheme> Themes { get; private set => SetProperty(ref field, value); } = [];
+    /// <summary>获取独立轮播曲目，不复用侧卡或下面三栏。</summary>
+    public List<HomeSong> FeaturedSongs { get; private set => SetProperty(ref field, value); } = [];
+    /// <summary>获取独立侧卡集合，不复用轮播或三栏曲目。</summary>
+    public List<HomeSong> CardSongs { get; private set => SetProperty(ref field, value); } = [];
     /// <summary>获取通用推荐栏目。</summary>
     public List<HomeSong> Songs { get; private set => SetProperty(ref field, value); } = [];
     /// <summary>获取近期有效收听的回顾栏目。</summary>
@@ -67,7 +76,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>显示当前栏目中的曲目，拒绝已经被刷新替换的卡片。</summary>
     public void ShowPreview(HomeSong song)
     {
-        if (_active && !_stopped && !HasDetails && (Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) PreviewSong = song;
+        if (_active && !_stopped && !HasDetails && (Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song) || FeaturedSongs.Contains(song) || CardSongs.Contains(song))) PreviewSong = song;
     }
     /// <summary>关闭详情，释放视图对封面的消费。</summary>
     public void DismissPreview() => PreviewSong = null;
@@ -91,13 +100,13 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>打开当前推荐中的规范曲目，不改变播放状态或栏目快照。</summary>
     public bool OpenDetails(HomeSong song, bool preservePreview = false)
     {
-        if (!_active || _stopped || !_app.CanPublishState || HasDetails || !(Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song))) return false;
+        if (!_active || _stopped || !_app.CanPublishState || HasDetails || !(Songs.Contains(song) || Familiar.Contains(song) || Discovery.Contains(song) || FeaturedSongs.Contains(song) || CardSongs.Contains(song))) return false;
         MusicDetailsViewModel? presentation = null;
         try
         {
             var editor = _editors.Create(song.Music);
             presentation = new MusicDetailsViewModel(editor, _app, _database, _editorSessions, _logger,
-                song.PlayCommand, song, song.Reason);
+                song.PlayCommand, song, _editors.CreateSpectrogram(song.Music), song.Reason);
             presentation.Start();
         }
         catch (Exception ex)
@@ -151,8 +160,12 @@ public sealed class HomeViewModel : ObservableObject
     public bool IsEmpty { get; private set => SetProperty(ref field, value); }
     /// <summary>获取有库但没有可推荐候选的状态。</summary>
     public bool IsUnavailable { get; private set => SetProperty(ref field, value); }
+    /// <summary>区分来源离线与排除已收藏/歌单歌曲后没有新候选。</summary>
+    public string UnavailableMessage { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("HomeUnavailable");
     /// <summary>获取是否显示已有推荐内容。</summary>
-    public bool HasContent => Songs.Count > 0;
+    public bool HasContent => Songs.Count > 0 || Familiar.Count > 0 || Discovery.Count > 0;
+    /// <summary>获取当前是否有足够独立候选展示精选。</summary>
+    public bool HasFeatured => Themes.Count > 0;
     /// <summary>获取错误说明；已有内容在刷新失败时保留。</summary>
     public string ErrorMessage { get; private set => SetProperty(ref field, value); } = "";
     /// <summary>获取换一批与重试命令。</summary>
@@ -175,8 +188,11 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>初始化依赖，不订阅事件或启动工作。</summary>
     public HomeViewModel(AppViewModel app, MusicDatabaseService database, PlaybackStatsService statistics,
         HomeRecommendationService recommendations, PlaybackCoordinator playback, AddFolderViewModel folders,
-        WebDavLibraryService remote, ILogger<HomeViewModel> logger, IMusicDetailsEditorFactory editors, EditorSessions editorSessions)
+        WebDavLibraryService remote, ILogger<HomeViewModel> logger, IMusicDetailsEditorFactory editors, EditorSessions editorSessions,
+        IAudioRecommendationSource analysis, ICommunityRecommendationSource community)
     {
+        _analysis = analysis;
+        _community = community;
         _app = app;
         _database = database;
         _statistics = statistics;
@@ -211,6 +227,9 @@ public sealed class HomeViewModel : ObservableObject
         ObserveFavorites();
         _app.State.Lifecycle.Changed += LifecycleChanged;
         _statistics.StatsUpdated += HistoryChanged;
+        _analysis.ResultsChanged += EnrichmentChanged;
+        _community.Changed += EnrichmentChanged;
+        _database.RecommendationPreferencesChanged += InvalidateForNextVisit;
         _folders.PropertyChanged += FoldersChanged;
         _remote.SourceAvailabilityChanged += SourceChanged;
     }
@@ -253,11 +272,15 @@ public sealed class HomeViewModel : ObservableObject
             _favoriteSource = null;
             _app.State.Lifecycle.Changed -= LifecycleChanged;
             _statistics.StatsUpdated -= HistoryChanged;
+            _analysis.ResultsChanged -= EnrichmentChanged;
+            _community.Changed -= EnrichmentChanged;
+            _database.RecommendationPreferencesChanged -= InvalidateForNextVisit;
             _folders.PropertyChanged -= FoldersChanged;
             _remote.SourceAvailabilityChanged -= SourceChanged;
         }
         await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks);
         _snapshot = [];
+        _recentRecommendations = [];
         _history.Clear();
         PlaylistMenuItems.Clear();
     }
@@ -335,6 +358,7 @@ public sealed class HomeViewModel : ObservableObject
     }
     private void SourceChanged(int source, bool offline) => PostInvalidate();
     private void HistoryChanged() => PostInvalidate(history: true);
+    private void EnrichmentChanged() => PostInvalidate(history: true);
     private void PostInvalidate(bool history = false)
     {
         _dispatcher?.TryEnqueue(() =>
@@ -406,7 +430,8 @@ public sealed class HomeViewModel : ObservableObject
                             _snapshotVersion = version;
                             _publishedDay = DateTime.UtcNow.Date;
                             ErrorMessage = "";
-                            Publish(new([], [], [], true));
+                            _recentRecommendations = [];
+                            Publish(new([], [], [], true), _batch);
                         }
                         continue;
                     }
@@ -415,6 +440,7 @@ public sealed class HomeViewModel : ObservableObject
                     var snapshot = _snapshot;
                     if (_snapshotVersion != version)
                     {
+                        var playlistIds = await _database.GetRecommendationPlaylistIdsAsync(token);
                         snapshot = new RecommendationTrack[_app.SongsSource.Count];
                         for (int i = 0; i < snapshot.Length; i++)
                         {
@@ -422,7 +448,7 @@ public sealed class HomeViewModel : ObservableObject
                             if (revision != _revision || version != _app.State.Library.Version) break;
                             var m = _app.SongsSource[i];
                             snapshot[i] = new(m.Id, ArtistHelper.GetArtistNames(m.Author), m.Album, m.AlbumArtist,
-                                m.Genre, m.Year, m.IsFavorite, m.IsPlayable, m.PlayCount);
+                                m.Genre, m.Year, m.IsFavorite, m.IsPlayable, m.PlayCount, m.Title, playlistIds.Contains(m.Id));
                             if (i % 512 == 511) await Task.Yield();
                         }
                         if (revision != _revision || version != _app.State.Library.Version) { _dirty = true; continue; }
@@ -439,7 +465,14 @@ public sealed class HomeViewModel : ObservableObject
                     }
                     var history = _history;
                     int batch = _batch;
-                    var result = await Task.Run(() => _recommendations.Build(snapshot, history, now, batch, token), token);
+                    // 仅已发布的其他批次计入曝光；同批次的后台重算保持一致的输入。
+                    var recent = batch == _publishedBatch ? _recentRecommendations[1..] : _recentRecommendations;
+                    var community = _community.Snapshot;
+                    var result = await Task.Run(async () =>
+                    {
+                        var audio = await _analysis.GetScoresAsync(snapshot, history, token);
+                        return _recommendations.Build(snapshot, history, now, batch, token, audio, community, recent);
+                    }, token);
                     if (!_active || _stopped || token.IsCancellationRequested) continue;
                     if (revision != _revision || version != _app.State.Library.Version)
                     {
@@ -447,14 +480,16 @@ public sealed class HomeViewModel : ObservableObject
                         // 大批导入期间先展示仍在规范库中的首批结果；继续计算最新版本。
                         if (!HasContent)
                         {
-                            Publish(result);
+                            Publish(result, batch);
                             IsLoading = false;
                         }
                         continue;
                     }
-                    Publish(result);
+                    Publish(result, batch);
                     IsLoading = false;
                     IsUnavailable = !HasContent;
+                    if (IsUnavailable)
+                        UnavailableMessage = ToolUtils.GetString(snapshot.Any(track => track.IsAvailable) ? "HomeNoNewRecommendations" : "HomeUnavailable");
                     ErrorMessage = "";
                     _publishedDay = now.Date;
                 }
@@ -474,7 +509,7 @@ public sealed class HomeViewModel : ObservableObject
         finally { _running = false; }
     }
 
-    private void Publish(HomeRecommendation result)
+    private void Publish(HomeRecommendation result, int batch)
     {
         DismissPreview();
         ValidateDetails();
@@ -483,16 +518,25 @@ public sealed class HomeViewModel : ObservableObject
         Discovery = Resolve(result.Discovery, Discovery);
         SongsTitle = ToolUtils.GetString(result.IsColdStart ? "HomeExplore" : "HomeForYou");
         var themes = new List<HomeTheme>(5);
-        AddTheme(themes, SongsTitle, ToolUtils.GetString("HomeFeaturedDescription"), Songs);
-        AddTheme(themes, ToolUtils.GetString("HomeFamiliar"), ToolUtils.GetString("HomeFamiliarDescription"), Familiar);
-        AddTheme(themes, ToolUtils.GetString("HomeDiscovery"), ToolUtils.GetString("HomeDiscoveryDescription"), Discovery);
-        // 第 4/5 页复用「精选」「常听」的下一位封面：标题沿用栏目名、从该曲起播同栏目队列，凑满 Store 走马灯的 5 张。
-        AddTheme(themes, SongsTitle, ToolUtils.GetString("HomeFeaturedDescription"), Songs);
-        AddTheme(themes, ToolUtils.GetString("HomeFamiliar"), ToolUtils.GetString("HomeFamiliarDescription"), Familiar);
+        FeaturedSongs = Resolve(result.Featured ?? [], FeaturedSongs);
+        CardSongs = Resolve(result.Cards ?? [], CardSongs);
+        var featured = FeaturedSongs;
+        foreach (var song in featured)
+            themes.Add(new(SongsTitle, ToolUtils.GetString("HomeFeaturedDescription"), song.Music, song.Queue, PlayThemeCommand));
         bool sameThemes = themes.Count == Themes.Count;
         for (int i = 0; sameThemes && i < themes.Count; i++) sameThemes = themes[i] == Themes[i];
         if (!sameThemes) Themes = themes;
+        // 当前批次另占一项，后台重算排除它后仍保留完整的前三批曝光输入。
+        int retained = Math.Min(HomeRecommendationService.RecentBatchLimit + 1,
+            _recentRecommendations.Length + (batch == _publishedBatch ? 0 : 1));
+        var recent = new HomeRecommendation[Math.Max(1, retained)];
+        recent[0] = result;
+        int start = batch == _publishedBatch ? 1 : 0;
+        for (int i = 1; i < recent.Length; i++) recent[i] = _recentRecommendations[start + i - 1];
+        _recentRecommendations = recent;
+        _publishedBatch = batch;
         OnPropertyChanged(nameof(HasContent));
+        OnPropertyChanged(nameof(HasFeatured));
     }
     private List<HomeSong> Resolve(IReadOnlyList<RecommendedSong> songs, List<HomeSong> current)
     {
@@ -505,6 +549,8 @@ public sealed class HomeViewModel : ObservableObject
             if (music is not { IsPlayable: true }) continue;
             string key = song.Reason switch
             {
+                RecommendationReason.Audio => "HomeReasonAudio",
+                RecommendationReason.Community => "HomeReasonCommunity",
                 RecommendationReason.Artist => "HomeReasonArtist",
                 RecommendationReason.Genre => "HomeReasonGenre",
                 RecommendationReason.Favorite => "HomeReasonFavorite",
@@ -523,21 +569,6 @@ public sealed class HomeViewModel : ObservableObject
             if (same) return current;
         }
         return result;
-    }
-    private void AddTheme(List<HomeTheme> themes, string title, string description, List<HomeSong> songs)
-    {
-        // 各栏目榜首可能重复（同一首高热度曲），跳过已用作封面的曲目保证每页封面不同。
-        foreach (var song in songs)
-        {
-            if (UsesArtwork(themes, song.Music)) continue;
-            themes.Add(new(title, description, song.Music, song.Queue, PlayThemeCommand));
-            return;
-        }
-    }
-    private static bool UsesArtwork(List<HomeTheme> themes, Music music)
-    {
-        foreach (var theme in themes) if (ReferenceEquals(theme.Artwork, music)) return true;
-        return false;
     }
     private async Task PlayAsync(Music? selected, IReadOnlyList<Music>? songs)
     {

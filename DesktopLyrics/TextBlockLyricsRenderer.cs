@@ -10,12 +10,13 @@ using System.Text;
 using Windows.Foundation;
 using Windows.UI.Text;
 using WinUIMusicPlayer.Helper.Animations;
+using WinUIMusicPlayer.Controls;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
     /// 文本版桌面歌词渲染器：显示当前歌词行（发音 + 主文本 + 翻译），主色文字。
-    /// 文字带 Composition 软阴影（DevWinUI CompositionShadow，DropShadow + 字形 AlphaMask），
+    /// 文字带 Composition 软阴影（本地 CompositionShadow，DropShadow + 字形 AlphaMask），
     /// 双层嵌套叠加——强度与 Win2D 渲染器同一条曲线（DesktopLyricsShadow.SplitStrength：
     /// 内层 min(1,s) + 外层 clamp(s-1,0,1)），颜色为文字色反相；混合背景上黑白二选一
     /// 必有一侧对比度不足，阴影是可读性保底，均匀背景下近乎无感；环境自适应取色仍按
@@ -26,15 +27,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
     {
         private readonly Grid _root = new();
         private (TextBlock Pron, TextBlock Main, TextBlock Trans)? _mainPair;
-        // 双层阴影包裹（全限定引用：DevWinUI 命名空间下有同名 LyricLine，不能 using 进来）：
+        // 双层阴影包裹：
         // 内层贴文字，外层套在内层外（Content = 内层），两者都用文字字形 AlphaMask；
         // 强度 ≤100%（s ≤ 1）时外层透明度为 0 不参与
-        private DevWinUI.CompositionShadow? _mainShadowInner;
-        private DevWinUI.CompositionShadow? _mainShadowOuter;
-        private DevWinUI.CompositionShadow? _transShadowInner;
-        private DevWinUI.CompositionShadow? _transShadowOuter;
-        private DevWinUI.CompositionShadow? _pronShadowInner;
-        private DevWinUI.CompositionShadow? _pronShadowOuter;
+        private CompositionShadow? _mainShadowInner;
+        private CompositionShadow? _mainShadowOuter;
+        private CompositionShadow? _transShadowInner;
+        private CompositionShadow? _transShadowOuter;
+        private CompositionShadow? _pronShadowInner;
+        private CompositionShadow? _pronShadowOuter;
 
         // 换行动画：最外层阴影包裹（而非 TextBlock 本身）交给同一实例，
         // 文字与两层阴影在同一视觉子树里同步淡入淡出/滑入
@@ -187,7 +188,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 Foreground = _mainBrush ?? new SolidColorBrush(Colors.White),
                 Visibility = Visibility.Collapsed,
             };
-            // 双层阴影包裹（内层套文字，外层套内层）：DevWinUI 默认模板为
+            // 双层阴影包裹（内层套文字，外层套内层）：移植的默认模板为
             // Grid{阴影Border + Content}，影子 SpriteVisual 挂在文字后方的 Border 上，
             // 字形 mask 见 RefreshShadowMask；强度 >50% 时外层以剩余强度叠加
             _mainShadowInner = CreateTextShadow(main);
@@ -200,7 +201,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // 包裹层自身也要贴住内容宽度（内外两层都要）：SpriteVisual 固定在 Control 原点，
             // 而包裹层在 StackPanel 里默认被拉伸到面板宽度（= 较宽的主行宽度），居中的窄
             // 翻译行内容相对原点偏右，阴影整体左偏 (Control宽-内容宽)/2——翻译行阴影左偏
-            // 的根因。DevWinUI 只同步阴影尺寸不同步偏移，按"内容撑满 Control"设计，必须贴住。
+            // 的根因。CompositionShadow 只同步阴影尺寸不同步偏移，按"内容撑满 Control"设计，必须贴住。
             _mainShadowInner.HorizontalAlignment = HorizontalAlignment.Center;
             _mainShadowOuter.HorizontalAlignment = HorizontalAlignment.Center;
             _transShadowInner.HorizontalAlignment = HorizontalAlignment.Center;
@@ -224,10 +225,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             return (panel, (pron, main, trans));
         }
 
-        private static DevWinUI.CompositionShadow CreateTextShadow(FrameworkElement content)
+        private static CompositionShadow CreateTextShadow(FrameworkElement content)
         {
             // 零偏移光晕式阴影：保可读性且不喧宾夺主；颜色/强度随用户设置（见 ApplyColor）
-            return new DevWinUI.CompositionShadow
+            return new CompositionShadow
             {
                 Content = content,
                 BlurRadius = DesktopLyricsShadow.BlurRadius,
@@ -239,7 +240,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         /// <summary>重取四个字形 AlphaMask（主/翻译 × 内/外层）。文档不保证 GetAlphaMask
         /// 返回的 brush 随文本/字体变化自动更新，换字与样式变化后需显式刷新。
-        /// 外层的 Content 不是 TextBlock，DevWinUI 的自动 mask 对它退化为矩形阴影，
+        /// 外层的 Content 不是 TextBlock，CompositionShadow 的自动 mask 对它退化为矩形阴影，
         /// 必须手动喂与内层相同的字形 mask。先同步兜底一次，再推到低优先级队列——
         /// 让新文本先完成一次布局后取正确几何，避免阴影形状滞后一拍。
         /// 阴影关闭（强度 0）时跳过 mask 维护。</summary>
@@ -357,8 +358,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
 
         private static void ApplyShadowLayer(
-            DevWinUI.CompositionShadow? inner,
-            DevWinUI.CompositionShadow? outer,
+            CompositionShadow? inner,
+            CompositionShadow? outer,
             Windows.UI.Color color,
             float innerOpacity,
             float outerOpacity)

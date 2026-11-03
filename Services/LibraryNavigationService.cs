@@ -1,4 +1,3 @@
-using DevWinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Media.Animation;

@@ -1,4 +1,4 @@
-using DevWinUI;
+using WinUIMusicPlayer.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -56,6 +56,7 @@ namespace WinUIMusicPlayer.View
         public MainPage(MainViewModel viewModel)
         {
             InitializeComponent();
+            WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             ViewModel = viewModel;
             DataContext = this;

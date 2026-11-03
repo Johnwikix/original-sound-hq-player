@@ -7,7 +7,7 @@ using WinUIMusicPlayer.ViewModel;
 namespace WinUIMusicPlayer.View
 {
     /// <summary>
-    /// 设置�?顶部 SelectorBar 分区切换,各分区承载于 View/SubView/Settings 下的 UserControl�?
+    /// 璁剧疆椤?椤堕儴 SelectorBar 鍒嗗尯鍒囨崲,鍚勫垎鍖烘壙杞戒簬 View/SubView/Settings 涓嬬殑 UserControl銆?
     /// </summary>
     public sealed partial class SettingsPage : Page
     {
@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer.View
         public SettingsPage()
         {
             InitializeComponent();
+            WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
             NavigationCacheMode = NavigationCacheMode.Disabled;

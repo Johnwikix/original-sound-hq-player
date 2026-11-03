@@ -25,7 +25,7 @@ public enum AppLicenseState
 
 /// <summary>Store 许可状态源：非活跃或无法确认许可时按 LicensePolicy 限制功能；
 /// 许可按包身份（PFN）+ 账户判定、与签名渠道无关，查询失败即受限（fail-closed），
-/// 后续查询失败保持上次确认的状态。</summary>
+/// 后续查询失败保留已确认许可，但已知到期的试用仍在本地转为受限。</summary>
 public sealed class LicenseService : IDisposable
 {
     private const string ProductId = "9NFW1RPPT999";
@@ -117,7 +117,7 @@ public sealed class LicenseService : IDisposable
         _refreshTimer.Interval = RefreshInterval;
         _refreshTimer.Tick += OnRefreshTick;
         _refreshTimer.Start();
-        // UI 时钟只计算剩余天数，不触发 Store IO；复用方法委托，避免每次 Tick 分配闭包。
+        // UI 时钟更新剩余天数并按已知期限限制试用，不触发 Store IO；复用方法委托。
         _trialClockTimer = _queue.CreateTimer();
         _trialClockTimer.Interval = TimeSpan.FromMinutes(1);
         _trialClockTimer.Tick += OnTrialClockTick;
@@ -147,7 +147,7 @@ public sealed class LicenseService : IDisposable
                 ApplyState(AppLicenseState.FullLicense, null);
                 return true;
             case "trial":
-                var trialEnd = DateTimeOffset.Now.AddDays(3);
+                var trialEnd = _timeProvider.GetUtcNow().AddDays(3);
                 _logger.LogInformation("许可覆盖文件：试用中（{Expiration} 到期）", trialEnd);
                 ApplyState(AppLicenseState.TrialActive, trialEnd);
                 return true;
@@ -222,7 +222,9 @@ public sealed class LicenseService : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Store 许可查询失败，保持当前状态（{State}）", State);
+                    // 查询失败可以保留有效许可，但不能延长已知到期的试用。
+                    if (!_disposed) ApplyState(State, TrialExpiration);
+                    _logger.LogWarning(ex, "Store 许可查询失败，保持当前有效状态（{State}）", State);
                 }
                 // 在途查询期间的请求合并为一次补查，所有调用方等待补查完成。
             } while (_refreshPending && !_disposed);
@@ -274,6 +276,12 @@ public sealed class LicenseService : IDisposable
 
     private void ApplyState(AppLicenseState next, DateTimeOffset? expiration)
     {
+        // 时钟、查询和迟到缓存共用此入口，避免已过期的 IsActive 缓存重新解锁试用。
+        if (next == AppLicenseState.TrialActive && expiration is { } deadline && deadline <= _timeProvider.GetUtcNow())
+        {
+            next = AppLicenseState.LicenseInactive;
+            expiration = null;
+        }
         var previous = State;
         var previousExpiration = TrialExpiration;
         State = next;

@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>İşleniyor...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>Albüm özellikleri</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>Albüm ayrıntıları</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>Değişiklikler işleniyor, lütfen bekleyin...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>Kapağı çevrimiçi eşleştir</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>Yerel diske kaydet</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>Kapağı düzenle</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>Başlık</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>Yıl</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>Meta veriler bu albümdeki tüm şarkılara kaydedilsin mi?</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>Dosyaya yaz</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>Kapat</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>Müzik ayrıntıları</value>
@@ -2260,7 +2236,7 @@
     <value>Yukarıdaki önbellek konumunun WebDav alt klasörünü kullanır.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Kapaklar ve WebDAV bu klasörü paylaşır. Değiştirmek, önbellekleri isteğe bağlı oluşturur ve mevcut dosyaları korur.</value>
+    <value>Kapaklar, WebDAV sesi, müzik özellikleri ve ses yüksekliği önbellekleri için ortak klasör. Yeni konum gerektiğinde doldurulur; eski konumdaki dosyalar korunur.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>Güvenli HTTPS bağlantısı kurulamıyor. NAS sertifikasını ve TLS ayarlarını denetleyin.</value>
@@ -2587,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Müziğinizle başlayın</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Bir müzik klasörü ekleyin. Dinledikleriniz ve favorileriniz önerilerinizi şekillendirsin.</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>Müzik klasörü ekle</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Müzik kaynaklarına erişilemiyor. Bağlantıyı kontrol edin veya kaynaklarınızı yönetin.</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>Müzik kaynaklarına erişilemiyor. Bağlantıyı kontrol edin veya kaynaklarınızı yönetin.</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>Yeniden dene</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>Kitaplığınızı keşfedin</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>Sizin için</value></data>
@@ -2652,4 +2628,40 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>LRC şarkı sözlerini yerel olarak kaydet</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Çalan parçayı bul</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Çalan parçayı bul</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Arka planda müzik analizi</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Benzer tarzdaki şarkıları keşfetmek ve ana sayfa önerilerini iyileştirmek için tını, ritim ve diğer müzik özelliklerini analiz eder.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Tamamlanan {0} / bulunan {1} · sırada {2} · başarısız {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Yeni müzik bekleniyor</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Analiz kapalı</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Uygun dosyalar denetleniyor</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Analiz ediliyor</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Analiz kesildi; yeniden denenecek</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Benzer müzik tarzı</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fm benzer önerileri</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Yalnızca yerel dosyalar ve tamamen önbelleğe alınmış WebDAV parçaları analiz edilir; ses indirilmez. Bir CPU çekirdeğinde %10 çalışma oranı hedeflenir ve analiz işlemi boşta kaldığında kapanır.</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Albüm bilgileri</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Parçalar</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} dosya yazılamadı: {1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>Spektrum</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>Görünümü sıfırla</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>Spektrum seçenekleri</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>Kanal</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>Birleşik</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>Sol</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>Sağ</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>Frekans çözünürlüğü (FFT)</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>En düşük düzey (dBFS)</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>En yüksek düzey (dBFS)</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>Ses analiz ediliyor…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>Spektrumu görmek için ses dosyasının tamamı önbelleğe alınmalıdır.</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>Bu parça analiz edilemedi. Yeniden deneyin.</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>Stereo karışım</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Ses spektrogramı</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Tekerlek zamanı, Shift+tekerlek frekansı yakınlaştırır. Sürükleme kaydırır; Sol/Sağ zamanı kaydırır, Yukarı/Aşağı frekansı yakınlaştırır, Home sıfırlar. Çalan parçada aramak için çift tıklayın.</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Görünümü sıfırla</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spektrum seçenekleri</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Opak mod (seçili değilken düşük düzeyler saydam)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Opak mod</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Tekerlek: zamanı yakınlaştır · Shift+tekerlek: frekansı yakınlaştır · Sürükleme: kaydır</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Henüz yeni öneri yok. Favorilerde veya çalma listelerinde aynı adı taşıyan şarkılar hariç tutulur. Daha fazla müzik ekleyip yeniden deneyin.</value></data>
 </root>

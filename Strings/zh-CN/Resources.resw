@@ -507,29 +507,8 @@
   <data name="Processing" xml:space="preserve">
     <value>处理中...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>专辑属性</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>专辑详情</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>正在处理保存，请稍候...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>在线匹配封面</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>保存到本地</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>编辑封面</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>标题</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>年份</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>是否确定保存元信息至专辑内所有音乐</value>
@@ -542,9 +521,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>写入文件</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>关闭</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>音乐详情</value>
@@ -2262,7 +2238,7 @@
     <value>跟随上方缓存位置，自动存放在 WebDav 子目录。</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>封面与 WebDAV 共用此目录；更改后按需建立缓存，旧文件保留。</value>
+    <value>封面、WebDAV 音频及音乐风格/响度分析缓存共用此目录；更改后按需建立缓存，旧目录文件保留。</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>无法建立 HTTPS 安全连接。请检查 NAS 证书和 TLS 设置。</value>
@@ -2589,7 +2565,7 @@ SHA-256：{5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>从你的音乐开始</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>添加音乐文件夹，探索曲库中的旋律。随着收听和收藏，首页会逐渐了解你的偏好。</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>添加音乐文件夹</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音乐来源暂时不可用。请检查连接，或在音乐来源页面管理你的音乐。</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>音乐来源暂时不可用。请检查连接，或在音乐来源页面管理你的音乐。</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>重试</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>探索曲库</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>为你推荐</value></data>
@@ -2654,4 +2630,40 @@ SHA-256：{5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>保存歌词lrc到本地</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>定位当前播放歌曲</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>定位当前播放歌曲</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>后台音乐分析</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>分析音乐的音色、节奏等特征，帮助发现风格相近的歌曲，改善首页推荐。</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>已完成 {0} / 已发现 {1} · 排队 {2} · 失败 {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>等待新增曲目</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>分析已关闭</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>正在检查可分析文件</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>正在分析</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>分析中断，稍后重试</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>音乐风格相似</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fm 相似推荐</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>仅分析本地文件和已完整缓存的 WebDAV 曲目，不下载音频。以单核 10% CPU 占空比在后台运行，空闲时退出分析进程。</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>专辑信息</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>曲目</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} 个文件未能写入：{1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>频谱分析</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>重置视图</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>频谱选项</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>声道</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>合并</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>左声道</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>右声道</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>频率分辨率（FFT）</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>强度下限（dBFS）</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>强度上限（dBFS）</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>正在分析音频…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>完整缓存后可查看此歌曲的频谱。</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>暂时无法分析此歌曲，请重试。</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>立体声下混</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>音频声谱图</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>滚轮横向缩放，Shift+滚轮纵向缩放；拖动平移，左右键横向平移，上下键纵向缩放，Home 重置；双击跳转当前歌曲。</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>重置视图</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>频谱选项</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>不透明模式（未选中时为低响度透明）</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>不透明模式</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>滚轮缩放时间 · Shift+滚轮缩放频率 · 拖动平移</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>暂无新的推荐。收藏和播放列表中的同名歌曲不再重复推荐；可以添加更多音乐后再试。</value></data>
 </root>

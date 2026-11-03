@@ -183,11 +183,11 @@ namespace WinUIMusicPlayer.Helper
 {
     public static class DialogHelper
     {
+        public static Task ShowThemedAsync(this ContentDialog dialog, XamlRoot root) => Task.CompletedTask;
         public static Task<bool> ShowConfirmAsync(XamlRoot root, string key) => Task.FromResult(false);
         public static Task<string?> ShowArtistPickerAsync(XamlRoot root, IReadOnlyList<string> names) => Task.FromResult<string?>(names[0]);
     }
 }
-namespace DevWinUI { public static class DialogExtensions { public static Task ShowThemedAsync(this ContentDialog dialog, XamlRoot root) => Task.CompletedTask; } }
 namespace WinUIMusicPlayer.View.SubView { public sealed class MusicDetailsWindow(Music music) : Window { } }
 namespace WinUIMusicPlayer.View
 {

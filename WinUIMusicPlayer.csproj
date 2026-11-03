@@ -14,8 +14,8 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
-	<!-- 本地诊断源码及其生成文件不属于主程序；Git 忽略规则不影响 SDK 的默认文件扫描。 -->
-	<DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
+	<!-- 本地诊断、回归工程及其生成文件不属于主程序；Git 忽略规则不影响 SDK 默认扫描。 -->
+	<DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;_tools\**</DefaultItemExcludes>
 	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
   <ItemGroup>
@@ -74,7 +74,9 @@
   <ItemGroup>
 	<!-- 独立播放进程（AOT 单文件，仓库内为发布产物暂存）：与应用主程序、ffmpeg DLL 同铺应用根，
 	     AutoGen 默认按 exe 目录定位 DLL，无需任何路径适配 -->
-	<None Include="Player\*.exe" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+	<None Remove="Player\AudioAnalysisWorker.exe" />
+    <None Include="Player\AudioAnalysisWorker.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="AudioAnalysisWorker.exe" />
+    <None Include="Player\*.exe" Exclude="Player\AudioAnalysisWorker.exe" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
 	<None Include="Player\*.dll" Exclude="Player\wavpackdll.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
 
 	<!-- FFmpeg 9.0.1 shared DLL（单套分发，全程序唯一样本）：主程序进程内转码与独立播放进程
@@ -85,6 +87,7 @@
 	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     <None Include="Libraries\WavPack\x64\wavpackdll.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="wavpackdll.dll" />
     <None Include="Libraries\WavPack\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\WavPack.txt" />
+    <None Update="Libraries\DevWinUI\LICENSE-Controls.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-Controls.txt" />
     <None Update="Libraries\DevWinUI\LICENSE-StoreCarousel.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-StoreCarousel.txt" />
   </ItemGroup>
 
@@ -111,7 +114,6 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.ColorPicker" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
-    <PackageReference Include="DevWinUI" Version="10.8.0" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
@@ -398,5 +400,80 @@
       <_SatoriNormalizedRuntimeAsset Remove="@(_SatoriNormalizedRuntimeAsset)" />
       <_SatoriNormalizedCopyLocal Remove="@(_SatoriNormalizedCopyLocal)" />
     </ItemGroup>
+  </Target>
+  <ItemGroup>
+    <AnalysisWorkerSources Include="External\AudioAnalysisWorker\*.cs;External\AudioAnalysisWorker\*.csproj;Services\AudioAnalysis\Core\*.cs;Assets\icon.ico" />
+  </ItemGroup>
+  <!-- AudioPlayer 输入含 IPC 共享源码 BassPlayerIpc.Shared 与内嵌的 dsp-tables.bin；递归 glob 必须排除
+       obj/bin，否则发布自身生成的 .cs 会让哈希漂移导致无限重发布；pubxml 不经命令行使用，不纳入。 -->
+  <ItemGroup>
+    <AudioPlayerSources Include="External\AudioPlayer\**\*.cs;External\AudioPlayer\AudioPlayer.csproj;External\AudioPlayer\Assets\icon.ico;External\AudioPlayer\AudioEnhancement\Coefficients\Assets\dsp-tables.bin;External\BassPlayerIpc.Shared\*.cs;External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj"
+                        Exclude="External\AudioPlayer\obj\**;External\AudioPlayer\bin\**" />
+  </ItemGroup>
+  <!-- Player\ 下暂存的两个独立进程 exe 均为 NativeAOT 产物，不可字节复现；时间戳增量会被 git 操作重置后
+       触发无谓重发布并污染仓库。改用源码内容哈希门控：hash 文件与 exe 一起提交，pull 后哈希一致即跳过，
+       源码真实变更才重新发布。 -->
+  <UsingTask TaskName="HashSourceInputs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Hash ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Using Namespace="System.Security.Cryptography" />
+      <Using Namespace="System.Text" />
+      <Code Type="Fragment" Language="C#">
+        <![CDATA[
+        var sb = new StringBuilder();
+        using (var sha = SHA256.Create())
+        {
+            foreach (string path in Files.Select(f => f.ItemSpec).OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+            {
+                if (!File.Exists(path)) { Hash = "missing:" + path; return true; }
+                byte[] fileHash;
+                using (Stream stream = File.OpenRead(path)) fileHash = sha.ComputeHash(stream);
+                foreach (byte b in fileHash) sb.Append(b.ToString("x2"));
+                sb.Append('|');
+            }
+            byte[] final = sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+            sb.Clear();
+            foreach (byte b in final) sb.Append(b.ToString("x2"));
+        }
+        Hash = sb.ToString();
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <Target Name="PublishAudioAnalysisWorker" BeforeTargets="PrepareForBuild" Condition="'$(Platform)' == 'x64'">
+    <HashSourceInputs Files="@(AnalysisWorkerSources->'%(FullPath)')">
+      <Output TaskParameter="Hash" PropertyName="WorkerInputsHash" />
+    </HashSourceInputs>
+    <ReadLinesFromFile File="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash" Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash')">
+      <Output TaskParameter="Lines" PropertyName="WorkerKnownHash" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <SkipWorkerPublish Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.exe') and '$(WorkerKnownHash)' == '$(WorkerInputsHash)'">true</SkipWorkerPublish>
+    </PropertyGroup>
+    <Message Text="AudioAnalysisWorker 源码未变化，跳过重新发布" Importance="high" Condition="'$(SkipWorkerPublish)' == 'true'" />
+    <Exec Condition="'$(SkipWorkerPublish)' != 'true'"
+          Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioAnalysisWorker\AudioAnalysisWorker.csproj&quot; -c Release -r win-x64 -p:UseSharedCompilation=false -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash" Lines="$(WorkerInputsHash)" Overwrite="true" Condition="'$(SkipWorkerPublish)' != 'true'" />
+  </Target>
+  <Target Name="PublishAudioPlayer" BeforeTargets="PrepareForBuild" Condition="'$(Platform)' == 'x64'">
+    <HashSourceInputs Files="@(AudioPlayerSources->'%(FullPath)')">
+      <Output TaskParameter="Hash" PropertyName="AudioPlayerInputsHash" />
+    </HashSourceInputs>
+    <ReadLinesFromFile File="$(MSBuildProjectDirectory)\Player\AudioPlayer.hash" Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioPlayer.hash')">
+      <Output TaskParameter="Lines" PropertyName="AudioPlayerKnownHash" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <SkipAudioPlayerPublish Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioPlayer.exe') and '$(AudioPlayerKnownHash)' == '$(AudioPlayerInputsHash)'">true</SkipAudioPlayerPublish>
+    </PropertyGroup>
+    <Message Text="AudioPlayer 源码未变化，跳过重新发布" Importance="high" Condition="'$(SkipAudioPlayerPublish)' == 'true'" />
+    <Exec Condition="'$(SkipAudioPlayerPublish)' != 'true'"
+          Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioPlayer\AudioPlayer.csproj&quot; -c Release -r win-x64 -p:Platform=x64 -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\Player\AudioPlayer.hash" Lines="$(AudioPlayerInputsHash)" Overwrite="true" Condition="'$(SkipAudioPlayerPublish)' != 'true'" />
   </Target>
 </Project>

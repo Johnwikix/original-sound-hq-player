@@ -30,6 +30,7 @@ public sealed partial class HomeHeroCard : UserControl
     public HomeHeroCard()
     {
         InitializeComponent();
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
         _shadow = new CarouselArtworkShadow(Artwork, ShadowHost);
         ActionPanel.RenderTransform = _textTransform;
         // DevWinUI 10.8.0 StoreCarousel.RunTextAnimation：整组、无错峰、无附加 easing。
@@ -39,7 +40,7 @@ public sealed partial class HomeHeroCard : UserControl
         AddTransition(_textTransform, "ScaleY", .8, 1);
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-        SizeChanged += OnSizeChanged;
+
     }
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
@@ -88,17 +89,31 @@ public sealed partial class HomeHeroCard : UserControl
         ActionPanel.Visibility = Theme is null ? Visibility.Collapsed : Visibility.Visible;
         if (Theme is not null && _settings.AnimationsEnabled) _textTransition.Begin();
     }
-    private void OnSizeChanged(object sender, SizeChangedEventArgs args)
+    private double _measureWidth = double.NaN;
+    private double _measureHeight = double.NaN;
+    /// <inheritdoc />
+    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
     {
-        bool compact = args.NewSize.Width < 360 || args.NewSize.Height < 220;
-        double margin = compact ? 12 : 40;
-        ActionPanel.Margin = compact ? new Thickness(12) : new Thickness(40, 24, 24, 24);
-        ActionPanel.MaxWidth = System.Math.Min(300, System.Math.Max(0, args.NewSize.Width - margin - (compact ? 12 : 24)));
-        TitleText.FontSize = compact ? 20 : 28;
-        TitleText.MaxLines = args.NewSize.Height < 170 ? 1 : 2;
-        DescriptionText.Visibility = args.NewSize.Height < 260 ? Visibility.Collapsed : Visibility.Visible;
-        PlayButton.MinWidth = System.Math.Min(120, ActionPanel.MaxWidth);
-        PlayButton.MaxWidth = ActionPanel.MaxWidth;
+        WinUIMusicPlayer.Services.UiLayoutDiagnostics.Measure(this, availableSize);
+        // 响应父级约束，不在 SizeChanged 中用舍入后的 ActualSize 反写并重新触发布局。
+        if (double.IsFinite(availableSize.Width) && double.IsFinite(availableSize.Height) &&
+            (_measureWidth != availableSize.Width || _measureHeight != availableSize.Height))
+        {
+            double width = availableSize.Width;
+            double height = availableSize.Height;
+            bool compact = width < 360 || height < 220;
+            double margin = compact ? 12 : 40;
+            ActionPanel.Margin = compact ? new Thickness(12) : new Thickness(40, 24, 24, 24);
+            ActionPanel.MaxWidth = System.Math.Min(300, System.Math.Max(0, width - margin - (compact ? 12 : 24)));
+            TitleText.FontSize = compact ? 20 : 28;
+            TitleText.MaxLines = height < 170 ? 1 : 2;
+            DescriptionText.Visibility = height < 260 ? Visibility.Collapsed : Visibility.Visible;
+            PlayButton.MinWidth = System.Math.Min(120, ActionPanel.MaxWidth);
+            PlayButton.MaxWidth = ActionPanel.MaxWidth;
+            _measureWidth = width;
+            _measureHeight = height;
+        }
+        return base.MeasureOverride(availableSize);
     }
     private void UpdateTone(Color color)
     {

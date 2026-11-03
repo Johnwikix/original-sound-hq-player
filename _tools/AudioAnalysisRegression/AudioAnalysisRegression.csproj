@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><NuGetAudit>false</NuGetAudit></PropertyGroup>
+<ItemGroup>
+<Compile Include="../../Services/Recommendations/RecommendationSources.cs;../../Services/Recommendations/RecommendationSignals.cs" />
+<Compile Include="../../Services/Recommendations/RecommendationEvidence.cs" />
+<Compile Include="../../Services/Recommendations/NeighborScoring.cs" />
+<Compile Include="../../Services/AppLifecycle.cs" />
+<Compile Include="../../Services/AudioAnalysis/*.cs;../../Services/AudioAnalysis/Core/*.cs;../../Model/Recommendations/HomeRecommendation.cs" />
+<Compile Include="../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs" />
+<TrimmerRootAssembly Include="SQLite-net" /><TrimmerRootAssembly Include="SQLitePCLRaw.core" />
+<PackageReference Include="sqlite-net-pcl" Version="1.11.285" /><PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
+<Content Include="../../Player/AudioAnalysisWorker.exe" Link="AudioAnalysisWorker.exe" CopyToOutputDirectory="PreserveNewest" />
+<Content Include="../../Libraries/FFmpeg/x64/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+</ItemGroup></Project>

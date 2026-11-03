@@ -13,6 +13,10 @@ public sealed partial class MusicDetailControl : UserControl
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel), typeof(MusicDetailsViewModel), typeof(MusicDetailControl), new PropertyMetadata(null, ViewModelChanged));
     public MusicDetailsViewModel? ViewModel { get => (MusicDetailsViewModel?)GetValue(ViewModelProperty); set => SetValue(ViewModelProperty, value); }
+    /// <summary>是否显示内建标题行；独立窗口把标题放到应用标题栏时关闭。</summary>
+    public static readonly DependencyProperty ShowHeaderProperty = DependencyProperty.Register(
+        nameof(ShowHeader), typeof(bool), typeof(MusicDetailControl), new PropertyMetadata(true, ShowHeaderChanged));
+    public bool ShowHeader { get => (bool)GetValue(ShowHeaderProperty); set => SetValue(ShowHeaderProperty, value); }
     public MusicDetailsEditorViewModel? Editor => ViewModel?.Editor;
     public WinUIMusicPlayer.Model.Music? Music => ViewModel?.Music;
     /// <summary>获取共享封面动画的目的元素。</summary>
@@ -27,11 +31,19 @@ public sealed partial class MusicDetailControl : UserControl
         InitializeComponent();
         CoordinatedElements = [HeroText];
         SizeChanged += OnSizeChanged;
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
+    private static void ShowHeaderChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+        => ((MusicDetailControl)sender).HeaderBar.Visibility = (bool)args.NewValue ? Visibility.Visible : Visibility.Collapsed;
     private static void ViewModelChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (MusicDetailControl)sender;
+        if (args.OldValue is MusicDetailsViewModel old) old.Spectrogram.SetActive(false);
+        // 清空/替换中间节点之前移除全部嵌套监听，避免生成绑定继续保留旧的 Spectrogram 等子 VM。
+        control.Bindings?.StopTracking();
+        // x:Bind 遇到空的中间 ViewModel 时会跳过目标赋值，退出详情必须显式清空子视图上下文。
+        control.SpectrumView.ViewModel = control.ViewModel?.Spectrogram;
         control.DismissMenus();
         control.Artwork.Music = control.Music;
         control.CoverPreviewImage.Source = null;
@@ -40,18 +52,31 @@ public sealed partial class MusicDetailControl : UserControl
         control.IdentityScroll.ChangeView(null, 0, null, true);
         control.DetailScroll.ChangeView(null, 0, null, true);
         control.FileScroll.ChangeView(null, 0, null, true);
-        control.Bindings?.Update();
+        if (control.ViewModel is not null) control.Bindings?.Update();
         if (control.ViewModel is null) control.ActivityIndicator.IsActive = false;
     }
     private void Confirm_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
     private void Cancel_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
-    private void OnUnloaded(object sender, RoutedEventArgs args) => DismissMenus();
+    private void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        Bindings.Update();
+        UpdateSpectrumActive();
+    }
+    private void OnUnloaded(object sender, RoutedEventArgs args)
+    {
+        ViewModel?.Spectrogram.SetActive(false);
+        Bindings.StopTracking();
+        DismissMenus();
+    }
+    private void WorkspaceTabs_SelectionChanged(object sender, SelectionChangedEventArgs args) => UpdateSpectrumActive();
+    private void UpdateSpectrumActive()
+        => ViewModel?.Spectrogram.SetActive(IsLoaded && ReferenceEquals(WorkspaceTabs.SelectedItem, SpectrumTab));
     private void OnSizeChanged(object sender, SizeChangedEventArgs args)
     {
         // 矮窗口优先保留侧栏，避免封面占去编辑区的垂直空间；极窄时才继续堆叠。
-        bool shortWindow = args.NewSize.Height < 640;
-        bool stacked = args.NewSize.Width < 960 && (!shortWindow || args.NewSize.Width < 760);
-        bool compact = args.NewSize.Width < 960 || shortWindow;
+        bool shortWindow = args.NewSize.Height < 540;
+        bool stacked = args.NewSize.Width < 810 && (!shortWindow || args.NewSize.Width < 760);
+        bool compact = args.NewSize.Width < 810 || shortWindow;
         double gutter = compact ? 24 : 32;
         double coverSize = stacked ? 112 : compact ? 200 : 240;
         double columnGap = compact ? 24 : 36;

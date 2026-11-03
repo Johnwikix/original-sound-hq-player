@@ -292,6 +292,7 @@ namespace WinUIMusicPlayer.Services
             var settings = new IpcSetting
             {
                 OutputMode = AppSettings.OutputMode,
+                CacheRoot = AppSettings.MusicCoverCache,
                 BassOutputDeviceId = AppSettings.BassOutputDeviceId,
                 WasapiEndpointId = AppSettings.WasapiEndpointId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
@@ -310,9 +311,14 @@ namespace WinUIMusicPlayer.Services
             };
             // 受限时关闭高级输出，沿用引擎的保进度重建及 PCM/立体声回退。
             _license.ApplyOutputRestrictions(ref settings);
-            Span<byte> buf = stackalloc byte[BinarySerializer.IpcSettingSize];
-            int len = BinarySerializer.WriteIpcSetting(buf, settings);
-            Publish(CommandId.UpdateSettings, buf[..len]);
+            int capacity = BinarySerializer.IpcSettingSize + 4 + System.Text.Encoding.UTF8.GetByteCount(settings.CacheRoot ?? "");
+            byte[] buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(capacity);
+            try
+            {
+                int len = BinarySerializer.WriteIpcSetting(buffer, settings);
+                Publish(CommandId.UpdateSettings, buffer.AsSpan(0, len));
+            }
+            finally { System.Buffers.ArrayPool<byte>.Shared.Return(buffer); }
         }
 
         /// <summary>完整绑定集合随有序命令发送，执行确认后才更新已应用快照。</summary>

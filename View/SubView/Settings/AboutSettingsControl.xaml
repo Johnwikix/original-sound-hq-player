@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dev="using:DevWinUI"
+    xmlns:localControls="using:WinUIMusicPlayer.Controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
@@ -130,7 +130,7 @@
                                 <TextBlock x:Uid="CoverDiskCache" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="*,Auto">
-                                <dev:AutoScrollView
+                                <localControls:AutoScrollView
                                     x:Name="AutoScrollViewControl"
                                     Grid.Column="0"
                                     Margin="0,0,10,0"
@@ -144,7 +144,7 @@
                                         TextAlignment="Right"
                                         TextTrimming="CharacterEllipsis"
                                         TextWrapping="NoWrap" />
-                                </dev:AutoScrollView>
+                                </localControls:AutoScrollView>
                                 <Button
                                     x:Uid="ChangeMusicCoverCache"
                                     Grid.Column="1"

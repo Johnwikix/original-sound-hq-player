@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>Wird verarbeitet...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>Albumeigenschaften</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>Albumdetails</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>Speichervorgang läuft, bitte warten...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>Online-Cover-Abgleich</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>Lokal speichern</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>Cover bearbeiten</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>Titel</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>Jahr</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>Metadaten wirklich für alle Titel im Album speichern?</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>In Datei schreiben</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>Schließen</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>Musikdetails</value>
@@ -2260,7 +2236,7 @@
     <value>Verwendet den Unterordner WebDav am oben gewählten Cache-Speicherort.</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>Cover und WebDAV nutzen diesen Ordner. Nach einer Änderung wird der Cache bei Bedarf aufgebaut; vorhandene Dateien bleiben erhalten.</value>
+    <value>Gemeinsamer Ordner für Cover, WebDAV-Audio sowie Musikmerkmale und Lautheitsanalyse. Ein neuer Speicherort wird bei Bedarf gefüllt; alte Dateien bleiben erhalten.</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>Keine sichere HTTPS-Verbindung möglich. Prüfen Sie NAS-Zertifikat und TLS-Einstellungen.</value>
@@ -2587,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Platz für deine Musik</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>Füge einen Musikordner hinzu. Deine Hörgewohnheiten und Favoriten prägen die Auswahl.</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>Musikordner hinzufügen</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>Deine Musikquellen sind nicht verfügbar. Prüfe die Verbindung oder verwalte deine Quellen.</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>Deine Musikquellen sind nicht verfügbar. Prüfe die Verbindung oder verwalte deine Quellen.</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>Erneut versuchen</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>Deine Sammlung entdecken</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>Für dich</value></data>
@@ -2652,4 +2628,40 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>Songtext als .lrc lokal speichern</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Aktuellen Titel finden</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Aktuellen Titel finden</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>Musikanalyse im Hintergrund</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>Analysiert Klangfarbe, Rhythmus und weitere Merkmale, um stilistisch ähnliche Titel zu entdecken und Empfehlungen auf der Startseite zu verbessern.</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>Fertig {0} / gefunden {1} · wartend {2} · Fehler {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>Warten auf neue Musik</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>Analyse deaktiviert</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>Geeignete Dateien werden geprüft</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>Analyse läuft</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>Analyse unterbrochen; neuer Versuch folgt</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>Ähnlicher Musikstil</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Ähnlich auf Last.fm</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>Nur lokale Dateien und vollständig zwischengespeicherte WebDAV-Titel werden analysiert, ohne Audio herunterzuladen. Ziel sind 10 % Arbeitsanteil eines CPU-Kerns; bei Leerlauf wird der Analyseprozess beendet.</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>Albuminformationen</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>Titel</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} Datei(en) konnten nicht geschrieben werden: {1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>Spektrum</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>Ansicht zurücksetzen</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>Spektrumoptionen</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>Kanal</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>Kombiniert</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>Links</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>Rechts</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>Frequenzauflösung (FFT)</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>Minimaler Pegel (dBFS)</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>Maximaler Pegel (dBFS)</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>Audio wird analysiert…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>Die Audiodatei muss vollständig zwischengespeichert sein.</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>Dieser Titel konnte nicht analysiert werden. Erneut versuchen.</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>Stereo-Downmix</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Audio-Spektrogramm</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Mausrad zoomt die Zeit, Umschalt+Mausrad die Frequenz. Ziehen verschiebt; Links/Rechts verschiebt die Zeit, Auf/Ab zoomt die Frequenz, Pos1 setzt zurück. Doppelklick sucht im laufenden Titel.</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Ansicht zurücksetzen</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spektrumoptionen</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Undurchsichtiger Modus (deaktiviert: leise Signale transparent)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Undurchsichtiger Modus</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Mausrad: Zeit zoomen · Umschalt+Mausrad: Frequenz zoomen · Ziehen: Verschieben</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Noch keine neuen Empfehlungen. Titel mit Namen aus Favoriten oder Playlists werden ausgeschlossen. Füge weitere Musik hinzu und versuche es erneut.</value></data>
 </root>

@@ -15,6 +15,7 @@ public sealed class RemoteAudioCache
 {
     private readonly object _gate = new();
     private readonly HashSet<string> _active = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, int> _readers = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _reserved = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _deleteOnRelease = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _initialized = new(StringComparer.OrdinalIgnoreCase);
@@ -66,6 +67,26 @@ public sealed class RemoteAudioCache
         Changed?.Invoke();
         ContentsChanged?.Invoke();
     }
+    /// <summary>仅租用当前版本的完整文件，不建立目录、预留下载或清理partial。</summary>
+    public CacheFile? AcquireCompleteRead(string resource, WebDavEntry entry)
+    {
+        lock (_gate)
+        {
+            if (_directory.Length == 0 || entry.Length <= 0) return null;
+            string path = Path.Combine(_directory, GetKey(resource, entry) + ".audio");
+            if ((_active.Contains(path) && !_readers.ContainsKey(path)) || _deleteOnRelease.Contains(path)) return null;
+            try
+            {
+                if (new FileInfo(path) is not { Exists: true } file || file.Length != entry.Length) return null;
+                var lease = new CacheFile(this, path, entry.Length, true, _generation);
+                _active.Add(path);
+                _readers[path] = _readers.GetValueOrDefault(path) + 1;
+                return lease;
+            }
+            catch (IOException) { return null; }
+            catch (UnauthorizedAccessException) { return null; }
+        }
+    }
     public CacheFile? Acquire(string resource, WebDavEntry entry)
     {
         bool changed = false;
@@ -79,7 +100,7 @@ public sealed class RemoteAudioCache
             if (_directory.Length == 0 || entry.Length <= 0) return null;
             string key = GetKey(resource, entry);
             string complete = Path.Combine(_directory, key + ".audio");
-            if (_active.Contains(complete)) return null;
+            if ((_active.Contains(complete) && !_readers.ContainsKey(complete)) || _deleteOnRelease.Contains(complete)) return null;
             try
             {
                 Directory.CreateDirectory(_directory);
@@ -88,9 +109,13 @@ public sealed class RemoteAudioCache
                         try { File.Delete(partial); } catch (IOException) { }
                 if (File.Exists(complete) && new FileInfo(complete).Length == entry.Length)
                 {
-                    File.SetLastWriteTimeUtc(complete, DateTime.UtcNow);
+                    // LRU触碰失败不能让正在被分析只读租用的离线文件退回网络。
+                    try { File.SetLastWriteTimeUtc(complete, DateTime.UtcNow); }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
                     var lease = new CacheFile(this, complete, entry.Length, true, _generation);
                     _active.Add(complete);
+                    _readers[complete] = _readers.GetValueOrDefault(complete) + 1;
                     return lease;
                 }
                 // 无强版本不跨 Range 响应拼接。普通顺序播放仍能使用网络。
@@ -130,11 +155,21 @@ public sealed class RemoteAudioCache
     {
         lock (_gate)
         {
+            if (_readers.TryGetValue(file, out int readers) && readers > 1)
+            {
+                _readers[file] = readers - 1;
+                return;
+            }
+            _readers.Remove(file);
             _active.Remove(file);
             _reserved.Remove(file);
             if (_deleteOnRelease.Remove(file))
                 try { File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
+    }
+    private bool IsReadCurrent(string file, int generation)
+    {
+        lock (_gate) return generation == _generation && !_deleteOnRelease.Contains(file);
     }
     private bool CanWrite(string file, int generation, long length)
     {
@@ -195,6 +230,7 @@ public sealed class RemoteAudioCache
         private readonly FileStream _file;
         private readonly Channel<(long Offset, byte[] Bytes, int Count)>? _writes;
         private readonly Task _writer;
+        private Task? _disposeTask;
         private readonly List<(long Start, long End)> _ranges = [];
         private readonly object _gate = new();
         private volatile bool _failed, _disposed;
@@ -202,6 +238,8 @@ public sealed class RemoteAudioCache
         public bool IsComplete { get; private set; }
         public bool CanWrite => !IsComplete && !_failed && !_disposed && _owner.CanWrite(_completePath, _generation, _length);
         public string? CompletePath => IsComplete ? _completePath : null;
+        /// <summary>清理或目录切换使旧租约失效；读者结束前文件仍由租约保护。</summary>
+        public bool IsCurrent => !_disposed && IsComplete && _owner.IsReadCurrent(_completePath, _generation);
         public void Abandon() => _failed = true;
 
         internal CacheFile(RemoteAudioCache owner, string path, long length, bool complete, int generation)
@@ -274,9 +312,12 @@ public sealed class RemoteAudioCache
                 finally { ArrayPool<byte>.Shared.Return(item.Bytes); }
             }
         }
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
-            if (_disposed) return;
+            lock (_gate) return new(_disposeTask ??= DisposeCoreAsync());
+        }
+        private async Task DisposeCoreAsync()
+        {
             _disposed = true;
             _writes?.Writer.TryComplete();
             try

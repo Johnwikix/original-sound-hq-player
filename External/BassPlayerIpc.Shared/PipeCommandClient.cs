@@ -132,7 +132,7 @@ public sealed class PipeCommandClient : IDisposable, IAsyncDisposable
 
     private static void CopyPayload(Pending work, ReadOnlySpan<byte> payload)
     {
-        int maximum = work.Command == CommandId.UpdateDeviceCorrections || work.Command == CommandId.StreamControl
+        int maximum = work.Command == CommandId.UpdateDeviceCorrections || work.Command == CommandId.StreamControl || work.Command == CommandId.UpdateSettings
             ? IpcConstants.MaxPayloadSize : IpcConstants.MaxRequestSize;
         if (payload.Length > maximum) throw new ArgumentOutOfRangeException(nameof(payload));
         if (work.Payload.Length < payload.Length)

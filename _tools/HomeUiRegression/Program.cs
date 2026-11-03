@@ -45,7 +45,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
     public IXamlType GetXamlType(string name) => _local.GetXamlType(name) ?? _native.GetXamlType(name);
     public XmlnsDefinition[] GetXmlnsDefinitions() => [];
     private readonly List<string> _results = [];
-    private readonly string _resultPath = Path.Combine(AppContext.BaseDirectory, "result.txt");
+    private readonly string _resultPath = Path.Combine(AppContext.BaseDirectory,
+        Environment.GetCommandLineArgs().Contains("--recommendation-preferences") ? "recommendation-preferences-result.txt" : "result.txt");
     public RegressionApplication() => UnhandledException += (_, args) => File.WriteAllText(_resultPath, "FAIL: unhandled " + args.Exception);
     private void Check(bool condition, string name)
     {
@@ -101,7 +102,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await StartPolishProbeAsync();
             return;
         }
-        string path = Path.Combine(AppContext.BaseDirectory, "fixture.db");
+        string path = Path.Combine(AppContext.BaseDirectory,
+            Environment.GetCommandLineArgs().Contains("--recommendation-preferences") ? "recommendation-preferences-fixture.db" : "fixture.db");
         if (File.Exists(path)) File.Delete(path);
         var database = new SQLiteAsyncConnection(path);
         Window? window = null;
@@ -112,6 +114,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Resources.MergedDictionaries.Add(new XamlControlsResources());
             Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Style/BtnStyle.xaml") });
             await database.CreateTableAsync<PlayListMusic>();
+            await database.ExecuteAsync("CREATE TABLE PlayList(Id INTEGER PRIMARY KEY)");
             await database.ExecuteAsync("CREATE TABLE PlaybackHistory (MusicId INTEGER, StartedAt INTEGER, TotalDurationMs REAL, DurationPlayedMs REAL)");
             await database.ExecuteAsync("INSERT INTO PlaybackHistory VALUES (1,?,100000,90000)", DateTime.UtcNow.AddDays(-2).Ticks);
             for (int i = 2; i <= 20; i++)
@@ -127,13 +130,38 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await database.CreateTableAsync<PendingMetadataWrite>();
             await data.Lyrics.InitializeAsync(path);
             var editorFactory = new FixtureEditorFactory(data, app);
-            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory, editorFactory.Sessions);
+            var analysis = new FixtureEnrichment();
+            home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory, editorFactory.Sessions, analysis, new FixtureEnrichment());
             using var services = new ServiceCollection().AddSingleton(home).BuildServiceProvider();
             App.Services = services;
             window = new Window();
             App.MainWindow = window;
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 820));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
+            if (Environment.GetCommandLineArgs().Contains("--spectrogram-memory"))
+            {
+                await CheckSpectrogramMemoryAsync(window, data, app);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
+            if (Environment.GetCommandLineArgs().Contains("--spectrogram"))
+            {
+                await CheckSpectrogramAsync(window, data);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
+            if (Environment.GetCommandLineArgs().Contains("--album-track-layout"))
+            {
+                await CheckAlbumTrackLayoutAsync(window);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
+            await CheckSourceCommandAsync(window);
+            if (Environment.GetCommandLineArgs().Contains("--source-command"))
+            {
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             var page = new HomePage { RequestedTheme = ElementTheme.Light,
                 Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 243, 243, 243)) };
             window.Content = page;
@@ -163,7 +191,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Wait(() => home.HasContent && !home.IsLoading);
             Check(((ScrollViewer)page.FindName("ContentScroll")).Visibility == Visibility.Visible && !home.IsEmpty,
                 "first imported batch replaces empty state before overall scanning completes");
-            Check(home.Familiar.Count == 20 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
+            Check(home.Familiar.Count == 10 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
                 "real SQLite history and canonical music objects reach the shipping page");
             Check(!home.PlaySongCommand.CanExecute(home.Songs[0]), "play remains guarded until engine and lifecycle are ready");
             app.State.Lifecycle.TransitionTo(AppPhase.Initializing);
@@ -174,6 +202,29 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var initialThemes = home.Themes;
             var carousel = (FeaturedCarousel)page.FindName("Featured");
             carousel.AutoShuffle = false; // 手动导航断言需要确定时序，自动轮播单独验证。
+            if (Environment.GetCommandLineArgs().Contains("--recommendation-preferences"))
+            {
+                await CheckRecommendationPreferencesAsync(home, data, database, analysis, page);
+                Check(!offThread, "playlist preference changes keep UI notifications on the dispatcher");
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
+            if (Environment.GetCommandLineArgs().Contains("--local-controls"))
+            {
+                await CheckLocalControlsAsync(window, home.Songs[0].Music);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
+            if (Environment.GetCommandLineArgs().Contains("--recommendation-slots"))
+            {
+                var ids = home.Songs.Concat(home.Familiar).Concat(home.Discovery).Concat(home.FeaturedSongs).Concat(home.CardSongs).Select(x => x.Music.Id).ToArray();
+                Check(ids.Distinct().Count() == ids.Length, "shipping page keeps featured, familiar, primary and discovery recordings disjoint");
+                Check(home.Themes.Count == 5 && home.CardSongs.Count == 3 && ReferenceEquals(carousel.ThumbnailItemsSource, home.CardSongs), "shipping thumbnail binding uses independent side cards and five disjoint carousel tracks");
+                home.ShowPreview(home.FeaturedSongs[0]);
+                Check(ReferenceEquals(home.PreviewSong, home.FeaturedSongs[0]), "featured cards retain preview interaction after decoupling shelves");
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--interactive"))
             {
                 window.Title = "Home Carousel interaction fixture";
@@ -835,6 +886,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(((FeaturedCarousel)page.FindName("Featured")).ItemsSource!.Count > 0 && home.PlaySongCommand.CanExecute(home.Songs[0]),
                 "reloaded page restarts compiled tracking and commands");
             await EditorCoverChecks.RunAsync(data, app, Check);
+            await AlbumDetailsChecks.RunAsync(data, app, Check);
             // Exercise the actual page fields and production editor state machines against SQLite.
             var editCard = Descendants<HomeSongItem>((ContentPresenter)carousel.FindName("PrimaryThumbnail")).Single();
             var editMusic = ((HomeSong)editCard.Tag).Music;

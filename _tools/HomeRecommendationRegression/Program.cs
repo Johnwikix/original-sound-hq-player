@@ -4,6 +4,8 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Recommendations;
 using WinUIMusicPlayer.Services.Recommendations;
 
+if (args is ["--evaluate", var snapshotDirectory]) { await OfflineEvaluation.RunAsync(snapshotDirectory); return; }
+
 int checks = 0;
 void Check(bool condition, string name)
 {
@@ -13,6 +15,10 @@ void Check(bool condition, string name)
 }
 var service = new HomeRecommendationService();
 var now = new DateTime(2026, 10, 28, 9, 0, 0, DateTimeKind.Utc);
+checks += BatchVariationRegression.Run(service, now);
+checks += InstrumentalRegression.Run(service, now);
+checks += ShelfPolicyRegression.Run(service, now);
+checks += NeighborAlgorithmRegression.Run(service, now);
 RecommendationTrack Track(int id, string artist = "", string genre = "", string album = "", bool favorite = false, bool available = true)
     => new(id, [artist], album, artist, genre, 2000 + id % 25, favorite, available, 0);
 var library = new List<RecommendationTrack>();
@@ -80,6 +86,25 @@ try
     Check(Math.Abs(signals.Single(x => x.MusicId == 6).Weight - .5) < .00001, "exactly fifty percent is a qualified positive signal");
 }
 finally { await db.CloseAsync(); File.Delete(path); }
+var combined = personalized.Songs.Concat(personalized.Familiar).Concat(personalized.Discovery).Concat(personalized.Featured ?? []).Concat(personalized.Cards ?? []).ToArray();
+Check(combined.Select(x => x.MusicId).Distinct().Count() == combined.Length, "all shelves and featured slots share one exclusion set");
+Check((personalized.Featured?.Count ?? 0) == 5, "ample library provides five independent featured slots");
+Check(personalized.Cards?.Count == 3, "side cards are allocated independently from all carousel pages");
+var duplicateLibrary = library.Concat([new RecommendationTrack(100, ["Artist 1"], "Other", "Artist 1", "Pop", 2020, false, true, 0, "Same"),
+    new RecommendationTrack(101, ["Artist 1"], "Other", "Artist 1", "Pop", 2020, false, true, 0, "Same")]).ToArray();
+var duplicates = service.Build(duplicateLibrary,[],now,0,default);
+Check(duplicates.Songs.Concat(duplicates.Familiar).Concat(duplicates.Discovery).Concat(duplicates.Featured ?? []).Concat(duplicates.Cards ?? []).Count(x => x.MusicId is 100 or 101) <= 1,
+    "same artist and title versions cannot occupy different page slots");
+var audioScores = new Dictionary<int,float> { [79] = 1 };
+var enhanced = service.Build(library,[],now,0,default,audioScores,
+    new CommunitySignals(new Dictionary<string,float>(StringComparer.OrdinalIgnoreCase) { ["Artist 18"] = 1 }, new Dictionary<string,float>()));
+Check(enhanced.Songs.Concat(enhanced.Featured ?? []).Concat(enhanced.Cards ?? []).Any(x => x.Reason is RecommendationReason.Audio or RecommendationReason.Community), "real optional signals participate in ranking and explanations");
+var versions = Enumerable.Range(1,40).Select(id => new RecommendationTrack(id,["Artist"],"Album","Artist","Rock",2020,false,true,0,"Same recording")).ToArray();
+var onlyVersions = service.Build(versions,[new(){MusicId=1,Weight=1,Count=1}],now,0,default);
+Check(onlyVersions.Songs.Count==1 && onlyVersions.Familiar.Count==0, "a library consisting of versions keeps a primary playback entry");
+checks += OwnedTrackRegression.Run(service, now);
+checks += TasteRegression.Run(service, now);
+checks += await CommunitySeedRegression.RunAsync(now);
 foreach (int size in new[] { 10000, 100000 })
 {
     var large = new RecommendationTrack[size];
@@ -89,5 +114,11 @@ foreach (int size in new[] { 10000, 100000 })
     var result = service.Build(large, [], now, 0, default);
     Check(result.Songs.Count == 20, "bounded candidate selection for " + size + " songs");
     Console.WriteLine($"MEASURE: synthetic {size} tracks, {watch.Elapsed.TotalMilliseconds:F1} ms, {(GC.GetAllocatedBytesForCurrentThread() - allocated) / 1048576.0:F2} MiB allocated; input creation excluded.");
+    var personalizedLarge = large.Select((track, index) => track with { IsFavorite = index % 17 == 0 }).ToArray();
+    allocated = GC.GetAllocatedBytesForCurrentThread();
+    watch.Restart();
+    result = service.Build(personalizedLarge, [], now, 0, default);
+    Check(result.Songs.Count == 20, "bounded positive-neighbor selection for " + size + " songs");
+    Console.WriteLine($"MEASURE: personalized synthetic {size} tracks, {watch.Elapsed.TotalMilliseconds:F1} ms, {(GC.GetAllocatedBytesForCurrentThread() - allocated) / 1048576.0:F2} MiB allocated; input creation excluded.");
 }
 Console.WriteLine($"PASS: {checks} checks.");

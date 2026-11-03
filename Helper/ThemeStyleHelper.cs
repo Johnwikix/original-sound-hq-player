@@ -20,6 +20,7 @@ namespace WinUIMusicPlayer.Helper
         private AppWindow _appWindow;
         private CustomAcrylicSystemBackdrop _acrylicSystemBackdrop;
         private CustomMicaSystemBackdrop _micaSystemBackdrop;
+        private readonly SolidColorSystemBackdrop _micaFallbackBackdrop = new();
         private TransparentTintBackdrop _transparentTintBackdrop;
 
         public ThemeStyleHelper(Window window, AppWindow appWindow)
@@ -53,6 +54,13 @@ namespace WinUIMusicPlayer.Helper
         }
 
         public void SetAppStyle()
+        {
+            SetAppStyle(null);
+        }
+
+        /// <summary>根据系统报告的云母可用性应用样式，保留用户保存的样式选择。</summary>
+        /// <param name="isMicaSupported">系统是否支持云母材质；为空时查询当前系统。</param>
+        internal void SetAppStyle(bool? isMicaSupported)
         {
             try
             {
@@ -97,9 +105,12 @@ namespace WinUIMusicPlayer.Helper
                         }
                         break;
                     case "Mica":
-                        if (!MicaController.IsSupported())
+                        if (!(isMicaSupported ?? MicaController.IsSupported()))
                         {
-                            _window.SystemBackdrop = _transparentTintBackdrop;
+                            if (_window.SystemBackdrop != _micaFallbackBackdrop)
+                            {
+                                _window.SystemBackdrop = _micaFallbackBackdrop;
+                            }
                             break;
                         }
                         if (_window.SystemBackdrop is not CustomMicaSystemBackdrop)

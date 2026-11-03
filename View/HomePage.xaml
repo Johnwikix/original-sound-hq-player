@@ -36,8 +36,8 @@
         <ScrollViewer Grid.Row="1" x:Name="ContentScroll" ViewChanging="Content_ViewChanging" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasContent), Mode=OneWay}" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
             <Grid>
                 <StackPanel Margin="0,12,0,24" Padding="24,0,24,0" Spacing="24">
-                    <controls:FeaturedCarousel x:Name="Featured" ItemsSource="{x:Bind ViewModel.Themes, Mode=OneWay}"
-                        ThumbnailItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}">
+                    <controls:FeaturedCarousel x:Name="Featured" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasFeatured), Mode=OneWay}" ItemsSource="{x:Bind ViewModel.Themes, Mode=OneWay}"
+                        ThumbnailItemsSource="{x:Bind ViewModel.CardSongs, Mode=OneWay}">
                         <controls:FeaturedCarousel.MainContent>
                             <controls:HomeHeroCard x:Name="HomeHero" SlideFromRight="{x:Bind Featured.SlideFromRight, Mode=OneWay}"
                                 Theme="{x:Bind SelectedTheme(Featured.SelectedIndex, Featured.PageCount), Mode=OneWay}" />
@@ -66,7 +66,7 @@
                         </controls:FeaturedCarousel.ThumbnailTemplate>
                     </controls:FeaturedCarousel>
                     <controls:RecommendationShelf x:Name="SongsShelf" ItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}"
-                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging">
+                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging" Visibility="{x:Bind ShowCount(ViewModel.Songs.Count), Mode=OneWay}">
                         <controls:RecommendationShelf.Header><TextBlock Text="{x:Bind ViewModel.SongsTitle, Mode=OneWay}" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
                     </controls:RecommendationShelf>
                     <controls:RecommendationShelf x:Name="FamiliarShelf" ItemsSource="{x:Bind ViewModel.Familiar, Mode=OneWay}"
@@ -109,7 +109,7 @@
         </Grid>
         <StackPanel Grid.Row="1" x:Name="UnavailablePanel" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsUnavailable), Mode=OneWay}">
             <FontIcon Glyph="&#xE753;" FontSize="44" />
-            <TextBlock x:Uid="HomeUnavailable" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock x:Name="UnavailableMessageText" Text="{x:Bind ViewModel.UnavailableMessage, Mode=OneWay}" TextAlignment="Center" TextWrapping="Wrap" />
             <Button x:Uid="HomeRetry" Style="{StaticResource MenuButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}" HorizontalAlignment="Center" />
         </StackPanel>
         <InfoBar Grid.Row="1" IsOpen="{x:Bind HasText(ViewModel.ErrorMessage), Mode=OneWay}" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Severity="Warning" IsClosable="False" VerticalAlignment="Top" Margin="24,8,24,0">

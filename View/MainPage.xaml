@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dev="using:DevWinUI"
+    xmlns:localControls="using:WinUIMusicPlayer.Controls"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -167,7 +167,7 @@
                             HorizontalAlignment="Stretch"
                             RowDefinitions="Auto,*,*,Auto"
                             Visibility="{x:Bind tools:BindUtils.GetMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
-                            <dev:AutoScrollView
+                            <localControls:AutoScrollView
                                 Grid.Row="0"
                                 Margin="10,0,10,0"
                                 IsPlaying="False"
@@ -181,7 +181,7 @@
                                     IsTextSelectionEnabled="True"
                                     Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                                     TextTrimming="CharacterEllipsis" />
-                            </dev:AutoScrollView>
+                            </localControls:AutoScrollView>
                             <Button
                                 x:Name="MusicAlbumButton"
                                 Grid.Row="1"
@@ -194,7 +194,7 @@
                                 CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                 IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                                 <Button.Content>
-                                    <dev:AutoScrollView
+                                    <localControls:AutoScrollView
                                         Margin="0"
                                         IsPlaying="False"
                                         PointerCanceled="AutoScrollHover_PointerCanceled"
@@ -204,7 +204,7 @@
                                             FontSize="12"
                                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
-                                    </dev:AutoScrollView>
+                                    </localControls:AutoScrollView>
                                 </Button.Content>
                             </Button>
                             <Button
@@ -219,7 +219,7 @@
                                 CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                 IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                                 <Button.Content>
-                                    <dev:AutoScrollView
+                                    <localControls:AutoScrollView
                                         Margin="0"
                                         IsPlaying="False"
                                         PointerCanceled="AutoScrollHover_PointerCanceled"
@@ -229,7 +229,7 @@
                                             FontSize="12"
                                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
-                                    </dev:AutoScrollView>
+                                    </localControls:AutoScrollView>
                                 </Button.Content>
                             </Button>
                             <Grid

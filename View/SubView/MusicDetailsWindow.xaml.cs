@@ -3,103 +3,40 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.Windows.Storage.Pickers;
+using Microsoft.UI.Xaml.Input;
 using System;
-using System.ComponentModel;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Windows.Storage;
+using Windows.System;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.WebService;
 using WinUIMusicPlayer.ViewModel;
-using WinUIMusicPlayer.Services.Lyrics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace WinUIMusicPlayer.View.SubView
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
-    public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx, INotifyPropertyChanged
+    /// <summary>独立歌曲属性窗口，与页内详情层共用 MusicDetailControl 布局和编辑会话。</summary>
+    public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx
     {
-        private static ILogger<MusicDetailsWindow> _logger = App.GetLogger<MusicDetailsWindow>();
-        private Music MusicDetail
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public BitmapImage? AlbumCoverBitmap => _artwork.Image;
-        public bool IsLoading
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    OnPropertyChanged();
-                }
-            }
-        } = false;
-        public LyricsEditorViewModel LyricsEditor { get; }
-        public MusicMetadataEditorViewModel MetadataEditor { get; }
-        private readonly CancellationTokenSource _windowClosed = new();
-        private NotificationService NotificationService { get; set; }
-        private readonly WindowArtworkSession _artwork = new();
-        private byte[]? AlbumCoverData => _artwork.Data;
-        private nint hwnd;
+        private static readonly ILogger<MusicDetailsWindow> _logger = App.GetLogger<MusicDetailsWindow>();
+
+        public MusicDetailsViewModel? ViewModel { get; private set; }
         private ThemeStyleHelper themeStyleHelper;
         private bool _closed;
-        private IDisposable? _editorSession;
-
-        public event PropertyChangedEventHandler? PropertyChanged;
 
         public MusicDetailsWindow(Music music)
         {
-            MusicDetail = music;
-            MetadataEditor = new MusicMetadataEditorViewModel(music);
-            IsLoading = true;
-            LyricsEditor = new LyricsEditorViewModel(music, App.Services.GetRequiredService<MusicDatabaseService>(),
-                App.Services.GetRequiredService<LyricsParser>(), App.Services.GetRequiredService<LyricsOnlineSearch>(),
-                App.Services.GetRequiredService<ApplicationTasks>(), App.Services.GetRequiredService<ILlmTranslationService>());
-            this.InitializeComponent();
-            _artwork.Updated += ArtworkUpdated;
+            InitializeComponent();
             AppWindow.TitleBar.PreferredTheme = TitleBarTheme.UseDefaultAppMode;
             AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
             this.SetTitleBarBackgroundColors(Colors.Transparent);
             SetTitleBar(MusicDetailTitleBar);
             setWindow();
-            _editorSession = App.Services.GetRequiredService<EditorSessions>().Attach(() =>
-            {
-                _windowClosed.Cancel();
-                LyricsEditor.Dispose();
-                return Task.CompletedTask;
-            });
-            _ = App.Services.GetRequiredService<ApplicationTasks>().RunAsync(async token =>
-            {
-                using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, _windowClosed.Token);
-                try { await InitalizeData(music, linked.Token); }
-                catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
-                catch (Exception ex) { _logger.LogError(ex, "加载歌曲详情失败"); }
-                finally { if (!_closed) IsLoading = false; }
-            });
+            Open(music);
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
@@ -114,44 +51,52 @@ namespace WinUIMusicPlayer.View.SubView
             this.Closed += MusicDetailWindow_Closed;
         }
 
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        private void Open(Music music)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            try
+            {
+                var app = App.Services.GetRequiredService<AppViewModel>();
+                var factory = App.Services.GetRequiredService<IMusicDetailsEditorFactory>();
+                var editor = factory.Create(music);
+                ViewModel = new MusicDetailsViewModel(editor, app, App.Services.GetRequiredService<MusicDatabaseService>(),
+                    App.Services.GetRequiredService<EditorSessions>(), App.GetLogger<MusicDetailsViewModel>(),
+                    MusicCommands.DetailsPlayCommand, new MusicDetailsRequest(music, AppData.CurrentPage), factory.CreateSpectrogram(music));
+                ViewModel.CloseRequested += CloseRequested;
+                ViewModel.Start();
+                DetailView.ViewModel = ViewModel;
+                Bindings.Update();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "打开歌曲详情失败");
+                DispatcherQueue.TryEnqueue(() => { if (!_closed) Close(); });
+            }
+        }
+
+        private void setWindow()
+        {
+            // 默认 900×675（低于主窗口最小尺寸）；控件宽 <810 或高 <540 才进入紧凑布局。
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 675, 900, App.MainWindow.AppWindow, this.AppWindow);
+            this.AppWindow.SetIcon("Assets/icon.ico");
+        }
+
+        private void Root_KeyDown(object sender, KeyRoutedEventArgs args)
+        {
+            if (args.Key != VirtualKey.Escape) return;
+            Close();
+            args.Handled = true;
+        }
+
+        private void CloseRequested(object? sender, EventArgs args)
+        {
+            DispatcherQueue.TryEnqueue(() => { if (!_closed) Close(); });
         }
 
         private void MainWindow_backdropInputState(object? sender, bool e)
         {
             themeStyleHelper?.UpdateBackdropActiveState(e);
         }
-
-        private void MusicDetailWindow_Closed(object sender, WindowEventArgs args)
-        {
-            _closed = true;
-            _artwork.Updated -= ArtworkUpdated;
-            _artwork.Dispose();
-            OnPropertyChanged(nameof(AlbumCoverBitmap));
-            Bindings.StopTracking();
-            if (App.MainWindow is not null)
-            {
-                App.MainWindow.themeChanged -= MainWindow_themeChanged;
-                App.MainWindow.styleChanged -= MainWindow_styleChanged;
-                App.MainWindow.customStyleChanged -= MainWindow_customStyleChanged;
-                App.MainWindow.backdropInputState -= MainWindow_backdropInputState;
-            }
-            _windowClosed.Cancel();
-            LyricsEditor.Dispose();
-            _editorSession?.Dispose();
-            this.Closed -= MusicDetailWindow_Closed;
-        }
-
-        private void setWindow()
-        {
-            hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850, 700, App.MainWindow.AppWindow, this.AppWindow);
-            this.AppWindow.SetIcon("Assets/icon.ico");
-            NotificationService = App.Services.GetRequiredService<NotificationService>();
-        }
-
         private void MainWindow_customStyleChanged(object? sender, EventArgs e)
         {
             themeStyleHelper.ChangeCustomAcrylicStyle();
@@ -165,217 +110,27 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper.SetAppTheme();
         }
 
-        private async Task InitalizeData(Music music, CancellationToken token)
+        private void MusicDetailWindow_Closed(object sender, WindowEventArgs args)
         {
-            await LyricsEditor.LoadAsync();
-            token.ThrowIfCancellationRequested();
-            var tags = await App.Services.GetRequiredService<MusicDatabaseService>().ReadAdditionalMetadataAsync(music, token);
-            token.ThrowIfCancellationRequested();
-            if (tags is { } loaded)
+            _closed = true;
+            if (ViewModel is { } viewModel)
             {
-                // 大多数文件没有这些标签；仅确认空值时不重建音乐列表。
-                if (MetadataEditor.ApplyLoaded(loaded)) NotifyMetadataChanged();
+                ViewModel = null;
+                viewModel.CloseRequested -= CloseRequested;
+                viewModel.BeginClose();
+                DetailView.ViewModel = null;
+                Bindings.StopTracking();
+                // StopAsync 自行观察异常；EditorSessions 保留退出屏障直到真实工作完成。
+                _ = viewModel.StopAsync();
             }
-            await _artwork.LoadAsync(ct => ToolUtils.GetRawImage(music, true, ct), token);
-        }
-
-        private string ConvertDuration(TimeSpan duration)
-        {
-            if (duration.TotalHours >= 1)
+            if (App.MainWindow is not null)
             {
-                return duration.ToString(@"hh\:mm\:ss");
+                App.MainWindow.themeChanged -= MainWindow_themeChanged;
+                App.MainWindow.styleChanged -= MainWindow_styleChanged;
+                App.MainWindow.customStyleChanged -= MainWindow_customStyleChanged;
+                App.MainWindow.backdropInputState -= MainWindow_backdropInputState;
             }
-            else
-            {
-                return duration.ToString(@"mm\:ss");
-            }
-        }
-        private string ConvertBitDepth(int bitDepth)
-        {
-            return $"{bitDepth}bit";
-        }
-
-        private string ConvertSampleRate(int sampleRate)
-        {
-            return $"{sampleRate}Hz";
-        }
-
-        private string ConvertBitRate(int bitRate)
-        {
-            return $"{bitRate}Kbps";
-        }
-
-        private string ConvertTime(DateTime time)
-        {
-            return time.ToString("yyyy-MM-dd HH:mm:ss");
-        }
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!_closed) this.Close();
-        }
-
-        private Visibility BoolToVisibility(bool isLoading)
-        {
-            return isLoading ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        private Visibility BoolToNVisibility(bool isLoading)
-        {
-            return isLoading ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        private Visibility TextToVisibility(string text)
-        {
-            return string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var snapshot = MetadataEditor.Capture();
-                bool saved = await LyricsEditor.SaveAsync(metadataDraft: snapshot);
-                bool unchanged = PublishCommittedMetadata(snapshot);
-                if (!saved || !unchanged) return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"UpdateFile 更新文件失败: {ex.Message}");
-                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                return;
-            }
-            if (!_closed) this.Close();
-        }
-
-        private async Task<bool> UpdateFile(DateTime updateTime)
-        {
-            IsLoading = true;
-            var snapshot = MetadataEditor.Capture();
-            snapshot.UpdateTime = updateTime;
-            bool saved = await LyricsEditor.SaveAsync(AlbumCoverData, queueMetadata: true, metadataDraft: snapshot);
-            bool unchanged = PublishCommittedMetadata(snapshot);
-            if (!saved) return false;
-            NotificationService.SendNotification(snapshot.Title, ToolUtils.GetString("MetadataWriteQueued"));
-            return unchanged;
-        }
-
-        private bool PublishCommittedMetadata(Music snapshot)
-        {
-            if (!ReferenceEquals(LyricsEditor.LastCommittedMetadata, snapshot)) return false;
-            bool unchanged = MetadataEditor.AcceptSaved(snapshot);
-            NotifyMetadataChanged();
-            return unchanged;
-        }
-
-        private static void NotifyMetadataChanged()
-        {
-            var app = App.Services.GetRequiredService<AppViewModel>();
-            app.NotifySongsSourceChanged();
-            App.Services.GetRequiredService<LibraryProjectionService>().RequestRefresh();
-        }
-
-        private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (MusicDetail.IsRemote) return;
-            ConfirmFlyout.Hide();
-            try
-            {
-                DateTime newModificationTime = DateTime.Now;
-                if (await UpdateFile(newModificationTime) && !_closed) this.Close();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"SaveToDataBaseButton_Click 保存数据库信息失败: {ex.Message}");
-                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-            }
-            finally { IsLoading = false; }
-        }
-
-        private void ArtworkUpdated() => OnPropertyChanged(nameof(AlbumCoverBitmap));
-
-        private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                bool empty = false;
-                bool completed = await _artwork.LoadAsync(async ct =>
-                {
-                    var cover = await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(MusicDetail, ct);
-                    empty = cover is not { Length: > 0 };
-                    return cover;
-                }, keepExistingOnEmpty: true);
-                if (completed && !_closed && empty)
-                    NotificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainCover"));
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "读取在线封面失败");
-                if (!_closed) NotificationService.SendNotification(ToolUtils.GetString("Error"), exception.Message);
-            }
-        }
-
-        private async void OpenFile_Click(object sender, RoutedEventArgs e)
-        {
-            ToolUtils.OpenFileInExplorer(MusicDetail.Path);
-        }
-
-        private async void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
-        {
-            if (!MusicDetail.IsRemote) await LyricsEditor.ReadEmbeddedAsync();
-        }
-
-        private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (MusicDetail.IsRemote) return;
-            try
-            {
-                FileOpenPicker openPicker = new(App.MainWindow.AppWindow.Id)
-                {
-                    ViewMode = PickerViewMode.Thumbnail
-                };
-                openPicker.FileTypeFilter.Add(".jpg");
-                openPicker.FileTypeFilter.Add(".jpeg");
-                openPicker.FileTypeFilter.Add(".png");
-                var file = await openPicker.PickSingleFileAsync();
-                if (file is not null)
-                {
-                    await _artwork.LoadAsync(async ct => await System.IO.File.ReadAllBytesAsync(file.Path, ct));
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"SelectCoverImageButton_Click 选择封面图片失败: {ex.Message}");
-                if (!_closed) NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-            }
-        }
-
-        private async void SaveImageButton_Click(object sender, RoutedEventArgs e)
-        {
-            var savedCover = AlbumCoverData;
-            if (savedCover is null) return;
-            var picker = new FileSavePicker(App.MainWindow.AppWindow.Id);
-            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            picker.FileTypeChoices.Add("JPEG Image", new[] { ".jpg" });
-            picker.SuggestedFileName = "SavedImage";
-            var file = await picker.PickSaveFileAsync();
-            if (file is not null)
-            {
-                try
-                {
-                    await System.IO.File.WriteAllBytesAsync(file.Path, savedCover);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"SaveImageButton_Click 保存封面图片失败: {ex.Message}");
-                    NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                }
-            }
-        }
-
-        private void CloseFlyoutButton_Click(object sender, RoutedEventArgs e)
-        {
-            ConfirmFlyout.Hide();
+            this.Closed -= MusicDetailWindow_Closed;
         }
     }
 }

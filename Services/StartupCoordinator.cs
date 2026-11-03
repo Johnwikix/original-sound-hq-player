@@ -42,6 +42,7 @@ namespace WinUIMusicPlayer.Services
             // 音频进程与解码库预热先于用户协议启动，IPC 在解码依赖就绪后完成握手。
             // 连接等待与数据库初始化、协议阅读并行；进度由标题栏指示。
             var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
+            shutdown.RegisterStop(UiLayoutDiagnostics.StopAsync);
             var lifecycle = App.Services.GetRequiredService<AppLifecycle>();
             var settings = App.Services.GetRequiredService<SettingsCoordinator>();
             MusicDatabaseService.AttachSettingsCapture(App.Services.GetRequiredService<SettingsSnapshotFactory>());
@@ -196,6 +197,17 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterStop(watcher.StopAsync);
             shutdown.RegisterCleanup(watcher.StopAsync);
             await watcher.StartAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+            var analysis = App.Services.GetRequiredService<AudioAnalysis.AudioAnalysisService>();
+            var analysisSettings = App.Services.GetRequiredService<WinUIMusicPlayer.ViewModel.Pages.AnalysisSettingsViewModel>();
+            analysisSettings.Start(App.MainWindow.DispatcherQueue);
+            shutdown.RegisterStop(analysisSettings.StopAsync);
+            shutdown.RegisterStop(analysis.StopAsync);
+            await analysis.StartAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+            var enrichment = App.Services.GetRequiredService<LastFm.LastFmRecommendationService>();
+            shutdown.RegisterStop(enrichment.StopAsync);
+            enrichment.Start();
             await remoteLibrary.StartConfiguredScansAsync();
             cancellationToken.ThrowIfCancellationRequested();
             logger.LogInformation("协议确认后核心启动完成：{ElapsedMs} ms", startup.ElapsedMilliseconds);

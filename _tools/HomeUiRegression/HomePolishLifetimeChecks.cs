@@ -9,45 +9,6 @@ internal sealed partial class HomePolishWindow
 {
     private async Task CheckSecondaryLifetimes()
     {
-        var bytes = await WinUIMusicPlayer.Utils.ToolUtils.GetRawImage(_songs[0]);
-        using (var artwork = new WindowArtworkSession())
-        {
-            int updates = 0;
-            bool wrongThread = false;
-            artwork.Updated += () => { updates++; wrongThread |= !DispatcherQueue.HasThreadAccess; };
-            Assert(await artwork.LoadAsync(_ => Task.FromResult(bytes)), "window artwork publishes a real decoded bitmap");
-            Assert(artwork.Image is { PixelWidth: > 0 } && ReferenceEquals(artwork.Data, bytes), "window artwork owns matching decoded image and original bytes");
-            var existingImage = artwork.Image;
-            Assert(await artwork.LoadAsync(_ => Task.FromResult<byte[]?>(null), keepExistingOnEmpty: true)
-                && ReferenceEquals(artwork.Image, existingImage) && ReferenceEquals(artwork.Data, bytes) && updates == 1,
-                "empty online lookup keeps the current cover and byte pair without republishing");
-            var gate = new TaskCompletionSource<byte[]?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            CancellationToken readToken = default;
-            var readerEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var pending = artwork.LoadAsync(token => { readToken = token; token.Register(() => throw new InvalidOperationException("fixture cancellation callback")); readerEntered.TrySetResult(); return gate.Task; });
-            await readerEntered.Task;
-            artwork.Dispose();
-            artwork.Dispose();
-            Assert(artwork.Image is null, "one failing cancellation callback cannot interrupt owner cleanup");
-            Assert(readToken.IsCancellationRequested, "closing a property owner propagates cancellation to the real cover reader");
-            Assert(!pending.IsCompleted, "closing does not pretend a reader that ignores cancellation has already stopped");
-            Assert(artwork.Data is null && artwork.Image is null, "closed property owner clears image and byte references immediately");
-            gate.SetResult(bytes);
-            Assert(!await pending && updates == 1, "late cover completion cannot republish into a closed owner");
-            Assert(!wrongThread, "native cover publication stays on the UI thread");
-            Assert(!await artwork.LoadAsync(_ => throw new Exception("Must not execute")), "closed artwork owner rejects new work");
-        }
-        using (var artwork = new WindowArtworkSession())
-        {
-            var gate = new TaskCompletionSource<byte[]?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var old = artwork.LoadAsync(_ => gate.Task);
-            Assert(await artwork.LoadAsync(_ => Task.FromResult(bytes)), "latest cover request can finish while the older reader is pending");
-            var image = artwork.Image;
-            gate.SetResult([]);
-            Assert(!await old && ReferenceEquals(artwork.Image, image) && ReferenceEquals(artwork.Data, bytes),
-                "late cancelled initial read cannot overwrite a newer user cover selection");
-        }
-
         var canvas = new Canvas { Width = 600, Height = 240 };
         var source = new Border { Width = 100, Height = 100, Background = new SolidColorBrush(Microsoft.UI.Colors.CornflowerBlue) };
         var destination = new Border { Width = 150, Height = 150, Background = new SolidColorBrush(Microsoft.UI.Colors.CornflowerBlue) };

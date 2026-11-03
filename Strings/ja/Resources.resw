@@ -508,29 +508,8 @@
   <data name="Processing" xml:space="preserve">
     <value>処理中...</value>
   </data>
-  <data name="AlbumDetailWindow.Title" xml:space="preserve">
-    <value>アルバムのプロパティ</value>
-  </data>
   <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
     <value>アルバムの詳細</value>
-  </data>
-  <data name="LoadingTextBlock.Text" xml:space="preserve">
-    <value>保存処理を行っています、しばらくお待ちください...</value>
-  </data>
-  <data name="GetImageFromNetButton.Content" xml:space="preserve">
-    <value>オンラインでジャケットを照合</value>
-  </data>
-  <data name="SaveImageButton.Content" xml:space="preserve">
-    <value>ローカルに保存</value>
-  </data>
-  <data name="SelectCoverImageButton.Content" xml:space="preserve">
-    <value>ジャケットを編集</value>
-  </data>
-  <data name="TitleLabel.Text" xml:space="preserve">
-    <value>タイトル</value>
-  </data>
-  <data name="YearLabel.Text" xml:space="preserve">
-    <value>年</value>
   </data>
   <data name="ConfirmFlyout.Text" xml:space="preserve">
     <value>アルバム内の全ての音楽にメタ情報を保存しますか？</value>
@@ -543,9 +522,6 @@
   </data>
   <data name="SaveButton.Content" xml:space="preserve">
     <value>ファイルに書き込む</value>
-  </data>
-  <data name="CloseButtonItem.Content" xml:space="preserve">
-    <value>閉じる</value>
   </data>
   <data name="MusicDetailTitleBar.Text" xml:space="preserve">
     <value>音楽の詳細</value>
@@ -2260,7 +2236,7 @@
     <value>上で指定したキャッシュ保存先の WebDav サブフォルダーを使用します。</value>
   </data>
   <data name="CacheRootDescription" xml:space="preserve">
-    <value>カバーと WebDAV で共通のフォルダーを使います。変更後は必要に応じてキャッシュを作成し、以前のファイルは保持します。</value>
+    <value>カバー、WebDAV音声、音楽特徴量・ラウドネスのキャッシュで共用します。変更後は必要に応じて作成し、旧フォルダーのファイルは保持します。</value>
   </data>
   <data name="WebDavTlsError" xml:space="preserve">
     <value>HTTPS の安全な接続を確立できません。NAS の証明書と TLS 設定を確認してください。</value>
@@ -2587,7 +2563,7 @@ SHA-256: {5}
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>あなたの音楽から始めよう</value></data>
   <data name="HomeEmptySubtitle.Text" xml:space="preserve"><value>音楽フォルダーを追加して、ライブラリを楽しみましょう。再生履歴とお気に入りをもとにおすすめを作成します。</value></data>
   <data name="HomeAddFolder.Content" xml:space="preserve"><value>音楽フォルダーを追加</value></data>
-  <data name="HomeUnavailable.Text" xml:space="preserve"><value>音楽ソースを利用できません。接続を確認するか、音楽ソースのページで管理してください。</value></data>
+  <data name="HomeUnavailable" xml:space="preserve"><value>音楽ソースを利用できません。接続を確認するか、音楽ソースのページで管理してください。</value></data>
   <data name="HomeRetry.Content" xml:space="preserve"><value>再試行</value></data>
   <data name="HomeExplore" xml:space="preserve"><value>ライブラリを探索</value></data>
   <data name="HomeForYou" xml:space="preserve"><value>あなたへのおすすめ</value></data>
@@ -2652,4 +2628,40 @@ SHA-256: {5}
   <data name="HomeDetailsExportLyrics.Text" xml:space="preserve"><value>歌詞lrcをローカルに保存する</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>再生中の曲を表示</value></data>
   <data name="LocateCurrentTrackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>再生中の曲を表示</value></data>
+  <data name="AnalysisTitle" xml:space="preserve"><value>バックグラウンド音楽分析</value></data>
+  <data name="AnalysisDescription" xml:space="preserve"><value>音色やリズムなどを分析して、似たスタイルの曲を見つけ、ホームのおすすめを改善します。</value></data>
+  <data name="AnalysisProgress" xml:space="preserve"><value>完了 {0} / 検出 {1} · 待機 {2} · 失敗 {3}</value></data>
+  <data name="AnalysisIdle" xml:space="preserve"><value>新しい曲を待機中</value></data>
+  <data name="AnalysisDisabled" xml:space="preserve"><value>分析は無効です</value></data>
+  <data name="AnalysisScanning" xml:space="preserve"><value>分析可能なファイルを確認中</value></data>
+  <data name="AnalysisRunning" xml:space="preserve"><value>分析中</value></data>
+  <data name="AnalysisError" xml:space="preserve"><value>分析が中断されました。後で再試行します</value></data>
+  <data name="HomeReasonAudio" xml:space="preserve"><value>音楽スタイルが似ています</value></data>
+  <data name="HomeReasonCommunity" xml:space="preserve"><value>Last.fmの類似推薦</value></data>
+  <data name="AnalysisScope" xml:space="preserve"><value>ローカルファイルと完全にキャッシュされたWebDAVの曲のみが対象です。音声はダウンロードしません。CPU 1コアの稼働率10%を目安に実行し、待機時に分析プロセスを終了します。</value></data>
+  <data name="AlbumDetailsInfoTab.Text" xml:space="preserve"><value>アルバム情報</value></data>
+  <data name="AlbumDetailsTracksTab.Text" xml:space="preserve"><value>曲目</value></data>
+  <data name="AlbumDetailsWriteFailed" xml:space="preserve"><value>{0} 個のファイルに書き込めませんでした: {1}</value></data>
+  <data name="SpectrumTab.Text" xml:space="preserve"><value>スペクトル</value></data>
+  <data name="SpectrumReset.ToolTipService.ToolTip" xml:space="preserve"><value>表示をリセット</value></data>
+  <data name="SpectrumOptions.ToolTipService.ToolTip" xml:space="preserve"><value>スペクトル設定</value></data>
+  <data name="SpectrumChannel.Header" xml:space="preserve"><value>チャンネル</value></data>
+  <data name="SpectrumCombined.Content" xml:space="preserve"><value>合成</value></data>
+  <data name="SpectrumLeft.Content" xml:space="preserve"><value>左</value></data>
+  <data name="SpectrumRight.Content" xml:space="preserve"><value>右</value></data>
+  <data name="SpectrumResolution.Header" xml:space="preserve"><value>周波数分解能（FFT）</value></data>
+  <data name="SpectrumMinimum.Header" xml:space="preserve"><value>最小レベル（dBFS）</value></data>
+  <data name="SpectrumMaximum.Header" xml:space="preserve"><value>最大レベル（dBFS）</value></data>
+  <data name="SpectrumAnalyzing" xml:space="preserve"><value>音声を解析中…</value></data>
+  <data name="SpectrumNeedsCache" xml:space="preserve"><value>表示するには音声ファイル全体のキャッシュが必要です。</value></data>
+  <data name="SpectrumFailed" xml:space="preserve"><value>この曲を解析できませんでした。再試行してください。</value></data>
+  <data name="SpectrumDownmix" xml:space="preserve"><value>ステレオダウンミックス</value></data>
+  <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>音声スペクトログラム</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>ホイールで時間軸、Shift+ホイールで周波数軸を拡大縮小。ドラッグで移動、左右キーで時間軸を移動、上下キーで周波数軸を拡大縮小、Homeでリセット。ダブルクリックで再生中の曲をシークします。</value></data>
+  <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>表示をリセット</value></data>
+  <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>スペクトル設定</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>不透明モード（オフ時は低レベルを透明化）</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>不透明モード</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>ホイール：時間軸の拡大縮小 · Shift+ホイール：周波数軸の拡大縮小 · ドラッグ：移動</value></data>
+  <data name="HomeNoNewRecommendations" xml:space="preserve"><value>新しいおすすめはありません。お気に入りやプレイリストと同名の曲は除外します。曲を追加して再度お試しください。</value></data>
 </root>

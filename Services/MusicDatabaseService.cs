@@ -92,6 +92,8 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.CreateTableAsync<WebDavSource>();
                     await _dbConnection.CreateTableAsync<RemoteTrack>();
                     await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
+                    Analysis = new WinUIMusicPlayer.Services.AudioAnalysis.AnalysisRepository(_dbConnection, () => AppSettings.MusicCoverCache);
+                    await Analysis.InitializeAsync();
                     await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await EnsurePendingMetadataLyricsColumnsAsync();
@@ -927,6 +929,7 @@ namespace WinUIMusicPlayer.Services
             {
                 AppData.AllPlayListMusics = mappings;
                 AppViewModel.RefreshPlayListSummaries();
+                PublishRecommendationPreferencesChanged();
             });
         }
 
@@ -1232,9 +1235,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
                 AppViewModel.SpectralEnhancement = (int)audio.SpectralEnhancement;
-                AppViewModel.IsDopEnabled = audio.IsDopEnabled;
-                AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
-                AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;
+                AppViewModel.RestoreOutputPreferences(audio);
                 AppViewModel.AtmosEndpointId = audio.AtmosEndpointId ?? "";
                 AppViewModel.IsFadeEnabled = audio.IsFadeEnabled;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
@@ -1425,6 +1426,7 @@ namespace WinUIMusicPlayer.Services
                 // The library connection is ready before Last.fm starts. Resolve only at this legacy
                 // command boundary, avoiding a constructor cycle with the borrowed library store.
                 await App.Services.GetRequiredService<LastFmService>().SaveFavoriteAsync(change);
+                PublishRecommendationPreferencesChanged();
             }
             catch (Exception ex)
             {

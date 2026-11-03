@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.View.SubView.Settings
         public GeneralSettingsControl()
         {
             InitializeComponent();
+            WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
         }

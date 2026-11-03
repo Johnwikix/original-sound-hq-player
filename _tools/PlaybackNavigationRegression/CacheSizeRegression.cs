@@ -33,12 +33,14 @@ internal static class CacheSizeRegression
             Write("WebDav/Audio/song.audio", 64);
             Write("WebDav/Audio/song.audio.123.part", 128);
             File.SetAttributes(Path.Combine(root, "WebDav/Audio/song.audio.123.part"), FileAttributes.Hidden);
+            Write("Analysis/Features.db", 256);
+            Write("Analysis/Loudness/tone.bin", 512);
             Write("unrelated.mp3", 512);
             Write("Music/album.flac", 1024);
-            Check(CacheSizeCalculator.GetSize(root) == 255, "应合计全部封面和 WebDAV 缓存，排除用户音乐");
+            Check(CacheSizeCalculator.GetSize(root) == 1023, "应合计全部封面和 WebDAV 缓存，排除用户音乐");
             AppSettings.MusicCoverCache = root;
             await model.RefreshCacheSizeAsync();
-            Check(published && model.CacheSize == "255 B", "ViewModel 应发布全部缓存大小");
+            Check(published && model.CacheSize == "1023 B", "ViewModel 应发布全部缓存大小");
 
             // 一次扫描尚未发布时切换目录，旧结果不得覆盖新根目录。
             Task oldRefresh = model.RefreshCacheSizeAsync();
@@ -49,7 +51,7 @@ internal static class CacheSizeRegression
             AppSettings.MusicCoverCache = root;
             File.Delete(Path.Combine(root, "Cache/image_150.bmp"));
             await model.RefreshCacheSizeAsync();
-            Check(model.CacheSize == "251 B", "清理后应重新计算总量");
+            Check(model.CacheSize == "1019 B", "清理后应重新计算总量");
             Task stopping = model.RefreshCacheSizeAsync();
             string beforeStop = model.CacheSize;
             await model.StopAsync();

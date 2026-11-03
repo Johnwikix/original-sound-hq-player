@@ -12,7 +12,8 @@ internal static class CacheSizeCalculator
         // 根目录的网络封面，以及封面/WebDAV 专用目录中的所有格式和未完成文件。
         return SumFiles(root, "*.bin", false) +
             SumFiles(Path.Combine(root, "Cache"), "*", true) +
-            SumFiles(Path.Combine(root, "WebDav"), "*", true);
+            SumFiles(Path.Combine(root, "WebDav"), "*", true) +
+            SumFiles(Path.Combine(root, "Analysis"), "*", true);
     }
 
     private static long SumFiles(string directory, string pattern, bool recursive)

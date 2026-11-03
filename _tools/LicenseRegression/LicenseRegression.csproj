@@ -6,8 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <Compile Include="../../Services/LicenseService.cs" />
     <Compile Include="../../Services/LicensePolicy.cs" />
+    <Compile Include="../../Services/SettingsSnapshotFactory.Audio.cs" />
+    <Compile Include="../../ViewModel/AppViewModel.License.cs" />
+    <Compile Include="../../ViewModel/AppViewModel.OutputPreferences.cs" />
+    <Compile Include="../../State/AudioPreferencesState.cs" />
   </ItemGroup>
 </Project>

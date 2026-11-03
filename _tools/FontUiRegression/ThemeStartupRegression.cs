@@ -21,6 +21,7 @@ internal static class ThemeStartupRegression
         ElementTheme previousElementTheme = AppSettings.ElementTheme;
         try
         {
+            await MicaFallbackRegression.RunAsync(check);
             foreach (ElementTheme theme in new[] { ElementTheme.Light, ElementTheme.Dark, ElementTheme.Default })
             {
                 foreach (string style in new[] { "Mica", "TransparentAcrylic" })
