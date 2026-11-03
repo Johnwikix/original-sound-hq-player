@@ -46,7 +46,7 @@
 
 ## 🔒 Free Trial & Full Version
 
-The app is becoming paid starting with v1.2.3.0 (Microsoft Store channel): installing starts a free trial with every feature available (trial length as shown on the Store listing). After the trial ends the player keeps playing your local music — core playback, the 10-band equalizer, and the remaining DSP effects (loudness normalization, unified preamp, channel & headphone effects) stay free, while the following full-version features are locked:
+The app is becoming paid starting with v1.2.3.0 (Microsoft Store channel): installing starts a free trial with every feature available (trial length as shown on the Store listing). What happens after the trial ends depends on the channel: the Microsoft Store build is blocked from launching by the Store's trial policy, while the GitHub Release build (and self-built versions) is unaffected and keeps playing your local music — core playback, the 10-band equalizer, and the remaining DSP effects (loudness normalization, unified preamp, channel & headphone effects) stay free, while the following full-version features are locked:
 
 - **Convolution correction**: curve editor, WAV impulse response (IR) import, per-output-device binding, and preset management
 - **DSD bitstream output**: DoP and DSD Native
@@ -61,6 +61,12 @@ While restricted, your existing settings are never modified or erased — comple
   - Multi-dimensional browsing by song, artist, album, folder, or favorites
   - Manual local folder scanning with automatic rescan to keep your library in sync
   - Quick access to your favorite tracks
+  - Search covers title, artist, album, custom tags, and original file names (with extension)
+
+- 🏠 **Home & Personalized Recommendations**
+  - A featured carousel plus For You, Recently Played, and Explore Other Genres sections
+  - Recommendations from local tags and audio features, optionally blended with Last.fm similarity; "another batch" reduces repeats
+  - Drag-and-drop import for an empty library; the home page can be set as the default start page
 
 - ☁️ **WebDAV Music Sources**
   - Connect to WebDAV servers (NAS, Alist/OpenList, etc.) and manage them alongside your local library
@@ -77,6 +83,8 @@ While restricted, your existing settings are never modified or erased — comple
 
 - 🎛️ **Full Playback Control**
   - Play, pause, skip, shuffle, sequential, single-loop
+  - Gapless playback with no gaps between tracks
+  - 0.25×–5× playback speed with pitch preserved
   - Customizable global shortcuts
 
 - 🔊 **Professional Audio Processing**
@@ -86,18 +94,33 @@ While restricted, your existing settings are never modified or erased — comple
   - Convolution correction: draw a correction curve (2–32 draggable control points with named presets that can be updated or deleted in place) or import a headphone/room-correction WAV impulse response (IR); rendered into a minimum-phase FIR for real-time convolution, resampled to the output rate automatically; correction curves can be bound per output device and are applied automatically when devices are plugged, removed, or switched; edits take effect instantly with auto-save, and offline editing is supported when no audio output is active; live combined EQ/convolution response preview in the editor
   - Unified preamp: applied to EQ and convolution together — set manually or auto-compensated from the combined response peak (1 dB headroom, normalized to −1 dB) to prevent clipping from correction boosts
   - Loudness normalization: background EBU R128 analysis per track, smooth fixed gain applied once complete and cached — files untouched, dynamics uncompressed (target −24 to −12 LUFS, default −18)
+  - Dynamic compressor: dynamic range compression and limiting with an adjustable peak-protection ceiling shared by loudness normalization and the compressor
+  - Output resampling: choose a target sample rate
   - Channel & headphone effects: balance, L/R swap, mono mixdown, headphone crossfeed, stereo width
   - One-tap DSP master switch bypasses all effects; DoP / Native DSD bitstream playback bypasses them automatically with settings preserved
   - Full float64 high-precision audio pipeline with bit-transparent handling of 24-bit sources
 
 - 🌈 **Shader Backgrounds & Word-by-word Lyrics**
-  - 7 dynamic shader backgrounds (Fluid, PS3 XMB, Rotating Mesh, Liquid Flow, Gradient Flow, Wavy, Chromatic Resonance) rendered live with cover-based color extraction, plus light-wave and fog ambience effects
+  - 7 dynamic shader backgrounds (Fluid, PS3 XMB, Rotating Mesh, Liquid Flow, Gradient Flow, Wavy, Chromatic Resonance) rendered live with cover-based color extraction, plus light-wave and fog ambience effects; custom image backgrounds are also supported
   - Now-playing word-by-word lyrics: per-word highlighting, character float/scale animation, and eased per-line scrolling (FlowWave spring / per-line stagger easing options) with customizable font size, colors and opacity
   - Standalone desktop lyrics window: word/line modes, dual-line display (original + translation), glow and outline, fog/snow/rain effects, custom colors, lockable and click-through
+  - Lyrics translation & romanization: bilingual original + translation display, TTML dual-language support, and a built-in local romanization engine
+  - Taskbar lyrics & media controls: scrolling lyrics, a live spectrum, and playback controls on the taskbar
 
 - 📝 **Music Info & Lyrics**
   - Real-time display of title, artist, album, duration, sample rate, bitrate, file type
   - Automatic album art and lyrics matching
+  - Song/album property tag editing: album artist, genre, composer, lyricist, conductor, and catalog number — editable, searchable, and sortable; album properties save in batch (writing only changed fields)
+  - Spectrogram view in song details: full-track spectrum with zoom, panning, hover readouts, and double-click seeking; the cursor follows playback
+
+- 📊 **Playback Statistics**
+  - Total listening time, track counts, active days, hourly distribution, and top songs/artists/albums
+  - Selectable time ranges, including "All time"
+
+- 🔗 **Last.fm Scrobbling**
+  - Enter your own API credentials and connect your account to report plays and now playing automatically; offline plays are cached and submitted when back online
+  - Submit local play history with original timestamps (last 14 days by default)
+  - One-way sync of local favorites to Last.fm loved tracks, with manual upload of existing favorites
 
 - 📱 **Sony Walkman Support**
   - Transfer music with metadata (including lyrics) to Sony Walkman over USB
@@ -108,6 +131,7 @@ While restricted, your existing settings are never modified or erased — comple
   - 7 UI languages (Simplified Chinese, English, German, Spanish, Japanese, Russian, Turkish), following the system language by default
   - 3 application styles: Mica, Acrylic, and more
   - 3 themes: System Default, Dark, Light
+  - Changeable app font; lyrics and desktop lyrics follow it by default, each with an independent-font option
   - Integrated SMTC (System Media Transport Controls)
   - Original album art with timeline display
 
