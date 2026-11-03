@@ -2660,8 +2660,8 @@ SHA-256: {5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Rueda para ampliar el tiempo, Mayús+rueda para ampliar la frecuencia. Arrastra para desplazar; Izquierda/Derecha desplaza el tiempo, Arriba/Abajo amplía la frecuencia, Inicio restablece. Doble clic para buscar en la pista actual.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Restablecer vista</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Opciones del espectro</value></data>
-  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Transparencia de niveles bajos (totalmente transparente a -120 dBFS)</value></data>
-  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Modo de transparencia de niveles bajos</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Modo opaco (desactivar para transparencia de niveles bajos)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Modo opaco</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Rueda: ampliar tiempo · Mayús+rueda: ampliar frecuencia · Arrastrar: desplazar</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>No hay nuevas recomendaciones. Se excluyen las canciones cuyos títulos ya están en Favoritos o listas. Añade más música e inténtalo de nuevo.</value></data>
 </root>

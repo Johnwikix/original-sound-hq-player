@@ -14,7 +14,7 @@
                 <Button x:Name="ResetButton" x:Uid="SpectrumReset" Command="{x:Bind ViewModel.ResetViewCommand, Mode=OneWay}" Padding="8" Background="Transparent">
                     <FontIcon Glyph="&#xE777;" FontSize="16" />
                 </Button>
-                <ToggleButton x:Name="TransparencyButton" x:Uid="SpectrumTransparency" IsChecked="{x:Bind ViewModel.IsTransparencyEnabled, Mode=TwoWay}" Padding="8" Background="Transparent">
+                <ToggleButton x:Name="TransparencyButton" x:Uid="SpectrumTransparency" IsChecked="{x:Bind ViewModel.IsOpaque, Mode=TwoWay}" Padding="8" Background="Transparent">
                     <FontIcon Glyph="&#xE7B3;" FontSize="16" />
                 </ToggleButton>
                 <Button x:Name="OptionsButton" x:Uid="SpectrumOptions" Padding="8" Background="Transparent">

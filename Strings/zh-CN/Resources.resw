@@ -2662,8 +2662,8 @@ SHA-256：{5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>滚轮横向缩放，Shift+滚轮纵向缩放；拖动平移，左右键横向平移，上下键纵向缩放，Home 重置；双击跳转当前歌曲。</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>重置视图</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>频谱选项</value></data>
-  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>低响度透明（-120 dBFS 全透明）</value></data>
-  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>低响度透明模式</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>不透明模式（未选中时为低响度透明）</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>不透明模式</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>滚轮缩放时间 · Shift+滚轮缩放频率 · 拖动平移</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>暂无新的推荐。收藏和播放列表中的同名歌曲不再重复推荐；可以添加更多音乐后再试。</value></data>
 </root>

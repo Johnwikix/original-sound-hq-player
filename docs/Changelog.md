@@ -1,3 +1,8 @@
+## 2026-11-03 频谱不透明开关
+- `ViewModel/Controls/SpectrogramViewModel.cs`、`View/Controls/SpectrogramControl.xaml`、`Strings/*/Resources.resw`：低响度透明仍默认启用，ToggleButton 改为未选中=透明、选中=不透明，并同步七语言提示。
+- `View/Controls/MusicDetailControl.xaml(.cs)`：四个歌曲操作移出标题滚动区，固定为左栏底栏；紧凑/高 DPI 等效尺寸下长标题只挤压可滚动内容，不再裁剪按钮，操作栏继续参与协调进入动画。
+- `_tools/HomeUiRegression`：覆盖开关反向绑定及 760×420 长标题布局中最右侧按钮和固定底栏的几何可见性。
+
 ## 2026-11-03 频谱透明默认启用与可见缩放提示
 - `ViewModel/Controls/SpectrogramViewModel.cs`、`View/Controls/SpectrogramControl.xaml`：低响度透明模式改为默认启用，ToggleButton 点击后关闭；技术信息下方直接显示滚轮时间缩放、Shift+滚轮频率缩放和拖动平移说明。
 - `Strings/*/Resources.resw`、`_tools/HomeUiRegression`：补齐七语言可见提示，覆盖默认启用、反向关闭及提示文本回归；DPI/长标题左侧按钮布局按需求暂未修改。

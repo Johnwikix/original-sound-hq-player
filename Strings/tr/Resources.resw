@@ -2660,8 +2660,8 @@ SHA-256: {5}
   <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Tekerlek zamanı, Shift+tekerlek frekansı yakınlaştırır. Sürükleme kaydırır; Sol/Sağ zamanı kaydırır, Yukarı/Aşağı frekansı yakınlaştırır, Home sıfırlar. Çalan parçada aramak için çift tıklayın.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Görünümü sıfırla</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spektrum seçenekleri</value></data>
-  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Düşük düzey saydamlığı (-120 dBFS'de tamamen saydam)</value></data>
-  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Düşük düzey saydamlık modu</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Opak mod (seçili değilken düşük düzeyler saydam)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Opak mod</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Tekerlek: zamanı yakınlaştır · Shift+tekerlek: frekansı yakınlaştır · Sürükleme: kaydır</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Henüz yeni öneri yok. Favorilerde veya çalma listelerinde aynı adı taşıyan şarkılar hariç tutulur. Daha fazla müzik ekleyip yeniden deneyin.</value></data>
 </root>

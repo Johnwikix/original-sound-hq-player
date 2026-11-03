@@ -62,7 +62,15 @@ public sealed class SpectrogramViewModel : ObservableObject
     public double ViewStart { get; private set => SetProperty(ref field, value); }
     public double VerticalZoom { get; private set => SetProperty(ref field, value); } = 1;
     public double FrequencyViewStart { get; private set => SetProperty(ref field, value); }
-    public bool IsTransparencyEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsTransparencyEnabled
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsOpaque));
+        }
+    } = true;
+    public bool IsOpaque { get => !IsTransparencyEnabled; set => IsTransparencyEnabled = !value; }
     public bool HasPlaybackCursor => SameMusic(_app.CurrentPlayingMusic);
     public bool IsPlaying => HasPlaybackCursor && _app.IsPlaying;
     public double PositionSeconds => HasPlaybackCursor ? _app.CurrentPlayingTime.TotalSeconds : 0;
