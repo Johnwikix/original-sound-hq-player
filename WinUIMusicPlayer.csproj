@@ -404,8 +404,54 @@
   <ItemGroup>
     <AnalysisWorkerSources Include="External\AudioAnalysisWorker\*.cs;External\AudioAnalysisWorker\*.csproj;Services\AudioAnalysis\Core\*.cs;Assets\icon.ico" />
   </ItemGroup>
-  <Target Name="PublishAudioAnalysisWorker" BeforeTargets="PrepareForBuild"
-          Condition="'$(Platform)' == 'x64'" Inputs="@(AnalysisWorkerSources)" Outputs="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.exe">
-    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioAnalysisWorker\AudioAnalysisWorker.csproj&quot; -c Release -r win-x64 -p:UseSharedCompilation=false -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
+  <!-- NativeAOT 发布产物不可字节复现，时间戳增量会被 git 操作重置后触发无谓重发布并污染仓库；
+       改用源码内容哈希门控：hash 文件与 exe 一起提交，pull 后哈希一致即跳过，源码真实变更才重新发布。 -->
+  <UsingTask TaskName="HashAnalysisWorkerInputs" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Hash ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Using Namespace="System.Security.Cryptography" />
+      <Using Namespace="System.Text" />
+      <Code Type="Fragment" Language="C#">
+        <![CDATA[
+        var sb = new StringBuilder();
+        using (var sha = SHA256.Create())
+        {
+            foreach (string path in Files.Select(f => f.ItemSpec).OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+            {
+                if (!File.Exists(path)) { Hash = "missing:" + path; return true; }
+                byte[] fileHash;
+                using (Stream stream = File.OpenRead(path)) fileHash = sha.ComputeHash(stream);
+                foreach (byte b in fileHash) sb.Append(b.ToString("x2"));
+                sb.Append('|');
+            }
+            byte[] final = sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+            sb.Clear();
+            foreach (byte b in final) sb.Append(b.ToString("x2"));
+        }
+        Hash = sb.ToString();
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <Target Name="PublishAudioAnalysisWorker" BeforeTargets="PrepareForBuild" Condition="'$(Platform)' == 'x64'">
+    <HashAnalysisWorkerInputs Files="@(AnalysisWorkerSources->'%(FullPath)')">
+      <Output TaskParameter="Hash" PropertyName="WorkerInputsHash" />
+    </HashAnalysisWorkerInputs>
+    <ReadLinesFromFile File="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash" Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash')">
+      <Output TaskParameter="Lines" PropertyName="WorkerKnownHash" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <SkipWorkerPublish Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.exe') and '$(WorkerKnownHash)' == '$(WorkerInputsHash)'">true</SkipWorkerPublish>
+    </PropertyGroup>
+    <Message Text="AudioAnalysisWorker 源码未变化，跳过重新发布" Importance="high" Condition="'$(SkipWorkerPublish)' == 'true'" />
+    <Exec Condition="'$(SkipWorkerPublish)' != 'true'"
+          Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioAnalysisWorker\AudioAnalysisWorker.csproj&quot; -c Release -r win-x64 -p:UseSharedCompilation=false -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash" Lines="$(WorkerInputsHash)" Overwrite="true" Condition="'$(SkipWorkerPublish)' != 'true'" />
   </Target>
 </Project>
