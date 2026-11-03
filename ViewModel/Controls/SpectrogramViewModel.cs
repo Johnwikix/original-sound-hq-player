@@ -60,6 +60,9 @@ public sealed class SpectrogramViewModel : ObservableObject
     public double MaximumDbFloor => MinimumDb + 10;
     public double Zoom { get; private set => SetProperty(ref field, value); } = 1;
     public double ViewStart { get; private set => SetProperty(ref field, value); }
+    public double VerticalZoom { get; private set => SetProperty(ref field, value); } = 1;
+    public double FrequencyViewStart { get; private set => SetProperty(ref field, value); }
+    public bool IsTransparencyEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool HasPlaybackCursor => SameMusic(_app.CurrentPlayingMusic);
     public bool IsPlaying => HasPlaybackCursor && _app.IsPlaying;
     public double PositionSeconds => HasPlaybackCursor ? _app.CurrentPlayingTime.TotalSeconds : 0;
@@ -78,6 +81,8 @@ public sealed class SpectrogramViewModel : ObservableObject
         {
             Zoom = 1;
             ViewStart = 0;
+            VerticalZoom = 1;
+            FrequencyViewStart = 0;
             Inspection = "";
         });
     }
@@ -179,13 +184,22 @@ public sealed class SpectrogramViewModel : ObservableObject
         Zoom = Math.Clamp(Zoom * factor, 1, 8);
         ViewStart = Math.Clamp(time - anchor / Zoom, 0, 1 - 1 / Zoom);
     }
+    public void ZoomFrequencyAt(double anchor, double factor)
+    {
+        anchor = Math.Clamp(anchor, 0, 1);
+        double frequency = FrequencyViewStart + (1 - anchor) / VerticalZoom;
+        VerticalZoom = Math.Clamp(VerticalZoom * factor, 1, 8);
+        FrequencyViewStart = Math.Clamp(frequency - (1 - anchor) / VerticalZoom, 0, 1 - 1 / VerticalZoom);
+    }
     public void Pan(double fraction) => ViewStart = Math.Clamp(ViewStart + fraction / Zoom, 0, 1 - 1 / Zoom);
+    public void PanFrequency(double fraction) => FrequencyViewStart = Math.Clamp(FrequencyViewStart + fraction / VerticalZoom, 0, 1 - 1 / VerticalZoom);
     public void Inspect(double x, double y)
     {
         if (Data is not { } data) return;
         double time = Math.Clamp(ViewStart + x / Zoom, 0, 1);
+        double frequency = Math.Clamp(FrequencyViewStart + (1 - y) / VerticalZoom, 0, 1);
         int column = Math.Clamp((int)(time * data.Width), 0, data.Width - 1);
-        int bin = Math.Clamp((int)((1 - y) * (data.Height - 1)), 0, data.Height - 1);
+        int bin = Math.Clamp((int)(frequency * (data.Height - 1)), 0, data.Height - 1);
         double seconds = time * data.Duration;
         Inspection = string.Create(CultureInfo.CurrentCulture, $"{(int)seconds / 60:00}:{seconds % 60:00.0} · {bin * data.SampleRate / (double)data.FftSize:N0} Hz · {data.Values(Channel)[column * data.Height + bin] - 160} dBFS");
     }

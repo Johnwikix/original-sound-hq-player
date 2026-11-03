@@ -2657,8 +2657,11 @@ SHA-256: {5}
   <data name="SpectrumFailed" xml:space="preserve"><value>この曲を解析できませんでした。再試行してください。</value></data>
   <data name="SpectrumDownmix" xml:space="preserve"><value>ステレオダウンミックス</value></data>
   <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>音声スペクトログラム</value></data>
-  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>ホイールで拡大縮小。左右キーで移動、上下キーで拡大縮小、Homeでリセット。ダブルクリックで再生中の曲をシークします。</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>ホイールで時間軸、Shift+ホイールで周波数軸を拡大縮小。ドラッグで移動、左右キーで時間軸を移動、上下キーで周波数軸を拡大縮小、Homeでリセット。ダブルクリックで再生中の曲をシークします。</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>表示をリセット</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>スペクトル設定</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>低レベルを透明化（-120 dBFS で完全に透明）</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>低レベル透明モード</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>ホイール：時間軸の拡大縮小 · Shift+ホイール：周波数軸の拡大縮小 · ドラッグ：移動</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>新しいおすすめはありません。お気に入りやプレイリストと同名の曲は除外します。曲を追加して再度お試しください。</value></data>
 </root>

@@ -6,12 +6,18 @@
     Foreground="{ThemeResource TextFillColorSecondaryBrush}">
     <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8" Padding="0,12,0,8">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <TextBlock Text="{x:Bind ViewModel.TechnicalInfo, Mode=OneWay}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.TechnicalInfo, Mode=OneWay}" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock x:Name="InteractionHint" x:Uid="SpectrumInteractionHint" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                 <Button x:Name="ResetButton" x:Uid="SpectrumReset" Command="{x:Bind ViewModel.ResetViewCommand, Mode=OneWay}" Padding="8" Background="Transparent">
                     <FontIcon Glyph="&#xE777;" FontSize="16" />
                 </Button>
-                <Button x:Uid="SpectrumOptions" Padding="8" Background="Transparent">
+                <ToggleButton x:Name="TransparencyButton" x:Uid="SpectrumTransparency" IsChecked="{x:Bind ViewModel.IsTransparencyEnabled, Mode=TwoWay}" Padding="8" Background="Transparent">
+                    <FontIcon Glyph="&#xE7B3;" FontSize="16" />
+                </ToggleButton>
+                <Button x:Name="OptionsButton" x:Uid="SpectrumOptions" Padding="8" Background="Transparent">
                     <FontIcon Glyph="&#xE713;" FontSize="16" />
                     <Button.Flyout>
                         <Flyout>

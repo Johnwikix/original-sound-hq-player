@@ -2657,8 +2657,11 @@ SHA-256: {5}
   <data name="SpectrumFailed" xml:space="preserve"><value>Не удалось проанализировать трек. Повторите попытку.</value></data>
   <data name="SpectrumDownmix" xml:space="preserve"><value>Сведение в стерео</value></data>
   <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Спектрограмма аудио</value></data>
-  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Колесо — масштаб. Влево/вправо — сдвиг, вверх/вниз — масштаб, Home — сброс. Двойной щелчок — переход в текущем треке.</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Колесо масштабирует время, Shift+колесо — частоту. Перетаскивание сдвигает вид; влево/вправо — сдвиг времени, вверх/вниз — масштаб частоты, Home — сброс. Двойной щелчок — переход в текущем треке.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Сбросить вид</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Настройки спектра</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Прозрачность тихих сигналов (полностью прозрачно при -120 dBFS)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Режим прозрачности тихих сигналов</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Колесо: масштаб времени · Shift+колесо: масштаб частоты · Перетаскивание: сдвиг</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Новых рекомендаций пока нет. Треки с названиями из избранного или плейлистов исключены. Добавьте музыку и попробуйте снова.</value></data>
 </root>

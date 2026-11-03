@@ -2657,8 +2657,11 @@ SHA-256: {5}
   <data name="SpectrumFailed" xml:space="preserve"><value>Dieser Titel konnte nicht analysiert werden. Erneut versuchen.</value></data>
   <data name="SpectrumDownmix" xml:space="preserve"><value>Stereo-Downmix</value></data>
   <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Audio-Spektrogramm</value></data>
-  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Mausrad zum Zoomen. Links/Rechts zum Verschieben, Auf/Ab zum Zoomen, Pos1 zum Zurücksetzen. Doppelklick sucht im laufenden Titel.</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Mausrad zoomt die Zeit, Umschalt+Mausrad die Frequenz. Ziehen verschiebt; Links/Rechts verschiebt die Zeit, Auf/Ab zoomt die Frequenz, Pos1 setzt zurück. Doppelklick sucht im laufenden Titel.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Ansicht zurücksetzen</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spektrumoptionen</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Transparenz leiser Signale (bei -120 dBFS vollständig transparent)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Transparenzmodus für leise Signale</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Mausrad: Zeit zoomen · Umschalt+Mausrad: Frequenz zoomen · Ziehen: Verschieben</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Noch keine neuen Empfehlungen. Titel mit Namen aus Favoriten oder Playlists werden ausgeschlossen. Füge weitere Musik hinzu und versuche es erneut.</value></data>
 </root>

@@ -1,3 +1,12 @@
+## 2026-11-03 频谱透明默认启用与可见缩放提示
+- `ViewModel/Controls/SpectrogramViewModel.cs`、`View/Controls/SpectrogramControl.xaml`：低响度透明模式改为默认启用，ToggleButton 点击后关闭；技术信息下方直接显示滚轮时间缩放、Shift+滚轮频率缩放和拖动平移说明。
+- `Strings/*/Resources.resw`、`_tools/HomeUiRegression`：补齐七语言可见提示，覆盖默认启用、反向关闭及提示文本回归；DPI/长标题左侧按钮布局按需求暂未修改。
+
+## 2026-11-03 频谱二维缩放与低响度透明模式
+- `View/Controls/SpectrogramControl.xaml(.cs)`：频谱右缘与上方按钮组对齐；滚轮缩放时间轴、Shift+滚轮缩放频率轴，拖动支持二维平移，频率刻度和悬停读数随视口更新；新增低响度透明切换，-120 dBFS 及以下全透明、至 0 dBFS 线性恢复不透明。
+- `ViewModel/Controls/SpectrogramViewModel.cs`、`Strings/*/Resources.resw`：增加独立纵向视口、透明度状态及七语言交互提示，重置同时恢复两个坐标轴。
+- `_tools/HomeUiRegression`：新增右缘几何、纵向锚点/平移/重置、透明度像素和真实 ToggleButton 双向绑定回归。
+
 ## 2026-11-03 取消跨流派栏的未听硬限制
 - `Services/Recommendations/HomeRecommendationService.cs`：换个流派听听允许已听歌曲，已听权重乘0.5，并与收藏/歌单的0.1系数叠加；常听不降权。
 - `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`：新增全曲库已听、播放次数与历史不同步、未听优先及第三栏真实可见性回归；完整232首快照3个批次的第三栏由0首恢复至20首。

@@ -2657,8 +2657,11 @@ SHA-256: {5}
   <data name="SpectrumFailed" xml:space="preserve"><value>Unable to analyze this track. Please retry.</value></data>
   <data name="SpectrumDownmix" xml:space="preserve"><value>Stereo downmix</value></data>
   <data name="SpectrumChart.AutomationProperties.Name" xml:space="preserve"><value>Audio spectrogram</value></data>
-  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Scroll to zoom. Left/Right to pan, Up/Down to zoom, Home to reset. Double-click to seek the playing track.</value></data>
+  <data name="SpectrumChart.AutomationProperties.HelpText" xml:space="preserve"><value>Scroll to zoom time, Shift+Scroll to zoom frequency. Drag to pan; Left/Right pan time, Up/Down zoom frequency, Home resets. Double-click to seek the playing track.</value></data>
   <data name="SpectrumReset.AutomationProperties.Name" xml:space="preserve"><value>Reset view</value></data>
   <data name="SpectrumOptions.AutomationProperties.Name" xml:space="preserve"><value>Spectrum options</value></data>
+  <data name="SpectrumTransparency.ToolTipService.ToolTip" xml:space="preserve"><value>Low-level transparency (fully transparent at -120 dBFS)</value></data>
+  <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Low-level transparency mode</value></data>
+  <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Mouse wheel: zoom time · Shift+mouse wheel: zoom frequency · Drag: pan</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>No new recommendations yet. Songs with titles already in Favorites or playlists are excluded. Add more music and try again.</value></data>
 </root>

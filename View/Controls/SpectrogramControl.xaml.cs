@@ -3,6 +3,7 @@ using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Composition;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
@@ -16,6 +17,7 @@ using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.System;
 using Windows.UI;
+using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.AudioAnalysis;
 using WinUIMusicPlayer.ViewModel;
@@ -41,7 +43,8 @@ public sealed partial class SpectrogramControl : UserControl
     private bool _wasPlaying;
     private bool _panning;
     private double _dragX;
-    private Rect Plot => new(48, 28, Math.Max(1, ChartHost.ActualWidth - 64), Math.Max(1, ChartHost.ActualHeight - 60));
+    private double _dragY;
+    private Rect Plot => new(48, 28, Math.Max(1, ChartHost.ActualWidth - 48), Math.Max(1, ChartHost.ActualHeight - 60));
 
     public SpectrogramControl()
     {
@@ -122,8 +125,10 @@ public sealed partial class SpectrogramControl : UserControl
     private void ModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName is nameof(SpectrogramViewModel.Data) or nameof(SpectrogramViewModel.Channel)
-            or nameof(SpectrogramViewModel.MinimumDb) or nameof(SpectrogramViewModel.MaximumDb)) RefreshPixels();
+            or nameof(SpectrogramViewModel.MinimumDb) or nameof(SpectrogramViewModel.MaximumDb)
+            or nameof(SpectrogramViewModel.IsTransparencyEnabled)) RefreshPixels();
         if (args.PropertyName is nameof(SpectrogramViewModel.Zoom) or nameof(SpectrogramViewModel.ViewStart)) { _canvas?.Invalidate(); UpdateCursor(); }
+        if (args.PropertyName is nameof(SpectrogramViewModel.VerticalZoom) or nameof(SpectrogramViewModel.FrequencyViewStart)) _canvas?.Invalidate();
         if (args.PropertyName is nameof(SpectrogramViewModel.PositionSeconds) or nameof(SpectrogramViewModel.IsPlaying)
             or nameof(SpectrogramViewModel.HasPlaybackCursor) or nameof(SpectrogramViewModel.Data)) UpdateCursor();
     }
@@ -144,12 +149,14 @@ public sealed partial class SpectrogramControl : UserControl
         byte[] values = data.Values(ViewModel.Channel);
         double minimum = ViewModel.MinimumDb, maximum = ViewModel.MaximumDb;
         bool contrast = _accessibility.HighContrast;
+        bool transparency = ViewModel.IsTransparencyEnabled;
         int height = Math.Min(1024, data.Height);
         try
         {
-            var pixels = await Task.Run(() => MakePixels(data, values, height, minimum, maximum, contrast, request.Token), request.Token);
+            var pixels = await Task.Run(() => MakePixels(data, values, height, minimum, maximum, contrast, transparency, request.Token), request.Token);
             if (version != _version || !ReferenceEquals(canvas, _canvas) || !IsLoaded) return;
-            var bitmap = CanvasBitmap.CreateFromBytes(canvas, pixels, data.Width, height, Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized);
+            var bitmap = CanvasBitmap.CreateFromBytes(canvas, pixels, data.Width, height,
+                Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized);
             _bitmap?.Dispose();
             _bitmap = bitmap;
             canvas.Invalidate();
@@ -165,7 +172,7 @@ public sealed partial class SpectrogramControl : UserControl
         }
         finally { if (ReferenceEquals(_pixels, request)) _pixels = null; request.Dispose(); }
     }
-    private static byte[] MakePixels(SpectrogramData data, byte[] values, int height, double minimum, double maximum, bool contrast, CancellationToken token)
+    private static byte[] MakePixels(SpectrogramData data, byte[] values, int height, double minimum, double maximum, bool contrast, bool transparency, CancellationToken token)
     {
         var colors = new Color[161];
         for (int i = 0; i < colors.Length; i++) colors[i] = Palette(Math.Clamp((i - 160 - minimum) / (maximum - minimum), 0, 1), contrast);
@@ -181,7 +188,9 @@ public sealed partial class SpectrogramControl : UserControl
                 for (int bin = first; bin < last; bin++) peak = Math.Max(peak, values[x * data.Height + bin]);
                 var color = colors[Math.Min(160, (int)peak)];
                 int offset = (y * data.Width + x) * 4;
-                pixels[offset] = color.B; pixels[offset + 1] = color.G; pixels[offset + 2] = color.R; pixels[offset + 3] = 255;
+                byte alpha = transparency ? (byte)(Math.Clamp(peak - 40, 0, 120) * 255 / 120) : (byte)255;
+                pixels[offset] = (byte)(color.B * alpha / 255); pixels[offset + 1] = (byte)(color.G * alpha / 255);
+                pixels[offset + 2] = (byte)(color.R * alpha / 255); pixels[offset + 3] = alpha;
             }
         }
         return pixels;
@@ -203,8 +212,10 @@ public sealed partial class SpectrogramControl : UserControl
         if (_bitmap is null || ViewModel?.Data is not { } data || _text is null) return;
         var drawing = args.DrawingSession;
         var plot = Plot;
-        drawing.DrawImage(_bitmap, plot, new Rect(ViewModel.ViewStart * data.Width, 0, data.Width / ViewModel.Zoom, _bitmap.Size.Height),
-            1, CanvasImageInterpolation.NearestNeighbor);
+        var source = new Rect(ViewModel.ViewStart * data.Width,
+            (1 - ViewModel.FrequencyViewStart - 1 / ViewModel.VerticalZoom) * _bitmap.Size.Height,
+            data.Width / ViewModel.Zoom, _bitmap.Size.Height / ViewModel.VerticalZoom);
+        drawing.DrawImage(_bitmap, plot, source, 1, CanvasImageInterpolation.NearestNeighbor);
         var foreground = (Foreground as SolidColorBrush)?.Color ?? Microsoft.UI.Colors.Gray;
         var grid = foreground;
         grid.A = 45;
@@ -212,14 +223,19 @@ public sealed partial class SpectrogramControl : UserControl
         {
             float y = (float)(plot.Bottom - plot.Height * i / 4);
             drawing.DrawLine((float)plot.Left, y, (float)plot.Right, y, grid);
-            drawing.DrawText($"{data.SampleRate / 2000d * i / 4:0.#}k", 0, y - 7, foreground, _text);
+            double frequency = ViewModel.FrequencyViewStart + i / 4d / ViewModel.VerticalZoom;
+            drawing.DrawText($"{data.SampleRate / 2000d * frequency:0.#}k", 0, y - 7, foreground, _text);
             float x = (float)(plot.Left + plot.Width * i / 4);
             double seconds = (ViewModel.ViewStart + i / 4d / ViewModel.Zoom) * data.Duration;
             drawing.DrawText($"{(int)seconds / 60}:{(int)seconds % 60:00}", Math.Clamp(x - 14, 0, (float)ChartHost.ActualWidth - 34), (float)plot.Bottom + 6, foreground, _text);
         }
         drawing.DrawText($"{ViewModel.MinimumDb:0} … {ViewModel.MaximumDb:0} dBFS", (float)plot.Left, 0, foreground, _text);
         for (int i = 0; i < 40; i++)
-            drawing.FillRectangle((float)plot.Right - 80 + i * 2, 4, 2, 6, Palette(i / 39d, _accessibility.HighContrast));
+        {
+            var color = Palette(i / 39d, _accessibility.HighContrast);
+            if (ViewModel.IsTransparencyEnabled) color.A = (byte)(i * 255 / 39);
+            drawing.FillRectangle((float)plot.Right - 80 + i * 2, 4, 2, 6, color);
+        }
     }
     private void UpdateCursor()
     {
@@ -256,9 +272,12 @@ public sealed partial class SpectrogramControl : UserControl
     {
         if (_panning)
         {
-            double current = args.GetCurrentPoint(ChartHost).Position.X;
-            ViewModel?.Pan((_dragX - current) / Plot.Width);
-            _dragX = current;
+            var current = args.GetCurrentPoint(ChartHost).Position;
+            var plot = Plot;
+            ViewModel?.Pan((_dragX - current.X) / plot.Width);
+            ViewModel?.PanFrequency((current.Y - _dragY) / plot.Height);
+            _dragX = current.X;
+            _dragY = current.Y;
             return;
         }
         if (Relative(args.GetCurrentPoint(ChartHost).Position, out double x, out double y)) ViewModel?.Inspect(x, y);
@@ -269,9 +288,11 @@ public sealed partial class SpectrogramControl : UserControl
     {
         var point = args.GetCurrentPoint(ChartHost);
         ChartHost.Focus(FocusState.Pointer);
-        if (ViewModel is not { Zoom: > 1 } || !point.Properties.IsLeftButtonPressed || !Relative(point.Position, out _, out _)) return;
+        if (ViewModel is not { } vm || vm.Zoom <= 1 && vm.VerticalZoom <= 1
+            || !point.Properties.IsLeftButtonPressed || !Relative(point.Position, out _, out _)) return;
         _panning = ChartHost.CapturePointer(args.Pointer);
         _dragX = point.Position.X;
+        _dragY = point.Position.Y;
     }
     private void Chart_PointerReleased(object sender, PointerRoutedEventArgs args)
     {
@@ -282,8 +303,11 @@ public sealed partial class SpectrogramControl : UserControl
     private void Chart_PointerWheelChanged(object sender, PointerRoutedEventArgs args)
     {
         var point = args.GetCurrentPoint(ChartHost);
-        if (!Relative(point.Position, out double x, out _)) return;
-        ViewModel?.ZoomAt(x, point.Properties.MouseWheelDelta > 0 ? 1.25 : .8);
+        if (!Relative(point.Position, out double x, out double y)) return;
+        double factor = point.Properties.MouseWheelDelta > 0 ? 1.25 : .8;
+        bool vertical = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
+        if (vertical) ViewModel?.ZoomFrequencyAt(y, factor);
+        else ViewModel?.ZoomAt(x, factor);
         args.Handled = true;
     }
     private void Chart_DoubleTapped(object sender, DoubleTappedRoutedEventArgs args)
@@ -294,8 +318,10 @@ public sealed partial class SpectrogramControl : UserControl
     {
         switch (args.Key)
         {
-            case VirtualKey.Add: case VirtualKey.Up: ViewModel?.ZoomAt(.5, 1.25); break;
-            case VirtualKey.Subtract: case VirtualKey.Down: ViewModel?.ZoomAt(.5, .8); break;
+            case VirtualKey.Add: ViewModel?.ZoomAt(.5, 1.25); break;
+            case VirtualKey.Subtract: ViewModel?.ZoomAt(.5, .8); break;
+            case VirtualKey.Up: ViewModel?.ZoomFrequencyAt(.5, 1.25); break;
+            case VirtualKey.Down: ViewModel?.ZoomFrequencyAt(.5, .8); break;
             case VirtualKey.Left: ViewModel?.Pan(-.1); break;
             case VirtualKey.Right: ViewModel?.Pan(.1); break;
             case VirtualKey.Home: ViewModel?.ResetViewCommand.Execute(null); break;
