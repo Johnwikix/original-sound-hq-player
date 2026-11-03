@@ -45,6 +45,24 @@ internal static class ShelfPolicyRegression
                 "independent shelf policies retain page-wide deduplication in batch " + batch);
         }
 
+        var allHeardTracks = library.Select(track => track with { PlayCount = 5 }).ToArray();
+        var allHeardHistory = library.Select(track => Listen(track.Id, track.Id <= 81 ? 10 : 1)).ToArray();
+        var allHeard = service.Build(allHeardTracks, allHeardHistory, now, 0, default);
+        Check(allHeard.Discovery.Count == 20 && allHeard.Discovery.All(song => song.MusicId > 81),
+            "an entirely heard library retains an alternative-genre shelf");
+        var mixedHeard = library.Select(track => track.Id >= 102 ? track with { PlayCount = 5 } : track).ToArray();
+        var mixed = service.Build(mixedHeard, [Listen(1, 8)], now, 0, default);
+        Check(mixed.Discovery.Count == 20 && mixed.Discovery.All(song => song.MusicId is >= 82 and <= 101),
+            "unheard alternatives rank ahead of equally unfamiliar heard songs without excluding replay");
+        var heardInHistory = Enumerable.Range(1, 81).Select(id => Listen(id, 10))
+            .Concat(Enumerable.Range(102, 220).Select(id => new HomeListening
+            {
+                MusicId = id, Weight = .5, Count = 1, LastPlayedTicks = now.AddDays(-2).Ticks
+            })).ToArray();
+        var historyMixed = service.Build(library, heardInHistory, now, 0, default);
+        Check(historyMixed.Discovery.Count == 20 && historyMixed.Discovery.All(song => song.MusicId is >= 82 and <= 101),
+            "qualified history also attenuates discovery when cumulative play count is stale");
+
         var narrow = Enumerable.Range(1, 41).Select(id => Track(id, id <= 21 ? "Jazz" : "Metal", id == 1)).ToArray();
         var reserved = service.Build(narrow, [], now, 0, default);
         Check(reserved.Songs.Count == 20 && reserved.Discovery.Count == 13
@@ -56,7 +74,7 @@ internal static class ShelfPolicyRegression
 
         var heard = new[] { Listen(1, 8) }.Concat(Enumerable.Range(82, 240).Select(id => Listen(id, 1))).ToArray();
         Check(service.Build(library, heard, now, 0, default).Discovery.All(song => song.MusicId <= 81),
-            "previously heard alternatives do not masquerade as unheard discoveries");
+            "alternative genre selection still follows the dominant listening preference");
         var unplayable = library.Select(track => track.Id > 81 ? track with { IsAvailable = false } : track).ToArray();
         Check(service.Build(unplayable, [], now, 0, default).Discovery.Count == 0,
             "offline alternative genres do not produce unplayable discoveries");

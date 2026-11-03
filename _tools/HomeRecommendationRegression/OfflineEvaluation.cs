@@ -40,7 +40,7 @@ internal static class OfflineEvaluation
     }
     internal sealed class Report
     {
-        public string Algorithm { get; set; } = "tfidf-cosine-knn-sum5-seeds64-centered-retrieval-rrf60-window200-collected0.1";
+        public string Algorithm { get; set; } = "tfidf-cosine-knn-sum5-seeds64-centered-retrieval-rrf60-window200-collected0.1-heard-discovery0.5";
         public DateTime SnapshotUtc { get; set; }
         public int Tracks { get; set; }
         public int ExplicitPositiveGroups { get; set; }
@@ -48,8 +48,10 @@ internal static class OfflineEvaluation
         public string LibrarySha256 { get; set; } = "";
         public string FeaturesSha256 { get; set; } = "";
         public List<Metric> Metrics { get; set; } = [];
+        public List<ShelfCounts> FullSnapshotShelves { get; set; } = [];
         public List<string> Notes { get; set; } = [];
     }
+    internal sealed record ShelfCounts(string Model, int Batch, int Primary, int Familiar, int Discovery);
     internal sealed class Manifest
     {
         public DateTime NowUtc { get; set; }
@@ -101,6 +103,14 @@ internal static class OfflineEvaluation
                     "Legacy baseline retains its original hard collection exclusion; the new production policy applies a 0.1 recommendation weight instead.",
                     "Main20 is the displayed Songs shelf; Primary28 includes carousel and side cards. No target labels enter model fitting."]
             };
+            var fullAudio = await AudioPreferenceScorer.ScoreAsync(repository, tracks, history, default);
+            for (int batch = 0; batch < 3; batch++)
+            {
+                var result = new HomeRecommendationService().Build(tracks, history, manifest.NowUtc, batch, default, fullAudio);
+                var counts = new ShelfCounts("current", batch, result.Songs.Count, result.Familiar.Count, result.Discovery.Count);
+                report.FullSnapshotShelves.Add(counts);
+                Console.WriteLine($"full-snapshot | batch={batch} | primary={counts.Primary} | familiar={counts.Familiar} | discovery={counts.Discovery}");
+            }
             for (int fold = 0; fold < 5; fold++)
             {
                 var heldOut = positives.Where(key => Fold(key) == fold).ToHashSet(StringComparer.Ordinal);

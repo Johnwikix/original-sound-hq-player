@@ -1,3 +1,8 @@
+## 2026-11-03 取消跨流派栏的未听硬限制
+- `Services/Recommendations/HomeRecommendationService.cs`：换个流派听听允许已听歌曲，已听权重乘0.5，并与收藏/歌单的0.1系数叠加；常听不降权。
+- `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`：新增全曲库已听、播放次数与历史不同步、未听优先及第三栏真实可见性回归；完整232首快照3个批次的第三栏由0首恢复至20首。
+- `docs/RecommendationAlgorithmResearch.md`、`docs/HomeRecommendationsPlan.md`：补记此次漏测的完整快照场景与最新栏目/留出结果。
+
 ## 2026-11-03 TF-IDF与音频近邻推荐、收藏软降权
 - `ContentKnnProfile`、`NeighborScoring`、`AudioNeighborProfile`：艺术家/流派TF-IDF与声学余弦item-kNN替换原元数据权重和8中心聚类，共用64种子/5近邻的有界加权求和。
 - `HomeRecommendationService`、`RecommendationRankFusion`：来源内召回后等权RRF融合，缺失来源不进入零分均值；收藏/歌单及同名副本保留资格并乘0.1，常听与训练偏好不降权。

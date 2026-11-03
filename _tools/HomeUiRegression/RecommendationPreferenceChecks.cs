@@ -39,13 +39,23 @@ internal sealed partial class RegressionApplication
             "returning to the page applies playlist changes received while inactive");
         Check(home.Discovery.Count > 0 && ((RecommendationShelf)page.FindName("DiscoveryShelf")).Visibility == Visibility.Visible,
             "shipping alternative-genre shelf remains visible with recent listening preferences");
+        var app = Field<AppViewModel>(home, "_app");
+        var allHeardSongs = app.SongsSource.ToList();
+        foreach (var song in allHeardSongs) song.PlayCount = 5;
+        app.Replace(allHeardSongs);
+        await Wait(() => analysis.LastTracks.All(track => track.PlayCount == 5) && !Field<bool>(home, "_running"));
+        Check(home.Songs.Count > 0 && home.Familiar.Count > 0 && home.Discovery.Count > 0,
+            "an entirely heard library publishes all three shelves through the shipping view model");
+        Check(((RecommendationShelf)page.FindName("SongsShelf")).Visibility == Visibility.Visible
+            && ((RecommendationShelf)page.FindName("FamiliarShelf")).Visibility == Visibility.Visible
+            && ((RecommendationShelf)page.FindName("DiscoveryShelf")).Visibility == Visibility.Visible,
+            "compiled bindings keep all three shelves visible after every track has been played");
         await database.ExecuteAsync("INSERT INTO PlayListMusic (PlayListId, MusicId, [Order]) SELECT 123, Id, Id FROM Music");
         data.NotifyRecommendationPreferencesChanged();
         home.RefreshCommand.Execute(null);
         await Wait(() => analysis.LastTracks.All(track => track.IsInPlaylist) && !Field<bool>(home, "_running"));
         Check(home.Songs.Count > 0 && home.Familiar.Count > 0 && home.HasContent && !home.IsUnavailable,
             "all-playlisted library retains downweighted recommendations and unpenalized familiar content");
-        var app = Field<AppViewModel>(home, "_app");
         app.Replace([app.FindById(1)!]);
         await Wait(() => home.Familiar.Count == 1 && home.Songs.Count == 0 && !Field<bool>(home, "_running"));
         Check(((ScrollViewer)page.FindName("ContentScroll")).Visibility == Visibility.Visible

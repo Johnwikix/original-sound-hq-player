@@ -14,6 +14,7 @@ public sealed class HomeRecommendationService
     private const int PageSize = 20;
     private const int FeaturedLimit = 5;
     private const int CardLimit = 3;
+    private const double HeardDiscoveryWeight = .5;
     private const double RelevanceTolerance = .12;
     private static readonly string[] UnknownNames =
     [
@@ -136,8 +137,10 @@ public sealed class HomeRecommendationService
             Offer(fallback, new(item, jitter * recommendationWeight, 0, RecommendationReason.Explore, "", jitter * recommendationWeight));
             // 跨流派探索不设置主推荐的亲和度下限；陌生流派本来就可能没有匹配证据。
             double discoveryScore = 1 - g;
-            var discovery = new Candidate(item, discoveryScore * recommendationWeight, 0, RecommendationReason.Explore, "", jitter * recommendationWeight);
-            if (track.PlayCount == 0 && listened is not { Count: > 0 } && item.Genres.Length > 0
+            // 换流派也允许回听；播放记录只降低权重，不能把听过的曲库整栏筛空。
+            double discoveryWeight = recommendationWeight * (track.PlayCount > 0 || listened is { Count: > 0 } ? HeardDiscoveryWeight : 1);
+            var discovery = new Candidate(item, discoveryScore * discoveryWeight, 0, RecommendationReason.Explore, "", jitter * discoveryWeight);
+            if (item.Genres.Length > 0
                 && genreSupport.Count > 1 && (genreMax <= 0 || g < 1 - 1e-6))
             {
                 Offer(explore, discovery);
