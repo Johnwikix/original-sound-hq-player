@@ -52,6 +52,8 @@ public sealed class HomeViewModel : ObservableObject
     private bool _started, _active, _stopped, _running, _deferredRefresh, _dirty = true, _historyDirty = true;
     private long _revision, _snapshotVersion = -1;
     private int _batch;
+    private int _publishedBatch = -1;
+    private HomeRecommendation[] _recentRecommendations = [];
     private DateTime _historyDay, _publishedDay;
     private RecommendationTrack[] _snapshot = [];
     private List<HomeListening> _history = [];
@@ -278,6 +280,7 @@ public sealed class HomeViewModel : ObservableObject
         }
         await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks);
         _snapshot = [];
+        _recentRecommendations = [];
         _history.Clear();
         PlaylistMenuItems.Clear();
     }
@@ -427,7 +430,8 @@ public sealed class HomeViewModel : ObservableObject
                             _snapshotVersion = version;
                             _publishedDay = DateTime.UtcNow.Date;
                             ErrorMessage = "";
-                            Publish(new([], [], [], true));
+                            _recentRecommendations = [];
+                            Publish(new([], [], [], true), _batch);
                         }
                         continue;
                     }
@@ -461,11 +465,13 @@ public sealed class HomeViewModel : ObservableObject
                     }
                     var history = _history;
                     int batch = _batch;
+                    // 仅已发布的其他批次计入曝光；同批次的后台重算保持一致的输入。
+                    var recent = batch == _publishedBatch ? _recentRecommendations[1..] : _recentRecommendations;
                     var community = _community.Snapshot;
                     var result = await Task.Run(async () =>
                     {
                         var audio = await _analysis.GetScoresAsync(snapshot, history, token);
-                        return _recommendations.Build(snapshot, history, now, batch, token, audio, community);
+                        return _recommendations.Build(snapshot, history, now, batch, token, audio, community, recent);
                     }, token);
                     if (!_active || _stopped || token.IsCancellationRequested) continue;
                     if (revision != _revision || version != _app.State.Library.Version)
@@ -474,12 +480,12 @@ public sealed class HomeViewModel : ObservableObject
                         // 大批导入期间先展示仍在规范库中的首批结果；继续计算最新版本。
                         if (!HasContent)
                         {
-                            Publish(result);
+                            Publish(result, batch);
                             IsLoading = false;
                         }
                         continue;
                     }
-                    Publish(result);
+                    Publish(result, batch);
                     IsLoading = false;
                     IsUnavailable = !HasContent;
                     if (IsUnavailable)
@@ -503,7 +509,7 @@ public sealed class HomeViewModel : ObservableObject
         finally { _running = false; }
     }
 
-    private void Publish(HomeRecommendation result)
+    private void Publish(HomeRecommendation result, int batch)
     {
         DismissPreview();
         ValidateDetails();
@@ -520,6 +526,15 @@ public sealed class HomeViewModel : ObservableObject
         bool sameThemes = themes.Count == Themes.Count;
         for (int i = 0; sameThemes && i < themes.Count; i++) sameThemes = themes[i] == Themes[i];
         if (!sameThemes) Themes = themes;
+        // 当前批次另占一项，后台重算排除它后仍保留完整的前三批曝光输入。
+        int retained = Math.Min(HomeRecommendationService.RecentBatchLimit + 1,
+            _recentRecommendations.Length + (batch == _publishedBatch ? 0 : 1));
+        var recent = new HomeRecommendation[Math.Max(1, retained)];
+        recent[0] = result;
+        int start = batch == _publishedBatch ? 1 : 0;
+        for (int i = 1; i < recent.Length; i++) recent[i] = _recentRecommendations[start + i - 1];
+        _recentRecommendations = recent;
+        _publishedBatch = batch;
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(HasFeatured));
     }

@@ -11,10 +11,13 @@ internal enum RecommendationSources { Metadata = 1, Audio = 2, Community = 4, Al
 internal readonly record struct RecommendationFeatures(RecommendationTrack Track, string[] Artists,
     string[] Genres, string AlbumKey, string RecordingKey, bool IsCollected = false)
 {
-    /// <summary>收藏/歌单及同名副本保留候选资格，但推荐排序权重降低90%；不改变训练偏好或常听。</summary>
-    internal double RecommendationWeight => IsCollected ? .1 : 1;
+    /// <summary>标题含Instrumental（忽略大小写）的版本降低75%展示权重，不改变偏好训练。</summary>
+    internal double InstrumentalWeight => Track.Title?.Contains("Instrumental", StringComparison.OrdinalIgnoreCase) == true ? .25 : 1;
+
+    /// <summary>收藏/歌单及同名副本乘0.1，再叠加伴奏版本降权；常听仅使用伴奏版本系数。</summary>
+    internal double RecommendationWeight => (IsCollected ? .1 : 1) * InstrumentalWeight;
 }
 
-/// <summary>保存来源评分或融合后的排序分；TieBreaker仅用于同分排序。</summary>
+/// <summary>保存来源评分或融合后的排序分；TieBreaker是供同分排序和最终随机重排共用的批次随机值。</summary>
 internal readonly record struct RecommendationCandidate(RecommendationFeatures Features, double Score,
     double Affinity, RecommendationReason Reason, string Detail, double TieBreaker = 0);

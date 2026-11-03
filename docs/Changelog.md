@@ -1,3 +1,16 @@
+## 2026-11-03 降低Instrumental版本推荐权重
+- `Services/Recommendations/RecommendationFeatures.cs`、`HomeRecommendationService.cs`：标题含Instrumental（忽略大小写）的歌曲展示权重乘0.25，作用于各推荐栏目及有界召回，并与既有降权叠加；保留训练偏好和候选不足时的推荐资格。
+- `_tools/HomeRecommendationRegression/InstrumentalRegression.cs`：补充大小写、来源召回、随机回退、常听、探索、训练保留及纯伴奏曲库用例；按用户要求未构建或运行测试。
+
+## 2026-11-03 最近常听加入近期展示降权
+- `Services/Recommendations/HomeRecommendationService.cs`：最近常听复用最近三批0.15/0.35/0.6曝光降权，同录音版本共享；保留有效收听基础评分、收藏/歌单不额外降权和小曲库复用资格。
+- `_tools/HomeRecommendationRegression/BatchVariationRegression.cs`：补充常听连续换批、相同输入可复现、单首常听保留和同录音版本降权用例；按用户要求未构建或运行测试。
+
+## 2026-11-03 修复换一批推荐高度重复
+- `Services/Recommendations/HomeRecommendationService.cs`：批次随机值参与相近分数选择；最近三批曝光按0.15/0.35/0.6衰减展示分，同录音版本共享衰减；不足时保留复用资格，常听与偏好训练不降权。
+- `ViewModel/Pages/HomeViewModel.cs`：传递已发布批次快照，后台重算沿用同一批次的曝光输入，失败或取消不消耗曝光历史。
+- `_tools/HomeRecommendationRegression/BatchVariationRegression.cs`：新增不同来源分数的连续批次重合率、可复现性、小曲库、同录音版本和常听隔离回归；最终改动按用户要求未继续构建或运行验证。
+
 ## 2026-11-03 频谱不透明开关
 - `ViewModel/Controls/SpectrogramViewModel.cs`、`View/Controls/SpectrogramControl.xaml`、`Strings/*/Resources.resw`：低响度透明仍默认启用，ToggleButton 改为未选中=透明、选中=不透明，并同步七语言提示。
 - `View/Controls/MusicDetailControl.xaml(.cs)`：四个歌曲操作移出标题滚动区，固定为左栏底栏；紧凑/高 DPI 等效尺寸下长标题只挤压可滚动内容，不再裁剪按钮，操作栏继续参与协调进入动画。
