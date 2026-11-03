@@ -33,7 +33,7 @@ internal static class AudioTasteRegression
             }
             var tracks = Enumerable.Range(1, 20).Select(id => new RecommendationTrack(id, ["Artist " + id], "", "", "", 2020, id <= 2, true, 0)).ToArray();
             var scores = await AudioPreferenceScorer.ScoreAsync(repository, tracks, [], default);
-            Check(scores.Count == 20 && scores[3] >= .8 && scores[4] >= .8,
+            Check(scores.Count == 20 && scores[3] >= .49 && scores[4] >= .49,
                 "two opposite favorite styles remain independently recommendable");
             Check(scores[5] < .2 && scores[6] < .2, "unrelated acoustic style is not made similar by averaging preferences");
             var playlist = tracks.Select(track => track with { IsFavorite = false, IsInPlaylist = track.Id == 1 }).ToArray();

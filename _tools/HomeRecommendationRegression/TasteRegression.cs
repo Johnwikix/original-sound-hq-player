@@ -45,8 +45,9 @@ internal static class TasteRegression
             audio[id] = .95f;
         }
         var acoustic = service.Build(acousticLibrary, [], now, 0, default, audio);
-        Check(acoustic.Songs.Count(song => song.MusicId >= 101) >= 16,
-            "strong acoustic matches outrank broad metadata matches from different musical styles");
+        Check(Primary(acoustic).Count(song => song.MusicId >= 101) >= 8
+            && Primary(acoustic).Count(song => song.MusicId <= 100) >= 8,
+            "rank fusion retains both acoustic-only matches and independently supported metadata matches");
         Check(Primary(acoustic).Any(song => song.MusicId >= 101 && song.Reason == RecommendationReason.Audio),
             "acoustic explanation belongs to an actually promoted matching song");
 

@@ -4,6 +4,8 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Recommendations;
 using WinUIMusicPlayer.Services.Recommendations;
 
+if (args is ["--evaluate", var snapshotDirectory]) { await OfflineEvaluation.RunAsync(snapshotDirectory); return; }
+
 int checks = 0;
 void Check(bool condition, string name)
 {
@@ -14,6 +16,7 @@ void Check(bool condition, string name)
 var service = new HomeRecommendationService();
 var now = new DateTime(2026, 10, 28, 9, 0, 0, DateTimeKind.Utc);
 checks += ShelfPolicyRegression.Run(service, now);
+checks += NeighborAlgorithmRegression.Run(service, now);
 RecommendationTrack Track(int id, string artist = "", string genre = "", string album = "", bool favorite = false, bool available = true)
     => new(id, [artist], album, artist, genre, 2000 + id % 25, favorite, available, 0);
 var library = new List<RecommendationTrack>();
@@ -109,5 +112,11 @@ foreach (int size in new[] { 10000, 100000 })
     var result = service.Build(large, [], now, 0, default);
     Check(result.Songs.Count == 20, "bounded candidate selection for " + size + " songs");
     Console.WriteLine($"MEASURE: synthetic {size} tracks, {watch.Elapsed.TotalMilliseconds:F1} ms, {(GC.GetAllocatedBytesForCurrentThread() - allocated) / 1048576.0:F2} MiB allocated; input creation excluded.");
+    var personalizedLarge = large.Select((track, index) => track with { IsFavorite = index % 17 == 0 }).ToArray();
+    allocated = GC.GetAllocatedBytesForCurrentThread();
+    watch.Restart();
+    result = service.Build(personalizedLarge, [], now, 0, default);
+    Check(result.Songs.Count == 20, "bounded positive-neighbor selection for " + size + " songs");
+    Console.WriteLine($"MEASURE: personalized synthetic {size} tracks, {watch.Elapsed.TotalMilliseconds:F1} ms, {(GC.GetAllocatedBytesForCurrentThread() - allocated) / 1048576.0:F2} MiB allocated; input creation excluded.");
 }
 Console.WriteLine($"PASS: {checks} checks.");

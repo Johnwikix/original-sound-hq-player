@@ -1,10 +1,11 @@
+// Frozen baseline from f1455f32 for offline comparison; never shipped.
 using System;
 using WinUIMusicPlayer.AudioAnalysis;
 
 namespace WinUIMusicPlayer.Services.AudioAnalysis;
 
 /// <summary>最多64个正向样本、8个兴趣中心；保留多种喜欢的音色/节奏，不保存全库向量。</summary>
-public sealed class AudioTasteProfile
+public sealed class LegacyAudioTasteProfile
 {
     private const int Dimensions = 128;
     private const int SampleLimit = 64;

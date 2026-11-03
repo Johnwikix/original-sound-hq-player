@@ -25,7 +25,8 @@ internal static class ShelfPolicyRegression
         var replay = service.Build(collected, [Listen(1, 8), Listen(2, 4)], now, 0, default);
         Check(replay.Familiar.Count > 0 && replay.Familiar[0].MusicId == 1,
             "recent favorites remain eligible for the familiar shelf in an all-collected library");
-        Check(!NewSongs(replay).Any(), "familiar-only results never move collected music into discovery or primary shelves");
+        Check(NewSongs(replay).All(song => song.MusicId == 2),
+            "small collected libraries can recommend a different collected recording without duplicating familiar history");
         var single = service.Build([collected[0]], [Listen(1, 8)], now, 0, default);
         Check(single.Familiar.Count == 1 && single.Songs.Count == 0,
             "one collected recording retains its familiar playback entry");
@@ -46,10 +47,10 @@ internal static class ShelfPolicyRegression
 
         var narrow = Enumerable.Range(1, 41).Select(id => Track(id, id <= 21 ? "Jazz" : "Metal", id == 1)).ToArray();
         var reserved = service.Build(narrow, [], now, 0, default);
-        Check(reserved.Songs.Count == 20 && reserved.Discovery.Count == 12
+        Check(reserved.Songs.Count == 20 && reserved.Discovery.Count == 13
             && reserved.Featured?.Count == 5 && reserved.Cards?.Count == 3,
             "discovery receives its own quota while preserving primary and featured slots");
-        Check(reserved.Songs.Concat(reserved.Featured ?? []).Concat(reserved.Cards ?? []).Count(song => song.MusicId <= 21) == 20
+        Check(reserved.Songs.Concat(reserved.Featured ?? []).Concat(reserved.Cards ?? []).Count(song => song.MusicId is > 1 and <= 21) == 20
             && reserved.Discovery.All(song => song.MusicId > 21),
             "primary selection cannot consume the reserved alternative-genre pool");
 

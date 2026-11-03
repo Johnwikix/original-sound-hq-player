@@ -48,14 +48,14 @@ internal static class ScaleRegression
                 while(service.Progress.Phase!="Idle")await Task.Delay(30,timeout.Token);
             string[] artists=["Artist"];
             var tracks = new RecommendationTrack[count];
-            for(int i=0;i<count;i++)tracks[i]=new(i+1,artists,"","","",2020,i==0,true,0,"Scale "+i);
+            for(int i=0;i<count;i++)tracks[i]=new(i+1,artists,"","","",2020,i%17==0,true,0,"Scale "+i);
             long before = GC.GetTotalAllocatedBytes(true);
             long start = Stopwatch.GetTimestamp();
             var scores = await service.GetScoresAsync(tracks,[],default);
             double ms = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
             long allocated = GC.GetTotalAllocatedBytes(true)-before;
             if(scores.Count!=count || scores.Values.Any(x=>!float.IsFinite(x)))throw new Exception("Invalid streaming scale result");
-            string report = string.Create(CultureInfo.InvariantCulture,$"NativeAOT={!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported}\r\nrows={count}\r\nscore_ms={ms:F3}\r\nmanaged_allocated_bytes={allocated}\r\nbytes_per_track={(double)allocated/count:F3}\r\n");
+            string report = string.Create(CultureInfo.InvariantCulture,$"NativeAOT={!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported}\r\nrows={count}\r\npositive_inputs={(count+16)/17}\r\nseed_capacity=64\r\nscore_ms={ms:F3}\r\nmanaged_allocated_bytes={allocated}\r\nbytes_per_track={(double)allocated/count:F3}\r\n");
             Console.WriteLine(report);
             File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(),"_tools/artifacts/analysis-index-scale.txt"),report);
         }

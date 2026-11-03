@@ -1,3 +1,9 @@
+## 2026-11-03 TF-IDF与音频近邻推荐、收藏软降权
+- `ContentKnnProfile`、`NeighborScoring`、`AudioNeighborProfile`：艺术家/流派TF-IDF与声学余弦item-kNN替换原元数据权重和8中心聚类，共用64种子/5近邻的有界加权求和。
+- `HomeRecommendationService`、`RecommendationRankFusion`：来源内召回后等权RRF融合，缺失来源不进入零分均值；收藏/歌单及同名副本保留资格并乘0.1，常听与训练偏好不降权。
+- `_tools/HomeRecommendationRegression`、`AudioAnalysisRegression`、`HomeUiRegression`：新增手算向量、融合、软降权及真实SQLite/WinUI回归，保留旧版基线和可复现留出评估工具。
+- `docs/RecommendationAlgorithmResearch.md`：新增开源调研、参数、失败候选、分组/时间留出结果和局限；小样本改善不等同在线效果，时间留出新曲仍未召回。
+
 ## 2026-11-03 修复最近常听与跨流派推荐回退
 - `Services/Recommendations/HomeRecommendationService.cs`：最近常听允许收藏/歌单歌曲并按有效收听排序；恢复独立的跨流派探索候选与配额，主推荐继续排除已收录歌曲及同名副本。
 - `ViewModel/Pages/HomeViewModel.cs`、`View/HomePage.xaml`：仅有常听时仍展示首页，隐藏空主推荐，保留共享播放命令。

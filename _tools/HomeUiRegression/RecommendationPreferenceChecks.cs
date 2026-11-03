@@ -42,9 +42,12 @@ internal sealed partial class RegressionApplication
         await database.ExecuteAsync("INSERT INTO PlayListMusic (PlayListId, MusicId, [Order]) SELECT 123, Id, Id FROM Music");
         data.NotifyRecommendationPreferencesChanged();
         home.RefreshCommand.Execute(null);
-        await Wait(() => analysis.LastTracks.All(track => track.IsInPlaylist) && home.Songs.Count == 0 && !home.IsLoading);
-        Check(home.Familiar.Count > 0 && home.HasContent && !home.IsUnavailable,
-            "all-playlisted library publishes familiar-only content through the real view model");
+        await Wait(() => analysis.LastTracks.All(track => track.IsInPlaylist) && !Field<bool>(home, "_running"));
+        Check(home.Songs.Count > 0 && home.Familiar.Count > 0 && home.HasContent && !home.IsUnavailable,
+            "all-playlisted library retains downweighted recommendations and unpenalized familiar content");
+        var app = Field<AppViewModel>(home, "_app");
+        app.Replace([app.FindById(1)!]);
+        await Wait(() => home.Familiar.Count == 1 && home.Songs.Count == 0 && !Field<bool>(home, "_running"));
         Check(((ScrollViewer)page.FindName("ContentScroll")).Visibility == Visibility.Visible
             && ((RecommendationShelf)page.FindName("FamiliarShelf")).Visibility == Visibility.Visible
             && ((RecommendationShelf)page.FindName("SongsShelf")).Visibility == Visibility.Collapsed

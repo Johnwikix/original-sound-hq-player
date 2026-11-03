@@ -11,6 +11,13 @@ namespace WinUIMusicPlayer.Services.AudioAnalysis;
 /// <summary>只读取已提交特征，调用方负责串行化缓存切换与分析提交。</summary>
 public static class AudioPreferenceScorer
 {
+    /// <summary>三遍流式读取已提交特征，完成曲库校准、正向采样和逐候选余弦近邻评分。</summary>
+    /// <param name="repository">一个由调用方串行保护的分析仓库。</param>
+    /// <param name="tracks">一份固定曲库字段快照。</param>
+    /// <param name="history">一份已聚合的有效收听快照。</param>
+    /// <param name="token">一个停止遍历和评分的取消令牌。</param>
+    /// <param name="canScore">一个在功能关闭时拒绝继续读取的可选守卫。</param>
+    /// <returns>一份仅包含有效已分析曲目的近邻支持分；没有已分析正向样本时为空。</returns>
     public static async Task<Dictionary<int, float>> ScoreAsync(AnalysisRepository repository, IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history, CancellationToken token, Func<bool>? canScore = null)
     {
         var scores = new Dictionary<int, float>();
@@ -31,7 +38,7 @@ public static class AudioPreferenceScorer
         var scale = new double[128];
         var clips = new float[384];
         var vector = new float[128];
-        var profile = new AudioTasteProfile();
+        var profile = new AudioNeighborProfile();
         int count = 0;
         int pass = 0;
         VisitAnalysisVector visitor = Process;
@@ -53,7 +60,7 @@ public static class AudioPreferenceScorer
             }
             if (pass == 1)
             {
-                if (!profile.Fit()) return scores;
+                if (!profile.HasSamples) return scores;
             }
         }
         return scores;
@@ -79,7 +86,7 @@ public static class AudioPreferenceScorer
             {
                 profile.Add(musicId, vector, weights[musicId]);
             }
-            else scores[musicId] = profile.Score(vector);
+            else scores[musicId] = profile.Score(musicId, vector);
         }
     }
 }
