@@ -1,12 +1,16 @@
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using SQLite;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.View.Controls;
 
 internal sealed partial class RegressionApplication
 {
     private async Task CheckRecommendationPreferencesAsync(HomeViewModel home, MusicDatabaseService data,
-        SQLiteAsyncConnection database, FixtureEnrichment analysis)
+        SQLiteAsyncConnection database, FixtureEnrichment analysis, HomePage page)
     {
         Check(analysis.LastTracks.All(track => !track.IsInPlaylist), "empty playlists do not invent positive preferences");
         await database.ExecuteAsync("INSERT INTO PlayList VALUES(123),(124)");
@@ -33,6 +37,20 @@ internal sealed partial class RegressionApplication
         await Wait(() => analysis.LastTracks.Any(track => track.Id == 32 && track.IsInPlaylist));
         Check(analysis.LastTracks.Single(track => track.Id == 32).IsInPlaylist,
             "returning to the page applies playlist changes received while inactive");
+        Check(home.Discovery.Count > 0 && ((RecommendationShelf)page.FindName("DiscoveryShelf")).Visibility == Visibility.Visible,
+            "shipping alternative-genre shelf remains visible with recent listening preferences");
+        await database.ExecuteAsync("INSERT INTO PlayListMusic (PlayListId, MusicId, [Order]) SELECT 123, Id, Id FROM Music");
+        data.NotifyRecommendationPreferencesChanged();
+        home.RefreshCommand.Execute(null);
+        await Wait(() => analysis.LastTracks.All(track => track.IsInPlaylist) && home.Songs.Count == 0 && !home.IsLoading);
+        Check(home.Familiar.Count > 0 && home.HasContent && !home.IsUnavailable,
+            "all-playlisted library publishes familiar-only content through the real view model");
+        Check(((ScrollViewer)page.FindName("ContentScroll")).Visibility == Visibility.Visible
+            && ((RecommendationShelf)page.FindName("FamiliarShelf")).Visibility == Visibility.Visible
+            && ((RecommendationShelf)page.FindName("SongsShelf")).Visibility == Visibility.Collapsed
+            && ((StackPanel)page.FindName("UnavailablePanel")).Visibility == Visibility.Collapsed,
+            "compiled bindings show familiar-only results without an empty primary shelf or unavailable overlay");
+        Check(home.PlaySongCommand.CanExecute(home.Familiar[0]), "familiar-only cards retain the shared playback command");
         await home.StopAsync();
         var stopped = analysis.LastTracks;
         data.NotifyRecommendationPreferencesChanged();

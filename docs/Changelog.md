@@ -1,3 +1,9 @@
+## 2026-11-03 修复最近常听与跨流派推荐回退
+- `Services/Recommendations/HomeRecommendationService.cs`：最近常听允许收藏/歌单歌曲并按有效收听排序；恢复独立的跨流派探索候选与配额，主推荐继续排除已收录歌曲及同名副本。
+- `ViewModel/Pages/HomeViewModel.cs`、`View/HomePage.xaml`：仅有常听时仍展示首页，隐藏空主推荐，保留共享播放命令。
+- `_tools/HomeRecommendationRegression`、`_tools/HomeUiRegression`：修正旧回归的栏目预期，增加收藏回听、探索配额、去重及真实WinUI绑定检查。
+- `docs/HomeRecommendationsPlan.md`：列明实际向量、输入参数、固定权重和质量验证局限，补充implicit/LightFM/SAR及内容近邻方案调研。
+
 ## 2026-11-02 推荐排除收藏、歌单及同名副本
 - `HomeRecommendationService`：最爱和播放列表继续作为偏好样本，轮播、侧卡、主推荐、探索与常听统一排除已收录歌曲及同名副本（去首尾空白、忽略大小写，不依赖歌手、路径或专辑）。
 - `HomeRecommendationService`：排除发生在候选池截断前，栏目配额按可推荐候选计算；没有新候选时不回填已收录歌曲，其余候选保留风格相关性、歌手/专辑多样性与批次随机扰动。

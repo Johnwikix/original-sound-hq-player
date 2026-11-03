@@ -27,8 +27,8 @@ internal static class TasteRegression
                 "preferred genre survives diversity and exploration across batch " + batch);
             Check(Primary(result).Take(8).All(song => song.MusicId <= 81),
                 "featured slots retain clear positive taste across batch " + batch);
-            Check(result.Discovery.Count > 0 && result.Discovery.Count(song => song.MusicId <= 81) >= result.Discovery.Count * .8,
-                "discovery finds unheard music around the preferred style across batch " + batch);
+            Check(result.Discovery.Count == 20 && result.Discovery.All(song => song.MusicId > 81),
+                "discovery explores unheard alternative genres across batch " + batch);
         }
 
         var acousticLibrary = new List<RecommendationTrack>();
@@ -84,12 +84,12 @@ internal static class TasteRegression
             "playlist membership supplies an explicit positive preference without favorites or history");
         Check(RecommendationEvidence.Strength(playlistOnly[0], null) == RecommendationEvidence.Strength(playlistOnly[0] with { IsFavorite = true }, null),
             "overlapping favorite and playlist membership does not duplicate the same positive vote");
-        var oldAndNew = Enumerable.Range(1, 350).Select(id => Track(id, "Artist " + id, "Jazz", id <= 300)
+        var oldAndNew = Enumerable.Range(1, 350).Select(id => Track(id, "Artist " + id, id <= 300 ? "Jazz" : "Metal", id <= 300)
             with { PlayCount = id <= 300 ? 10 : 0 }).ToArray();
         var oldAndNewScores = oldAndNew.ToDictionary(track => track.Id, track => track.Id <= 300 ? .98f : .8f);
         var discoveryResult = service.Build(oldAndNew, [], now, 0, default, oldAndNewScores);
         Check(discoveryResult.Discovery.Count == 20 && discoveryResult.Discovery.All(song => song.MusicId > 300),
-            "listened favorites cannot exhaust the bounded pool of unheard style matches");
+            "listened favorites cannot exhaust the bounded pool of unheard alternative genres");
         return checks;
     }
 }

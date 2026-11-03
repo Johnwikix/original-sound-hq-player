@@ -204,7 +204,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             carousel.AutoShuffle = false; // 手动导航断言需要确定时序，自动轮播单独验证。
             if (Environment.GetCommandLineArgs().Contains("--recommendation-preferences"))
             {
-                await CheckRecommendationPreferencesAsync(home, data, database, analysis);
+                await CheckRecommendationPreferencesAsync(home, data, database, analysis, page);
                 Check(!offThread, "playlist preference changes keep UI notifications on the dispatcher");
                 File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
                 return;

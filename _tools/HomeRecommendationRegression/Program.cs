@@ -13,6 +13,7 @@ void Check(bool condition, string name)
 }
 var service = new HomeRecommendationService();
 var now = new DateTime(2026, 10, 28, 9, 0, 0, DateTimeKind.Utc);
+checks += ShelfPolicyRegression.Run(service, now);
 RecommendationTrack Track(int id, string artist = "", string genre = "", string album = "", bool favorite = false, bool available = true)
     => new(id, [artist], album, artist, genre, 2000 + id % 25, favorite, available, 0);
 var library = new List<RecommendationTrack>();

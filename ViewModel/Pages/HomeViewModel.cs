@@ -161,7 +161,7 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>区分来源离线与排除已收藏/歌单歌曲后没有新候选。</summary>
     public string UnavailableMessage { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("HomeUnavailable");
     /// <summary>获取是否显示已有推荐内容。</summary>
-    public bool HasContent => Songs.Count > 0;
+    public bool HasContent => Songs.Count > 0 || Familiar.Count > 0 || Discovery.Count > 0;
     /// <summary>获取当前是否有足够独立候选展示精选。</summary>
     public bool HasFeatured => Themes.Count > 0;
     /// <summary>获取错误说明；已有内容在刷新失败时保留。</summary>
