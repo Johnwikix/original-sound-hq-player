@@ -196,7 +196,8 @@ public partial class FolderViewModel : ObservableObject
         }
         SelectedNode = node;
         // 清除不同目录的可操作列表，防止异步排序期间播放到上一个目录。
-        if (AppViewModel.State.Browse.CurrentFolder?.Identity != node?.Location.Identity) AppViewModel.FolderSongs.Clear();
+        if (AppViewModel.State.Browse.CurrentFolder?.Identity != node?.Location.Identity)
+            _projections.ClearSongCollection(AppViewModel.FolderSongs);
         AppViewModel.State.Browse.CurrentFolder = node?.Location;
         Title = node?.Name ?? PageTitle;
         CurrentPath = node?.Path ?? string.Empty;

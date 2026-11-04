@@ -51,6 +51,16 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private readonly SemaphoreSlim _computeGate = new(1, 1);
     private bool _stopped;
 
+    /// <summary>清空歌曲投影，并同步使其已发布的查询缓存失效。</summary>
+    /// <param name="target">需要清空的歌曲集合。</param>
+    /// <remarks>必须在 UI 线程调用；保留在途刷新屏障，由后续请求发布最新目录的结果。</remarks>
+    public void ClearSongCollection(BulkObservableCollection<Music> target)
+    {
+        // 缓存只记录查询键；集合清空后即不再持有该键的结果，不能继续命中缓存。
+        _published.Remove(target);
+        target.Clear();
+    }
+
     /// <summary>同一列表最多一个在途计算；新请求替换待执行参数，不为每次输入复制音乐库。</summary>
     public Task UpdateSongCollectionsAsync(BulkObservableCollection<Music> target, SongViewType kind, Func<Music, bool>? filterPredicate = null)
     {

@@ -80,6 +80,7 @@ namespace WinUIMusicPlayer.Services
         public event Action? RefreshRequested;
         private int _version;
         public void RequestRefresh() { app.State.Library.NotifyChanged(); RefreshRequested?.Invoke(); }
+        public void ClearSongCollection(BulkObservableCollection<Music> target) => target.Clear();
         // 保留真实边界的 UI 线程异步发布和迟到结果丢弃；不模拟生产排序/IPC。
         public async Task UpdateSongCollectionsAsync(BulkObservableCollection<Music> target, SongViewType kind, Func<Music, bool> filter)
         {

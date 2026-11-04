@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.Model
 }
 namespace WinUIMusicPlayer.Utils
 {
-    public static class ToolUtils
+    public static partial class ToolUtils
     {
         public enum PlayMode { SingleLoop, ListLoop, RandomLoop, RepeatOff }
         public static string SanitizeFileName(string text, char[] invalid) => text;
@@ -77,7 +77,7 @@ namespace WinUIMusicPlayer.Services
             return Succeed;
         }
     }
-    public sealed class MusicDatabaseService
+    public sealed partial class MusicDatabaseService
     {
         public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => Task.FromResult(Model.LyricsDocument.Empty);
     }

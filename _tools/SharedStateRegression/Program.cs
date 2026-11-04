@@ -291,6 +291,8 @@ static async Task RunAsync()
     Check(list.FillCount == fillsBeforeStop, "Stopping must suppress delayed list publication.");
     Console.WriteLine("PASS: library cache, version invalidation, shared refresh barrier, latest search and stop suppression.");
 
+    await FolderNavigationRegression.RunAsync();
+
     // 原始文件名检索：标签字段不含搜索词时按文件名命中；目录段不属于文件名。
     var nameState = new AppState();
     nameState.Library.Replace([

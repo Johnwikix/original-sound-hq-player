@@ -1,3 +1,9 @@
+## 2026-11-04 修复快速切回目录后歌曲列表为空
+- `Services/LibraryProjectionService.cs`：统一清空歌曲投影和使查询缓存失效，避免缓存命中已清空的集合。
+- `ViewModel/Pages/FolderViewModel.cs`：目录切换通过投影服务清空旧歌曲，保留异步加载期间禁止操作旧目录歌曲的行为。
+- `_tools/SharedStateRegression`：链接生产目录 ViewModel、索引和投影服务，覆盖快速 A→B→A、等待共享计算时切回、缓存复用及 UI 上下文通知。
+- 验证：新增回归在修复前失败、修复后通过；共享状态回归、37 项 WinUI 检查和主工程 Debug/x64 构建通过。WinUI 检查使用隔离数据库和歌曲控件替身，未验证真实曲库播放。
+
 ## 2026-11-04 修复目录选择错位并支持拖动分栏
 - `View/FolderBrowsePage.xaml.cs`：单选事件读取本次 AddedItems，避免 WinUI 更新 SelectedItem 之前读到上一次选择，修复树高亮与右侧目录/歌曲不一致；目录刷新后在容器布局完成时恢复当前高亮，并在离页时解绑。
 - `View/FolderBrowsePage.xaml`、`ViewModel/Pages/FolderViewModel.cs`：加入 GridSplitter，左右列可拖动调整；设置两侧最小宽度，并在会话内保留分栏比例。

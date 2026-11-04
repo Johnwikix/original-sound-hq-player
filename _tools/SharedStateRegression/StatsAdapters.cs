@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.Model.Stats
 }
 namespace WinUIMusicPlayer.ViewModel
 {
-    public class AppViewModel
+    public partial class AppViewModel
     {
         public bool TryFindById(int id, out Model.Music? music) { music = null; return false; }
     }

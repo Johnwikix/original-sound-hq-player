@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.Model
     }
     public sealed record MusicGroup(string Key, List<Music> Items);
     public sealed record PlaylistLink(int MusicId, int PlayListId, int Order);
-    public static class AppData { public static List<PlaylistLink> AllPlayListMusics { get; } = []; }
+    public static partial class AppData { public static List<PlaylistLink> AllPlayListMusics { get; } = []; }
 }
 namespace WinUIMusicPlayer.Utils
 {
