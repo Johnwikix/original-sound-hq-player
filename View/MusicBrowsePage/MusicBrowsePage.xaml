@@ -17,232 +17,242 @@
     TabIndex="0"
     mc:Ignorable="d">
     <Grid>
-        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
-<Grid Margin="0" RowDefinitions="Auto,Auto,*">
-        <Grid
-            x:Name="TopPanel"
-            Grid.Row="0"
-            Visibility="Visible">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock
-                    x:Uid="MusicBrowsePageTitle"
-                    Margin="16,10,16,10"
-                    VerticalAlignment="Center"
-                    FontSize="28" />
-                <SelectorBar
-                    x:Name="selectPage"
-                    VerticalAlignment="Center"
-                    SelectedItem="{x:Bind SelectorItem(ViewModel.SelectedPageTag), Mode=OneWay}"
-                    SelectionChanged="SelectPage_SelectionChanged">
-                    <SelectorBarItem
-                        x:Name="Song"
-                        x:Uid="SongTab"
-                        FontSize="18"
-                        Tag="song" />
-                    <SelectorBarItem
-                        x:Name="Album"
-                        x:Uid="AlbumTab"
-                        FontSize="18"
-                        Tag="album" />
-                    <SelectorBarItem
-                        x:Name="Artist"
-                        x:Uid="ArtistTab"
-                        FontSize="18"
-                        Tag="artist" />
-                    <SelectorBarItem
-                        x:Name="Favourite"
-                        x:Uid="FavouriteTab"
-                        FontSize="18"
-                        Tag="favourite" />
-                </SelectorBar>
-            </StackPanel>
-
-
-            <!--  顶栏右侧只保留设备与排序选择；传输/重扫进度统一由 MainPage 全页进度层显示  -->
-            <StackPanel
-                Margin="16,10,16,10"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                Orientation="Horizontal">
-                <ComboBox
-                    x:Name="UsbDeviceCombox"
-                    x:Uid="USBDevice"
-                    Margin="10,0,10,0"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderBrush="Transparent"
-                    BorderThickness="0"
-                    FontSize="12"
-                    ItemsSource="{x:Bind ViewModel.UsbDeviceService.Devices, Mode=OneWay}"
-                    SelectedItem="{x:Bind ViewModel.UsbDeviceService.SelectedDevice, Mode=TwoWay}"
-                    Visibility="{x:Bind ViewModel.UsbDeviceService.DevicesVisibility, Mode=OneWay}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="model:UsbStorageDevice">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Margin="0,0,5,0" Text="{x:Bind Path}" />
-                                <TextBlock Text="{x:Bind FreeSpaceInGB}" />
-                                <TextBlock Text=" GB" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                <ComboBox
-                    Width="130"
-                    Margin="0,0,4,0"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderBrush="Transparent"
-                    BorderThickness="0"
-                    DisplayMemberPath="Name"
-                    FontSize="12"
-                    ItemsSource="{x:Bind ViewModel.RemoteSources.Choices}"
-                    SelectedItem="{x:Bind ViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
-                <StackPanel Margin="0" Orientation="Horizontal">
-                    <ComboBox
-                        x:Name="SortByComboBox"
-                        Width="130"
-                        Margin="0,0,10,0"
-                        VerticalAlignment="Center"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        FontSize="12"
-                        ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="model:SortOption">
-                                <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-            </StackPanel>
-        </Grid>
-        <InfoBar
-            x:Name="InfoBar"
-            Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
-            Grid.Row="1"
-            IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
-            Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
-            Severity="Informational" />
-        <Grid Grid.Row="2">
-            <Frame CacheSize="0"
-                x:Name="ContentFrame"
-                Margin="6,6,0,0"
-                IsNavigationStackEnabled="False"
-                Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(ViewModel.AppViewModel.LibraryEmptyVisibility), Mode=OneWay}" />
-
-            <!--  空音乐库占位：整个库无任何歌曲时覆盖内容区，顶栏标签保留  -->
-            <Grid
-                x:Name="EmptyLibraryGrid"
-                AllowDrop="True"
-                Background="Transparent"
-                DragLeave="EmptyLibraryGrid_DragLeave"
-                DragOver="EmptyLibraryGrid_DragOver"
-                Drop="EmptyLibraryGrid_Drop"
-                Unloaded="EmptyLibraryGrid_Unloaded"
-                Visibility="{x:Bind ViewModel.AppViewModel.LibraryEmptyVisibility, Mode=OneWay}">
-                <StackPanel
-                    MaxWidth="520"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                    <Border
-                        Width="96"
-                        Height="96"
-                        HorizontalAlignment="Center"
-                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                        CornerRadius="28">
-                        <FontIcon
-                            FontSize="44"
-                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                            Glyph="&#xE8D6;" />
-                    </Border>
-                    <TextBlock
-                        x:Uid="MusicBrowseEmptyTitle"
-                        Margin="0,24,0,0"
-                        HorizontalAlignment="Center"
-                        FontSize="28"
-                        FontWeight="SemiBold"
-                        TextAlignment="Center" />
-                    <TextBlock
-                        x:Uid="MusicBrowseEmptySubtitle"
-                        Margin="0,8,0,0"
-                        HorizontalAlignment="Center"
-                        FontSize="14"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        TextAlignment="Center"
-                        TextWrapping="Wrap" />
-                    <Button
-                        Margin="0,32,0,0"
-                        HorizontalAlignment="Center"
-                        Command="{x:Bind ViewModel.EmptyAddFolderCommand}"
-                        Style="{StaticResource FluentAccentButtonStyle}">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE8B7;" />
-                            <TextBlock
-                                x:Uid="AddFolder"
-                                Margin="8,0,0,0"
-                                VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <StackPanel
-                        Margin="0,20,0,0"
-                        HorizontalAlignment="Center"
-                        Opacity="0.6"
-                        Orientation="Horizontal">
-                        <FontIcon
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Glyph="&#xE8B7;" />
-                        <TextBlock
-                            x:Uid="AddFolderPageDragHint"
-                            Margin="6,0,0,0"
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    </StackPanel>
-                </StackPanel>
-                <!--  拖放反馈层（置于最上层，不拦截拖放事件）  -->
+        <ContentControl
+            x:Name="MusicDetailsSource"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False">
+            <Grid Margin="0" RowDefinitions="Auto,Auto,*">
                 <Grid
-                    x:Name="DropOverlay"
-                    Margin="12"
-                    IsHitTestVisible="False"
-                    Visibility="Collapsed">
-                    <Border
-                        Background="{ThemeResource AccentFillColorSecondaryBrush}"
-                        CornerRadius="12"
-                        Opacity="0.35" />
-                    <Rectangle
-                        Margin="2"
-                        RadiusX="10"
-                        RadiusY="10"
-                        Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                        StrokeDashArray="4,4"
-                        StrokeThickness="2" />
+                    x:Name="TopPanel"
+                    Grid.Row="0"
+                    Visibility="Visible">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            x:Uid="MusicBrowsePageTitle"
+                            Margin="16,10,16,10"
+                            VerticalAlignment="Center"
+                            FontSize="28" />
+                        <SelectorBar
+                            x:Name="selectPage"
+                            VerticalAlignment="Center"
+                            SelectedItem="{x:Bind SelectorItem(ViewModel.SelectedPageTag), Mode=OneWay}"
+                            SelectionChanged="SelectPage_SelectionChanged">
+                            <SelectorBarItem
+                                x:Name="Song"
+                                x:Uid="SongTab"
+                                FontSize="18"
+                                Tag="song" />
+                            <SelectorBarItem
+                                x:Name="Album"
+                                x:Uid="AlbumTab"
+                                FontSize="18"
+                                Tag="album" />
+                            <SelectorBarItem
+                                x:Name="Artist"
+                                x:Uid="ArtistTab"
+                                FontSize="18"
+                                Tag="artist" />
+                            <SelectorBarItem
+                                x:Name="Favourite"
+                                x:Uid="FavouriteTab"
+                                FontSize="18"
+                                Tag="favourite" />
+                        </SelectorBar>
+                    </StackPanel>
+
+
+                    <!--  顶栏右侧只保留设备与排序选择；传输/重扫进度统一由 MainPage 全页进度层显示  -->
                     <StackPanel
-                        HorizontalAlignment="Center"
+                        Margin="16,10,16,10"
+                        HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
-                        <FontIcon
+                        <ComboBox
+                            x:Name="UsbDeviceCombox"
+                            x:Uid="USBDevice"
+                            Margin="10,0,10,0"
                             VerticalAlignment="Center"
-                            FontSize="16"
-                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                            Glyph="&#xE8B7;" />
-                        <TextBlock
-                            x:Uid="AddFolderPageDropOverlayText"
-                            Margin="8,0,0,0"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            FontSize="12"
+                            ItemsSource="{x:Bind ViewModel.UsbDeviceService.Devices, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.UsbDeviceService.SelectedDevice, Mode=TwoWay}"
+                            Visibility="{x:Bind ViewModel.UsbDeviceService.DevicesVisibility, Mode=OneWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:UsbStorageDevice">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Margin="0,0,5,0" Text="{x:Bind Path}" />
+                                        <TextBlock Text="{x:Bind FreeSpaceInGB}" />
+                                        <TextBlock Text=" GB" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <ComboBox
+                            Width="130"
+                            Margin="0,0,4,0"
                             VerticalAlignment="Center"
-                            FontSize="16"
-                            FontWeight="SemiBold"
-                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            DisplayMemberPath="Name"
+                            FontSize="12"
+                            ItemsSource="{x:Bind ViewModel.RemoteSources.Choices}"
+                            SelectedItem="{x:Bind ViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
+                        <StackPanel Margin="0" Orientation="Horizontal">
+                            <ComboBox
+                                x:Name="SortByComboBox"
+                                Width="130"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                FontSize="12"
+                                ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="model:SortOption">
+                                        <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
+                <InfoBar
+                    x:Name="InfoBar"
+                    Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
+                    Grid.Row="1"
+                    IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
+                    Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
+                    Severity="Informational" />
+                <Grid Grid.Row="2">
+                    <Frame
+                        x:Name="ContentFrame"
+                        Margin="6,6,0,0"
+                        CacheSize="0"
+                        IsNavigationStackEnabled="False"
+                        Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(ViewModel.AppViewModel.LibraryEmptyVisibility), Mode=OneWay}" />
+
+                    <!--  空音乐库占位：整个库无任何歌曲时覆盖内容区，顶栏标签保留  -->
+                    <Grid
+                        x:Name="EmptyLibraryGrid"
+                        AllowDrop="True"
+                        Background="Transparent"
+                        DragLeave="EmptyLibraryGrid_DragLeave"
+                        DragOver="EmptyLibraryGrid_DragOver"
+                        Drop="EmptyLibraryGrid_Drop"
+                        Unloaded="EmptyLibraryGrid_Unloaded"
+                        Visibility="{x:Bind ViewModel.AppViewModel.LibraryEmptyVisibility, Mode=OneWay}">
+                        <StackPanel
+                            MaxWidth="520"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                            <Border
+                                Width="96"
+                                Height="96"
+                                HorizontalAlignment="Center"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                CornerRadius="28">
+                                <FontIcon
+                                    FontSize="44"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE8D6;" />
+                            </Border>
+                            <TextBlock
+                                x:Uid="MusicBrowseEmptyTitle"
+                                Margin="0,24,0,0"
+                                HorizontalAlignment="Center"
+                                FontSize="28"
+                                FontWeight="SemiBold"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                x:Uid="MusicBrowseEmptySubtitle"
+                                Margin="0,8,0,0"
+                                HorizontalAlignment="Center"
+                                FontSize="14"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
+                            <Button
+                                Margin="0,32,0,0"
+                                HorizontalAlignment="Center"
+                                Command="{x:Bind ViewModel.EmptyAddFolderCommand}"
+                                Style="{StaticResource FluentAccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE8B7;" />
+                                    <TextBlock
+                                        x:Uid="AddFolder"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <StackPanel
+                                Margin="0,20,0,0"
+                                HorizontalAlignment="Center"
+                                Opacity="0.6"
+                                Orientation="Horizontal">
+                                <FontIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Glyph="&#xE8B7;" />
+                                <TextBlock
+                                    x:Uid="AddFolderPageDragHint"
+                                    Margin="6,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <!--  拖放反馈层（置于最上层，不拦截拖放事件）  -->
+                        <Grid
+                            x:Name="DropOverlay"
+                            Margin="12"
+                            IsHitTestVisible="False"
+                            Visibility="Collapsed">
+                            <Border
+                                Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                                CornerRadius="12"
+                                Opacity="0.35" />
+                            <Rectangle
+                                Margin="2"
+                                RadiusX="10"
+                                RadiusY="10"
+                                Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                StrokeDashArray="4,4"
+                                StrokeThickness="2" />
+                            <StackPanel
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <FontIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="16"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE8B7;" />
+                                <TextBlock
+                                    x:Uid="AddFolderPageDropOverlayText"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
             </Grid>
-        </Grid>
-    </Grid>
         </ContentControl>
-        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
+        <ContentControl
+            x:Name="MusicDetailsOverlay"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False"
+            TabFocusNavigation="Cycle"
+            Visibility="Collapsed" />
     </Grid>
 </Page>

@@ -56,6 +56,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontSize="16"
+                                FontWeight="Bold"
                                 Foreground="White"
                                 Glyph="&#xE70E;"
                                 Opacity="0"
@@ -239,7 +240,10 @@
         <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 
-    <Style x:Key="HomeSongActionButtonStyle" TargetType="Button" BasedOn="{StaticResource MenuButtonStyle}">
+    <Style
+        x:Key="HomeSongActionButtonStyle"
+        BasedOn="{StaticResource MenuButtonStyle}"
+        TargetType="Button">
         <Setter Property="Background" Value="{ThemeResource ButtonBackground}" />
         <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}" />
         <Setter Property="CornerRadius" Value="6" />
@@ -298,7 +302,10 @@
     </Style>
 
     <!--  属性窗口底部主操作按钮（保存到数据库）：强调色填充与标准按钮同尺寸。  -->
-    <Style x:Key="PrimarySaveStyle" TargetType="Button" BasedOn="{StaticResource HomeSongActionButtonStyle}">
+    <Style
+        x:Key="PrimarySaveStyle"
+        BasedOn="{StaticResource HomeSongActionButtonStyle}"
+        TargetType="Button">
         <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource AccentFillColorDefaultBrush}" />
         <Setter Property="CornerRadius" Value="6" />
@@ -319,10 +326,11 @@
                         CornerRadius="{TemplateBinding CornerRadius}">
                         <ContentPresenter
                             x:Name="ContentPresenter"
-                            Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                            Foreground="{TemplateBinding Foreground}"
                             HorizontalAlignment="Center"
-                            VerticalAlignment="Center" />
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}" />
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup
                                 x:Name="CommonStates"
@@ -455,7 +463,7 @@
                                 VerticalAlignment="Center"
                                 FontSize="16"
                                 Foreground="White"
-                                Glyph="&#xE768;"
+                                Glyph="&#xF5B0;"
                                 Opacity="0"
                                 RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -621,28 +629,28 @@
     </Style>
 
     <!--  隐式动效样式：默认模板按钮统一获得 Fluent 上浮/按压缩放；不想动效的按钮显式挂 DefaultButtonStyle。  -->
-    <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+    <Style BasedOn="{StaticResource DefaultButtonStyle}" TargetType="Button">
         <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
         <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 
-    <Style TargetType="HyperlinkButton" BasedOn="{StaticResource DefaultHyperlinkButtonStyle}">
+    <Style BasedOn="{StaticResource DefaultHyperlinkButtonStyle}" TargetType="HyperlinkButton">
         <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
         <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 
-    <Style TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}">
+    <Style BasedOn="{StaticResource DefaultToggleButtonStyle}" TargetType="ToggleButton">
         <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
         <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 
-    <!-- 仅叠加动效，默认模板由控件主题提供，避免依赖不可解析的 Default*Style 资源键。 -->
+    <!--  仅叠加动效，默认模板由控件主题提供，避免依赖不可解析的 Default*Style 资源键。  -->
     <Style TargetType="DropDownButton">
         <Setter Property="animations:FluentAnimation.PointerOver" Value="RootGrid" />
         <Setter Property="animations:FluentAnimation.Pressed" Value="RootGrid" />
@@ -651,7 +659,10 @@
     </Style>
 
     <!--  Accent 按钮加动效；引用处由 AccentButtonStyle 换成本样式。  -->
-    <Style x:Key="FluentAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+    <Style
+        x:Key="FluentAccentButtonStyle"
+        BasedOn="{StaticResource AccentButtonStyle}"
+        TargetType="Button">
         <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
