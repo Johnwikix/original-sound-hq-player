@@ -1,3 +1,7 @@
+## 2026-11-04 设置页字体列表按界面语言显示本地化字体名
+- `Utils/ToolUtils.cs`：`GetSystemFontsInternal` 改传候选 locale 列表（原始名、去脚本紧凑名、地区限定名、父级名）：DWrite 字体名表按 BCP-47 精确匹配，`zh-Hans-CN`（App 启动同步自 `ApplicationLanguages.Languages`）和 `ja` 等中性形式匹配不到 `zh-CN`/`ja-JP` 条目会整体回退英文；新增 `BuildLocaleCandidates` 生成候选；列表排序改为按 `DisplayName` 当前文化比较（中文名按拼音序归位）。zh 界面恢复「微软雅黑/宋体」，ja 界面恢复「游ゴシック/メイリオ」，es/ru/de/tr/en 无字体译名维持原名。
+- 验证：独立探针程序对 Win2D 1.4.0 实测各 locale 形式的显示名（zh-Hans-CN 回退英文、zh-CN/ja-JP 命中），并对全部应用语言端到端跑过候选生成逻辑；未在应用内重新部署验证（用户自行确认修改生效）。
+
 ## 2026-11-03 降低Instrumental版本推荐权重
 - `Services/Recommendations/RecommendationFeatures.cs`、`HomeRecommendationService.cs`：标题含Instrumental（忽略大小写）的歌曲展示权重乘0.25，作用于各推荐栏目及有界召回，并与既有降权叠加；保留训练偏好和候选不足时的推荐资格。
 - `_tools/HomeRecommendationRegression/InstrumentalRegression.cs`：补充大小写、来源召回、随机回退、常听、探索、训练保留及纯伴奏曲库用例；按用户要求未构建或运行测试。

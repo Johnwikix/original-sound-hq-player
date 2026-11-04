@@ -1260,7 +1260,7 @@ namespace WinUIMusicPlayer.Utils
             return index > 0 ? fontSource.Substring(0, index).Trim() : fontSource.Trim();
         }
         private static string? _cachedCultureName;
-        private static string[]? _cachedCultureArray;
+        private static string[]? _cachedLocaleCandidates;
 
         public static FontInfo ResolveFont(IList<FontInfo> fonts, string? savedName)
         {
@@ -1282,14 +1282,15 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
-                var cultureName = CultureInfo.CurrentUICulture.Name.ToLowerInvariant();
-                if (_cachedCultureArray is null || _cachedCultureName != cultureName)
+                var ui = CultureInfo.CurrentUICulture;
+                var cultureKey = ui.Name.ToLowerInvariant();
+                if (_cachedLocaleCandidates is null || _cachedCultureName != cultureKey)
                 {
-                    _cachedCultureName = cultureName;
-                    _cachedCultureArray = [cultureName];
+                    _cachedCultureName = cultureKey;
+                    _cachedLocaleCandidates = BuildLocaleCandidates(ui);
                 }
                 var names = CanvasTextFormat.GetSystemFontFamilies();
-                var displayNames = CanvasTextFormat.GetSystemFontFamilies(_cachedCultureArray);
+                var displayNames = CanvasTextFormat.GetSystemFontFamilies(_cachedLocaleCandidates);
                 var list = new List<FontInfo>();
                 for (var i = 0; i < names.Length; i++)
                 {
@@ -1309,13 +1310,36 @@ namespace WinUIMusicPlayer.Utils
                         _logger.LogError(ex, $"GetSystemFontsInternal 处理字体失败: {ex.Message}");
                     }
                 }
-                return [.. list.AsValueEnumerable().OrderBy(f => f.Name)];
+                return [.. list.AsValueEnumerable().OrderBy(f => f.DisplayName, StringComparer.CurrentCultureIgnoreCase)];
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"GetSystemFontsInternal 获取系统字体失败: {ex.Message}");
                 return new List<FontInfo>();
             }
+        }
+
+        // DWrite 字体名表按 BCP-47 精确匹配：CurrentUICulture 可能是 zh-Hans-CN 这类带脚本
+        // 子标签的形式（App 启动时来自 ApplicationLanguages.Languages），也可能是 ja、es 这类
+        // 中性形式（App.xaml.cs 的语言覆盖用的是 2 字母标签），匹配不到字体名表里的 zh-CN、
+        // ja-JP 条目会整体回退英文，因此按序传原始名、去脚本紧凑名、地区限定名和父级名回退。
+        private static string[] BuildLocaleCandidates(CultureInfo ui)
+        {
+            HashSet<string> candidates = [ui.Name.ToLowerInvariant()];
+            string[] parts = ui.Name.Split('-');
+            if (parts.Length >= 3 && parts[1].Length == 4)
+                candidates.Add(string.Join('-', parts[0], parts[^1]).ToLowerInvariant());
+            try
+            {
+                candidates.Add(CultureInfo.CreateSpecificCulture(ui.Name).Name.ToLowerInvariant());
+            }
+            catch (CultureNotFoundException)
+            {
+                // 映射不到地区限定形式时跳过，不影响已有候选
+            }
+            if (!string.IsNullOrEmpty(ui.Parent.Name) && ui.Parent.Name != ui.Name)
+                candidates.Add(ui.Parent.Name.ToLowerInvariant());
+            return [.. candidates];
         }
 
         public static async Task ExportPlayList(PlayList playList)
