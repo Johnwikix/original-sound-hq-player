@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ApplicationManifest>../../app.manifest</ApplicationManifest>
+    <OutputType>WinExe</OutputType><TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion><UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType><WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier><PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><NuGetAudit>false</NuGetAudit>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Helper/Animations/*.cs" />
+    <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />
+    <Page Include="../../Style/BtnStyle.xaml" Link="Style/BtnStyle.xaml" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
+    <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+    <PackageReference Include="ZLinq" Version="1.5.6" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
+    <Page Include="../../View/FolderBrowsePage.xaml" Link="View/FolderBrowsePage.xaml" />
+    <Page Include="../../View/AddFolderPage.xaml" Link="View/AddFolderPage.xaml" />
+    <Compile Include="../../View/AddFolderPage.xaml.cs" />
+    <Compile Include="../../View/FolderBrowsePage.xaml.cs;../../ViewModel/Pages/FolderViewModel.cs;../../Services/FolderBrowserIndex.cs;../../Model/FolderLocation.cs;../../Model/FolderBrowserNode.cs;../../Model/BulkObservableCollection.cs;../../State/LibraryState.cs" />
+    <Content Include="../../Strings/en/Resources.resw" Link="browser-resources.resw" CopyToOutputDirectory="PreserveNewest" />
+    <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />
+  </ItemGroup>
+</Project>

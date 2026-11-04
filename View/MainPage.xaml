@@ -46,6 +46,9 @@
                                 <TextBlock x:Uid="MusicBrowse" />
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
+                        <NavigationViewItem Icon="Folder" Tag="Folders">
+                            <NavigationViewItem.Content><TextBlock Text="{x:Bind tools:ToolUtils.GetString('FolderBrowserTitle')}" /></NavigationViewItem.Content>
+                        </NavigationViewItem>
                         <NavigationViewItem Tag="PlayLists">
                             <NavigationViewItem.Icon>
                                 <FontIcon FontFamily="{StaticResource UntamedFontFamily}" Glyph="&#xED3B;" />
@@ -187,6 +190,7 @@
                                 Grid.Row="1"
                                 Margin="10,0,10,0"
                                 Padding="1"
+                                Style="{StaticResource DefaultButtonStyle}"
                                 VerticalAlignment="Bottom"
                                 Background="Transparent"
                                 BorderThickness="0"
@@ -212,6 +216,7 @@
                                 Grid.Row="2"
                                 Margin="10,0,10,0"
                                 Padding="1"
+                                Style="{StaticResource DefaultButtonStyle}"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderThickness="0"

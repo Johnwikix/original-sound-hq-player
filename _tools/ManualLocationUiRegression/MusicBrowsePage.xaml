@@ -11,7 +11,6 @@
             <SelectorBarItem Tag="song" Text="Songs" />
             <SelectorBarItem Tag="album" Text="Albums" />
             <SelectorBarItem Tag="artist" Text="Artists" />
-            <SelectorBarItem Tag="folder" Text="Folders" />
             <SelectorBarItem Tag="favourite" Text="Favorites" />
         </SelectorBar>
         <Frame CacheSize="0" x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False" />

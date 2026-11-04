@@ -2666,4 +2666,22 @@ SHA-256：{5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>不透明模式</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>滚轮缩放时间 · Shift+滚轮缩放频率 · 拖动平移</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>暂无新的推荐。收藏和播放列表中的同名歌曲不再重复推荐；可以添加更多音乐后再试。</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>文件夹</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>此目录暂无歌曲</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>在左侧目录树中选择文件夹，或先添加音乐文件夹。</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>无法加载文件夹，请重试。</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} 首歌曲</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>重试</value>
+  </data>
 </root>

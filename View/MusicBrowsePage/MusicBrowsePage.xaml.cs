@@ -70,14 +70,6 @@ namespace WinUIMusicPlayer.View
                         ViewModel.AppViewModel.IsBackBtnEnable = true;
                     }
                     break;
-                case FolderBrowsePage page:
-                    AppData.CurrentPage = typeof(FolderBrowsePage);
-                    if (page.ViewModel.IsInDetailMode)
-                    {
-                        ViewModel.AppViewModel.PageType = "folder";
-                        ViewModel.AppViewModel.IsBackBtnEnable = true;
-                    }
-                    break;
                 case SongListPage:
                     AppData.CurrentPage = typeof(SongListPage);
                     break;
@@ -90,7 +82,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            var valid = new[] { "song", "album", "artist", "folder", "favourite" };
+            var valid = new[] { "song", "album", "artist", "favourite" };
             var saved = ViewModel.AppViewModel.DefaultPlayListComboBoxTag;
             if (!valid.Contains(saved))
             {
@@ -224,11 +216,7 @@ namespace WinUIMusicPlayer.View
                 artistPage.CollapseDetail();
                 return;
             }
-            if (ContentFrame.Content is FolderBrowsePage folderPage && folderPage.ViewModel.IsInDetailMode)
-            {
-                folderPage.CollapseDetail();
-                return;
-            }
+
         }
 
     }

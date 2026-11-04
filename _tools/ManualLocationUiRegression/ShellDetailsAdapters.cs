@@ -37,6 +37,8 @@ public sealed partial class MainPage : Page
     public void BeginPlayingTransitionForFixture() => _isPageTransitioning = true;
 }
 public sealed class FixtureShellViewModel(AppViewModel app) { public AppViewModel AppViewModel { get; } = app; }
+// 独立文件夹的真实页面在 FolderBrowserUiRegression 中验证。
+public sealed class FolderBrowsePage : Page { }
 public sealed class HomePage : Page { public void SetExternalDetailsVisible(bool value) { } }
 public sealed class PlayListPage : Page { public FixturePlaylistState ViewModel { get; } = new(); }
 public sealed class FixturePlaylistState { public bool IsInDetailMode { get; set; } }

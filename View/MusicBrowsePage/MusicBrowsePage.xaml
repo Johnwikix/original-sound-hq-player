@@ -50,11 +50,6 @@
                         FontSize="18"
                         Tag="artist" />
                     <SelectorBarItem
-                        x:Name="Folder"
-                        x:Uid="FolderTab"
-                        FontSize="18"
-                        Tag="folder" />
-                    <SelectorBarItem
                         x:Name="Favourite"
                         x:Uid="FavouriteTab"
                         FontSize="18"
@@ -181,7 +176,7 @@
                         Margin="0,32,0,0"
                         HorizontalAlignment="Center"
                         Command="{x:Bind ViewModel.EmptyAddFolderCommand}"
-                        Style="{StaticResource AccentButtonStyle}">
+                        Style="{StaticResource FluentAccentButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon Glyph="&#xE8B7;" />
                             <TextBlock

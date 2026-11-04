@@ -2664,4 +2664,22 @@ SHA-256: {5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Opak mod</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Tekerlek: zamanı yakınlaştır · Shift+tekerlek: frekansı yakınlaştır · Sürükleme: kaydır</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Henüz yeni öneri yok. Favorilerde veya çalma listelerinde aynı adı taşıyan şarkılar hariç tutulur. Daha fazla müzik ekleyip yeniden deneyin.</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>Klasörler</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>Bu klasörde şarkı yok</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>Soldaki ağaçtan bir klasör seçin veya bir müzik klasörü ekleyin.</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>Klasörler yüklenemedi. Lütfen yeniden deneyin.</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} şarkı</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>Yeniden dene</value>
+  </data>
 </root>

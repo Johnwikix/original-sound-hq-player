@@ -28,6 +28,8 @@ public sealed class LibraryNavigationService(Func<MainPage> getShell, ILogger<Li
     public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? transition = null)
         => getShell().CurrentLibraryPage?.NavigatePage(pageType, parameter, transition);
 
+    public void ShowFolders() => getShell().NavigateToFoldersPage();
+
     public void Back() => getShell().CurrentLibraryPage?.BackButton();
 
     public void SelectAlbum(string album)

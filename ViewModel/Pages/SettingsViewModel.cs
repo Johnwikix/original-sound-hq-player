@@ -8,6 +8,8 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class SettingsViewModel : ObservableObject
     {
+        public string FolderBrowserTitle => ToolUtils.GetString("FolderBrowserTitle");
+
         public AppViewModel AppViewModel { get; }
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         public DesktopLyrics.DesktopLyricsViewModel DesktopLyrics { get; }

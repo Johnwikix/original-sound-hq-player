@@ -2664,4 +2664,22 @@ SHA-256: {5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Opaque mode</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Mouse wheel: zoom time · Shift+mouse wheel: zoom frequency · Drag: pan</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>No new recommendations yet. Songs with titles already in Favorites or playlists are excluded. Add more music and try again.</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>No songs in this folder</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>Select a folder in the tree on the left, or add a music folder to get started.</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>Could not load folders. Please try again.</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} songs</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
 </root>

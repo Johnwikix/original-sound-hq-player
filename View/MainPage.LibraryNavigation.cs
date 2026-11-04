@@ -40,6 +40,19 @@ public sealed partial class MainPage
         MainFrame.BackStack.Clear();
     }
 
+    public void NavigateToFoldersPage()
+    {
+        DismissMusicDetailsForNavigation();
+        foreach (var item in NavigationViewControl.MenuItems)
+            if (item is NavigationViewItem navigationItem && navigationItem.Tag?.ToString() == "Folders")
+            {
+                NavigationViewControl.SelectedItem = navigationItem;
+                break;
+            }
+        if (MainFrame.Content is not FolderBrowsePage)
+            NavigateTo(typeof(FolderBrowsePage), null, new EntranceNavigationTransitionInfo());
+    }
+
     public void NavigateToMusicBrowsePage()
     {
         // 即便主 Frame 已在曲库，底栏仍可能要切换内层 Frame；先释放临时详情及旧返回回调。

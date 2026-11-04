@@ -2664,4 +2664,22 @@ SHA-256: {5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Undurchsichtiger Modus</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Mausrad: Zeit zoomen · Umschalt+Mausrad: Frequenz zoomen · Ziehen: Verschieben</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Noch keine neuen Empfehlungen. Titel mit Namen aus Favoriten oder Playlists werden ausgeschlossen. Füge weitere Musik hinzu und versuche es erneut.</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>Keine Titel in diesem Ordner</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>Wähle links im Verzeichnisbaum einen Ordner aus oder füge einen Musikordner hinzu.</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>Ordner konnten nicht geladen werden. Bitte versuche es erneut.</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} Titel</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>Erneut versuchen</value>
+  </data>
 </root>

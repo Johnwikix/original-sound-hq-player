@@ -125,6 +125,7 @@ namespace WinUIMusicPlayer.Services
             var folders = App.Services.GetRequiredService<AddFolderViewModel>();
             folders.Start();
             shutdown.RegisterStop(folders.StopAsync);
+            shutdown.RegisterStop(App.Services.GetRequiredService<FolderViewModel>().StopAsync);
             var home = App.Services.GetRequiredService<HomeViewModel>();
             home.Start(App.MainWindow.DispatcherQueue);
             shutdown.RegisterStop(home.StopAsync);

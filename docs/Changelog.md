@@ -1,3 +1,30 @@
+## 2026-11-04 恢复导航返回按钮并修复音乐来源页加载
+- `View/MainPage.LibraryNavigation.cs`：撤销文件夹页对外壳返回按钮的隐藏，恢复导航栏常驻显示；目录树仍不需要页内回退按钮。
+- `Style/BtnStyle.xaml`：移除本轮 DropDownButton 动效样式新增、但无法解析的 `DefaultDropDownButtonStyle` 引用，保留控件默认模板及上浮/按压动效，修复 AddFolderPage 的 XAML 加载异常。
+- `_tools/FolderBrowserUiRegression`：加入生产 AddFolderPage/XAML 的页面加载、默认模板和添加来源菜单展开回归；修复前复现与日志一致的资源缺失异常。
+- 验证：21 项 WinUI 检查通过，包含上述页面加载与菜单展开；测试隔离数据库和远程来源子控件。
+
+## 2026-11-04 文件夹页改为固定左右分栏
+- `View/FolderBrowsePage.xaml(.cs)`：左侧 TreeView 始终显示，右侧仅展示所选目录的歌曲；移除面包屑、上一级按钮和重复子目录列表，窄窗口仍保留左右布局。
+- `ViewModel/Pages/FolderViewModel.cs`、`View/MainPage.LibraryNavigation.cs`：树选择直接切换歌曲，恢复上次目录或默认选中首个根目录；文件夹浏览隐藏外壳返回键，歌曲详情仍可返回。
+- `Strings/*/Resources.resw`：七语言空态提示改为从左侧选取目录，统计仅显示歌曲数，删除不再使用的导航文案。
+- 验证：18 项真实 WinUI 布局/会话检查、七语言资源匹配和 CRLF 检查通过；宽窄窗口均保留目录树。UI 检查使用示例库与歌曲控件替身。
+
+## 2026-11-04 全局按钮 Fluent 上浮/按压缩放动效
+- `Style/BtnStyle.xaml`：SimpleHoverButtonStyle、PlayHoverButtonStyle 的悬停箭头由自绘 Path 改为 FontIcon（&#xE70E;/&#xE768;），三者连同 CircularButtonStyle 补 PointerOverOffset=-1、PointerDownScale=0.85；新增 Button/HyperlinkButton/ToggleButton/DropDownButton 隐式动效样式（BasedOn Default*Style，目标 ContentPresenter/RootGrid）覆盖全项目默认样式按钮，另加 FluentAccentButtonStyle。
+- `Style/FloatingCommandStyle.xaml`：FloatingLocateButtonStyle 模板组挂动效（目标 Surface）。
+- `View/MainPage.xaml`：播放信息区艺术家/专辑按钮显式挂 DefaultButtonStyle 退出隐式动效（按需求排除，导航为原生 NavigationView 不涉及）。
+- `View/SubView/EqualizerDialog.xaml`、`ConvolutionCurveDialog.xaml`：EqIconButtonStyle、CurveIconButtonStyle 补动效。
+- 8 处 `AccentButtonStyle` 引用替换为 `FluentAccentButtonStyle`（PlayListPage×2、MusicBrowsePage、FolderBrowsePage、MusicGroupDetailControl、PlaylistDetailControl、AddPlayListDialog、EqualizerDialog）。
+- `View/SubView/WebDavSourcesControl.xaml`：2 处 SubtleButtonStyle 按钮内联挂动效（外部样式模板根未知，目标按默认模板 ContentPresenter，未命中则静默无动效）。
+- 兼容性：隐式样式仅作用于未显式指定 Style 的按钮；ContentDialog/TeachingTip 等系统模板内按钮不受影响。构建通过；按用户要求未做运行时验证。
+
+## 2026-11-04 独立文件夹浏览与层级导航
+- `View/FolderBrowsePage.xaml(.cs)`、`ViewModel/Pages/FolderViewModel.cs`：以按需展开的目录树、面包屑、子目录列表和当前目录歌曲替换 SemanticZoom 封面网格，支持逐级返回、窄窗口浏览及离页保留目录。
+- `Model/FolderLocation.cs`、`Services/FolderBrowserIndex.cs`、曲库投影：按来源与完整路径识别目录，区分同名本地目录及 WebDAV 路径大小写，不在浏览时扫描磁盘或服务器。
+- `View/MainPage*`、曲库页与设置、`Strings/*/Resources.resw`：新增侧栏独立文件夹入口和七语言文案；旧“启动进入曲库文件夹”设置迁移到独立入口，歌曲操作复用现有 MVVM 控件。
+- 验证：Debug/x64 构建、21 项目录逻辑、17 项真实 WinUI 布局/会话检查和共享投影回归通过；UI 检查使用数据库/歌曲控件替身，完整导航与实际播放未验证，详情见 `_tools/FolderBrowserRegression/README.md`。
+
 ## 2026-11-04 设置页字体列表按界面语言显示本地化字体名
 - `Utils/ToolUtils.cs`：`GetSystemFontsInternal` 改传候选 locale 列表（原始名、去脚本紧凑名、地区限定名、父级名）：DWrite 字体名表按 BCP-47 精确匹配，`zh-Hans-CN`（App 启动同步自 `ApplicationLanguages.Languages`）和 `ja` 等中性形式匹配不到 `zh-CN`/`ja-JP` 条目会整体回退英文；新增 `BuildLocaleCandidates` 生成候选；列表排序改为按 `DisplayName` 当前文化比较（中文名按拼音序归位）。zh 界面恢复「微软雅黑/宋体」，ja 界面恢复「游ゴシック/メイリオ」，es/ru/de/tr/en 无字体译名维持原名。
 - 验证：独立探针程序对 Win2D 1.4.0 实测各 locale 形式的显示名（zh-Hans-CN 回退英文、zh-CN/ja-JP 命中），并对全部应用语言端到端跑过候选生成逻辑；未在应用内重新部署验证（用户自行确认修改生效）。

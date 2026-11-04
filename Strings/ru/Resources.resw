@@ -2664,4 +2664,22 @@ SHA-256: {5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Непрозрачный режим</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Колесо: масштаб времени · Shift+колесо: масштаб частоты · Перетаскивание: сдвиг</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>Новых рекомендаций пока нет. Треки с названиями из избранного или плейлистов исключены. Добавьте музыку и попробуйте снова.</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>Папки</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>В этой папке нет композиций</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>Выберите папку в дереве слева или добавьте папку с музыкой.</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>Не удалось загрузить папки. Повторите попытку.</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} композиций</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
 </root>

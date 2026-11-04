@@ -35,7 +35,6 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music? CurrentArtistObj { get => State.Browse.CurrentArtistObj; set => State.Browse.CurrentArtistObj = value; }
         public Music? CurrentAlbumObj { get => State.Browse.CurrentAlbumObj; set => State.Browse.CurrentAlbumObj = value; }
-        public Music? CurrentFolderObj { get => State.Browse.CurrentFolderObj; set => State.Browse.CurrentFolderObj = value; }
         public PlayMode CurrentPlayMode
         {
             get => State.Queue.Mode;
@@ -68,7 +67,6 @@ namespace WinUIMusicPlayer.ViewModel
         public int CurrentPlayListId { get => State.Browse.CurrentPlayListId; set => State.Browse.CurrentPlayListId = value; }
         public CollectionViewSource AlbumPageSource { get => State.LibraryViews.AlbumPageSource; set => State.LibraryViews.AlbumPageSource = value; }
         public CollectionViewSource ArtistPageSource { get => State.LibraryViews.ArtistPageSource; set => State.LibraryViews.ArtistPageSource = value; }
-        public CollectionViewSource FolderPageSource { get => State.LibraryViews.FolderPageSource; set => State.LibraryViews.FolderPageSource = value; }
         public BulkObservableCollection<Music> ListSongs { get => State.LibraryViews.ListSongs; set => State.LibraryViews.ListSongs = value; }
         public BulkObservableCollection<Music> AlbumSongs { get => State.LibraryViews.AlbumSongs; set => State.LibraryViews.AlbumSongs = value; }
         public BulkObservableCollection<Music> ArtistSongs { get => State.LibraryViews.ArtistSongs; set => State.LibraryViews.ArtistSongs = value; }
@@ -338,7 +336,6 @@ namespace WinUIMusicPlayer.ViewModel
         public bool TryFindById(int id, out Music? music) => _libraryQueries.TryFindById(id, out music);
         public Music? FindFirstByAlbum(string? album) => _libraryQueries.FindFirstByAlbum(album);
         public Music? FindFirstByArtist(string? artist) => _libraryQueries.FindFirstByArtist(artist);
-        public Music? FindFirstByFolder(string? folder) => _libraryQueries.FindFirstByFolder(folder);
         public int GetAlbumSongCount(string? album) => _libraryQueries.GetAlbumSongCount(album);
         public void NotifyIdIndexChanged() => _libraryQueries.Invalidate();
 

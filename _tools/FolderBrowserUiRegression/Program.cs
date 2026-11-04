@@ -1,0 +1,195 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Markup;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Graphics.Imaging;
+using WinUIMusicPlayer;
+using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.ViewModel;
+
+internal static class Program
+{
+    [STAThread]
+    private static void Main()
+    {
+        WinRT.ComWrappersSupport.InitializeComWrappers();
+        Application.Start(initialization =>
+        {
+            SynchronizationContext.SetSynchronizationContext(new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread()));
+            _ = new RegressionApp();
+        });
+    }
+}
+internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
+{
+    private readonly IXamlMetadataProvider _native = new Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider();
+    private readonly IXamlMetadataProvider _local = (IXamlMetadataProvider)Activator.CreateInstance(typeof(Program).Assembly.GetTypes().Single(t => t.FullName!.EndsWith(".XamlMetaDataProvider")))!;
+    public IXamlType GetXamlType(Type type) => _local.GetXamlType(type) ?? _native.GetXamlType(type);
+    public IXamlType GetXamlType(string name) => _local.GetXamlType(name) ?? _native.GetXamlType(name);
+    public XmlnsDefinition[] GetXmlnsDefinitions() => [];
+    private readonly List<string> _results = [];
+    private Window _window = null!;
+    private void Check(bool value, string name)
+    {
+        if (!value) throw new Exception(name);
+        _results.Add("PASS: " + name);
+    }
+    private static async Task Wait(Func<bool> ready)
+    {
+        for (int i = 0; i < 200; i++) { if (ready()) return; await Task.Delay(20); }
+        throw new TimeoutException("UI did not settle");
+    }
+    public RegressionApp()
+    {
+        UnhandledException += (_, args) => File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "unhandled.txt"), args.Exception.ToString());
+    }
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        try
+        {
+            RequestedTheme = ApplicationTheme.Dark;
+            Resources.MergedDictionaries.Add(new XamlControlsResources());
+            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Style/BtnStyle.xaml") });
+            var app = new AppViewModel();
+            var db = new MusicDatabaseService { Roots = [new() { Path = @"D:\Music", Name = "Music library" }, new() { Path = @"E:\Music", Name = "Archive" }] };
+            app.State.Library.Replace([
+                new() { FolderPath = @"D:\Music", Title = "A song in the library root" },
+                new() { FolderPath = @"D:\Music\Artist\Album", Title = "First track" },
+                new() { FolderPath = @"D:\Music\Artist\Album", Title = "Second track" },
+                new() { FolderPath = @"E:\Music\Artist\Album", Title = "A different album at another location" }
+            ]);
+            var services = new ServiceCollection().AddSingleton(app).AddSingleton(db).AddSingleton<MusicBrowseViewModel>()
+                .AddSingleton<LibraryProjectionService>().AddSingleton<FolderViewModel>().AddSingleton<AddFolderViewModel>()
+                .AddSingleton<ILogger<FolderViewModel>>(NullLogger<FolderViewModel>.Instance).BuildServiceProvider();
+            App.Services = services;
+            var vm = services.GetRequiredService<FolderViewModel>();
+            var projection = services.GetRequiredService<LibraryProjectionService>();
+            _window = new Window { Title = "Folder browser regression" };
+            var frame = new Frame { RequestedTheme = ElementTheme.Dark, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)) };
+            _window.Content = frame;
+            _window.AppWindow.Resize(new(1320, 900));
+            _window.Activate();
+            frame.Navigate(typeof(FolderBrowsePage));
+            await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsLoading && vm.Roots.Count == 2);
+            var page = (FolderBrowsePage)frame.Content;
+            double scale = page.XamlRoot.RasterizationScale;
+            _window.AppWindow.Resize(new((int)(1320 * scale), (int)(900 * scale)));
+            await Wait(() => page.ActualWidth >= 1100);
+            await Wait(() => !vm.IsBusy);
+            Check(vm.SelectedNode is not null && !app.IsBackBtnEnable, "Initial tree selection needs no directory back navigation");
+            var root = vm.Roots.Single(n => n.Path == @"D:\Music");
+            var tree = (TreeView)page.FindName("FolderTree");
+            tree.SelectedItem = root;
+            await Wait(() => vm.SelectedNode == root && !vm.IsBusy && app.FolderSongs.Count == 1);
+            Check(app.State.Browse.CurrentFolder?.Path == root.Path, "Native tree selection updates the shared folder identity and songs");
+            await Wait(() => tree.ContainerFromItem(root) is TreeViewItem);
+            ((TreeViewItem)tree.ContainerFromItem(root)).IsExpanded = true;
+            var artist = root.Children[0];
+            await Wait(() => root.VisibleChildren.Count == 1 && tree.ContainerFromItem(artist) is not null);
+            Check(root.IsExpanded, "Native expansion realizes the next folder level lazily");
+            tree.SelectedItem = artist;
+            await Wait(() => vm.SelectedNode == artist && !vm.IsBusy);
+            Check(app.FolderSongs.Count == 0 && vm.IsEmpty && !vm.ShowAddFolder,
+                "A parent without direct songs keeps its subfolders in the tree and shows a song empty state");
+            ((TreeViewItem)tree.ContainerFromItem(artist)).IsExpanded = true;
+            var album = artist.Children[0];
+            await Wait(() => tree.ContainerFromItem(album) is not null);
+            tree.SelectedItem = album;
+            Check(app.FolderSongs.Count == 0 && !vm.HasSongs, "Changing selection hides old playable rows during asynchronous publication");
+            await Wait(() => vm.SelectedNode == album && !vm.IsBusy && app.FolderSongs.Count == 2);
+            Check(!app.IsBackBtnEnable && tree.SelectedItem == album, "Nested folders remain selected without enabling a back command");
+            page.UpdateLayout();
+            var treePane = (Grid)page.FindName("TreePane");
+            var songsPane = (Grid)page.FindName("SongsPane");
+            double songsLeft = songsPane.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X;
+            double treeRight = treePane.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point(treePane.ActualWidth, 0)).X;
+            Check(songsLeft > treeRight && songsPane.ActualWidth > treePane.ActualWidth, "Wide layout places the song pane to the right of the folder tree");
+            await Capture(page, "wide.png");
+            _window.AppWindow.Resize(new((int)(760 * scale), (int)(720 * scale)));
+            await Wait(() => page.ActualWidth < 900);
+            await Task.Delay(200);
+            Check(treePane.Visibility == Visibility.Visible && treePane.ActualWidth >= 170,
+                "Compact windows keep the tree visible in the left column");
+            Check(songsPane.ActualWidth >= 400 && songsPane.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X > treePane.ActualWidth,
+                "Compact windows retain a usable song pane in the right column");
+            await Capture(page, "compact.png");
+            tree.SelectedItem = root;
+            await Wait(() => vm.SelectedNode == root && !vm.IsBusy && app.FolderSongs.Count == 1);
+            Check(frame.Content == page, "Selecting an ancestor in the tree stays on the same page");
+            frame.Navigate(typeof(Page));
+            Check(app.State.Browse.CurrentFolder?.Path == root.Path, "Leaving the page preserves the selected folder");
+            frame.Navigate(typeof(FolderBrowsePage));
+            await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsBusy);
+            Check(vm.SelectedNode?.Path == root.Path && !app.IsBackBtnEnable, "Recreated page restores tree selection without back navigation");
+            app.IsBackBtnEnable = true;
+            var previousRoot = vm.SelectedNode;
+            projection.RequestRefresh();
+            await Wait(() => !ReferenceEquals(vm.SelectedNode, previousRoot) && !vm.IsBusy);
+            Check(app.IsBackBtnEnable, "A background folder refresh preserves the song detail presenter back state");
+            app.IsBackBtnEnable = false;
+            db.Roots.RemoveAt(1);
+            app.State.Library.Replace(app.SongsSource.Where(m => !m.FolderPath.StartsWith("E:")).ToList());
+            projection.RequestRefresh();
+            await Wait(() => vm.Roots.Count == 1 && !vm.IsBusy);
+            Check(vm.Roots[0].Path == root.Path, "Library refresh removes a deleted scan root");
+            frame.Navigate(typeof(AddFolderPage));
+            await Wait(() => frame.Content is AddFolderPage { IsLoaded: true });
+            var sourcesPage = (AddFolderPage)frame.Content;
+            var addSource = FindChild<DropDownButton>(sourcesPage) ?? throw new Exception("Missing add-source dropdown");
+            addSource.ApplyTemplate();
+            sourcesPage.UpdateLayout();
+            Check(addSource.Template is not null && VisualTreeHelper.GetChildrenCount(addSource) > 0,
+                "Production AddFolderPage loads its default DropDownButton template without a missing style resource");
+            var sourceMenu = (MenuFlyout)addSource.Flyout;
+            Check(sourceMenu.Items.Count == 2 && sourceMenu.Items[0] is MenuFlyoutItem { Command: not null },
+                "The source dropdown retains local-folder and WebDAV entries");
+            sourceMenu.ShowAt(addSource);
+            await Wait(() => sourceMenu.IsOpen);
+            Check(sourceMenu.IsOpen, "The source dropdown flyout opens with the global animation style");
+            sourceMenu.Hide();
+            await vm.StopAsync();
+            var slowDb = new MusicDatabaseService { Pending = new() };
+            var slow = new FolderViewModel(new(), app, slowDb, projection, NullLogger<FolderViewModel>.Instance);
+            var loading = slow.ActivateAsync();
+            await Task.Delay(20);
+            var stopping = slow.StopAsync();
+            Check(!stopping.IsCompleted, "Shutdown waits for an in-flight SQLite read after cancellation");
+            slowDb.Pending.SetResult([new() { Path = @"X:\Late", Name = "Late" }]);
+            await stopping;
+            Check(slow.Roots.Count == 0, "Late database completion cannot publish after shutdown");
+            var failureDb = new MusicDatabaseService { Fail = true };
+            var failure = new FolderViewModel(new(), app, failureDb, projection, NullLogger<FolderViewModel>.Instance);
+            await failure.ActivateAsync();
+            Check(failure.Error.Length > 0 && !failure.IsLoading, "Database failure publishes an actionable error");
+            failureDb.Fail = false;
+            await failure.RetryCommand.ExecuteAsync(null);
+            Check(failure.Error.Length == 0, "Retry recovers from a failed directory read");
+            await failure.StopAsync();
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "result.txt"), _results);
+        }
+        catch (Exception exception) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), "FAIL: " + exception); }
+        finally { _window?.Close(); Exit(); }
+    }
+    private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        if (parent is T match) return match;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            if (FindChild<T>(VisualTreeHelper.GetChild(parent, i)) is { } child) return child;
+        return null;
+    }
+
+    private async Task Capture(FrameworkElement element, string name)
+    {
+        element.UpdateLayout();
+        await Task.Delay(400);
+        await WindowCapture.CaptureAsync(_window, name);
+    }
+}

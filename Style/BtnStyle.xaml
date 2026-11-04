@@ -27,6 +27,8 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16,8" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -49,21 +51,25 @@
                                 Opacity="0" />
 
                             <!--  悬停时显示的向上箭头 (居中显示)  -->
-                            <Path
+                            <FontIcon
                                 x:Name="HoverArrow"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                Data="M0,8 L8,0 L16,8 L12,8 L8,4 L4,8 Z"
-                                Fill="White"
+                                FontSize="16"
+                                Foreground="White"
+                                Glyph="&#xE70E;"
                                 Opacity="0"
                                 RenderTransformOrigin="0.5,0.5">
-                                <Path.RenderTransform>
+                                <FontIcon.RenderTransform>
                                     <TranslateTransform x:Name="ArrowTransform" Y="10" />
-                                </Path.RenderTransform>
-                            </Path>
+                                </FontIcon.RenderTransform>
+                            </FontIcon>
                         </Grid>
                         <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
+                            <VisualStateGroup
+                                x:Name="CommonStates"
+                                animations:FluentAnimation.PointerOver="RootBorder"
+                                animations:FluentAnimation.Pressed="RootBorder">
                                 <VisualState x:Name="Normal">
                                     <Storyboard>
                                         <DoubleAnimation
@@ -420,6 +426,8 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16,8" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -441,21 +449,25 @@
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 Opacity="0" />
 
-                            <Path
+                            <FontIcon
                                 x:Name="HoverArrow"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                Data="M0,0 L0,16 L14,8 Z"
-                                Fill="White"
+                                FontSize="16"
+                                Foreground="White"
+                                Glyph="&#xE768;"
                                 Opacity="0"
                                 RenderTransformOrigin="0.5,0.5">
-                                <Path.RenderTransform>
+                                <FontIcon.RenderTransform>
                                     <TranslateTransform x:Name="ArrowTransform" Y="0" />
-                                </Path.RenderTransform>
-                            </Path>
+                                </FontIcon.RenderTransform>
+                            </FontIcon>
                         </Grid>
                         <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
+                            <VisualStateGroup
+                                x:Name="CommonStates"
+                                animations:FluentAnimation.PointerOver="RootBorder"
+                                animations:FluentAnimation.Pressed="RootBorder">
                                 <VisualState x:Name="Normal">
                                     <Storyboard>
                                         <DoubleAnimation
@@ -554,6 +566,8 @@
         <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
         <Setter Property="Padding" Value="1,3,0,1" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -575,7 +589,10 @@
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             ContentTransitions="{TemplateBinding ContentTransitions}" />
                         <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
+                            <VisualStateGroup
+                                x:Name="CommonStates"
+                                animations:FluentAnimation.PointerOver="RootGrid"
+                                animations:FluentAnimation.Pressed="RootGrid">
                                 <VisualState x:Name="Normal" />
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
@@ -601,5 +618,43 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!--  隐式动效样式：默认模板按钮统一获得 Fluent 上浮/按压缩放；不想动效的按钮显式挂 DefaultButtonStyle。  -->
+    <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
+    </Style>
+
+    <Style TargetType="HyperlinkButton" BasedOn="{StaticResource DefaultHyperlinkButtonStyle}">
+        <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
+    </Style>
+
+    <Style TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}">
+        <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
+    </Style>
+
+    <!-- 仅叠加动效，默认模板由控件主题提供，避免依赖不可解析的 Default*Style 资源键。 -->
+    <Style TargetType="DropDownButton">
+        <Setter Property="animations:FluentAnimation.PointerOver" Value="RootGrid" />
+        <Setter Property="animations:FluentAnimation.Pressed" Value="RootGrid" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
+    </Style>
+
+    <!--  Accent 按钮加动效；引用处由 AccentButtonStyle 换成本样式。  -->
+    <Style x:Key="FluentAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+        <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 </ResourceDictionary>

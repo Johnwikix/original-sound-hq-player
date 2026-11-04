@@ -12,7 +12,7 @@ public sealed class BrowseState : ObservableObject
     public SortOption SelectedSortOption { get; set => SetProperty(ref field, value); }
     public Music? CurrentArtistObj { get; set => SetProperty(ref field, value); }
     public Music? CurrentAlbumObj { get; set => SetProperty(ref field, value); }
-    public Music? CurrentFolderObj { get; set => SetProperty(ref field, value); }
+    public FolderLocation? CurrentFolder { get; set => SetProperty(ref field, value); }
     public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
     public int CurrentPlayListId { get; set; }
 }

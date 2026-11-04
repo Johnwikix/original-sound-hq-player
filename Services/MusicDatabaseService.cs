@@ -1137,7 +1137,9 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.WasapiEndpointId = audio.WasapiEndpointId;
                 AppSettings.BassASIODeviceId = audio.BassASIODeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefaultEntry;
-                AppViewModel.DefaultPlayListComboBoxTag = settings.DefaultPlayList;
+                AppViewModel.DefaultPlayListComboBoxTag = settings.DefaultPlayList == "folder" ? "song" : settings.DefaultPlayList;
+                if (settings.DefaultEntry == "MusicBrowse" && settings.DefaultPlayList == "folder")
+                    AppViewModel.DefaultEntryComboBoxTag = "Folders";
                 AppViewModel.Latency = audio.Latency;
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.WindowBackgroundImagePath = settings.WindowBackgroundImagePath;

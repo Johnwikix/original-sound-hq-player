@@ -1,4 +1,7 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:animations="using:WinUIMusicPlayer.Helper.Animations">
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="FloatingCommandForeground" Color="{ThemeResource SystemAccentColorDark2}" />
@@ -47,13 +50,18 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="Canvas.ZIndex" Value="10" />
+        <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Surface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
                         <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
+                            <VisualStateGroup
+                                x:Name="CommonStates"
+                                animations:FluentAnimation.PointerOver="Surface"
+                                animations:FluentAnimation.Pressed="Surface">
                                 <VisualState x:Name="Normal" />
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>

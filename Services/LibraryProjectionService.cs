@@ -43,7 +43,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     {
         SongViewType.Album => state.Browse.CurrentAlbumObj?.Album,
         SongViewType.Artist => state.Browse.CurrentArtistObj?.Author,
-        SongViewType.Folder => state.Browse.CurrentFolderObj?.LastLevelFolderPath,
+        SongViewType.Folder => state.Browse.CurrentFolder?.Identity,
         _ => null
     });
     private readonly Dictionary<BulkObservableCollection<Music>, (SongViewType Kind, Func<Music, bool>? Filter)> _requested = new();

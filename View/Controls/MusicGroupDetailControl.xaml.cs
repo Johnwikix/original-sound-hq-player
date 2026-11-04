@@ -47,6 +47,16 @@ namespace WinUIMusicPlayer.View.Controls
             set => SetValue(DetailKindProperty, value);
         }
 
+        public static readonly DependencyProperty ShowHeaderProperty =
+            DependencyProperty.Register(nameof(ShowHeader), typeof(bool), typeof(MusicGroupDetailControl), new PropertyMetadata(true));
+
+        /// <summary>目录浏览复用歌曲列表时隐藏专辑式封面与标题栏。</summary>
+        public bool ShowHeader
+        {
+            get => (bool)GetValue(ShowHeaderProperty);
+            set => SetValue(ShowHeaderProperty, value);
+        }
+
         public MusicGroupDetailControl()
         {
             // 控件拥有此实例；避免根 DI 容器长期保留 transient IDisposable。

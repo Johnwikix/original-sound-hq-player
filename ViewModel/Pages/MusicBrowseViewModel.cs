@@ -35,7 +35,9 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (value is not ("song" or "album" or "artist" or "folder" or "favourite")) return;
+                // 兼容旧入口调用，目录页已提升为主侧栏导航。
+                if (value == "folder") { _navigation.ShowFolders(); return; }
+                if (value is not ("song" or "album" or "artist" or "favourite")) return;
                 if (SetProperty(ref field, value)) NavigateSelectedPage();
             }
         } = string.Empty;
@@ -223,11 +225,6 @@ namespace WinUIMusicPlayer.ViewModel
                     AppViewModel.PageType = AppViewModel.CurrentArtistObj is { } ar && !string.IsNullOrEmpty(ar.Author)
                         ? "artist" : "artistBrowse";
                     break;
-                case "folder":
-                    AppData.CurrentPage = typeof(FolderBrowsePage);
-                    AppViewModel.PageType = AppViewModel.CurrentFolderObj is { } f && !string.IsNullOrEmpty(f.LastLevelFolderPath)
-                        ? "folder" : "folderBrowse";
-                    break;
                 case "favourite":
                     AppViewModel.PageType = "favourite";
                     AppData.CurrentPage = typeof(FavouritePlayListPage);
@@ -250,13 +247,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         /// <summary>
         /// 外部文件匹配库内条目后的播放入口：播放队列替换为同文件夹曲目（文件夹语义与
-        /// FolderViewModel.Play 一致，按文件夹名聚合、沿用库内顺序），从匹配曲目开始；
+        /// 目录浏览一致，按来源与完整目录路径聚合、沿用库内顺序），从匹配曲目开始；
         /// 匹配条目尚未同步进 SongsSource（如同文件夹刚扫描入库）时不替换队列，仅替换当前曲。
         /// </summary>
         public void PlayMusicWithFolderQueue(Music music)
         {
             if (!AppViewModel.CanStartPlayback) return;
-            if (string.IsNullOrEmpty(music.LastLevelFolderPath))
+            if (string.IsNullOrEmpty(music.FolderPath))
             {
                 _ = PlayMusic(music, IsChangeList: true);
                 return;
@@ -267,8 +264,9 @@ namespace WinUIMusicPlayer.ViewModel
             for (int i = 0; i < source.Length; i++)
             {
                 var m = source[i];
-                if (m.LastLevelFolderPath is not null
-                    && m.LastLevelFolderPath.Equals(music.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
+                if (m.SourceId == music.SourceId
+                    && string.Equals(FolderLocation.Normalize(m.FolderPath, m.SourceId), FolderLocation.Normalize(music.FolderPath, music.SourceId),
+                        music.IsRemote ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
                 {
                     folderSongs.Add(m);
                 }
@@ -313,8 +311,7 @@ namespace WinUIMusicPlayer.ViewModel
             "song" => 0,
             "album" => 1,
             "artist" => 2,
-            "folder" => 3,
-            "favourite" => 4,
+            "favourite" => 3,
             _ => -1
         };
     }

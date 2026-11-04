@@ -128,6 +128,11 @@ internal sealed partial class TestWindow : Window
             _songPage = InnerFrame.Content as SongListPage;
             Check(_songPage is not null, "initial browser defaults to the actual songs page");
             Check(Selector.SelectedItem?.Tag?.ToString() == "song", "selector visually selects initial string tag");
+            if (Environment.GetEnvironmentVariable("FOLDER_NAVIGATION_CHECK") == "1")
+            {
+                await CheckNavigation();
+                Close();
+            }
         });
         _monitor = new System.Threading.Timer(_ =>
         {
@@ -325,7 +330,7 @@ internal sealed partial class TestWindow : Window
     {
         var browser = _shell.CurrentLibraryPage!;
         var vm = browser.ViewModel;
-        foreach (var (tag, type) in new[] { ("album", typeof(AlbumPage)), ("artist", typeof(ArtistPage)), ("folder", typeof(FolderBrowsePage)), ("favourite", typeof(FavouritePlayListPage)), ("song", typeof(SongListPage)) })
+        foreach (var (tag, type) in new[] { ("album", typeof(AlbumPage)), ("artist", typeof(ArtistPage)), ("favourite", typeof(FavouritePlayListPage)), ("song", typeof(SongListPage)) })
         {
             browser.SelectBarItem(tag);
             await Task.Delay(100);
@@ -333,6 +338,13 @@ internal sealed partial class TestWindow : Window
             Check(Selector.SelectedItem?.Tag?.ToString() == tag, "selector highlights " + tag);
             Check(!InnerFrame.IsNavigationStackEnabled, "native Frame keeps the configured stack behavior for " + tag);
         }
+        vm.SelectedPageTag = "folder";
+        await Task.Delay(150);
+        Check(_shell.ShellFrame.Content is FolderBrowsePage && _shell.CurrentLibraryPage is null,
+            "folder navigation uses the main shell Frame rather than the library child Frame");
+        _shell.NavigateToMusicBrowsePage();
+        await Task.Delay(150);
+        browser = _shell.CurrentLibraryPage!;
         _shell.ShellFrame.Navigate(typeof(EmptyPage));
         await Task.Delay(150);
         vm.SelectBarAlbum("Album");

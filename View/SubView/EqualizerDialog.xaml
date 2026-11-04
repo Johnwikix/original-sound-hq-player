@@ -3,6 +3,7 @@
     x:Class="WinUIMusicPlayer.View.SubView.EqualizerDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:animations="using:WinUIMusicPlayer.Helper.Animations"
     xmlns:controls="using:WinUIMusicPlayer.Controls.Equalizer"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
@@ -15,6 +16,10 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="6" />
+            <Setter Property="animations:FluentAnimation.PointerOver" Value="ContentPresenter" />
+            <Setter Property="animations:FluentAnimation.Pressed" Value="ContentPresenter" />
+            <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+            <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
         </Style>
         <!--  收紧对话框留白，让均衡器区域更紧凑  -->
         <Thickness x:Key="ContentDialogPadding">16</Thickness>
@@ -76,7 +81,7 @@
                                     x:Name="AddPresetConfirmButton"
                                     HorizontalAlignment="Right"
                                     Click="AddPresetConfirmButton_Click"
-                                    Style="{StaticResource AccentButtonStyle}" />
+                                    Style="{StaticResource FluentAccentButtonStyle}" />
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>

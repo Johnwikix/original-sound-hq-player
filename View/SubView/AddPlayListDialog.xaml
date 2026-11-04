@@ -34,7 +34,7 @@
                 HorizontalAlignment="Stretch"
                 Click="ConfirmButton_Click"
                 CornerRadius="{ThemeResource ControlCornerRadius}"
-                Style="{StaticResource AccentButtonStyle}" />
+                Style="{StaticResource FluentAccentButtonStyle}" />
             <Button
                 x:Name="CancelButton"
                 Grid.Column="1"

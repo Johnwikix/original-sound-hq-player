@@ -120,7 +120,7 @@
                         Grid.Column="0"
                         Margin="10,0,10,0"
                         Command="{x:Bind ViewModel.PlayAllCommand, Mode=OneWay}"
-                        Style="{StaticResource AccentButtonStyle}">
+                        Style="{StaticResource FluentAccentButtonStyle}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xE768;" />

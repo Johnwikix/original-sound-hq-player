@@ -1,133 +1,56 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
-using System;
-using WinRT;
-using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services.NavigationService;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
-namespace WinUIMusicPlayer.View
+namespace WinUIMusicPlayer.View;
+
+/// <summary>目录浏览视图；交互转发给会话 ViewModel，控件不拥有目录状态。</summary>
+public sealed partial class FolderBrowsePage : Page
 {
-    public sealed partial class FolderBrowsePage : Page, INavigatable
+    private bool _ownsActivation;
+    public FolderViewModel ViewModel { get; }
+    public FolderBrowsePage()
     {
-        private readonly ConnectedAnimationScope _coverAnimation;
-        private readonly BrowsePositionKeeper _position;
-        public FolderViewModel ViewModel { get; }
-
-        public FolderBrowsePage()
-        {
-            ViewModel = App.Services.GetRequiredService<FolderViewModel>(); ;
-            this.InitializeComponent();
-            Unloaded += PageUnloaded;
-            _coverAnimation = new ConnectedAnimationScope(this, "FolderCover");
-            DataContext = this;
-            this.NavigationCacheMode = NavigationCacheMode.Disabled;
-            _position = new BrowsePositionKeeper(this, ViewModel.AppViewModel.State.Browse,
-                ViewModel.AppViewModel.State.Browse.Positions.Folders, FolderGridView, BrowsePositionKind.Folder,
-                BrowseZoom, ZoomedOutGridView, (ListView)DetailView.FindName("MusicListView"),
-                () => ViewModel.AppViewModel.CurrentFolderObj?.LastLevelFolderPath);
-        }
-
-        public void ReceiveNavigationParameter(object parameter)
-        {
-            ViewModel.ReceiveNavigation();
-        }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            DetailView.ViewModel.IsClosingForTransition = false;
-            ViewModel.ReceiveNavigation();
-        }
-
-        private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            if (DetailView.ViewModel.IsClosingForTransition) return;
-            var gridView = sender as GridView;
-            var item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
-            var coverBorder = FindCoverBorderInItem(item);
-            bool animate = _coverAnimation.Prepare(coverBorder);
-            SetEntryTransitions();
-            ViewModel.FolderGridView_ItemClick(sender, e);
-            if (animate) _coverAnimation.StartDeferred(() => DetailView.DetailCoverBorder);
-        }
-
-        public void CollapseDetail()
-        {
-            if (!ViewModel.IsInDetailMode) return;
-            var item = ViewModel.AppViewModel.CurrentFolderObj is { } selected
-                ? FolderGridView.ContainerFromItem(selected)?.As<GridViewItem>() : null;
-            var source = FindCoverBorderInItem(item);
-            bool animate = source is not null && _coverAnimation.Prepare(DetailView.DetailCoverBorder);
-            if (!animate) _coverAnimation.Cancel();
-            SetExitTransitions();
-            DetailView.ViewModel.IsClosingForTransition = animate;
-            ViewModel.CollapseDetail();
-            if (animate) _coverAnimation.StartDeferred(() => source, FinishCoverTransition);
-        }
-
-        private void FinishCoverTransition()
-        {
-            DetailView.ViewModel.IsClosingForTransition = false;
-            DetailView.ViewModel.RefreshFromAppState();
-        }
-
-        private void PageUnloaded(object sender, RoutedEventArgs args)
-        {
-            _coverAnimation.Cancel();
-            DetailView.ViewModel.IsClosingForTransition = false;
-        }
-
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            _position.Leave();
-            _coverAnimation.Cancel();
-            DetailView.ViewModel.IsClosingForTransition = false;
-            base.OnNavigatedFrom(e);
-        }
-
-        private static Border? FindCoverBorderInItem(GridViewItem? item)
-        {
-            if (item is null) return null;
-            return ToolUtils.FindVisualChild<Border>(item, b => b.Name == "CoverBorder");
-        }
-
-        private void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        {
-            var frameworkElement = e.OriginalSource as FrameworkElement;
-            if (frameworkElement?.DataContext is Music clickedItem)
-            {
-                ViewModel.SelectedItem = clickedItem;
-            }
-            e.Handled = true;
-        }
-
-        public void EnterDetailFromCrossLink()
-        {
-            _coverAnimation.Cancel();
-            DetailView.ViewModel.IsClosingForTransition = false;
-            SetEntryTransitions();
-            ViewModel.EnterDetailFromCrossLink();
-        }
-        public void RefreshDetailView() => ViewModel.RefreshDetailView();
-
-        private void SetEntryTransitions()
-        {
-            DetailView.OpacityTransition = TransitionCache.Slow;
-            BrowseZoom.OpacityTransition = TransitionCache.Fast;
-        }
-
-        private void SetExitTransitions()
-        {
-            DetailView.OpacityTransition = TransitionCache.Fast;
-            BrowseZoom.OpacityTransition = TransitionCache.Slow;
-        }
+        ViewModel = App.Services.GetRequiredService<FolderViewModel>();
+        InitializeComponent();
+        NavigationCacheMode = NavigationCacheMode.Disabled;
+        Loaded += Page_Loaded;
+        Unloaded += Page_Unloaded;
+    }
+    public bool HasText(string text) => !string.IsNullOrEmpty(text);
+    private async void Page_Loaded(object sender, RoutedEventArgs args)
+    {
+        Bindings.Initialize();
+        Bindings.Update();
+        _ownsActivation = true;
+        await ViewModel.ActivateAsync();
+    }
+    private void Page_Unloaded(object sender, RoutedEventArgs args)
+    {
+        DeactivateView();
+        Bindings.StopTracking();
+    }
+    private void DeactivateView()
+    {
+        // OnNavigatedFrom 已交接给新页面后，旧页面迟到的 Unloaded 不能停止新会话。
+        if (!_ownsActivation) return;
+        _ownsActivation = false;
+        ViewModel.Deactivate();
+    }
+    protected override void OnNavigatedFrom(NavigationEventArgs args)
+    {
+        DeactivateView();
+        base.OnNavigatedFrom(args);
+    }
+    private void Tree_SelectionChanged(TreeView sender, TreeViewSelectionChangedEventArgs args)
+    {
+        if (sender.SelectedItem is FolderBrowserNode node) ViewModel.SelectFolderCommand.Execute(node);
+    }
+    private void Tree_Expanding(TreeView sender, TreeViewExpandingEventArgs args)
+    {
+        if (args.Item is FolderBrowserNode node) ViewModel.ExpandFolder(node);
     }
 }

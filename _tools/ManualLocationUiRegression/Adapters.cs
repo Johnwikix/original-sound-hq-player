@@ -22,7 +22,7 @@ namespace WinUIMusicPlayer
         public static ILogger<T> GetLogger<T>() => NullLogger<T>.Instance;
     }
 }
-namespace WinUIMusicPlayer.State { public sealed class AppState { public PlaybackQueueState Queue { get; } = new(); public BrowseState Browse { get; } = new(); } }
+namespace WinUIMusicPlayer.State { public sealed class AppState { public PlaybackQueueState Queue { get; } = new(); public BrowseState Browse { get; } = new(); public ShellState Shell { get; } = new(); } }
 namespace AnimatedWin2dControls.Messages { }
 namespace WinUIMusicPlayer.Reader { public static class Placeholder { } }
 namespace WinUIMusicPlayer.Model
@@ -36,6 +36,9 @@ namespace WinUIMusicPlayer.Model
         public string Album { get; set; } = "Album";
         public string Author { get; set; } = "Artist";
         public string Path { get; set; } = "";
+        public string FolderPath { get; set; } = "";
+        public int SourceId { get; set; }
+        public bool IsRemote => SourceId != 0;
         public string LastLevelFolderPath { get; set; } = "Folder";
         public bool IsFavorite { get; set; }
         public int Order { get; set; }
@@ -162,6 +165,7 @@ namespace WinUIMusicPlayer.Utils
     public static class ArtistHelper { public static string[] GetArtistNames(string value) => value.Split(';'); }
     public static class ToolUtils
     {
+        public static bool OpenFileInExplorer(string path) => true;
         public static T? FindVisualChild<T>(DependencyObject root, Func<T, bool> match) where T : DependencyObject
         {
             for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root); i++)

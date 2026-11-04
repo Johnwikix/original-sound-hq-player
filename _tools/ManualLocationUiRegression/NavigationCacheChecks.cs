@@ -28,7 +28,7 @@ internal sealed partial class TestWindow
         ObserveCachePage((Page)InnerFrame.Content);
         for (int i = 0; i < 4; i++)
         {
-            foreach (string tag in new[] { "favourite", "album", "artist", "folder", "song" })
+            foreach (string tag in new[] { "favourite", "album", "artist", "song" })
             {
                 _shell.CurrentLibraryPage!.SelectBarItem(tag);
                 await Task.Delay(120);

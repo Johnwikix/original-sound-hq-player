@@ -75,7 +75,7 @@ internal sealed partial class TestWindow
             CheckTop((ListViewBase)rebuilt.FindName("MusicListView"), index, top, tag + " list");
         }
         _app.CurrentAlbumObj = _app.CurrentArtistObj = _app.CurrentFolderObj = null;
-        foreach (var (tag, name) in new[] { ("album", "AlbumGridView"), ("artist", "ArtistsGridView"), ("folder", "FolderGridView") })
+        foreach (var (tag, name) in new[] { ("album", "AlbumGridView"), ("artist", "ArtistsGridView") })
         {
             var page = await Open(tag);
             var zoom = (SemanticZoom)page.FindName("BrowseZoom");
@@ -102,7 +102,6 @@ internal sealed partial class TestWindow
 
             if (tag == "album") { _app.CurrentAlbumObj = _tiles[636]; ((AlbumPage)page).ReceiveNavigationParameter(new()); }
             if (tag == "artist") { _app.CurrentArtistObj = _tiles[636]; ((ArtistPage)page).ReceiveNavigationParameter(new()); }
-            if (tag == "folder") { _app.CurrentFolderObj = _tiles[636]; ((FolderBrowsePage)page).ReceiveNavigationParameter(new()); }
             await Task.Delay(250);
             var detail = (WinUIMusicPlayer.View.Controls.MusicGroupDetailControl)page.FindName("DetailView");
             double detailTop = await Position((ListViewBase)detail.FindName("MusicListView"), 817);
@@ -113,7 +112,6 @@ internal sealed partial class TestWindow
             CheckTop((ListViewBase)detail.FindName("MusicListView"), 817, detailTop, tag + " detail list");
             if (page is AlbumPage album) album.CollapseDetail();
             if (page is ArtistPage artist) artist.CollapseDetail();
-            if (page is FolderBrowsePage folder) folder.CollapseDetail();
             await Task.Delay(500);
             CheckTop((GridView)page.FindName(name), 636, beforeDetail, tag + " return from details");
             await Capture(tag + "-restored.png");

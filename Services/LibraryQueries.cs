@@ -13,7 +13,6 @@ public sealed class LibraryQueries(LibraryState library)
     private readonly Dictionary<int, Music> _idIndex = new(capacity: 16384);
     private readonly Dictionary<string, Music> _firstAlbumIndex = new(capacity: 4096, StringComparer.Ordinal);
     private readonly Dictionary<string, Music> _firstArtistIndex = new(capacity: 4096, StringComparer.Ordinal);
-    private readonly Dictionary<string, Music> _firstFolderIndex = new(capacity: 4096, StringComparer.Ordinal);
     private readonly Dictionary<string, int> _albumSongCounts = new(capacity: 4096, StringComparer.Ordinal);
     private long _indexedVersion = -1;
     private int _sourceFilter = -1;
@@ -51,13 +50,6 @@ public sealed class LibraryQueries(LibraryState library)
         return null;
     }
 
-    public Music? FindFirstByFolder(string? folder)
-    {
-        if (string.IsNullOrEmpty(folder)) return null;
-        if (_indexedVersion != library.Version) RebuildIdIndex();
-        return _firstFolderIndex.TryGetValue(folder, out var m) ? m : null;
-    }
-
     public void Invalidate() => library.NotifyChanged();
 
     private void RebuildIdIndex()
@@ -65,7 +57,6 @@ public sealed class LibraryQueries(LibraryState library)
         _idIndex.Clear();
         _firstAlbumIndex.Clear();
         _firstArtistIndex.Clear();
-        _firstFolderIndex.Clear();
         _albumSongCounts.Clear();
         var src = library.Songs;
         for (int i = 0; i < src.Count; i++)
@@ -82,8 +73,6 @@ public sealed class LibraryQueries(LibraryState library)
             }
             if (!string.IsNullOrEmpty(m.Author))
                 AddArtistIndexEntry(m);
-            if (!string.IsNullOrEmpty(m.LastLevelFolderPath) && !_firstFolderIndex.ContainsKey(m.LastLevelFolderPath))
-                _firstFolderIndex[m.LastLevelFolderPath] = m;
         }
         _indexedVersion = library.Version;
     }

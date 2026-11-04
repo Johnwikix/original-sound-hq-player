@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (IsClosingForTransition) return;
             if (e.PropertyName == "CurrentAlbumObj" && PageKind == GroupKind.Album) RefreshFromAppState();
             else if (e.PropertyName == "CurrentArtistObj" && PageKind == GroupKind.Artist) RefreshFromAppState();
-            else if (e.PropertyName == "CurrentFolderObj" && PageKind == GroupKind.Folder) RefreshFromAppState();
+            else if (e.PropertyName == "CurrentFolder" && PageKind == GroupKind.Folder) RefreshFromAppState();
         }
 
         private void OnSongsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -196,12 +196,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     }
                     break;
                 case GroupKind.Folder:
-                    if (AppViewModel.CurrentFolderObj is { } folder && !string.IsNullOrEmpty(folder.LastLevelFolderPath))
+                    if (State.Browse.CurrentFolder is { } folder)
                     {
+                        SelectedMusic = null;
+                        SelectedMusics.Clear();
                         _kind = GroupKind.Folder;
                         _songsBound = true;
-                        CoverSource = folder;
-                        Title = folder.LastLevelFolderPath;
+                        CoverSource = null;
+                        Title = folder.Name;
                         CoverGlyph = "\uE8B7";
                         CoverCornerRadius = new CornerRadius(10);
                         IsAlbumDetail = false;
@@ -235,7 +237,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 RefreshAlbumTitles(album);
             else if (AppViewModel.CurrentArtistObj is { } artist && _kind == GroupKind.Artist)
                 RefreshArtistTitles(artist);
-            else if (AppViewModel.CurrentFolderObj is { } folder && _kind == GroupKind.Folder)
+            else if (State.Browse.CurrentFolder is { } folder && _kind == GroupKind.Folder)
                 RefreshFolderTitles(folder);
         }
 
@@ -287,19 +289,17 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             ThirdTitle = ArtistText;
         }
 
-        private void RefreshFolderTitles(Music folder)
+        private void RefreshFolderTitles(FolderLocation folder)
         {
             int count = 0;
             int albums = 0;
             int authors = 0;
             _seenAlbums.Clear();
             _seenAuthors.Clear();
-            var currentFolder = folder.LastLevelFolderPath;
-            var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
-            for (int i = 0; i < srcSpan.Length; i++)
+            var songs = AppViewModel.FolderSongs;
+            for (int i = 0; i < songs.Count; i++)
             {
-                var music = srcSpan[i];
-                if (music.LastLevelFolderPath != currentFolder) continue;
+                var music = songs[i];
                 count++;
                 if (!string.IsNullOrEmpty(music.Album) && _seenAlbums.Add(music.Album)) albums++;
                 if (!string.IsNullOrEmpty(music.Author) && _seenAuthors.Add(music.Author)) authors++;

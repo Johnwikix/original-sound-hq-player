@@ -1,199 +1,233 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
-using WinRT;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
-using ZLinq;
 
-namespace WinUIMusicPlayer.ViewModel
+namespace WinUIMusicPlayer.ViewModel;
+
+/// <summary>独立目录浏览页的会话状态；离开页面后取消读取并解绑曲库通知。</summary>
+public partial class FolderViewModel : ObservableObject
 {
-    public partial class FolderViewModel : ObservableObject
+    private readonly MusicDatabaseService _database;
+    private readonly LibraryProjectionService _projections;
+    private readonly ILogger<FolderViewModel> _logger;
+    private readonly FolderBrowserIndex _index = new();
+    private CancellationTokenSource? _read;
+    private bool _active;
+    private bool _stopped;
+    private bool _refreshPending;
+    private Task _loadTask = Task.CompletedTask;
+    private Task _songsTask = Task.CompletedTask;
+    private int _navigationRevision;
+    private List<Folder> _roots = [];
+
+    public AppViewModel AppViewModel { get; }
+    public MusicBrowseViewModel MusicBrowseViewModel { get; }
+    public BulkObservableCollection<FolderBrowserNode> Roots { get; } = [];
+    public FolderBrowserNode? SelectedNode { get; private set => SetProperty(ref field, value); }
+    public string Title { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("FolderBrowserTitle");
+    public string CurrentPath { get; private set => SetProperty(ref field, value); } = string.Empty;
+    public string Summary { get; private set => SetProperty(ref field, value); } = string.Empty;
+    public string Error { get; private set => SetProperty(ref field, value); } = string.Empty;
+    public bool IsLoading { get; private set => SetProperty(ref field, value); }
+    public bool IsLoadingSongs { get; private set => SetProperty(ref field, value); }
+    public bool IsBusy => IsLoading || IsLoadingSongs;
+    public bool IsEmpty => !IsBusy && Error.Length == 0 && AppViewModel.FolderSongs.Count == 0;
+    public bool ShowAddFolder => Roots.Count == 0;
+    public bool HasSongs => !IsBusy && Error.Length == 0 && AppViewModel.FolderSongs.Count > 0;
+    public string PageTitle => ToolUtils.GetString("FolderBrowserTitle");
+    public string EmptyTitle => ToolUtils.GetString("FolderBrowserEmpty");
+    public string EmptyHint => ToolUtils.GetString("FolderBrowserEmptyHint");
+    public string RetryLabel => ToolUtils.GetString("FolderBrowserRetry");
+
+    public FolderViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel,
+        MusicDatabaseService database, LibraryProjectionService projections, ILogger<FolderViewModel> logger)
     {
-        public Music SelectedItem { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<MenuModel> FolderMenuOptions { get; set => SetProperty(ref field, value); } = [];
-        public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
-        private MusicBrowseViewModel? MusicBrowseViewModel { get; set; }
-        public AppViewModel AppViewModel { get; }
-        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
-        private MusicDatabaseService _musicDatabaseService { get; }
-        private ILogger<FolderViewModel> _logger;
+        MusicBrowseViewModel = musicBrowseViewModel;
+        AppViewModel = appViewModel;
+        _database = database;
+        _projections = projections;
+        _logger = logger;
+    }
 
-        public FolderViewModel(MusicBrowseViewModel? musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FolderViewModel> logger)
-        {
-            MusicBrowseViewModel = musicBrowseViewModel;
-            AppViewModel = appViewModel;
-            _musicDatabaseService = musicDatabaseService;
-            _logger = logger;
-            InitalizeOption();
-        }
+    public Task ActivateAsync()
+    {
+        if (_stopped || _active) return _loadTask;
+        _active = true;
+        AppData.CurrentPage = typeof(View.FolderBrowsePage);
+        AppViewModel.PageType = "folder";
+        AppViewModel.IsBackBtnEnable = false;
+        _projections.RefreshRequested += LibraryChanged;
+        AppViewModel.State.Browse.PropertyChanged += BrowseChanged;
+        AppViewModel.FolderSongs.CollectionChanged += SongsChanged;
+        IsLoading = true;
+        Error = string.Empty;
+        PublishAvailability();
+        RequestRefresh();
+        return _loadTask;
+    }
 
-        public void ReceiveNavigation()
+    private void RequestRefresh()
+    {
+        if (!_active || _stopped) return;
+        _refreshPending = true;
+        if (_read is { IsCancellationRequested: false }) return;
+        var request = new CancellationTokenSource();
+        _read = request;
+        // 新会话等待上一次读取收尾；关闭时等待此链，取消不代表 SQLite 已停止。
+        _loadTask = LoadAsync(_loadTask, request);
+    }
+
+    private async Task LoadAsync(Task previous, CancellationTokenSource request)
+    {
+        try
         {
-            if (AppViewModel.CurrentFolderObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentFolderObj.LastLevelFolderPath))
+            await previous;
+            while (_active && !request.IsCancellationRequested && _refreshPending)
             {
-                IsInDetailMode = true;
-                AppViewModel.PageType = "folder";
-                AppViewModel.IsBackBtnEnable = true;
-            }
-            else
-            {
-                AppViewModel.CurrentFolderObj = null;
-                IsInDetailMode = false;
-                AppViewModel.PageType = "folderBrowse";
-                AppViewModel.IsBackBtnEnable = false;
-            }
-        }
-
-        private void InitalizeOption()
-        {
-            FolderMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPlayItem"), Tag = "Play", Command = PlayCommand });
-            FolderMenuOptions.Add(new() { Title = ToolUtils.GetString("AddToFavourite"), Tag = "AddToFavour", Command = AddToFavourCommand });
-            FolderMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToPlaylistItem"), Tag = "AddToPlayList", Children = [] });
-            FolderMenuOptions.Add(new() { Title = ToolUtils.GetString("Rescan"), Tag = "Rescan", Command = RescanFolderCommand });
-        }
-
-        public void UpdateAlbumMenuOptionsPlayList()
-        {
-            var option = FolderMenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
-            option?.Children.Clear();
-            foreach (var item in AppViewModel.AllPlayList)
-            {
-                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command = AddToPlayListCommand });
+                _refreshPending = false;
+                // 只读扫描根表；歌曲数由内存索引统计，不反复查询全库计数。
+                var roots = await _database.GetFolders();
+                if (!_active || request.IsCancellationRequested || !ReferenceEquals(_read, request)) return;
+                _roots = roots;
+                Rebuild();
             }
         }
-
-        [RelayCommand]
-        private void PrepareMenu()
+        catch (OperationCanceledException) when (request.IsCancellationRequested) { }
+        catch (Exception exception)
         {
-            UpdateAlbumMenuOptionsPlayList();
-            UpDateUsbDeviceMenuflyout();
-            var songs = AppViewModel.SongsSource.Where(m =>
-                SelectedItem is not null && m.LastLevelFolderPath == SelectedItem.LastLevelFolderPath);
-            ToolUtils.UpdateMusicMenuAvailability(FolderMenuOptions, songs, SelectedItem);
+            _logger.LogError(exception, "加载目录浏览器失败");
+            if (_active && !request.IsCancellationRequested) Error = ToolUtils.GetString("FolderBrowserLoadError");
         }
-
-        public void UpDateUsbDeviceMenuflyout()
-            => ToolUtils.UpdateUsbSendMenu(FolderMenuOptions, TransmitFileToUsbCommand);
-
-        public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
+        finally
         {
-            var gridView = sender as GridView;
-            GridViewItem? item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
-            if (item is not null)
+            if (ReferenceEquals(_read, request))
             {
-                Music? folder = item.Content as Music;
-                if (MusicBrowseViewModel is not null && folder is not null)
-                {
-                    try
-                    {
-                        AppViewModel.PageType = "folder";
-                        AppViewModel.CurrentFolderObj = folder;
-                        IsInDetailMode = true;
-                        AppViewModel.IsBackBtnEnable = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"FolderGridView_ItemClick 导航失败: {ex.Message}");
-                    }
-                }
+                _read = null;
+                IsLoading = false;
+                PublishAvailability();
+            }
+            request.Dispose();
+        }
+    }
+
+    public void Deactivate()
+    {
+        if (!_active) return;
+        _active = false;
+        _navigationRevision++;
+        IsLoadingSongs = false;
+        _read?.Cancel();
+        _projections.RefreshRequested -= LibraryChanged;
+        AppViewModel.State.Browse.PropertyChanged -= BrowseChanged;
+        AppViewModel.FolderSongs.CollectionChanged -= SongsChanged;
+    }
+
+    public async Task StopAsync()
+    {
+        _stopped = true;
+        Deactivate();
+        await Task.WhenAll(_loadTask, _songsTask);
+    }
+
+    [RelayCommand]
+    private async Task RetryAsync()
+    {
+        Deactivate();
+        await ActivateAsync();
+    }
+
+    private void LibraryChanged() => RequestRefresh();
+    private void BrowseChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(AppViewModel.State.Browse.SourceFilterId)) Rebuild();
+    }
+    private void Rebuild()
+    {
+        if (!_active) return;
+        var state = AppViewModel.State;
+        var expanded = _index.GetExpandedLocations();
+        var previousNode = SelectedNode;
+        _index.Rebuild(AppViewModel.SongsSource, _roots, state.Browse.SourceFilterId);
+        foreach (var location in expanded)
+            if (_index.Find(location) is { } expandedNode)
+            {
+                expandedNode.RealizeChildren();
+                expandedNode.IsExpanded = true;
+            }
+        Roots.FillFrom(CollectionsMarshal.AsSpan(_index.Roots));
+        var selected = _index.Find(state.Browse.CurrentFolder);
+        // 当前目录被移除时退到仍存在的最近祖先。
+        for (var ancestor = previousNode?.Parent; selected is null && ancestor is not null; ancestor = ancestor.Parent)
+            selected = _index.Find(ancestor.Location);
+        Navigate(selected ?? (Roots.Count > 0 ? Roots[0] : null));
+    }
+
+    [RelayCommand]
+    private void SelectFolder(FolderBrowserNode? node)
+    {
+        var current = _index.Find(node?.Location);
+        if (current is not null && !ReferenceEquals(current, SelectedNode)) Navigate(current);
+    }
+
+    public void ExpandFolder(FolderBrowserNode node) => node.RealizeChildren();
+
+    private void Navigate(FolderBrowserNode? node)
+    {
+        if (!_active) return;
+        for (var ancestor = node?.Parent; ancestor is not null; ancestor = ancestor.Parent)
+        {
+            ancestor.RealizeChildren();
+            ancestor.IsExpanded = true;
+        }
+        SelectedNode = node;
+        // 清除不同目录的可操作列表，防止异步排序期间播放到上一个目录。
+        if (AppViewModel.State.Browse.CurrentFolder?.Identity != node?.Location.Identity) AppViewModel.FolderSongs.Clear();
+        AppViewModel.State.Browse.CurrentFolder = node?.Location;
+        Title = node?.Name ?? PageTitle;
+        CurrentPath = node?.Path ?? string.Empty;
+        IsLoadingSongs = true;
+        _songsTask = LoadSongsAsync(++_navigationRevision);
+        PublishAvailability();
+    }
+    private async Task LoadSongsAsync(int revision)
+    {
+        try
+        {
+            await _projections.UpdateSongCollectionsAsync(AppViewModel.FolderSongs, SongViewType.Folder,
+                music => AppViewModel.State.Browse.CurrentFolder?.Matches(music) == true);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "加载当前目录歌曲失败");
+            if (_active && revision == _navigationRevision) Error = ToolUtils.GetString("FolderBrowserLoadError");
+        }
+        finally
+        {
+            if (_active && revision == _navigationRevision)
+            {
+                IsLoadingSongs = false;
+                PublishAvailability();
             }
         }
+    }
 
-        public void EnterDetailFromCrossLink()
-        {
-            if (AppViewModel.CurrentFolderObj is null) return;
-            IsInDetailMode = true;
-            AppViewModel.IsBackBtnEnable = true;
-        }
-
-        public void CollapseDetail()
-        {
-            if (!IsInDetailMode) return;
-            IsInDetailMode = false;
-            AppViewModel.CurrentFolderObj = null;
-            AppViewModel.PageType = "folderBrowse";
-            AppViewModel.IsBackBtnEnable = false;
-        }
-
-        public void RefreshDetailView() { }
-
-        [RelayCommand]
-        private async Task RescanFolder()
-        {
-            await AppViewModel.RescanFolder(SelectedItem);
-            await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
-        }
-
-        [RelayCommand]
-        private void Play()
-        {
-            if (!AppViewModel.CanStartPlayback) return;
-            var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
-            var pool = System.Buffers.ArrayPool<Music>.Shared;
-            var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
-            int count = 0;
-            try
-            {
-                for (int i = 0; i < srcSpan.Length; i++)
-                {
-                    var m = srcSpan[i];
-                    if (m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
-                    {
-                        buf[count++] = m;
-                    }
-                }
-                if (count == 0 || MusicBrowseViewModel is null) return;
-
-                var slice = buf.AsSpan(0, count);
-                slice.Sort((a, b) => string.CompareOrdinal(a.LastLevelFolderPath, b.LastLevelFolderPath));
-
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(slice.ToArray());
-                _ = MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true);
-            }
-            finally
-            {
-                pool.Return(buf, clearArray: true);
-            }
-        }
-        [RelayCommand]
-        private void AddToFavour()
-        {
-            var folders = AppViewModel.SongsSource.AsValueEnumerable()
-                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.LastLevelFolderPath);
-            foreach (var folder in folders)
-            {
-                MusicCommands.AddToFavouriteCommand.Execute(folder);
-            }
-        }
-
-        [RelayCommand]
-        private void AddToPlayList(int playListId)
-        {
-            var folders = AppViewModel.SongsSource
-               .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
-               .OrderBy(m => m.LastLevelFolderPath);
-            _ = _musicDatabaseService.AddMusicListToPlayList(folders, playListId);
-        }
-
-        [RelayCommand]
-        public async Task TransmitFileToUsb(UsbSendTarget? target)
-        {
-            var folders = AppViewModel.SongsSource
-               .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
-               .OrderBy(m => m.LastLevelFolderPath);
-            if (target?.Device is null) return;
-            await AppViewModel.TransmitFileToUsb(folders, target.Device, target.Format, target.BitrateKbps);
-        }
+    private void SongsChanged(object? sender, NotifyCollectionChangedEventArgs args) => PublishAvailability();
+    private void PublishAvailability()
+    {
+        Summary = string.Format(ToolUtils.GetString("FolderBrowserSummary"), AppViewModel.FolderSongs.Count);
+        OnPropertyChanged(nameof(IsBusy));
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(HasSongs));
+        OnPropertyChanged(nameof(ShowAddFolder));
     }
 }

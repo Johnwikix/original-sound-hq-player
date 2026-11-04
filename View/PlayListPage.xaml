@@ -55,7 +55,7 @@
                     Margin="0,32,0,0"
                     HorizontalAlignment="Center"
                     Click="AddPlayList_Click"
-                    Style="{StaticResource AccentButtonStyle}">
+                    Style="{StaticResource FluentAccentButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE710;" />
                         <TextBlock
@@ -143,7 +143,7 @@
                         x:Name="AddPlayListButton"
                         Height="36"
                         MinHeight="36"
-                        Style="{StaticResource AccentButtonStyle}"
+                        Style="{StaticResource FluentAccentButtonStyle}"
                         Click="AddPlayList_Click">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon

@@ -49,8 +49,8 @@ public sealed class LibraryBrowseCoordinator(AppState state, LibraryQueries quer
             case nameof(state.Browse.CurrentAlbumObj):
                 _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.AlbumSongs, SongViewType.Album, m => m.Album == state.Browse.CurrentAlbumObj?.Album);
                 break;
-            case nameof(state.Browse.CurrentFolderObj):
-                _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == state.Browse.CurrentFolderObj?.LastLevelFolderPath);
+            case nameof(state.Browse.CurrentFolder):
+                _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FolderSongs, SongViewType.Folder, m => state.Browse.CurrentFolder?.Matches(m) == true);
                 break;
         }
     }
@@ -94,8 +94,7 @@ public sealed class LibraryBrowseCoordinator(AppState state, LibraryQueries quer
         }
         else if (pageType == typeof(FolderBrowsePage))
         {
-            _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == state.Browse.CurrentFolderObj?.LastLevelFolderPath);
-            projections.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), state.LibraryViews.FolderPageSource);
+            _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FolderSongs, SongViewType.Folder, m => state.Browse.CurrentFolder?.Matches(m) == true);
         }
         else if (pageType == typeof(FavouritePlayListPage))
         {

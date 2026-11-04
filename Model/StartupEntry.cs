@@ -4,5 +4,5 @@ namespace WinUIMusicPlayer.Model;
 public static class StartupEntry
 {
     /// <summary>返回支持的入口 Tag。</summary>
-    public static string Normalize(string? value) => value is "Home" or "AddFolder" or "MusicBrowse" or "PlayLists" or "Stats" ? value : "Home";
+    public static string Normalize(string? value) => value is "Home" or "AddFolder" or "MusicBrowse" or "Folders" or "PlayLists" or "Stats" ? value : "Home";
 }

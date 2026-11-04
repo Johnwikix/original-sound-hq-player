@@ -2664,4 +2664,22 @@ SHA-256: {5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>不透明モード</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>ホイール：時間軸の拡大縮小 · Shift+ホイール：周波数軸の拡大縮小 · ドラッグ：移動</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>新しいおすすめはありません。お気に入りやプレイリストと同名の曲は除外します。曲を追加して再度お試しください。</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>フォルダー</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>このフォルダーに曲はありません</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>左側のツリーでフォルダーを選択するか、音楽フォルダーを追加してください。</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>フォルダーを読み込めませんでした。再試行してください。</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} 曲</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>再試行</value>
+  </data>
 </root>

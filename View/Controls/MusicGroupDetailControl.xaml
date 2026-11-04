@@ -30,6 +30,7 @@
     <Grid RowDefinitions="Auto,*">
         <Grid
             x:Name="DetailInfoBar"
+            Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ShowHeader), Mode=OneWay}"
             Grid.Row="0"
             Margin="10,0,10,10"
             ColumnDefinitions="Auto,*">
@@ -120,7 +121,7 @@
                         Grid.Column="0"
                         Margin="10,0,10,0"
                         Command="{x:Bind ViewModel.PlayAllCommand, Mode=OneWay}"
-                        Style="{StaticResource AccentButtonStyle}">
+                        Style="{StaticResource FluentAccentButtonStyle}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon Glyph="&#xE768;" />

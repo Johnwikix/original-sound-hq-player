@@ -2664,4 +2664,22 @@ SHA-256: {5}
   <data name="SpectrumTransparency.AutomationProperties.Name" xml:space="preserve"><value>Modo opaco</value></data>
   <data name="SpectrumInteractionHint.Text" xml:space="preserve"><value>Rueda: ampliar tiempo · Mayús+rueda: ampliar frecuencia · Arrastrar: desplazar</value></data>
   <data name="HomeNoNewRecommendations" xml:space="preserve"><value>No hay nuevas recomendaciones. Se excluyen las canciones cuyos títulos ya están en Favoritos o listas. Añade más música e inténtalo de nuevo.</value></data>
+  <data name="FolderBrowserTitle" xml:space="preserve">
+    <value>Carpetas</value>
+  </data>
+  <data name="FolderBrowserEmpty" xml:space="preserve">
+    <value>No hay canciones en esta carpeta</value>
+  </data>
+  <data name="FolderBrowserEmptyHint" xml:space="preserve">
+    <value>Selecciona una carpeta en el árbol de la izquierda o añade una carpeta de música.</value>
+  </data>
+  <data name="FolderBrowserLoadError" xml:space="preserve">
+    <value>No se pudieron cargar las carpetas. Vuelve a intentarlo.</value>
+  </data>
+  <data name="FolderBrowserSummary" xml:space="preserve">
+    <value>{0} canciones</value>
+  </data>
+  <data name="FolderBrowserRetry" xml:space="preserve">
+    <value>Reintentar</value>
+  </data>
 </root>

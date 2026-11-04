@@ -167,6 +167,7 @@
                         <ComboBoxItem x:Uid="HomeCombox" Tag="Home" />
                         <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
                         <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
+                        <ComboBoxItem Content="{x:Bind ViewModel.FolderBrowserTitle}" Tag="Folders" />
                         <ComboBoxItem x:Uid="PlayListsCombox" Tag="PlayLists" />
                     </ComboBox>
                 </controls:SettingsCard>
@@ -182,7 +183,6 @@
                         <ComboBoxItem x:Uid="SongCombox" Tag="song" />
                         <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
                         <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
-                        <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
                         <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
                     </ComboBox>
                 </controls:SettingsCard>
