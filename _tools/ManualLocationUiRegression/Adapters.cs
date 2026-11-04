@@ -118,7 +118,14 @@ namespace WinUIMusicPlayer.ViewModel
             }
             return Queue.IndexOf(SelectedPlaybackMusic);
         }
-        public BulkObservableCollection<Music> SequentialPlayingList { get; set; } = [];
+        public BulkObservableCollection<Music> SequentialPlayingList
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value)) OnPropertyChanged(nameof(CurrentPlayingList));
+            }
+        } = [];
         public List<Music> SongsSource { get; } = [];
         public ObservableCollection<PlayList> AllPlayList { get; } = [];
         public ObservableCollection<SortOption> SortOptions { get; } = [];

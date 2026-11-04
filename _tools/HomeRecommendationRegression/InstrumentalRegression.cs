@@ -71,7 +71,7 @@ internal static class InstrumentalRegression
         var onlyResult = service.Build(onlyInstrumentals, [], now, 0, default);
         Check(Primary(onlyResult).Length == 28,
             "an instrumental-only library retains independent primary recommendations");
-        HomeRecommendation shownLone = new([new(onlyInstrumentals[0].Id, RecommendationReason.Explore)], [], [], true);
+        HomeRecommendation shownLone = new([new(onlyInstrumentals[0].Id, RecommendationReason.Explore)], [], [], true) { ExposedAtUtcTicks = now.Ticks };
         var lone = service.Build([onlyInstrumentals[0]], [], now, 1, default, recentRecommendations: [shownLone]);
         Check(lone.Songs.Count == 1 && lone.Songs[0].MusicId == onlyInstrumentals[0].Id,
             "instrumental and recent-exposure penalties never remove the only available song");

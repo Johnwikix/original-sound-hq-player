@@ -14,7 +14,7 @@ public sealed class HomeRecommendationService
     private const int PageSize = 20;
     private const int FeaturedLimit = 5;
     private const int CardLimit = 3;
-    internal const int RecentBatchLimit = 3;
+    internal const int RecentBatchLimit = HomeRecommendationState.RecentBatchLimit;
     private const double HeardDiscoveryWeight = .5;
     private const double RelevanceTolerance = .12;
     private static readonly string[] UnknownNames =
@@ -167,7 +167,7 @@ public sealed class HomeRecommendationService
         var exploration = Drain(explore);
         Merge(exploration, Drain(representatives));
         var familiarPool = Drain(familiar);
-        ApplyRecentExposure(pool, exploration, familiarPool, features, recentRecommendations, token);
+        ApplyRecentExposure(pool, exploration, familiarPool, features, recentRecommendations, nowUtc, token);
         var seen = new HashSet<int>();
         var recordings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         // 全页共享排除集合：常听、精选、主栏、探索分别分配独立曲目。
@@ -209,7 +209,7 @@ public sealed class HomeRecommendationService
                 }
             }
         }
-        return new(songs, familiarSongs, discoverySongs, !hasPreference, featured, cards);
+        return new(songs, familiarSongs, discoverySongs, !hasPreference, featured, cards) { ExposedAtUtcTicks = nowUtc.Ticks };
     }
 
     private static bool IsCollected(RecommendationTrack track, HashSet<string> collectedTitles) =>
@@ -217,15 +217,17 @@ public sealed class HomeRecommendationService
         || (!string.IsNullOrWhiteSpace(track.Title) && collectedTitles.Contains(track.Title.Trim()));
 
     private static void ApplyRecentExposure(List<Candidate> primary, List<Candidate> exploration, List<Candidate> familiar,
-        List<Features> features, IReadOnlyList<HomeRecommendation>? recent, CancellationToken token)
+        List<Features> features, IReadOnlyList<HomeRecommendation>? recent, DateTime nowUtc, CancellationToken token)
     {
         if (recent is not { Count: > 0 }) return;
         var weights = new Dictionary<int, double>();
-        for (int i = 0; i < Math.Min(RecentBatchLimit, recent.Count); i++)
+        int activeBatch = 0;
+        for (int i = 0; i < recent.Count && activeBatch < RecentBatchLimit; i++)
         {
             token.ThrowIfCancellationRequested();
-            double weight = i switch { 0 => .15, 1 => .35, _ => .6 };
             var page = recent[i];
+            if (!HomeRecommendationState.IsRecentExposure(page.ExposedAtUtcTicks, nowUtc)) continue;
+            double weight = activeBatch++ switch { 0 => .15, 1 => .35, _ => .6 };
             Remember(page.Songs, weight);
             Remember(page.Familiar, weight);
             Remember(page.Discovery, weight);

@@ -88,7 +88,7 @@ internal static class BatchVariationRegression
 
         var versions = tracks.Select(track => track with { Title = track.Id is 1 or 2 ? "Same recording" : track.Title,
             Artists = track.Id is 1 or 2 ? ["Same artist"] : track.Artists }).ToArray();
-        HomeRecommendation priorVersion = new([], [], [], false, [new(1, RecommendationReason.Audio)]);
+        HomeRecommendation priorVersion = new([], [], [], false, [new(1, RecommendationReason.Audio)]) { ExposedAtUtcTicks = now.Ticks };
         var alternate = service.Build(versions, [], now, 1, default, audio, recentRecommendations: [priorVersion]);
         Check(!Primary(alternate).Any(id => id is 1 or 2), "recent exposure also attenuates other files of the same recording");
         var familiarVersions = service.Build(versions, frequentHistory, now, 1, default, recentRecommendations: [priorVersion]);

@@ -1,4 +1,4 @@
-﻿using WinUIMusicPlayer.Controls;
+using WinUIMusicPlayer.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -60,7 +60,10 @@ namespace WinUIMusicPlayer.View.Controls
         private void MusicListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, MusicListView)) return;
-            ViewModel.MusicListView_DoubleTapped();
+            int index = ListViewInteraction.IndexFromSource(e.OriginalSource as DependencyObject, MusicListView);
+            if (index < 0 || index >= MusicListView.Items.Count || MusicListView.Items[index] is not PlayListMusicItem item) return;
+            e.Handled = true;
+            ViewModel.MusicListView_DoubleTapped(item);
         }
 
         private void MusicRow_SongInvoked(object sender, Music music)

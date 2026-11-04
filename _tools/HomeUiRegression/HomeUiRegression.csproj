@@ -29,7 +29,7 @@
     <Compile Include="../../Helper/ConnectedAnimationScope.cs;../../Services/ApplicationTasks.cs;../../Services/EditorSessions.cs;../../Services/IMusicDetailsEditorFactory.cs;../../Services/MusicDetailsEditorFactory.cs;../../Services/MusicMetadataStorage.cs;../../Services/AlbumTagEdit.cs" />
     <Compile Include="../../ViewModel/Controls/MusicDetailsViewModel.cs;../../Model/MusicDetailsRequest.cs" />
     <Compile Include="../../ViewModel/Controls/MusicMetadataEditorViewModel.cs;../../ViewModel/Controls/LyricsEditorViewModel.cs;../../ViewModel/Controls/MusicDetailsEditorViewModel.cs;../../ViewModel/Controls/AlbumDetailsViewModel.cs" />
-    <Compile Include="../../Model/Recommendations/*.cs;../../Services/Recommendations/*.cs;../../Services/MusicDatabaseService.Recommendations.cs" />
+    <Compile Include="../../Model/Recommendations/*.cs;../../Services/Recommendations/*.cs;../../Services/MusicDatabaseService.Recommendations.cs;../../Services/SettingsSaveQueue.cs" />
     <Compile Include="../../ViewModel/Pages/HomeViewModel.cs;../../Services/AppLifecycle.cs;../../Model/Music.cs;../../Model/BulkObservableCollection.cs;../../State/LibraryState.cs;../../Utils/ArtistHelper.cs" />
     <Compile Include="../../View/HomePage.xaml.cs;../../View/Controls/FeaturedCarousel.xaml.cs;../../View/Controls/HomeHeroCard.xaml.cs;../../View/Controls/MusicCoverControl.xaml.cs" />
     <Compile Include="../../Utils/CoverLoadQueue.cs" />

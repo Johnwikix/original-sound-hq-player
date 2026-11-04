@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -328,12 +328,13 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             MusicBrowseViewModel?.SelectBarAlbum(albumName);
         }
 
-        public void MusicListView_DoubleTapped() => _ = MusicListView_DoubleTappedAsync();
+        public void MusicListView_DoubleTapped(Music? music = null) => _ = MusicListView_DoubleTappedAsync(music);
 
-        public async Task MusicListView_DoubleTappedAsync()
+        public async Task MusicListView_DoubleTappedAsync(Music? music = null)
         {
             if (!AppViewModel.CanStartPlayback) return;
-            if (SelectedMusic is not null && MusicBrowseViewModel is not null)
+            var target = music ?? SelectedMusic;
+            if (target is not null && MusicBrowseViewModel is not null)
             {
                 var list = _kind switch
                 {
@@ -344,7 +345,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 };
                 if (list is null) return;
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(list);
-                await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
 
@@ -394,7 +395,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(SelectedMusics);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
             }
-            else if (SelectedMusic is not null)
+            else if (SelectedMusic is { } target)
             {
                 var groupList = _kind switch
                 {
@@ -404,7 +405,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     _ => (System.Collections.Generic.IEnumerable<Music>)([SelectedMusic])
                 };
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(groupList);
-                await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
 

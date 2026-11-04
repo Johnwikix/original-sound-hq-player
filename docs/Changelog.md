@@ -1,3 +1,13 @@
+## 2026-11-04 修复歌曲列表双击选错曲目
+- `SongListPage`、`MusicGroupDetailControl`、`PlaylistDetailControl`及对应ViewModel：从双击来源行捕获曲目，替换队列前固定播放参数，避免播放选择同步回写后重新播放旧歌；同类菜单后备入口同步固定参数。
+- `FavouritePlayListPage`、`MainPage`、`PlayingDetailPage`：双击读取来源行及队列索引，不依赖当前SelectedItem/SelectedIndex，保留按钮独立交互和队列重复条目语义。
+- `_tools/ManualLocationUiRegression`：补充同步队列通知导致选中项回写的播放回归用例；按用户要求未构建或运行测试。
+
+## 2026-11-04 推荐批次持久化与临时降权7天过期
+- `HomeRecommendationState`、`RecommendationStateRepository`、`MusicDatabaseService.Recommendations.cs`：SQLite保存下一批次、最近三批歌曲ID和原始UTC曝光时间，重启继续换批；曝光7天后失效，过期记录不占名额，固定降权不受影响。
+- `HomeViewModel`：只持久化实际展示结果，同批次重算不续期；合并写入并在退出时等待提交，读取失败不覆盖旧状态，确认空曲库后清空曝光。
+- `_tools/HomeRecommendationRegression/StatePersistenceRegression.cs`：增加SQLite重连、跨启动去重、过期边界、坏数据和取消用例；按用户要求未构建或运行测试。
+
 ## 2026-11-04 修复动效缓存长期保留 Compositor
 - `Helper/Animations/Composition.cs`：缓存改用 ConditionalWeakTable 关联 Compositor，允许包含反向引用的不可达缓存对象图回收；保留同一 Compositor 内的缓存复用和并发语义，不改动画键、参数或调用入口。
 - `Helper/Animations/Composition.cs`：使用静态工厂和 GetOrAdd 参数重载，避免缓存命中时创建捕获闭包。

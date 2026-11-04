@@ -417,7 +417,10 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, CurrentPlayListViewPlayingDetail)) return;
-            _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListViewPlayingDetail.SelectedIndex);
+            int index = ListViewInteraction.IndexFromSource(e.OriginalSource as DependencyObject, CurrentPlayListViewPlayingDetail);
+            if (index < 0 || index >= CurrentPlayListViewPlayingDetail.Items.Count) return;
+            e.Handled = true;
+            _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(index);
         }
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)

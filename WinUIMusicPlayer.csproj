@@ -117,28 +117,28 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.PinYinConverter" Version="1.0.0" />
     <PackageReference Include="csharp-kana" Version="1.0.2" />
     <PackageReference Include="csharp-pinyin" Version="1.0.1" />
     <PackageReference Include="LibNMeCab" Version="0.10.2" />
     <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.14" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
-    <PackageReference Include="System.IO.Hashing" Version="10.0.13" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageReference Include="System.IO.Hashing" Version="10.0.14" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
     <PackageReference Include="WinUIEx" Version="2.9.3" />
-    <PackageReference Include="z440.atl.core" Version="7.18.0" />
-    <PackageReference Include="ZLinq" Version="1.5.6" />
+    <PackageReference Include="z440.atl.core" Version="7.19.0" />
+    <PackageReference Include="ZLinq" Version="1.6.1" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="View\SettingsPage.xaml">
@@ -408,8 +408,7 @@
   <!-- AudioPlayer 输入含 IPC 共享源码 BassPlayerIpc.Shared 与内嵌的 dsp-tables.bin；递归 glob 必须排除
        obj/bin，否则发布自身生成的 .cs 会让哈希漂移导致无限重发布；pubxml 不经命令行使用，不纳入。 -->
   <ItemGroup>
-    <AudioPlayerSources Include="External\AudioPlayer\**\*.cs;External\AudioPlayer\AudioPlayer.csproj;External\AudioPlayer\Assets\icon.ico;External\AudioPlayer\AudioEnhancement\Coefficients\Assets\dsp-tables.bin;External\BassPlayerIpc.Shared\*.cs;External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj"
-                        Exclude="External\AudioPlayer\obj\**;External\AudioPlayer\bin\**" />
+    <AudioPlayerSources Include="External\AudioPlayer\**\*.cs;External\AudioPlayer\AudioPlayer.csproj;External\AudioPlayer\Assets\icon.ico;External\AudioPlayer\AudioEnhancement\Coefficients\Assets\dsp-tables.bin;External\BassPlayerIpc.Shared\*.cs;External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" Exclude="External\AudioPlayer\obj\**;External\AudioPlayer\bin\**" />
   </ItemGroup>
   <!-- Player\ 下暂存的两个独立进程 exe 均为 NativeAOT 产物，不可字节复现；时间戳增量会被 git 操作重置后
        触发无谓重发布并污染仓库。改用源码内容哈希门控：hash 文件与 exe 一起提交，pull 后哈希一致即跳过，
@@ -458,8 +457,7 @@
       <SkipWorkerPublish Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.exe') and '$(WorkerKnownHash)' == '$(WorkerInputsHash)'">true</SkipWorkerPublish>
     </PropertyGroup>
     <Message Text="AudioAnalysisWorker 源码未变化，跳过重新发布" Importance="high" Condition="'$(SkipWorkerPublish)' == 'true'" />
-    <Exec Condition="'$(SkipWorkerPublish)' != 'true'"
-          Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioAnalysisWorker\AudioAnalysisWorker.csproj&quot; -c Release -r win-x64 -p:UseSharedCompilation=false -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
+    <Exec Condition="'$(SkipWorkerPublish)' != 'true'" Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioAnalysisWorker\AudioAnalysisWorker.csproj&quot; -c Release -r win-x64 -p:UseSharedCompilation=false -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
     <WriteLinesToFile File="$(MSBuildProjectDirectory)\Player\AudioAnalysisWorker.hash" Lines="$(WorkerInputsHash)" Overwrite="true" Condition="'$(SkipWorkerPublish)' != 'true'" />
   </Target>
   <Target Name="PublishAudioPlayer" BeforeTargets="PrepareForBuild" Condition="'$(Platform)' == 'x64'">
@@ -473,8 +471,7 @@
       <SkipAudioPlayerPublish Condition="Exists('$(MSBuildProjectDirectory)\Player\AudioPlayer.exe') and '$(AudioPlayerKnownHash)' == '$(AudioPlayerInputsHash)'">true</SkipAudioPlayerPublish>
     </PropertyGroup>
     <Message Text="AudioPlayer 源码未变化，跳过重新发布" Importance="high" Condition="'$(SkipAudioPlayerPublish)' == 'true'" />
-    <Exec Condition="'$(SkipAudioPlayerPublish)' != 'true'"
-          Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioPlayer\AudioPlayer.csproj&quot; -c Release -r win-x64 -p:Platform=x64 -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
+    <Exec Condition="'$(SkipAudioPlayerPublish)' != 'true'" Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\AudioPlayer\AudioPlayer.csproj&quot; -c Release -r win-x64 -p:Platform=x64 -o &quot;$(MSBuildProjectDirectory)\Player&quot;" />
     <WriteLinesToFile File="$(MSBuildProjectDirectory)\Player\AudioPlayer.hash" Lines="$(AudioPlayerInputsHash)" Overwrite="true" Condition="'$(SkipAudioPlayerPublish)' != 'true'" />
   </Target>
 </Project>

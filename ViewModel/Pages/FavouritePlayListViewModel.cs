@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -137,8 +137,10 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else
             {
+                var target = SelectedMusic;
+                if (target is null) return;
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                _ = BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                _ = BrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
 

@@ -490,7 +490,10 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, CurrentPlayListView)) return;
-            _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListView.SelectedIndex);
+            int index = ListViewInteraction.IndexFromSource(e.OriginalSource as DependencyObject, CurrentPlayListView);
+            if (index < 0 || index >= CurrentPlayListView.Items.Count) return;
+            e.Handled = true;
+            _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(index);
         }
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)

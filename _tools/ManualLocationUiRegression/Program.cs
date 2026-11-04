@@ -100,6 +100,7 @@ internal sealed partial class TestWindow : Window
         AddAction(actions, "Positions", CheckBrowsePositions);
         AddAction(actions, "Edges", CheckEdges);
         AddAction(actions, "ImportSelection", CheckSelectionBatch);
+        AddAction(actions, "DoubleTapSelection", CheckDoubleTapSelectionAsync);
         AddAction(actions, "CrossDetails", CheckCrossDetailsNavigation);
         AddAction(actions, "Exit", async () => { await Task.Delay(500); Close(); });
         _root.Children.Add(actions);

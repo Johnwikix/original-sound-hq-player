@@ -16,6 +16,7 @@ void Check(bool condition, string name)
 var service = new HomeRecommendationService();
 var now = new DateTime(2026, 10, 28, 9, 0, 0, DateTimeKind.Utc);
 checks += BatchVariationRegression.Run(service, now);
+checks += await StatePersistenceRegression.RunAsync(service, now);
 checks += InstrumentalRegression.Run(service, now);
 checks += ShelfPolicyRegression.Run(service, now);
 checks += NeighborAlgorithmRegression.Run(service, now);

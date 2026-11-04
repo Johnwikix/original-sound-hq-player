@@ -52,7 +52,10 @@ public sealed class HomeViewModel : ObservableObject
     private bool _started, _active, _stopped, _running, _deferredRefresh, _dirty = true, _historyDirty = true;
     private long _revision, _snapshotVersion = -1;
     private int _batch;
-    private int _publishedBatch = -1;
+    private int? _publishedBatch;
+    private bool _recommendationStateLoaded, _canPersistRecommendations, _recommendationSaveFailed;
+    private readonly SettingsSaveQueue _recommendationSaves;
+    private HomeRecommendationState? _pendingRecommendationState;
     private HomeRecommendation[] _recentRecommendations = [];
     private DateTime _historyDay, _publishedDay;
     private RecommendationTrack[] _snapshot = [];
@@ -203,7 +206,8 @@ public sealed class HomeViewModel : ObservableObject
         _logger = logger;
         _editors = editors;
         _editorSessions = editorSessions;
-        RefreshCommand = new RelayCommand(() => { _batch++; RequestRefresh(invalidateSnapshot: true); }, () => !_stopped);
+        _recommendationSaves = new SettingsSaveQueue(SaveRecommendationStateAsync);
+        RefreshCommand = new RelayCommand(() => { _batch = unchecked(_batch + 1); RequestRefresh(invalidateSnapshot: true); }, () => !_stopped);
         PlaySongCommand = new AsyncRelayCommand<HomeSong>(song => PlayAsync(song?.Music, song?.Queue),
             song => song is not null && CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         PlayThemeCommand = new AsyncRelayCommand<HomeTheme>(theme => PlayAsync(theme?.Artwork, theme?.Queue),
@@ -260,7 +264,12 @@ public sealed class HomeViewModel : ObservableObject
     /// <summary>退出时解除订阅并等待真实在途查询和计算完成。</summary>
     public async Task StopAsync()
     {
-        if (_stopped) { await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks); return; }
+        if (_stopped)
+        {
+            await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks);
+            await FlushRecommendationStateAsync();
+            return;
+        }
         _stopped = true;
         Deactivate();
         if (_started)
@@ -279,6 +288,9 @@ public sealed class HomeViewModel : ObservableObject
             _remote.SourceAvailabilityChanged -= SourceChanged;
         }
         await Task.WhenAll(_refreshTask, _playlistTask, _editorTasks);
+        await FlushRecommendationStateAsync();
+        _pendingRecommendationState = null;
+        _recommendationSaveFailed = false;
         _snapshot = [];
         _recentRecommendations = [];
         _history.Clear();
@@ -437,6 +449,7 @@ public sealed class HomeViewModel : ObservableObject
                     }
                     IsEmpty = false;
                     IsLoading = !HasContent;
+                    await LoadRecommendationStateAsync(token);
                     var snapshot = _snapshot;
                     if (_snapshotVersion != version)
                     {
@@ -456,6 +469,9 @@ public sealed class HomeViewModel : ObservableObject
                         _snapshotVersion = version;
                     }
                     DateTime now = DateTime.UtcNow;
+                    if (_publishedBatch == _batch && _recentRecommendations.Length > 0
+                        && !HomeRecommendationState.IsRecentExposure(_recentRecommendations[0].ExposedAtUtcTicks, now))
+                        _batch = unchecked(_batch + 1);
                     if (_historyDirty || _historyDay != now.Date)
                     {
                         _historyDirty = false;
@@ -509,6 +525,71 @@ public sealed class HomeViewModel : ObservableObject
         finally { _running = false; }
     }
 
+    private async Task LoadRecommendationStateAsync(CancellationToken token)
+    {
+        if (_recommendationStateLoaded) return;
+        try
+        {
+            DateTime now = DateTime.UtcNow;
+            var state = await _database.GetHomeRecommendationStateAsync(now, token);
+            token.ThrowIfCancellationRequested();
+            // 保留读取期间用户已经点击的换批次数。
+            _batch = unchecked(_batch + state.NextBatch);
+            _recentRecommendations = state.Restore(now);
+            _canPersistRecommendations = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (Exception ex)
+        {
+            _batch = unchecked(_batch + Random.Shared.Next(int.MaxValue));
+            _logger.LogWarning(ex, "读取推荐状态失败，本次使用内存状态并保留已有持久化记录");
+        }
+        _recommendationStateLoaded = true;
+    }
+
+    private void QueueRecommendationState(HomeRecommendationState state)
+    {
+        if (!_canPersistRecommendations) return;
+        _pendingRecommendationState = state;
+        // 回调观察所有写入异常；合并期间只持有最新的有界快照。
+        _ = _recommendationSaves.RequestAsync();
+    }
+
+    private async Task SaveRecommendationStateAsync()
+    {
+        var snapshot = _pendingRecommendationState;
+        if (snapshot is null) return;
+        try
+        {
+            await _database.SaveHomeRecommendationStateAsync(snapshot);
+            _recommendationSaveFailed = false;
+        }
+        catch (Exception ex)
+        {
+            _recommendationSaveFailed = true;
+            _logger.LogWarning(ex, "保存推荐状态失败，下次发布或退出时重试");
+        }
+    }
+
+    private async Task FlushRecommendationStateAsync()
+    {
+        await _recommendationSaves.FlushAsync();
+        if (_recommendationSaveFailed) await _recommendationSaves.RequestAsync();
+    }
+
+    private HomeRecommendation CaptureDisplayedExposure(long ticks)
+    {
+        return new(Ids(Songs), Ids(Familiar), Ids(Discovery), false, Ids(FeaturedSongs), Ids(CardSongs))
+            { ExposedAtUtcTicks = ticks };
+
+        static RecommendedSong[] Ids(List<HomeSong> songs)
+        {
+            var result = new RecommendedSong[songs.Count];
+            for (int i = 0; i < result.Length; i++) result[i] = new(songs[i].Music.Id, RecommendationReason.Explore);
+            return result;
+        }
+    }
+
     private void Publish(HomeRecommendation result, int batch)
     {
         DismissPreview();
@@ -526,15 +607,28 @@ public sealed class HomeViewModel : ObservableObject
         bool sameThemes = themes.Count == Themes.Count;
         for (int i = 0; sameThemes && i < themes.Count; i++) sameThemes = themes[i] == Themes[i];
         if (!sameThemes) Themes = themes;
-        // 当前批次另占一项，后台重算排除它后仍保留完整的前三批曝光输入。
-        int retained = Math.Min(HomeRecommendationService.RecentBatchLimit + 1,
-            _recentRecommendations.Length + (batch == _publishedBatch ? 0 : 1));
-        var recent = new HomeRecommendation[Math.Max(1, retained)];
-        recent[0] = result;
-        int start = batch == _publishedBatch ? 1 : 0;
-        for (int i = 1; i < recent.Length; i++) recent[i] = _recentRecommendations[start + i - 1];
-        _recentRecommendations = recent;
-        _publishedBatch = batch;
+        if (HasContent || HasFeatured)
+        {
+            DateTime now = DateTime.UtcNow;
+            // 同批次重算不续期，实际显示的ID才进入曝光历史。
+            long ticks = batch == _publishedBatch && _recentRecommendations.Length > 0
+                ? _recentRecommendations[0].ExposedAtUtcTicks : now.Ticks;
+            int retained = Math.Min(HomeRecommendationService.RecentBatchLimit + 1,
+                _recentRecommendations.Length + (batch == _publishedBatch ? 0 : 1));
+            var recent = new HomeRecommendation[Math.Max(1, retained)];
+            recent[0] = CaptureDisplayedExposure(ticks);
+            int start = batch == _publishedBatch ? 1 : 0;
+            for (int i = 1; i < recent.Length; i++) recent[i] = _recentRecommendations[start + i - 1];
+            _recentRecommendations = recent;
+            _publishedBatch = batch;
+            QueueRecommendationState(HomeRecommendationState.Capture(batch, recent, now));
+        }
+        else if (_app.SongsSource.Count == 0)
+        {
+            _recentRecommendations = [];
+            _publishedBatch = null;
+            QueueRecommendationState(new() { NextBatch = _batch });
+        }
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(HasFeatured));
     }

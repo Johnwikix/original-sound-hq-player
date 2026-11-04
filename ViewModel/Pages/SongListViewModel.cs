@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
@@ -98,17 +98,14 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
 
-        public async Task MusicListView_DoubleTappedAsync()
+        public Task MusicListView_DoubleTappedAsync(Music? music = null)
         {
-            if (!AppViewModel.CanStartPlayback) return;
-            if (SelectedMusic is not null && MusicBrowseViewModel is not null)
-            {
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
-                await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
-            }
+            // 先捕获点击意图；替换队列会同步更新列表选择和SelectedMusic。
+            var target = music ?? SelectedMusic;
+            return target is null ? Task.CompletedTask : PlayMusic(target);
         }
 
-        public void MusicListView_DoubleTapped() => _ = MusicListView_DoubleTappedAsync();
+        public void MusicListView_DoubleTapped(Music? music = null) => _ = MusicListView_DoubleTappedAsync(music);
 
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
@@ -126,8 +123,10 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else
             {
+                var target = SelectedMusic;
+                if (target is null) return;
                 AppViewModel.SequentialPlayingList = new(AppViewModel.ListSongs);
-                _ = MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
+                _ = MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
         [RelayCommand]

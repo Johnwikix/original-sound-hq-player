@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -209,15 +209,16 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             MusicBrowseViewModel?.SelectBarAlbum(albumName);
         }
 
-        public void MusicListView_DoubleTapped() => _ = MusicListView_DoubleTappedAsync();
+        public void MusicListView_DoubleTapped(PlayListMusicItem? item = null) => _ = MusicListView_DoubleTappedAsync(item);
 
-        public async Task MusicListView_DoubleTappedAsync()
+        public async Task MusicListView_DoubleTappedAsync(PlayListMusicItem? item = null)
         {
             if (!AppViewModel.CanStartPlayback) return;
-            if (SelectedMusic is not null && MusicBrowseViewModel is not null)
+            var target = (item ?? SelectedMusic)?.Music;
+            if (target is not null && MusicBrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = ToMusicCollection(AppViewModel.PlayListSongs);
-                await MusicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
+                await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
 
@@ -306,11 +307,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 AppViewModel.SequentialPlayingList = seqList;
                 await MusicBrowseViewModel.PlayMusic(music: seqList[0], IsChangeList: true);
             }
-            else if (SelectedMusic is not null)
+            else if (SelectedMusic?.Music is { } target)
             {
                 var seqList = ToMusicCollection(AppViewModel.PlayListSongs);
                 AppViewModel.SequentialPlayingList = seqList;
-                await MusicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
+                await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
 

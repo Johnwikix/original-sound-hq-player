@@ -66,7 +66,10 @@ namespace WinUIMusicPlayer.View
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
             if (ListViewInteraction.IsAction(e.OriginalSource as DependencyObject, MusicListView)) return;
-            ViewModel.MusicListView_DoubleTapped();
+            int index = ListViewInteraction.IndexFromSource(e.OriginalSource as DependencyObject, MusicListView);
+            if (index < 0 || index >= MusicListView.Items.Count || MusicListView.Items[index] is not Music music) return;
+            e.Handled = true;
+            ViewModel.MusicListView_DoubleTapped(music);
         }
 
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
