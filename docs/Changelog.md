@@ -1,3 +1,9 @@
+## 2026-11-04 修复动效缓存长期保留 Compositor
+- `Helper/Animations/Composition.cs`：缓存改用 ConditionalWeakTable 关联 Compositor，允许包含反向引用的不可达缓存对象图回收；保留同一 Compositor 内的缓存复用和并发语义，不改动画键、参数或调用入口。
+- `Helper/Animations/Composition.cs`：使用静态工厂和 GetOrAdd 参数重载，避免缓存命中时创建捕获闭包。
+- `_tools/FolderBrowserUiRegression/CompositionCacheChecks.cs`：新增真实 Compositor/动画回归，覆盖跨所有者隔离、并发复用、失败重试、动效参数、反向引用回收及热缓存分配。
+- 验证：主工程 Debug/x64 构建、真实 WinUI 回归 49 项通过；20 组已释放所有者及缓存值在旧实现下全部存活，修复后全部可回收。复用工厂委托的 10 万次热缓存命中测得托管分配 0 字节，此结果不含调用方创建委托或新动画的成本。
+
 ## 2026-11-04 修复快速切回目录后歌曲列表为空
 - `Services/LibraryProjectionService.cs`：统一清空歌曲投影和使查询缓存失效，避免缓存命中已清空的集合。
 - `ViewModel/Pages/FolderViewModel.cs`：目录切换通过投影服务清空旧歌曲，保留异步加载期间禁止操作旧目录歌曲的行为。

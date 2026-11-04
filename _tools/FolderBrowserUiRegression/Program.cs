@@ -81,6 +81,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             _window.AppWindow.Resize(new(1320, 900));
             _window.AppWindow.Move(new(50, 30));
             _window.Activate();
+            await CheckCompositionCacheAsync();
             frame.Navigate(typeof(FolderBrowsePage));
             await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsLoading && vm.Roots.Count == 2);
             var page = (FolderBrowsePage)frame.Content;

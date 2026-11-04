@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Concurrent;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Windows.UI;
 
 namespace WinUIMusicPlayer.Helper.Animations;
@@ -19,18 +20,25 @@ public static class Composition
 {
     #region Fundamentals
 
-    private static readonly ConcurrentDictionary<
+    // 缓存值也可能反向引用 Compositor；依赖句柄保证整个不可达对象图仍可回收。
+    private static readonly ConditionalWeakTable<
         Compositor,
         ConcurrentDictionary<string, object>
-    > _objCache = [];
+    > _objCache = new();
 
     extension(Compositor c)
     {
+        /// <summary>获取同一 Compositor 和键共享的缓存对象。</summary>
+        /// <typeparam name="T">缓存对象的类型。</typeparam>
+        /// <param name="key">缓存对象的标识。</param>
+        /// <param name="create">缓存未命中时创建对象的工厂。</param>
+        /// <returns>已缓存的对象，或工厂创建并加入缓存的对象。</returns>
         public T GetCached<T>(string key, Func<T> create)
             where T : notnull
         {
-            var dic = _objCache.GetOrAdd(c, _ => new ConcurrentDictionary<string, object>());
-            return (T)dic.GetOrAdd(key, _ => create()!);
+            var dic = _objCache.GetValue(c, static _ => new ConcurrentDictionary<string, object>());
+            // .NET 10+ 的工厂参数重载避免每次命中都为 create 分配捕获闭包。
+            return (T)dic.GetOrAdd(key, static (_, factory) => factory()!, create);
         }
     }
 
@@ -38,8 +46,7 @@ public static class Composition
     {
         /// <summary>
         /// Gets a cached version of a CompositionObject per compositor
-        /// (Each CoreWindow has it's own compositor). Allows sharing of animations
-        /// without recreating everytime.
+        /// Allows sharing of animations while their compositor is reachable.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="c"></param>
