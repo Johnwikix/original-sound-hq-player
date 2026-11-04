@@ -1,3 +1,10 @@
+## 2026-11-04 加快设置页进入与重复导航
+- `View/SettingsPage.xaml`：六个分区改为按选中项首次加载模板，避免进入常规设置时连带创建音效、歌词、封面等隐藏分区；已访问分区复用控件。
+- `View/SettingsPage.xaml.cs`：启用受 Frame 缓存容量约束的页面缓存，重复进入保留常规默认分区及输出设备刷新；分区离开仍触发卸载清理。
+- `_tools/SettingsNavigationUiRegression`：使用生产页面及真实 WinUI 导航检查按需创建、分区复用、加载/卸载、导航历史与缓存驱逐；分区内容和输出服务使用替身，字体及 PCM 绑定由既有回归覆盖。
+- 性能：本机 Debug、真实设置控件、隔离播放与数据库启动的临时计时中，重复导航并布局由约 170–183 ms 降至 21–23 ms；不代表完整 MSIX 应用端到端耗时。
+- 验证：主工程 Debug/x64 构建、31 项设置导航、224 项字体及外观/PCM 回归通过；字体回归工程同步 Windows App SDK 2.6.5，修复既有依赖降级导致的构建失败。
+
 ## 2026-11-04 修复歌曲列表双击选错曲目
 - `SongListPage`、`MusicGroupDetailControl`、`PlaylistDetailControl`及对应ViewModel：从双击来源行捕获曲目，替换队列前固定播放参数，避免播放选择同步回写后重新播放旧歌；同类菜单后备入口同步固定参数。
 - `FavouritePlayListPage`、`MainPage`、`PlayingDetailPage`：双击读取来源行及队列索引，不依赖当前SelectedItem/SelectedIndex，保留按钮独立交互和队列重复条目语义。

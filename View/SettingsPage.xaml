@@ -49,6 +49,7 @@
             </StackPanel>
         </Grid>
 
+        <!-- Only the selected presenter applies its template; inactive sections stay uncreated. -->
         <controls:SwitchPresenter
             Grid.Row="1"
             Value="{x:Bind SectionSelector.SelectedItem.Tag, Mode=OneWay}">
@@ -60,30 +61,84 @@
 
             <!--  功能设置（含音频、外观）  -->
             <controls:Case Value="General">
-                <sub:GeneralSettingsControl />
+                <ContentControl
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsTabStop="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <sub:GeneralSettingsControl />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </controls:Case>
             <controls:Case Value="Dsp">
-                <sub:DspSettingsControl />
+                <ContentControl
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsTabStop="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <sub:DspSettingsControl />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </controls:Case>
 
             <!--  快捷键设置  -->
             <controls:Case Value="Shortcuts">
-                <sub:ShortcutsSettingsControl />
+                <ContentControl
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsTabStop="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <sub:ShortcutsSettingsControl />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </controls:Case>
 
             <!--  封面与着色器背景  -->
             <controls:Case Value="CoverBackground">
-                <sub:CoverBackgroundSettingsControl />
+                <ContentControl
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsTabStop="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <sub:CoverBackgroundSettingsControl />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </controls:Case>
 
             <!--  歌词与桌面歌词  -->
             <controls:Case Value="Lyrics">
-                <sub:LyricsSettingsControl />
+                <ContentControl
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsTabStop="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <sub:LyricsSettingsControl />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </controls:Case>
 
             <!--  关于（含音频可视化）  -->
             <controls:Case Value="About">
-                <sub:AboutSettingsControl />
+                <ContentControl
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsTabStop="False">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <sub:AboutSettingsControl />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
             </controls:Case>
         </controls:SwitchPresenter>
     </Grid>
