@@ -2684,4 +2684,7 @@ SHA-256：{5}
   <data name="FolderBrowserRetry" xml:space="preserve">
     <value>重试</value>
   </data>
+  <data name="FolderBrowserResizePanes" xml:space="preserve">
+    <value>调整文件夹和歌曲区域宽度</value>
+  </data>
 </root>

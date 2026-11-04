@@ -2682,4 +2682,7 @@ SHA-256: {5}
   <data name="FolderBrowserRetry" xml:space="preserve">
     <value>Erneut versuchen</value>
   </data>
+  <data name="FolderBrowserResizePanes" xml:space="preserve">
+    <value>Breite der Ordner- und Titelbereiche anpassen</value>
+  </data>
 </root>

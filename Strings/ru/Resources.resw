@@ -2682,4 +2682,7 @@ SHA-256: {5}
   <data name="FolderBrowserRetry" xml:space="preserve">
     <value>Повторить</value>
   </data>
+  <data name="FolderBrowserResizePanes" xml:space="preserve">
+    <value>Изменить ширину областей папок и композиций</value>
+  </data>
 </root>

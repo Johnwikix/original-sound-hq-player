@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:WinUIMusicPlayer.View.Controls"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
     xmlns:tools="using:WinUIMusicPlayer.Utils">
     <Grid>
         <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
@@ -12,13 +13,13 @@
                 <InfoBar IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
                     Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
                     Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}" />
-                <Grid x:Name="BrowserColumns" Grid.Row="1" ColumnSpacing="20">
+                <Grid x:Name="BrowserColumns" Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" MinWidth="170" MaxWidth="280" />
-                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="{x:Bind ViewModel.FolderColumnWidth, Mode=TwoWay}" MinWidth="170" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="{x:Bind ViewModel.SongsColumnWidth, Mode=TwoWay}" MinWidth="280" />
                     </Grid.ColumnDefinitions>
-                    <Grid x:Name="TreePane" RowDefinitions="Auto,Auto,*" RowSpacing="12" Padding="0,0,12,0"
-                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+                    <Grid x:Name="TreePane" RowDefinitions="Auto,Auto,*" RowSpacing="12" Padding="0,0,8,0">
                         <TextBlock Margin="8,0,0,0" Text="{x:Bind ViewModel.PageTitle}" FontSize="22" FontWeight="SemiBold" />
                         <ComboBox Grid.Row="1" Margin="4,0,0,0" HorizontalAlignment="Stretch" DisplayMemberPath="Name"
                             ItemsSource="{x:Bind ViewModel.MusicBrowseViewModel.RemoteSources.Choices}"
@@ -28,7 +29,7 @@
                             CanDragItems="False" CanReorderItems="False" SelectionChanged="Tree_SelectionChanged" Expanding="Tree_Expanding">
                             <TreeView.ItemTemplate>
                                 <DataTemplate x:DataType="model:FolderBrowserNode">
-                                    <TreeViewItem ItemsSource="{x:Bind VisibleChildren}"
+                                    <TreeViewItem ItemsSource="{x:Bind VisibleChildren}" Loaded="TreeItem_Loaded"
                                         HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}"
                                         IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
                                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" ToolTipService.ToolTip="{x:Bind Path}">
@@ -40,7 +41,11 @@
                             </TreeView.ItemTemplate>
                         </TreeView>
                     </Grid>
-                    <Grid x:Name="SongsPane" Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="16">
+                    <toolkit:GridSplitter x:Name="PaneSplitter" Grid.Column="1" HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch" Background="Transparent" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                        AutomationProperties.Name="{x:Bind ViewModel.ResizePanesLabel}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.ResizePanesLabel}" />
+                    <Grid x:Name="SongsPane" Grid.Column="2" Margin="12,0,0,0" RowDefinitions="Auto,*" RowSpacing="16">
                         <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                 <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />

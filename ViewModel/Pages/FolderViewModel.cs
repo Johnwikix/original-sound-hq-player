@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -44,6 +45,10 @@ public partial class FolderViewModel : ObservableObject
     public bool IsEmpty => !IsBusy && Error.Length == 0 && AppViewModel.FolderSongs.Count == 0;
     public bool ShowAddFolder => Roots.Count == 0;
     public bool HasSongs => !IsBusy && Error.Length == 0 && AppViewModel.FolderSongs.Count > 0;
+    // 会话内保留分栏比例；GridSplitter 的两列通过双向绑定共享同一份布局状态。
+    public GridLength FolderColumnWidth { get; set => SetProperty(ref field, value); } = new(1, GridUnitType.Star);
+    public GridLength SongsColumnWidth { get; set => SetProperty(ref field, value); } = new(3, GridUnitType.Star);
+    public string ResizePanesLabel => ToolUtils.GetString("FolderBrowserResizePanes");
     public string PageTitle => ToolUtils.GetString("FolderBrowserTitle");
     public string EmptyTitle => ToolUtils.GetString("FolderBrowserEmpty");
     public string EmptyHint => ToolUtils.GetString("FolderBrowserEmptyHint");

@@ -2682,4 +2682,7 @@ SHA-256: {5}
   <data name="FolderBrowserRetry" xml:space="preserve">
     <value>Reintentar</value>
   </data>
+  <data name="FolderBrowserResizePanes" xml:space="preserve">
+    <value>Ajustar el ancho de carpetas y canciones</value>
+  </data>
 </root>

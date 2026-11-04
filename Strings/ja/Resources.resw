@@ -2682,4 +2682,7 @@ SHA-256: {5}
   <data name="FolderBrowserRetry" xml:space="preserve">
     <value>再試行</value>
   </data>
+  <data name="FolderBrowserResizePanes" xml:space="preserve">
+    <value>フォルダーと曲の領域の幅を調整</value>
+  </data>
 </root>

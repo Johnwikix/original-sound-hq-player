@@ -1,3 +1,9 @@
+## 2026-11-04 修复目录选择错位并支持拖动分栏
+- `View/FolderBrowsePage.xaml.cs`：单选事件读取本次 AddedItems，避免 WinUI 更新 SelectedItem 之前读到上一次选择，修复树高亮与右侧目录/歌曲不一致；目录刷新后在容器布局完成时恢复当前高亮，并在离页时解绑。
+- `View/FolderBrowsePage.xaml`、`ViewModel/Pages/FolderViewModel.cs`：加入 GridSplitter，左右列可拖动调整；设置两侧最小宽度，并在会话内保留分栏比例。
+- `WinUIMusicPlayer.csproj`、`Strings/*/Resources.resw`：引用与现有 Toolkit 同版本的 Sizers，补齐七语言分隔条提示。
+- 验证：主工程 Debug/x64 构建和 37 项 WinUI 检查通过，覆盖原生行选择、刷新高亮、实际分隔条拖动处理/宽度限制/比例保留；真实鼠标命中与捕获受执行桌面限制未验证。
+
 ## 2026-11-04 恢复导航返回按钮并修复音乐来源页加载
 - `View/MainPage.LibraryNavigation.cs`：撤销文件夹页对外壳返回按钮的隐藏，恢复导航栏常驻显示；目录树仍不需要页内回退按钮。
 - `Style/BtnStyle.xaml`：移除本轮 DropDownButton 动效样式新增、但无法解析的 `DefaultDropDownButtonStyle` 引用，保留控件默认模板及上浮/按压动效，修复 AddFolderPage 的 XAML 加载异常。

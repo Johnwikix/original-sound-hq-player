@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using CommunityToolkit.WinUI.Controls;
+using Microsoft.UI.Xaml.Automation.Peers;
+using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -76,6 +79,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             var frame = new Frame { RequestedTheme = ElementTheme.Dark, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)) };
             _window.Content = frame;
             _window.AppWindow.Resize(new(1320, 900));
+            _window.AppWindow.Move(new(50, 30));
             _window.Activate();
             frame.Navigate(typeof(FolderBrowsePage));
             await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsLoading && vm.Roots.Count == 2);
@@ -95,7 +99,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             var artist = root.Children[0];
             await Wait(() => root.VisibleChildren.Count == 1 && tree.ContainerFromItem(artist) is not null);
             Check(root.IsExpanded, "Native expansion realizes the next folder level lazily");
-            tree.SelectedItem = artist;
+            SelectNativeRow(tree, artist);
+            Check(ReferenceEquals(vm.SelectedNode, artist) && vm.CurrentPath == artist.Path,
+                "Native row selection publishes this event's folder rather than the previous SelectedItem");
             await Wait(() => vm.SelectedNode == artist && !vm.IsBusy);
             Check(app.FolderSongs.Count == 0 && vm.IsEmpty && !vm.ShowAddFolder,
                 "A parent without direct songs keeps its subfolders in the tree and shows a song empty state");
@@ -112,6 +118,19 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             double songsLeft = songsPane.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X;
             double treeRight = treePane.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point(treePane.ActualWidth, 0)).X;
             Check(songsLeft > treeRight && songsPane.ActualWidth > treePane.ActualWidth, "Wide layout places the song pane to the right of the folder tree");
+            var splitter = (GridSplitter)page.FindName("PaneSplitter");
+            var columns = (Grid)page.FindName("BrowserColumns");
+            double leftBeforeDrag = treePane.ActualWidth;
+            double rightBeforeDrag = songsPane.ActualWidth;
+            await DragSplitterAsync(splitter, 80);
+            page.UpdateLayout();
+            Check(treePane.ActualWidth > leftBeforeDrag + 60 && songsPane.ActualWidth < rightBeforeDrag - 60,
+                "GridSplitter drag handling widens the folder pane and shrinks the song pane: " + leftBeforeDrag + " -> " + treePane.ActualWidth);
+            Check(columns.ColumnDefinitions[0].Width.Equals(vm.FolderColumnWidth)
+                && columns.ColumnDefinitions[2].Width.Equals(vm.SongsColumnWidth),
+                "Dragged column widths are published through two-way ViewModel bindings");
+            var savedFolderWidth = vm.FolderColumnWidth;
+            var savedSongsWidth = vm.SongsColumnWidth;
             await Capture(page, "wide.png");
             _window.AppWindow.Resize(new((int)(760 * scale), (int)(720 * scale)));
             await Wait(() => page.ActualWidth < 900);
@@ -120,15 +139,35 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
                 "Compact windows keep the tree visible in the left column");
             Check(songsPane.ActualWidth >= 400 && songsPane.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X > treePane.ActualWidth,
                 "Compact windows retain a usable song pane in the right column");
+            await DragSplitterAsync(splitter, 171 - treePane.ActualWidth);
+            page.UpdateLayout();
+            Check(treePane.ActualWidth >= 169 && treePane.ActualWidth <= 172,
+                "The folder pane stops at its minimum width in GridSplitter drag handling: " + treePane.ActualWidth);
+            await DragSplitterAsync(splitter, columns.ColumnDefinitions[2].ActualWidth - 281);
+            page.UpdateLayout();
+            Check(columns.ColumnDefinitions[2].ActualWidth >= 279 && columns.ColumnDefinitions[2].ActualWidth <= 282,
+                "The song pane minimum width limits GridSplitter drag handling: " + columns.ColumnDefinitions[2].ActualWidth);
+            double rightAtLimit = columns.ColumnDefinitions[2].ActualWidth;
+            await DragSplitterAsync(splitter, 100);
+            page.UpdateLayout();
+            Check(columns.ColumnDefinitions[2].ActualWidth >= 280 && Math.Abs(columns.ColumnDefinitions[2].ActualWidth - rightAtLimit) < 2,
+                "A drag past the song pane minimum is rejected without collapsing content");
+            vm.FolderColumnWidth = savedFolderWidth;
+            vm.SongsColumnWidth = savedSongsWidth;
+            page.UpdateLayout();
             await Capture(page, "compact.png");
             tree.SelectedItem = root;
             await Wait(() => vm.SelectedNode == root && !vm.IsBusy && app.FolderSongs.Count == 1);
-            Check(frame.Content == page, "Selecting an ancestor in the tree stays on the same page");
+            Check(ReferenceEquals(frame.Content, page), "Selecting an ancestor in the tree stays on the same page");
             frame.Navigate(typeof(Page));
             Check(app.State.Browse.CurrentFolder?.Path == root.Path, "Leaving the page preserves the selected folder");
             frame.Navigate(typeof(FolderBrowsePage));
             await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsBusy);
             Check(vm.SelectedNode?.Path == root.Path && !app.IsBackBtnEnable, "Recreated page restores tree selection without back navigation");
+            var restoredColumns = (Grid)((FolderBrowsePage)frame.Content).FindName("BrowserColumns");
+            Check(restoredColumns.ColumnDefinitions[0].Width.Equals(savedFolderWidth)
+                && restoredColumns.ColumnDefinitions[2].Width.Equals(savedSongsWidth),
+                "Recreated pages retain the dragged split ratio for the session");
             app.IsBackBtnEnable = true;
             var previousRoot = vm.SelectedNode;
             projection.RequestRefresh();
@@ -155,6 +194,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await Wait(() => sourceMenu.IsOpen);
             Check(sourceMenu.IsOpen, "The source dropdown flyout opens with the global animation style");
             sourceMenu.Hide();
+            await CheckSiblingSelectionAsync(frame, app, db, vm, projection);
             await vm.StopAsync();
             var slowDb = new MusicDatabaseService { Pending = new() };
             var slow = new FolderViewModel(new(), app, slowDb, projection, NullLogger<FolderViewModel>.Instance);
@@ -178,6 +218,66 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         catch (Exception exception) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), "FAIL: " + exception); }
         finally { _window?.Close(); Exit(); }
     }
+    private async Task DragSplitterAsync(GridSplitter splitter, double delta)
+    {
+        // 非交互执行桌面不能可靠命中鼠标目标；直接驱动实际 Toolkit 控件的拖动处理，
+        // 检查真实 Grid 列宽、约束和双向绑定，不在测试中重写调整宽度的算法。
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var begin = typeof(GridSplitter).GetMethod("OnDragStarting", flags)!;
+        var move = typeof(GridSplitter).GetMethod("OnDragHorizontal", flags)!;
+        if (begin.Invoke(splitter, null) is false) throw new Exception("GridSplitter rejected the drag");
+        move.Invoke(splitter, [delta]);
+        await Task.Yield();
+    }
+
+    private async Task CheckSiblingSelectionAsync(Frame frame, AppViewModel app, MusicDatabaseService db,
+        FolderViewModel vm, LibraryProjectionService projection)
+    {
+        string[] names = ["2018 - Vessels", "20200415", "超时空辉夜姬", "Girls Band Cry", "Life Awaits - Butterflies", "Life Awaits - Call", "Life Awaits - Flux"];
+        db.Roots = [new() { Path = @"D:\Music", Name = "Music" }];
+        app.State.Library.Replace(names.Select(name => new Music { FolderPath = @"D:\Music\" + name, Title = name + " track" }).ToList());
+        frame.Navigate(typeof(FolderBrowsePage));
+        await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsBusy && vm.Roots.Count == 1);
+        var page = (FolderBrowsePage)frame.Content;
+        var tree = (TreeView)page.FindName("FolderTree");
+        var root = vm.Roots[0];
+        await Wait(() => tree.ContainerFromItem(root) is TreeViewItem);
+        ((TreeViewItem)tree.ContainerFromItem(root)).IsExpanded = true;
+        await Wait(() => root.VisibleChildren.Count == names.Length && root.Children.All(n => tree.ContainerFromItem(n) is not null));
+        foreach (int index in new[] { 4, 0, 6, 1, 5, 2, 3 })
+        {
+            var node = root.Children.Single(n => n.Name == names[index]);
+            SelectNativeRow(tree, node);
+            await Wait(() => !vm.IsBusy);
+            Check(ReferenceEquals(vm.SelectedNode, node) && vm.Title == node.Name && vm.CurrentPath == node.Path
+                && app.State.Browse.CurrentFolder?.Path == node.Path
+                && app.FolderSongs.Count == 1 && app.FolderSongs[0].Title == names[index] + " track",
+                "Native sibling selection keeps the highlighted row, header, path and song aligned: " + names[index]);
+        }
+        foreach (var node in root.Children) SelectNativeRow(tree, node);
+        var last = root.Children[^1];
+        await Wait(() => !vm.IsBusy);
+        Check(vm.CurrentPath == last.Path && app.FolderSongs[0].Title == last.Name + " track",
+            "Rapid native selections publish only the latest folder's songs");
+        var selectedLocation = vm.SelectedNode!.Location;
+        projection.RequestRefresh();
+        await Wait(() => !ReferenceEquals(vm.SelectedNode, last) && !vm.IsBusy);
+        await Wait(() => tree.ContainerFromItem(vm.SelectedNode) is TreeViewItem { IsSelected: true });
+        Check(vm.SelectedNode!.Location == selectedLocation && vm.CurrentPath == selectedLocation.Path,
+            "Tree regeneration restores the same highlighted folder and content");
+        await Capture(page, "selection-aligned.png");
+    }
+
+    private static void SelectNativeRow(TreeView tree, FolderBrowserNode node)
+    {
+        var container = tree.ContainerFromItem(node) as TreeViewItem ?? throw new Exception("Folder row is not realized");
+        var peer = FrameworkElementAutomationPeer.CreatePeerForElement(container) ?? new TreeViewItemAutomationPeer(container);
+        var provider = peer.GetPattern(PatternInterface.SelectionItem) as ISelectionItemProvider
+            ?? throw new Exception("Folder row has no native selection provider");
+        provider.Select();
+        if (!container.IsSelected) throw new Exception("Native row did not become selected");
+    }
+
     private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
     {
         if (parent is T match) return match;
