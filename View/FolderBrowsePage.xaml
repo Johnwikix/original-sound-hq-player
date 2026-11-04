@@ -8,10 +8,15 @@
     xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
     xmlns:tools="using:WinUIMusicPlayer.Utils">
     <Grid>
-        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
+        <ContentControl
+            x:Name="MusicDetailsSource"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False">
             <Grid Margin="16,12,16,0" RowDefinitions="Auto,*">
-                <InfoBar IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
+                <InfoBar
                     Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
                     Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}" />
                 <Grid x:Name="BrowserColumns" Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -19,76 +24,179 @@
                         <ColumnDefinition Width="12" />
                         <ColumnDefinition Width="{x:Bind ViewModel.SongsColumnWidth, Mode=TwoWay}" MinWidth="280" />
                     </Grid.ColumnDefinitions>
-                    <Grid x:Name="TreePane" RowDefinitions="Auto,Auto,*" RowSpacing="12" Padding="0,0,8,0">
-                        <TextBlock Margin="8,0,0,0" Text="{x:Bind ViewModel.PageTitle}" FontSize="22" FontWeight="SemiBold" />
-                        <ComboBox Grid.Row="1" Margin="4,0,0,0" HorizontalAlignment="Stretch" DisplayMemberPath="Name"
+                    <Grid
+                        x:Name="TreePane"
+                        Padding="0,0,8,0"
+                        RowDefinitions="Auto,Auto,*"
+                        RowSpacing="12">
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            FontSize="22"
+                            FontWeight="SemiBold"
+                            Text="{x:Bind ViewModel.PageTitle}" />
+                        <ComboBox
+                            Grid.Row="1"
+                            Margin="4,0,0,0"
+                            HorizontalAlignment="Stretch"
+                            BorderBrush="Transparent"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            DisplayMemberPath="Name"
                             ItemsSource="{x:Bind ViewModel.MusicBrowseViewModel.RemoteSources.Choices}"
                             SelectedItem="{x:Bind ViewModel.MusicBrowseViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
-                        <TreeView x:Name="FolderTree" Grid.Row="2" ItemsSource="{x:Bind ViewModel.Roots}"
-                            SelectedItem="{x:Bind ViewModel.SelectedNode, Mode=OneWay}" SelectionMode="Single"
-                            CanDragItems="False" CanReorderItems="False" SelectionChanged="Tree_SelectionChanged" Expanding="Tree_Expanding">
+                        <TreeView
+                            x:Name="FolderTree"
+                            Grid.Row="2"
+                            CanDragItems="False"
+                            CanReorderItems="False"
+                            Expanding="Tree_Expanding"
+                            ItemsSource="{x:Bind ViewModel.Roots}"
+                            SelectedItem="{x:Bind ViewModel.SelectedNode, Mode=OneWay}"
+                            SelectionChanged="Tree_SelectionChanged"
+                            SelectionMode="Single">
                             <TreeView.ItemTemplate>
                                 <DataTemplate x:DataType="model:FolderBrowserNode">
-                                    <TreeViewItem ItemsSource="{x:Bind VisibleChildren}" Loaded="TreeItem_Loaded"
+                                    <TreeViewItem
                                         HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}"
-                                        IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
-                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" ToolTipService.ToolTip="{x:Bind Path}">
-                                            <FontIcon Glyph="&#xE8B7;" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                        IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}"
+                                        ItemsSource="{x:Bind VisibleChildren}"
+                                        Loaded="TreeItem_Loaded">
+                                        <Grid
+                                            ColumnDefinitions="Auto,*"
+                                            ColumnSpacing="8"
+                                            ToolTipService.ToolTip="{x:Bind Path}">
+                                            <FontIcon
+                                                FontSize="16"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Glyph="&#xE8B7;" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Text="{x:Bind Name}"
+                                                TextTrimming="CharacterEllipsis" />
                                         </Grid>
                                     </TreeViewItem>
                                 </DataTemplate>
                             </TreeView.ItemTemplate>
                         </TreeView>
                     </Grid>
-                    <toolkit:GridSplitter x:Name="PaneSplitter" Grid.Column="1" HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch" Background="Transparent" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                    <toolkit:GridSplitter
+                        x:Name="PaneSplitter"
+                        Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
                         AutomationProperties.Name="{x:Bind ViewModel.ResizePanesLabel}"
+                        Background="Transparent"
+                        ResizeBehavior="PreviousAndNext"
+                        ResizeDirection="Columns"
                         ToolTipService.ToolTip="{x:Bind ViewModel.ResizePanesLabel}" />
-                    <Grid x:Name="SongsPane" Grid.Column="2" Margin="12,0,0,0" RowDefinitions="Auto,*" RowSpacing="16">
+                    <Grid
+                        x:Name="SongsPane"
+                        Grid.Column="2"
+                        Margin="12,0,0,0"
+                        RowDefinitions="Auto,*"
+                        RowSpacing="16">
                         <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.Summary, Mode=OneWay}" VerticalAlignment="Center"
-                                    FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock
+                                    FontSize="24"
+                                    FontWeight="SemiBold"
+                                    Text="{x:Bind ViewModel.Title, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind ViewModel.Summary, Mode=OneWay}" />
                             </Grid>
-                            <TextBlock Grid.Row="1" Text="{x:Bind ViewModel.CurrentPath, Mode=OneWay}" FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True"
-                                TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind ViewModel.CurrentPath, Mode=OneWay}" />
-                            <Grid Grid.Row="2" Margin="0,6,0,0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                <ComboBox Width="140" HorizontalAlignment="Left" ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions}"
+                            <TextBlock
+                                Grid.Row="1"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ViewModel.CurrentPath, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.CurrentPath, Mode=OneWay}" />
+                            <Grid
+                                Grid.Row="2"
+                                Margin="0,6,0,0"
+                                ColumnDefinitions="*,Auto"
+                                ColumnSpacing="8">
+                                <ComboBox
+                                    Width="140"
+                                    HorizontalAlignment="Left"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions}"
                                     SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
                                     <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="model:SortOption"><TextBlock Text="{x:Bind DisplayText, Mode=OneWay}" /></DataTemplate>
+                                        <DataTemplate x:DataType="model:SortOption">
+                                            <TextBlock Text="{x:Bind DisplayText, Mode=OneWay}" />
+                                        </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <Button Grid.Column="1" Command="{x:Bind DetailView.ViewModel.PlayAllCommand}"
-                                    IsEnabled="{x:Bind ViewModel.HasSongs, Mode=OneWay}" Style="{StaticResource FluentAccentButtonStyle}">
+                                <Button
+                                    Grid.Column="1"
+                                    Command="{x:Bind DetailView.ViewModel.PlayAllCommand}"
+                                    IsEnabled="{x:Bind ViewModel.HasSongs, Mode=OneWay}"
+                                    Style="{StaticResource FluentAccentButtonStyle}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE768;" FontSize="14" /><TextBlock x:Uid="PlayAll" />
+                                        <FontIcon FontSize="14" Glyph="&#xE768;" />
+                                        <TextBlock x:Uid="PlayAll" />
                                     </StackPanel>
                                 </Button>
                             </Grid>
                         </Grid>
-                        <controls:MusicGroupDetailControl x:Name="DetailView" Grid.Row="1" DetailKind="Folder"
-                            ShowHeader="False" PlaySourceTag="FolderSongsView"
+                        <controls:MusicGroupDetailControl
+                            x:Name="DetailView"
+                            Grid.Row="1"
+                            DetailKind="Folder"
+                            PlaySourceTag="FolderSongsView"
+                            ShowHeader="False"
                             Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasSongs), Mode=OneWay}" />
-                        <StackPanel Grid.Row="1" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" MaxWidth="360"
+                        <StackPanel
+                            Grid.Row="1"
+                            MaxWidth="360"
+                            Margin="16"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="8"
                             Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsEmpty), Mode=OneWay}">
-                            <FontIcon Glyph="&#xE8D6;" FontSize="32" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.EmptyTitle}" FontSize="18" TextAlignment="Center" />
-                            <TextBlock Text="{x:Bind ViewModel.EmptyHint}" TextWrapping="Wrap" TextAlignment="Center"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <Button Command="{x:Bind ViewModel.MusicBrowseViewModel.EmptyAddFolderCommand}" HorizontalAlignment="Center"
+                            <FontIcon
+                                FontSize="32"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Glyph="&#xE8D6;" />
+                            <TextBlock
+                                FontSize="18"
+                                Text="{x:Bind ViewModel.EmptyTitle}"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.EmptyHint}"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
+                            <Button
+                                HorizontalAlignment="Center"
+                                Command="{x:Bind ViewModel.MusicBrowseViewModel.EmptyAddFolderCommand}"
                                 Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.ShowAddFolder), Mode=OneWay}">
                                 <TextBlock x:Uid="AddFolder" />
                             </Button>
                         </StackPanel>
-                        <ProgressRing Grid.Row="1" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" Width="32" Height="32" />
-                        <InfoBar Grid.Row="1" VerticalAlignment="Top" IsOpen="{x:Bind HasText(ViewModel.Error), Mode=OneWay}"
-                            IsClosable="False" Severity="Error" Message="{x:Bind ViewModel.Error, Mode=OneWay}">
+                        <ProgressRing
+                            Grid.Row="1"
+                            Width="32"
+                            Height="32"
+                            IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+                        <InfoBar
+                            Grid.Row="1"
+                            VerticalAlignment="Top"
+                            IsClosable="False"
+                            IsOpen="{x:Bind HasText(ViewModel.Error), Mode=OneWay}"
+                            Message="{x:Bind ViewModel.Error, Mode=OneWay}"
+                            Severity="Error">
                             <InfoBar.ActionButton>
-                                <Button Command="{x:Bind ViewModel.RetryCommand}" AutomationProperties.Name="{x:Bind ViewModel.RetryLabel}">
+                                <Button AutomationProperties.Name="{x:Bind ViewModel.RetryLabel}" Command="{x:Bind ViewModel.RetryCommand}">
                                     <FontIcon Glyph="&#xE72C;" />
                                 </Button>
                             </InfoBar.ActionButton>
@@ -97,7 +205,12 @@
                 </Grid>
             </Grid>
         </ContentControl>
-        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
+        <ContentControl
+            x:Name="MusicDetailsOverlay"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False"
+            TabFocusNavigation="Cycle"
+            Visibility="Collapsed" />
     </Grid>
 </Page>
