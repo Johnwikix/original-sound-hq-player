@@ -6,7 +6,7 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View
 {
-    /// <summary>设置页分区按需创建，页面缓存复用已访问的视图。</summary>
+    /// <summary>设置页分区按需创建，离开后不保留页面缓存。</summary>
     public sealed partial class SettingsPage : Page
     {
         public SettingsViewModel ViewModel { get; }
@@ -17,14 +17,12 @@ namespace WinUIMusicPlayer.View
             WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
-            NavigationCacheMode = NavigationCacheMode.Enabled;
+            NavigationCacheMode = NavigationCacheMode.Disabled;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            // Preserve the initial General section when returning to the cached page.
-            SectionSelector.SelectedItem = SectionSelector.Items[0];
             ViewModel.AppViewModel.IsRealDevceChange = false;
             _ = ViewModel.AppViewModel.GetWasapiDeviceAsync();
         }

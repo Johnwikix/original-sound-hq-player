@@ -70,38 +70,42 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             frame.Navigate(typeof(Page));
             frame.BackStack.Clear();
             await Settle(frame);
-            Check(dsp.Unloads == 2, "Leaving Settings raises DSP Unloaded even when the page is cached");
+            Check(dsp.Unloads == 2, "Leaving Settings raises DSP Unloaded for session cleanup");
             frame.Navigate(typeof(SettingsPage));
             frame.BackStack.Clear();
             await Settle(frame);
-            Check(ReferenceEquals(page, frame.Content), "Repeated entry reuses the cached settings page");
-            Check(selector.SelectedItem == selector.Items[0], "Repeated entry keeps the existing General default");
-            Check(ProbeSection.Created.Count == 6, "Repeated entry creates no additional sections");
-            Check(page.ViewModel.AppViewModel.RefreshCount == 2, "Every entry still refreshes output devices");
-            selector.SelectedItem = selector.Items[4];
+            Check(!ReferenceEquals(page, frame.Content), "Repeated entry creates a fresh settings page");
+            var currentPage = (SettingsPage)frame.Content;
+            var currentSelector = (SelectorBar)currentPage.FindName("SectionSelector");
+            Check(currentPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
+                "Settings explicitly disables page caching");
+            Check(currentSelector.SelectedItem == currentSelector.Items[0], "Repeated entry keeps the General default");
+            Check(ProbeSection.Created.Count == 7 && ProbeSection.Created[^1] is GeneralSettingsControl,
+                "Repeated entry creates only General instead of recreating all visited sections");
+            Check(currentPage.ViewModel.AppViewModel.RefreshCount == 2, "Every entry still refreshes output devices");
+            currentSelector.SelectedItem = currentSelector.Items[4];
             await Settle(frame);
-            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created.OfType<LyricsSettingsControl>().Single().Loads == 2,
-                "Selector binding still updates after cached page reattachment");
+            Check(ProbeSection.Created.Count == 8 && ProbeSection.Created[^1] is LyricsSettingsControl,
+                "Selector binding creates a new section only when selected on the fresh page");
             frame.Navigate(typeof(Page));
             await Settle(frame);
             frame.GoBack();
             await Settle(frame);
-            Check(ReferenceEquals(page, frame.Content) && selector.SelectedItem == selector.Items[0], "History reentry reuses settings and restores General");
-            Check(page.ViewModel.AppViewModel.RefreshCount == 3, "History reentry still refreshes devices");
+            var historyPage = (SettingsPage)frame.Content;
+            var historySelector = (SelectorBar)historyPage.FindName("SectionSelector");
+            Check(!ReferenceEquals(currentPage, historyPage) && historySelector.SelectedItem == historySelector.Items[0],
+                "History reentry creates a fresh settings page with General selected");
+            Check(ProbeSection.Created.Count == 9 && ProbeSection.Created[^1] is GeneralSettingsControl,
+                "History reentry creates only General");
+            Check(historyPage.ViewModel.AppViewModel.RefreshCount == 3, "History reentry still refreshes devices");
             frame.GoForward();
             await Settle(frame);
             Check(frame.Content is Page and not SettingsPage, "Forward navigation leaves Settings");
             frame.GoBack();
             await Settle(frame);
-            Check(ReferenceEquals(page, frame.Content), "Back after forward still reuses the cached page");
-            frame.CacheSize = 0;
-            frame.Navigate(typeof(Page));
-            await Settle(frame);
-            frame.Navigate(typeof(SettingsPage));
-            await Settle(frame);
-            Check(!ReferenceEquals(page, frame.Content), "Frame may evict the page when its cache budget is disabled");
-            Check(ProbeSection.Created.Count == 7 && ProbeSection.Created[^1] is GeneralSettingsControl,
-                "After eviction a fresh page still creates only General");
+            Check(!ReferenceEquals(historyPage, frame.Content), "Back after forward also creates a fresh settings page");
+            Check(ProbeSection.Created.Count == 10 && ProbeSection.Created[^1] is GeneralSettingsControl,
+                "Back after forward still creates only General");
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), string.Join("\r\n", _results) + "\r\n");
         }
         catch (Exception error)
