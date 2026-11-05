@@ -1,3 +1,13 @@
+## 2026-11-05 亚克力默认参数对齐 WinUI
+- `Helper/CustomAcrylicSystemBackdrop.cs`：新增 UseSystemDefaults 与 ApplySystemDefaults，按主题应用 WinUI DesktopAcrylicBackdrop 默认参数（浅色 #FCFCFC / TintOpacity 0 / LuminosityOpacity 0.85，深色 #2C2C2C / 0.15 / 0.96）；UpdateProperties 等扩展入口保留。
+- `Helper/ThemeStyleHelper.cs`：「亚克力」档改用默认参数并随主题更新；「透明亚克力」保持 0/0.4 不变，切到自定义或回退样式时关闭默认模式，避免后续主题变更覆盖参数。
+- 验证：主工程 Debug/x64 构建通过；FontUiRegression 224 项通过；浅色默认值由 WinAppSDK 2.6.5 运行时实测，深色值取自 WinUI 主题资源，未在深色系统实测。
+
+## 2026-11-05 云母默认参数对齐 WinUI
+- `Helper/CustomMicaSystemBackdrop.cs`：保留 TintColor/TintOpacity/MicaKind 及 UpdateProperties 扩展入口，默认值改为 WinUI 标准：浅色 #FFF3F3F3（原 #DCFFFFFF）、TintOpacity 0.5（原 1.0）；暗色保持 #FF202020。
+- 行为变化：Mica 默认外观恢复 WinUI 标准，比旧版更透明；设置自定义 tint 后控制器不再自动跟随主题，仍由 UpdateUiColor 按 ActualTheme 手动重设。
+- 验证：主工程 Debug/x64 构建通过；FontUiRegression 224 项通过（含 Mica 回退、主题切换与重连清理）；未做真实窗口的目视比对。
+
 ## 2026-11-04 取消设置页缓存以减少页面保留
 - `View/SettingsPage.xaml.cs`：禁用页面缓存，移除缓存返回时重置分区的逻辑；保留各分区按需创建，每次进入只创建常规设置并刷新输出设备。
 - `_tools/SettingsNavigationUiRegression`：调整源码断言，覆盖重复进入、导航历史均创建新页面且只加载常规分区；移除不适用于当前无缓存版本的计时说明。

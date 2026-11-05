@@ -21,6 +21,8 @@ namespace WinUIMusicPlayer.Helper
         public double LuminosityOpacity { get; set; } = 0.8;
         public Color TintColor { get; set; } = Color.FromArgb(255, 32, 32, 32);
         public bool IsInputActive = false;
+        /// <summary>为 true 时使用 Windows 默认亚克力参数，并随主题切换。</summary>
+        public bool UseSystemDefaults { get; set; }
 
         public CustomAcrylicSystemBackdrop(Window window = null)
         {
@@ -177,9 +179,15 @@ namespace WinUIMusicPlayer.Helper
             SetAcrylicProperties();
         }
 
+        /// <summary>切换到 Windows 默认亚克力参数，并立即按当前主题应用。</summary>
+        public void ApplySystemDefaults()
+        {
+            UseSystemDefaults = true;
+            UpdateUiColor(_rootElement?.ActualTheme ?? ElementTheme.Default);
+        }
+
         private void UpdateUiColor(ElementTheme elementTheme)
         {
-            if (!IsDefaultColor(TintColor)) return;
             var isDarkTheme = elementTheme switch
             {
                 ElementTheme.Dark => true,
@@ -187,6 +195,20 @@ namespace WinUIMusicPlayer.Helper
                 ElementTheme.Default => Application.Current.RequestedTheme == ApplicationTheme.Dark,
                 _ => true
             };
+
+            if (UseSystemDefaults)
+            {
+                // 与 WinUI DesktopAcrylicBackdrop 默认值一致：浅色 #FCFCFC / 0 / 0.85，深色 #2C2C2C / 0.15 / 0.96
+                TintColor = isDarkTheme
+                    ? Color.FromArgb(255, 44, 44, 44)
+                    : Color.FromArgb(255, 252, 252, 252);
+                TintOpacity = isDarkTheme ? 0.15 : 0;
+                LuminosityOpacity = isDarkTheme ? 0.96 : 0.85;
+                SetAcrylicProperties();
+                return;
+            }
+
+            if (!IsDefaultColor(TintColor)) return;
             TintColor = isDarkTheme
                 ? Color.FromArgb(255, 32, 32, 32)
                 : Color.FromArgb(255, 255, 255, 255);

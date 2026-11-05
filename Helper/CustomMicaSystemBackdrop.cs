@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.Helper
         // Mica效果属性
         public MicaKind MicaKind { get; set; } = MicaKind.Base;
         public Color TintColor { get; set; } = Color.FromArgb(255, 32, 32, 32);
-        public float TintOpacity { get; set; } = 1.0f;
+        public float TintOpacity { get; set; } = 0.5f;
         public bool IsInputActive = false;
 
         public CustomMicaSystemBackdrop(Window window = null)
@@ -193,9 +193,10 @@ namespace WinUIMusicPlayer.Helper
                 ElementTheme.Default => Application.Current.RequestedTheme == ApplicationTheme.Dark,
                 _ => true
             };
+            // 与 WinUI 默认云母一致：暗色 #202020，浅色 #F3F3F3
             TintColor = isDarkTheme
                 ? Color.FromArgb(255, 32, 32, 32)
-                : Color.FromArgb(220, 255, 255, 255);
+                : Color.FromArgb(255, 243, 243, 243);
             SetMicaProperties();
         }
     }

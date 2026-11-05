@@ -74,15 +74,13 @@ namespace WinUIMusicPlayer.Helper
                             _window.SystemBackdrop = _transparentTintBackdrop;
                             break;
                         }
+                        _acrylicSystemBackdrop.UseSystemDefaults = true;
                         if (backdrop is not null)
                         {
-                            backdrop.UpdateProperties(0.5f, 0.8f, GetUiColor());
+                            backdrop.ApplySystemDefaults();
                         }
                         else
                         {
-                            _acrylicSystemBackdrop.TintOpacity = 0.5f;
-                            _acrylicSystemBackdrop.LuminosityOpacity = 0.8f;
-                            _acrylicSystemBackdrop.TintColor = GetUiColor();
                             _window.SystemBackdrop = _acrylicSystemBackdrop;
                         }
                         break;
@@ -92,6 +90,7 @@ namespace WinUIMusicPlayer.Helper
                             _window.SystemBackdrop = _transparentTintBackdrop;
                             break;
                         }
+                        _acrylicSystemBackdrop.UseSystemDefaults = false;
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0, 0.4f, GetUiColor());
@@ -130,6 +129,7 @@ namespace WinUIMusicPlayer.Helper
                             _window.SystemBackdrop = _transparentTintBackdrop;
                             break;
                         }
+                        _acrylicSystemBackdrop.UseSystemDefaults = false;
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(1.0,
@@ -151,6 +151,7 @@ namespace WinUIMusicPlayer.Helper
                         }
                         break;
                     default:
+                        _acrylicSystemBackdrop.UseSystemDefaults = false;
                         _acrylicSystemBackdrop.TintOpacity = 0.5f;
                         _acrylicSystemBackdrop.LuminosityOpacity = 0.8f;
                         _acrylicSystemBackdrop.TintColor = GetUiColor();
@@ -171,6 +172,7 @@ namespace WinUIMusicPlayer.Helper
             {
                 if (_window.SystemBackdrop is CustomAcrylicSystemBackdrop backdrop)
                 {
+                    backdrop.UseSystemDefaults = false;
                     backdrop.UpdateProperties(1.0,
                         AppSettings.CustomAcrylicOpacity,
                         Color.FromArgb((byte)(AppSettings.CustomColorArgb >> 24),
