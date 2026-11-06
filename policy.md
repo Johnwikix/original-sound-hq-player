@@ -2,7 +2,7 @@
 
 ## 隐私政策
 
-2026-09-16.1
+2026-11-06.1
 
 本政策按应用当前的实际功能说明数据处理。应用没有自建用户账号、广告投放或营销订阅系统，也不以出售个人数据为业务。
 
@@ -20,11 +20,13 @@
 
 Microsoft Store 负责商店账号、支付及订单处理。应用读取商店提供的产品许可、试用到期信息和购买结果，用于展示授权状态和控制付费功能；开发者不通过本应用接收你的银行卡资料或 Microsoft 账号密码。平台的数据处理适用其隐私政策。
 
-### 3. 日志与主动反馈
+### 3. 日志、错误报告与主动反馈
 
 应用在本机记录运行和错误日志，可能包含文件路径、曲目信息、设备名称、错误堆栈等排查资料。当前日志配置按日滚动，最多保留 30 个日志文件。
 
-应用不自动向开发者上传这些日志。只有你主动通过邮箱等渠道提供日志、截图或问题描述时，开发者才会收到相关内容。发送前请检查并遮盖不希望提供的信息。反馈资料用于排查和回复请求，不用于营销；你可联系开发者请求访问、更正或删除，法律要求保留的情况除外。
+发生未处理异常或应用崩溃时，应用会通过 Windows 错误报告（WER）自动生成诊断报告并排队提交。报告可能包含异常类型、消息与栈顶信息、完整异常详情文件、当日运行日志，以及一份不含堆内存、仅含模块/线程/堆栈信息的小型进程转储；每个会话最多提交 10 份，同一错误签名只提交一次。是否上传及上传时机由 Windows 的错误报告设置决定，开发者可通过微软合作伙伴中心获取这些报告用于排查和修复缺陷，不用于营销。
+
+除上述 WER 诊断报告外，只有你主动通过邮箱等渠道提供日志、截图或问题描述时，开发者才会收到相关内容。发送前请检查并遮盖不希望提供的信息。本地还可能在 OriginalSoundPlayer/CrashDumps 保留崩溃转储，最多 14 天后清理。反馈资料用于排查和回复请求，不用于营销；你可联系开发者请求访问、更正或删除，法律要求保留的情况除外。
 
 ### 4. 保存位置与管理
 
@@ -44,7 +46,7 @@ Microsoft Store 负责商店账号、支付及订单处理。应用读取商店�
 
 ## Privacy Policy
 
-2026-09-16.1
+2026-11-06.1
 
 This policy describes data handling for the app's current features. The app has no developer-operated user accounts, advertising or marketing subscription system, and selling personal data is not its business.
 
@@ -62,11 +64,13 @@ Enabling online features, performing online actions or opening external links ma
 
 Microsoft Store handles Store accounts, payments and orders. The app reads the product license, trial expiration and purchase results supplied by the Store to display licensing status and control paid features. The developer does not receive your payment card details or Microsoft account password through this app. The platform's own privacy policy governs its processing.
 
-### 3. Logs and voluntary support requests
+### 3. Logs, error reports and support requests
 
 Runtime and error logs are written locally and may include file paths, track information, device names, exception details and other diagnostic information. The current configuration rolls logs daily and retains up to 30 log files.
 
-The app does not automatically upload these logs to the developer. The developer receives logs, screenshots or descriptions only when you choose to send them, for example by email. Review and redact them before sending. Support information is used to investigate and reply, not for marketing. Contact us to request access, correction or deletion, subject to legally required retention.
+When an unhandled error occurs or the app crashes, the app automatically creates a diagnostic report through Windows Error Reporting (WER) and queues it for submission. Such a report may contain the exception type, message and top stack frame, a full exception-details file, the current day's runtime log and a small process dump with module, thread and stack information but no heap contents. Reports are capped at 10 per session and duplicate error signatures are submitted once. Whether and when they are uploaded is governed by Windows error-reporting settings; the developer may access them through Microsoft Partner Center to diagnose and fix defects, and does not use them for marketing.
+
+Other than these WER diagnostic reports, the developer receives logs, screenshots or descriptions only when you choose to send them, for example by email. Review and redact them before sending. A local crash dump may also be kept under OriginalSoundPlayer/CrashDumps for up to 14 days. Contact us to request access, correction or deletion, subject to legally required retention.
 
 ### 4. Storage and controls
 

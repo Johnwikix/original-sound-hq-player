@@ -1,3 +1,16 @@
+## 2026-11-06 移除无效发布配置并补齐随包许可证全文
+- `WinUIMusicPlayer.csproj`：删除 `<PublishProfile>win-$(Platform).pubxml</PublishProfile>` 并补充原因注释。仓库 `.gitignore` 忽略 `*.pubxml`、csproj 哈希输入注释亦说明 pubxml 不经命令行使用，主工程发布走 MSIX 单项目打包与 `dotnet publish -o`；该属性只持续产生 NETSDK1198 警告且无实际作用。
+- `WinUIMusicPlayer.csproj`：随包分发 `LICENSE`（AGPL-3.0 全文）、`Libraries/FFmpeg/x64/LICENSE.txt`（LGPL-2.1 全文）与 `BUILD_INFO.txt`（源码版本、构建脚本与许可标识），统一 `Link` 到 `Licenses\` 并同时设置 `CopyToOutputDirectory` 与 `CopyToPublishDirectory`，与既有 WavPack/DevWinUI 许可项写法一致；未分发含本地绝对路径的 `BUILD.md`。
+- 兼容性：新增项仅影响输出/发布包内容，不改变构建行为；`PublishProfile` 移除后仍可通过命令行 `-p:PublishProfile=` 显式指定本地 pubxml。
+- 验证：按用户要求未执行构建、回归或 MSIX 打包验证；改动为 csproj 声明级，未触碰源码、Legal 文案与 Player 产物。
+
+## 2026-11-06 移除 ARM64 平台声明并修订日志上报披露
+- `WinUIMusicPlayer.csproj`：`<Platforms>` 收窄为 x64，删除 4 个重复的 Debug|ARM64 / Release|ARM64 配置块并补充原因注释；交付链原本只产 x64，ARM64 构建会把 x64 NativeAOT 子进程与缺失的原生 DLL 静默打进包。
+- `Legal/legal.en.json`、`Legal/legal.zh-CN.json`、`policy.md`：隐私政策第 3 节改为如实披露 WER 自动诊断报告（异常详情、当日日志、不含堆内存的小型转储、会话 10 份上限、上传由 Windows 错误报告设置决定）、本地转储保留与主动反馈边界；两份应用内协议版本同步至 2026-11-06.1。
+- `Services/AgreementAcceptanceStore.cs`：`CurrentVersion` 同步至 2026-11-06.1，保证两个 LegalBundle 的版本校验一致。
+- 验证：主工程 Debug/x64 构建通过（0 错误）；两份 Legal JSON 与 csproj XML 解析通过；7 语言资源与源码哈希未改动。未执行 ARM64 / Release / MSIX 打包与实机协议弹窗验证。
+- 兼容性：协议版本变更后，存量用户下次启动会重新显示用户协议；历史 ARM64 包不再有对应构建配置，后续仅提供 x64 包。
+
 ## 2026-11-05 亚克力默认参数对齐 WinUI
 - `Helper/CustomAcrylicSystemBackdrop.cs`：新增 UseSystemDefaults 与 ApplySystemDefaults，按主题应用 WinUI DesktopAcrylicBackdrop 默认参数（浅色 #FCFCFC / TintOpacity 0 / LuminosityOpacity 0.85，深色 #2C2C2C / 0.15 / 0.96）；UpdateProperties 等扩展入口保留。
 - `Helper/ThemeStyleHelper.cs`：「亚克力」档改用默认参数并随主题更新；「透明亚克力」保持 0/0.4 不变，切到自定义或回退样式时关闭默认模式，避免后续主题变更覆盖参数。

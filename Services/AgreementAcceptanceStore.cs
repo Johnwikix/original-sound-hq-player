@@ -9,7 +9,7 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>Local, versioned consent. A failed write never counts as acceptance.</summary>
 public sealed class AgreementAcceptanceStore(string path)
 {
-    public const string CurrentVersion = "2026-09-16.1";
+    public const string CurrentVersion = "2026-11-06.1";
 
     // 与数据库/设置同根的文档目录不经过 MSIX AppData 虚拟化；本地应用数据目录在部分用户环境
     // 下无法读写（虚拟化重定向），同意记录曾因此丢失。

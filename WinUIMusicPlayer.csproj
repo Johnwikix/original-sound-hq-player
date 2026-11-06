@@ -8,9 +8,12 @@
     <!-- Runtime Async：运行时驱动 async 状态机（preview 特性，BCL 已默认编译为该模型） -->
     <Features>$(Features);runtime-async=on</Features>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Platforms>x64;ARM64</Platforms>
+    <!-- 交付链（NativeAOT 子进程、FFmpeg/WavPack 原生 DLL、RID 与 Publish Target）
+         仅产 x64；不再声明 ARM64，避免把 x64 二进制静默打进 ARM64 包。 -->
+    <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
-    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+    <!-- 仓库不随附 pubxml（.gitignore 忽略 *.pubxml），命令行发布直接用 dotnet publish；
+         原先的 PublishProfile 指向不存在的 win-x64.pubxml，仅产生 NETSDK1198 且无实际作用。 -->
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
@@ -87,6 +90,13 @@
 	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
     <None Include="Libraries\WavPack\x64\wavpackdll.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="wavpackdll.dll" />
     <None Include="Libraries\WavPack\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\WavPack.txt" />
+
+	<!-- 许可证全文与源码来源说明随包分发：本程序 AGPL-3.0、FFmpeg LGPL-2.1。
+	     仅分发精简的 BUILD_INFO.txt，不带含本地构建路径的 BUILD.md；
+	     源码与构建脚本由公开仓库及 BUILD_INFO.txt 中的引用提供。 -->
+    <None Include="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\AGPL-3.0.txt" />
+    <None Include="Libraries\FFmpeg\x64\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\FFmpeg-LGPL-2.1.txt" />
+    <None Include="Libraries\FFmpeg\x64\BUILD_INFO.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\FFmpeg-BUILD-INFO.txt" />
     <None Update="Libraries\DevWinUI\LICENSE-Controls.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-Controls.txt" />
     <None Update="Libraries\DevWinUI\LICENSE-StoreCarousel.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\DevWinUI-StoreCarousel.txt" />
   </ItemGroup>
@@ -337,16 +347,6 @@
     <Optimize>False</Optimize>
     <DebugType>full</DebugType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <IsPublishable>True</IsPublishable>
-    <Optimize>False</Optimize>
-    <DebugType>full</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <IsPublishable>True</IsPublishable>
-    <Optimize>False</Optimize>
-    <DebugType>full</DebugType>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <IsPublishable>True</IsPublishable>
     <Optimize>True</Optimize>
@@ -358,16 +358,6 @@
 	 <!-- 合作伙伴中心的崩溃堆栈符号化依赖 PDB：符号包(.appxsym)打包时取自构建输出，
 	      PDB 不进入提交给商店的 MSIX，不影响包体积。 -->
 	 <DebugType>portable</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <IsPublishable>True</IsPublishable>
-    <Optimize>True</Optimize>
-    <DebugType>full</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <IsPublishable>True</IsPublishable>
-    <Optimize>True</Optimize>
-    <DebugType>full</DebugType>
   </PropertyGroup>
   <ItemGroup>
     <PRIResource Remove="External\**" />

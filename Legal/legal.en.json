@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-16.1",
+  "version": "2026-11-06.1",
   "language": "en",
   "documents": [
     {
@@ -89,10 +89,11 @@
           ]
         },
         {
-          "title": "3. Logs and voluntary support requests",
+          "title": "3. Logs, error reports and support requests",
           "paragraphs": [
             "Runtime and error logs are written locally and may include file paths, track information, device names, exception details and other diagnostic information. The current configuration rolls logs daily and retains up to 30 log files.",
-            "The app does not automatically upload these logs to the developer. The developer receives logs, screenshots or descriptions only when you choose to send them, for example by email. Review and redact them before sending. Support information is used to investigate and reply, not for marketing. Contact us to request access, correction or deletion, subject to legally required retention."
+            "When an unhandled error occurs or the app crashes, the app automatically creates a diagnostic report through Windows Error Reporting (WER) and queues it for submission. Such a report may contain the exception type, message and top stack frame, a full exception-details file, the current day's runtime log and a small process dump with module, thread and stack information but no heap contents. Reports are capped at 10 per session and duplicate error signatures are submitted once. Whether and when they are uploaded is governed by Windows error-reporting settings; the developer may access them through Microsoft Partner Center to diagnose and fix defects, and does not use them for marketing.",
+            "Other than these WER diagnostic reports, the developer receives logs, screenshots or descriptions only when you choose to send them, for example by email. Review and redact them before sending. A local crash dump may also be kept under OriginalSoundPlayer/CrashDumps for up to 14 days. Contact us to request access, correction or deletion, subject to legally required retention."
           ]
         },
         {
