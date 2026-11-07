@@ -1,3 +1,14 @@
+## 2026-11-07 文件夹页目录树展开收起过渡
+- `View/Controls/TreeViewExpansionMotion.cs`：目录树展开/收起的布局过渡。展开前后给所有行面板的已生成行挂 `Visual.Offset` 隐式动画（180ms），让它们在子行插入/移除时平滑让位或收拢；180+80ms 后统一摘除，避免复用行遗留动画影响滚动。
+- **新行不做行级动画**。逐行阶梯淡入已移除：总时长会随行数增长（展开 3 个和 30 个目录观感不一致）。改成「整批同时」的过程中试过四种实现，全部被 TreeView 的容器机制否决：
+  1. `Composition` 在 `Expanding`/`LayoutUpdated` 里设 `Visual.Opacity`：行容器首帧由框架绘制，回调拿到的视觉还没接入渲染树，设进去的 0 被忽略 → 先露一帧全亮再暗下去，就是「闪一下」。
+  2. XAML `Storyboard` 驱动内容元素 `Opacity`：同样晚一步，且绑定值恢复会覆盖动画。
+  3. `TreeView.ItemContainerTransitions` 挂 `EntranceThemeTransition`：入场能生效，但会让树重建时的选择恢复用例超时（`CheckSiblingSelectionAsync`），放弃。
+  4. 内容元素默认 `Opacity="0"` + 行 `Loaded` 时按节点状态淡入：绑定求值晚于首帧、容器复用时 `Loaded` 不再触发，最终会让行永久不可见（复现了最严重的回归），已回退。
+- 结论：TreeView 的行容器首帧与复用时机都在框架内部，外部无法安全干预。想要真正的逐行入场必须替换 `TreeViewItem` 的容器模板，本轮不做。
+- `_tools/FolderBrowserUiRegression`：新增「行出现后不得先亮后暗」「过渡结束后行必须画满」两项像素断言（只统计位置已稳定的帧，避免把父行当成子行）。
+- 验证：主工程 Debug/x64 构建通过；FolderBrowserUiRegression 75 项全通过（连续三次一致）。收起方向仍只有剩余行的收拢补间——WinUI 在 `Collapsed` 之前就同步移除子行，同帧设回 `IsExpanded` 也不会恢复容器（实测 `collapsed` 触发、`expanding` 不触发、`ContainerFromItem` 仍为 null）。
+
 ## 2026-11-06 移除无效发布配置并补齐随包许可证全文
 - `WinUIMusicPlayer.csproj`：删除 `<PublishProfile>win-$(Platform).pubxml</PublishProfile>` 并补充原因注释。仓库 `.gitignore` 忽略 `*.pubxml`、csproj 哈希输入注释亦说明 pubxml 不经命令行使用，主工程发布走 MSIX 单项目打包与 `dotnet publish -o`；该属性只持续产生 NETSDK1198 警告且无实际作用。
 - `WinUIMusicPlayer.csproj`：随包分发 `LICENSE`（AGPL-3.0 全文）、`Libraries/FFmpeg/x64/LICENSE.txt`（LGPL-2.1 全文）与 `BUILD_INFO.txt`（源码版本、构建脚本与许可标识），统一 `Link` 到 `Licenses\` 并同时设置 `CopyToOutputDirectory` 与 `CopyToPublishDirectory`，与既有 WavPack/DevWinUI 许可项写法一致；未分发含本地绝对路径的 `BUILD.md`。

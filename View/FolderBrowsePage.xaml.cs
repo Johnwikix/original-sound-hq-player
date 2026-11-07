@@ -2,8 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.View.Controls;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View;
@@ -13,11 +15,13 @@ public sealed partial class FolderBrowsePage : Page
 {
     private bool _ownsActivation;
     private bool _selectionRestorePending;
+    private readonly TreeViewExpansionMotion _treeMotion;
     public FolderViewModel ViewModel { get; }
     public FolderBrowsePage()
     {
         ViewModel = App.Services.GetRequiredService<FolderViewModel>();
         InitializeComponent();
+        _treeMotion = new(FolderTree);
         NavigationCacheMode = NavigationCacheMode.Disabled;
         Loaded += Page_Loaded;
         Unloaded += Page_Unloaded;
@@ -25,10 +29,13 @@ public sealed partial class FolderBrowsePage : Page
     public bool HasText(string text) => !string.IsNullOrEmpty(text);
     private async void Page_Loaded(object sender, RoutedEventArgs args)
     {
+        // Loaded 可能在没有 Unloaded 的情况下重入（重挂到另一个宿主），已激活时不重复订阅。
+        if (_ownsActivation) return;
         Bindings.Initialize();
         Bindings.Update();
         _ownsActivation = true;
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+        ViewModel.Roots.CollectionChanged += Roots_CollectionChanged;
         await ViewModel.ActivateAsync();
         RequestSelectionRestore();
     }
@@ -36,13 +43,17 @@ public sealed partial class FolderBrowsePage : Page
     {
         DeactivateView();
         Bindings.StopTracking();
+        _treeMotion.Cancel();
     }
     private void DeactivateView()
     {
         // OnNavigatedFrom 已交接给新页面后，旧页面迟到的 Unloaded 不能停止新会话。
         if (!_ownsActivation) return;
         _ownsActivation = false;
+        // 离页即取消过渡：不依赖宿主是否触发 Unloaded（Cancel 幂等）。
+        _treeMotion.Cancel();
         ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        ViewModel.Roots.CollectionChanged -= Roots_CollectionChanged;
         StopSelectionRestore();
         ViewModel.Deactivate();
     }
@@ -54,6 +65,12 @@ public sealed partial class FolderBrowsePage : Page
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(FolderViewModel.SelectedNode)) RequestSelectionRestore();
+    }
+
+    private void Roots_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        // 根节点整体重建会连带恢复展开状态：只跳过重建那一轮布局，避免逐行补播盖住刷新。
+        if (args.Action == NotifyCollectionChangedAction.Reset) _treeMotion.SuppressRestorePass();
     }
 
     private void RequestSelectionRestore()
@@ -107,7 +124,16 @@ public sealed partial class FolderBrowsePage : Page
     private void Tree_Expanding(TreeView sender, TreeViewExpandingEventArgs args)
     {
         if (!_ownsActivation) return;
-        if (args.Item is FolderBrowserNode node) ViewModel.ExpandFolder(node);
+        if (args.Item is FolderBrowserNode node)
+        {
+            ViewModel.ExpandFolder(node);
+            _treeMotion.PrepareExpand();
+        }
         RequestSelectionRestore();
+    }
+    private void Tree_Collapsed(TreeView sender, TreeViewCollapsedEventArgs args)
+    {
+        if (!_ownsActivation) return;
+        _treeMotion.PrepareCollapse();
     }
 }

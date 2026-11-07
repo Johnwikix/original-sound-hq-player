@@ -49,12 +49,12 @@
                             Grid.Row="2"
                             CanDragItems="False"
                             CanReorderItems="False"
+                            Collapsed="Tree_Collapsed"
                             Expanding="Tree_Expanding"
                             ItemsSource="{x:Bind ViewModel.Roots}"
                             SelectedItem="{x:Bind ViewModel.SelectedNode, Mode=OneWay}"
                             SelectionChanged="Tree_SelectionChanged"
-                            SelectionMode="Single">
-                            <TreeView.ItemTemplate>
+                            SelectionMode="Single">                            <TreeView.ItemTemplate>
                                 <DataTemplate x:DataType="model:FolderBrowserNode">
                                     <TreeViewItem
                                         HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}"
