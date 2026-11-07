@@ -184,7 +184,18 @@ public partial class FolderViewModel : ObservableObject
         if (current is not null && !ReferenceEquals(current, SelectedNode)) Navigate(current);
     }
 
-    public void ExpandFolder(FolderBrowserNode node) => node.RealizeChildren();
+    /// <summary>
+    /// 用户展开：实现子集并记录状态，供树重建时恢复。展开状态只经交互事件写入——
+    /// 容器与 IsExpanded 的绑定是 OneWay，避免根节点重建时框架把容器复位成折叠经 TwoWay 回写模型。
+    /// </summary>
+    public void ExpandFolder(FolderBrowserNode node)
+    {
+        node.RealizeChildren();
+        node.IsExpanded = true;
+    }
+
+    /// <summary>用户收起：只记录状态，容器状态由绑定同步。</summary>
+    public void CollapseFolder(FolderBrowserNode node) => node.IsExpanded = false;
 
     private void Navigate(FolderBrowserNode? node)
     {

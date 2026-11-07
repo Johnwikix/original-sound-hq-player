@@ -58,7 +58,7 @@
                                 <DataTemplate x:DataType="model:FolderBrowserNode">
                                     <TreeViewItem
                                         HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}"
-                                        IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}"
+                                        IsExpanded="{x:Bind IsExpanded, Mode=OneWay}"
                                         ItemsSource="{x:Bind VisibleChildren}"
                                         Loaded="TreeItem_Loaded">
                                         <Grid

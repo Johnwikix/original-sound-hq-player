@@ -1,3 +1,10 @@
+## 2026-11-07 修复目录树收起飞入并补上整批淡入
+- `View/Controls/TreeViewExpansionMotion.cs`：重写过渡驱动。收起时把隐式 `Visual.Offset` 动画也挂到了即将被移除的子树行上，这些容器进入容器池后被复用重摆放，残留动画让它们从旧坐标补间，即「收起后行从左上方飞入」（子项越多、视口下方没有同级项时必然复现）。现在在 `TreeViewItem.IsExpanded` 变更回调（早于框架延迟的节点同步与项目增删）识别即将离场的子树行：既不挂新动画，也摘除它们可能残留的动画；存留行照常补间，仍在 180+80ms 后统一摘除。
+- 同一文件：补上用户要求的整批淡入。容器内容变更/`Loaded` 时先把视觉透明度置 0 再补间到 1，首帧不会露全亮；窗口由扁平列表的插入事件打开（滚动虚拟化只实现容器、不插入条目，不会误淡入），450ms 后关闭。
+- `View/FolderBrowsePage.xaml`、`View/FolderBrowsePage.xaml.cs`、`ViewModel/Pages/FolderViewModel.cs`：`IsExpanded` 绑定改 `OneWay`。根节点重建时框架会把容器复位为折叠，`TwoWay` 会把这个复位当成用户意图写回刚恢复的模型（实测同一节点 6ms 后被打回 `false`），导致选中项容器永不实现、选择无法恢复。用户意图改由 `Expanding`/`Collapsed` 事件经 `ExpandFolder`/`CollapseFolder` 写入 ViewModel；页面在布局循环里从根到选中节点逐层核对容器展开态，补上重建后容器滞后于模型的一轮。
+- `_tools/FolderBrowserUiRegression`：收起断言改为「存留行挂补间」「被移除行不带走残留动画」「补间到期摘除」；淡入断言用后一行验证整批淡入 + 回退断言防止「先亮后暗」，首行首帧可能仍是展开前的旧帧（对比展开前该位置亮度仅差 0.6），不计入回退。
+- 验证：主工程 Debug/x64 构建 0 错误；FolderBrowserUiRegression 75 项断言全通过。`TreeView.ItemContainerTransitions`、显式 `Translation` 补间等替代方案均实测无效（原生过渡被 TreeView 绕过，布局完成时容器已在最终位置、显式方案测不到位移），故保留隐式动画路线。
+
 ## 2026-11-07 文件夹页目录树展开收起过渡
 - `View/Controls/TreeViewExpansionMotion.cs`：目录树展开/收起的布局过渡。展开前后给所有行面板的已生成行挂 `Visual.Offset` 隐式动画（180ms），让它们在子行插入/移除时平滑让位或收拢；180+80ms 后统一摘除，避免复用行遗留动画影响滚动。
 - **新行不做行级动画**。逐行阶梯淡入已移除：总时长会随行数增长（展开 3 个和 30 个目录观感不一致）。改成「整批同时」的过程中试过四种实现，全部被 TreeView 的容器机制否决：

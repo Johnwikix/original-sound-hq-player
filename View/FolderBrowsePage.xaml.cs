@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using WinUIMusicPlayer.Model;
@@ -88,24 +89,49 @@ public sealed partial class FolderBrowsePage : Page
 
     private void RestoreSelectionAfterLayout(object? sender, object args)
     {
-        // 每次只等一轮布局；屏外节点由容器 Loaded 再触发，避免持续跟踪布局。
-        StopSelectionRestore();
         if (!_ownsActivation || ViewModel.SelectedNode is not { } selected)
         {
+            StopSelectionRestore();
+            return;
+        }
+        if (FolderTree.ContainerFromItem(selected) is TreeViewItem { IsSelected: true })
+        {
+            StopSelectionRestore();
             return;
         }
         for (var parent = selected.Parent; parent is not null; parent = parent.Parent)
             if (!parent.IsExpanded)
             {
+                StopSelectionRestore();
                 return;
             }
+        // 根节点重建后容器由框架同步为折叠，且模型的展开值在容器生成前已写入、不会再触发绑定推送；
+        // 因此从根到选中节点逐层核对容器，模型已展开而容器未展开时推一层，子级容器下一轮布局才就绪。
+        List<FolderBrowserNode> ancestors = [];
+        for (var parent = selected.Parent; parent is not null; parent = parent.Parent) ancestors.Add(parent);
+        for (var depth = ancestors.Count - 1; depth >= 0; depth--)
+        {
+            if (FolderTree.ContainerFromItem(ancestors[depth]) is not TreeViewItem container) return;
+            if (!container.IsExpanded)
+            {
+                container.IsExpanded = true;
+                return;
+            }
+        }
+        // 增删过渡会推迟容器实现；保持监听直到成功、节点收起或离页，不能只等首轮布局。
         if (FolderTree.ContainerFromItem(selected) is not TreeViewItem item) return;
-        // 重建目录树时 SelectedItem 可能早于子节点容器生效；布局完成后恢复真正的高亮。
-        // 状态始终取自 VM，只临时跟踪布局，成功或离页后立即解绑。
         item.IsSelected = true;
+        if (item.IsSelected) StopSelectionRestore();
     }
 
-    private void TreeItem_Loaded(object sender, RoutedEventArgs args) => RequestSelectionRestore();
+    private void TreeItem_Loaded(object sender, RoutedEventArgs args)
+    {
+        // 行就绪即注册展开回调（重排记录用）；淡入窗口内的行在首帧渲染前置 0 起步。
+        if (sender is TreeViewItem row) _treeMotion.OnRowLoaded(row);
+        RequestSelectionRestore();
+        // Loaded 时容器已经可用，不必再等下一轮可能不发生的布局通知。
+        if (_selectionRestorePending) RestoreSelectionAfterLayout(sender, args);
+    }
 
     private void StopSelectionRestore()
     {
@@ -124,16 +150,13 @@ public sealed partial class FolderBrowsePage : Page
     private void Tree_Expanding(TreeView sender, TreeViewExpandingEventArgs args)
     {
         if (!_ownsActivation) return;
-        if (args.Item is FolderBrowserNode node)
-        {
-            ViewModel.ExpandFolder(node);
-            _treeMotion.PrepareExpand();
-        }
+        if (args.Item is FolderBrowserNode node) ViewModel.ExpandFolder(node);
         RequestSelectionRestore();
     }
     private void Tree_Collapsed(TreeView sender, TreeViewCollapsedEventArgs args)
     {
         if (!_ownsActivation) return;
-        _treeMotion.PrepareCollapse();
+        // 收起是用户意图，经 VM 记录；容器复位（重建、复用）不触发此事件，不会误写。
+        if (args.Item is FolderBrowserNode node) ViewModel.CollapseFolder(node);
     }
 }

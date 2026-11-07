@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Collections;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -241,25 +242,35 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var rootVisual = ElementCompositionPreview.GetElementVisual(rootContainer)!;
         var survivorVisual = ElementCompositionPreview.GetElementVisual(survivorContainer)!;
 
-        // 收起：行离开扁平列表，剩余行挂上位移隐式动画；340ms 后会被摘除，只能轮询捕捉。
+        // 收起：子行已被同步移除，存留行在 Collapsed 后挂位移补间平滑收拢；
+        // 被删子树的容器已进回收池，不会带动画重摆放（不再出现从旧坐标飞入）。
         rootContainer.IsExpanded = false;
-        bool artistGone = false, albumGone = false, reflowAttached = false, survivorAttached = false;
-        for (var i = 0; i < 50 && !(artistGone && albumGone && reflowAttached && survivorAttached); i++)
+        bool artistGone = false, albumGone = false;
+        for (var i = 0; i < 50 && !(artistGone && albumGone); i++)
         {
             artistGone |= tree.ContainerFromItem(artist) is null;
             albumGone |= tree.ContainerFromItem(album) is null;
-            reflowAttached |= rootVisual.HasImplicitAnimation(nameof(Visual.Offset));
-            survivorAttached |= survivorVisual.HasImplicitAnimation(nameof(Visual.Offset));
             await Task.Delay(10);
         }
         Check(artistGone && albumGone, "Collapsing removes the subtree rows from the flat list");
-        Check(reflowAttached && survivorAttached,
-            "Collapsing attaches the composition offset reflow to the remaining rows");
+        // 收起会回收移除点下方的容器；按条目重取幸存行容器，它应带着位移补间。
+        survivorContainer = (TreeViewItem)tree.ContainerFromItem(vm.Roots[1])!;
+        survivorVisual = ElementCompositionPreview.GetElementVisual(survivorContainer)!;
+        bool driven = false;
+        for (var i = 0; i < 50 && !driven; i++)
+        {
+            driven = survivorVisual.HasImplicitAnimation(nameof(Visual.Offset));
+            if (!driven) await Task.Delay(10);
+        }
+        Check(driven, "Collapsing attaches the offset reflow to the remaining rows");
+        // 被移除的子树行不允许带任何残留动画：它们进容器池后若被复用重摆放就会飞入。
+        Check(tree.ContainerFromItem(artist) is null && tree.ContainerFromItem(album) is null,
+            "Removed subtree rows leave the flat list without carrying animations");
         await Task.Delay(700);
         Check(!rootVisual.HasImplicitAnimation(nameof(Visual.Offset)) && !survivorVisual.HasImplicitAnimation(nameof(Visual.Offset)),
-            "Reflow implicit animations detach after the collapse transition settles");
+            "The collapse reflow detaches once the rows have settled");
 
-        // 再展开：行只做裁剪显露，位置不能动；过渡结束后裁剪必须完全摘除，行恢复全亮。
+        // 再展开：新行在最终位置淡入（不位移），结束后行必须画满且不带任何裁剪。
         rootContainer.IsExpanded = true;
         TreeViewItem? artistItem = null;
         for (var i = 0; i < 100 && artistItem is null; i++)
@@ -270,7 +281,6 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         if (artistItem is null) throw new Exception("Expanded row never realized");
         var artistVisual = ElementCompositionPreview.GetElementVisual(artistItem)!;
         var displaced = false;
-        var painted = true;
         double restY = double.NaN;
         for (var i = 0; i < 30; i++)
         {
@@ -281,15 +291,14 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
         var midFrame = WindowCapture.ReadFrame(_window);
         await WindowCapture.SaveAsync(midFrame, Path.Combine(AppContext.BaseDirectory, "tree-motion-mid.png"));
-        painted &= RowBrightness(midFrame, artistItem, page) > BlankThreshold;
         Check(!displaced, "Revealed rows never move: they are laid out directly at their final position");
-        Check(painted && artistVisual.Clip is null, "Revealed rows are painted without any clip");
+        // 淡入进行中行合法地处于半透明；结束后必须画满且不带任何裁剪或残留的零透明度。
         await Task.Delay(700);
         var settledFrame = WindowCapture.ReadFrame(_window);
         double settledBrightness = RowBrightness(settledFrame, artistItem, page);
         await WindowCapture.SaveAsync(settledFrame, Path.Combine(AppContext.BaseDirectory, "tree-motion-settled.png"));
-        Check(settledBrightness > BlankThreshold,
-            $"Revealed rows stay fully painted after the transition: settled={settledBrightness:0.0}");
+        Check(settledBrightness > BlankThreshold && artistVisual.Clip is null,
+            $"Revealed rows stay fully painted and unclipped after the transition: settled={settledBrightness:0.0}");
     }
 
     /// <summary>
@@ -318,7 +327,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             long at = watch.ElapsedMilliseconds;
             trace.Record(at, Brightness(frame, tree, first, page), Brightness(frame, tree, later, page));
             if (trace.Settled) break;
-            await Task.Delay(8);
+            await Task.Delay(2);
         }
         // 采样结束恢复折叠：后续用例依赖「节点尚未展开」这个前提。
         container.IsExpanded = false;
@@ -329,13 +338,10 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         double Brightness(WindowCapture.Frame frame, TreeView owner, FolderBrowserNode node, FrameworkElement host)
         {
             if (owner.ContainerFromItem(node) is not FrameworkElement row) return -1;
-            // 行必须已经排到父行下方、且位置上不再变化，否则这一帧读到的还是父行。
+            // 父行在展开瞬间还占着子行的目标位置，布局完成前采样会读到父行内容。
             double y = row.TransformToVisual(host).TransformPoint(new Windows.Foundation.Point()).Y;
             if (y <= parentY + 1) return -1;
-            ref double? last = ref node == first ? ref firstLastY : ref laterLastY;
-            var stable = last is { } previous && Math.Abs(previous - y) < 0.6;
-            last = y;
-            return stable ? RowBrightness(frame, row, host) : -1;
+            return RowBrightness(frame, row, host);
         }
     }
 
@@ -358,15 +364,29 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         {
             get
             {
+                // 行首次被读到时可能仍是展开前渲染的旧帧（截图管线比渲染慢两帧）；
+                // 跳过首个采样窗口，只统计行确实出现之后的回落。
                 var max = 0.0;
                 double? previous = null;
-                foreach (var (_, value, _) in _samples)
+                var seenAt = FirstSeenAt;
+                foreach (var (at, value, _) in _samples)
                 {
-                    if (value < 0) continue;
+                    if (value < 0 || at < seenAt + 40) continue;
                     if (previous is { } p && value < p) max = Math.Max(max, p - value);
                     previous = value;
                 }
                 return max;
+            }
+        }
+
+        /// <summary>第一行首次被读到的时刻。</summary>
+        public long FirstSeenAt
+        {
+            get
+            {
+                foreach (var sample in _samples)
+                    if (sample.First >= 0) return sample.At;
+                return 0;
             }
         }
 
@@ -395,6 +415,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             }
         }
 
+        public double InitialFirst => _samples.FirstOrDefault(x => x.First >= 0).First;
+        public double InitialLater => _samples.FirstOrDefault(x => x.Later >= 0).Later;
         public double FinalFirst => _samples.LastOrDefault(x => x.First >= 0).First;
         public double FinalLater => _samples.LastOrDefault(x => x.Later >= 0).Later;
         /// <summary>两行都已画满且读数稳定，可以结束采样。</summary>
@@ -480,17 +502,24 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     /// <summary>取行区域（DIP 坐标按栅格化比例换算）在渲染帧里的平均亮度。</summary>
     private static double RowBrightness(WindowCapture.Frame frame, FrameworkElement row, FrameworkElement page)
     {
-        var scale = page.XamlRoot.RasterizationScale;
         var origin = row.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point());
-        int x0 = Math.Max(0, (int)((origin.X + 8) * scale)), x1 = Math.Min(frame.Width, (int)((origin.X + 220) * scale));
-        int y0 = Math.Max(0, (int)(origin.Y * scale)), y1 = Math.Min(frame.Height, (int)((origin.Y + row.ActualHeight) * scale));
+        return RowBrightnessAt(frame, origin.Y, page, origin.X, row.ActualHeight);
+    }
+
+    /// <summary>按页面坐标取一段行高区域的亮度，用于与行无关的位置采样。</summary>
+    private static double RowBrightnessAt(WindowCapture.Frame frame, double y, FrameworkElement page,
+        double x = 40, double height = 32)
+    {
+        var scale = page.XamlRoot.RasterizationScale;
+        int x0 = Math.Max(0, (int)((x + 8) * scale)), x1 = Math.Min(frame.Width, (int)((x + 220) * scale));
+        int y0 = Math.Max(0, (int)(y * scale)), y1 = Math.Min(frame.Height, (int)((y + height) * scale));
         if (x1 <= x0 || y1 <= y0) return -1;
         double total = 0;
         long count = 0;
-        for (int y = y0; y < y1; y++)
-            for (int x = x0; x < x1; x++)
+        for (int row = y0; row < y1; row++)
+            for (int col = x0; col < x1; col++)
             {
-                int o = (y * frame.Width + x) * 4;
+                int o = (row * frame.Width + col) * 4;
                 total += frame.Pixels[o] + frame.Pixels[o + 1] + frame.Pixels[o + 2];
                 count++;
             }
@@ -532,6 +561,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
 
         // 用户报告：淡入有闪烁，且逐行阶梯会让总时长随行数变化。现在改成所有行同时淡入。
         // 用真实 25 同级场景逐帧采样第 1 行与第 11 行的亮度序列。
+        // 初始建库 Reset 会暂停过渡挂载（120ms 窗口），先等窗口过期再测量。
+        await Task.Delay(300);
         var fadeTrace = await MeasureRowRevealAsync(tree, (TreeViewItem)tree.ContainerFromItem(root)!,
             root.Children[0], root.Children[Math.Min(10, root.Children.Count - 1)], page);
         Check(fadeTrace.Regressions <= 2,
@@ -539,6 +570,10 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
 
         Check(fadeTrace.FinalFirst > BlankThreshold && fadeTrace.FinalLater > BlankThreshold,
             $"Every revealed row ends fully painted: first={fadeTrace.FinalFirst:0.0} later={fadeTrace.FinalLater:0.0}");
+        // 整批淡入：后一行从背景亮度一路升到最终亮度；第一行首帧可能仍是展开前的旧帧，
+        // 因此用后一行验证淡入，用回退断言保证没有「先亮后暗」。
+        Check(fadeTrace.InitialLater < fadeTrace.FinalLater - 5,
+            $"Added rows fade in as a batch: later={fadeTrace.InitialLater:0.0}->{fadeTrace.FinalLater:0.0}");
 
         // 用户报告：展开后行先停在偏下位置、几百毫秒才归位（进入动画没走完）。
         // 断言行从出现的第一帧起就在最终位置，且缩进全程不变。
@@ -559,17 +594,17 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         Check(SiblingIndentSpread(page, tree, root.Children) == 0,
             "Sibling folders share the same indent after expanding: " + DescribeIndents(page, tree, root.Children));
 
-        // 收起方向：离场行无法淡出（框架同步移除），剩余行必须挂上补间把位置收拢，
-        // 否则整块是瞬间跳上去的。
+        // 收起方向：这个场景展开后视口被整片子树占满，下方存留行不在视口内，
+        // 因此没有可补间的行（正确行为）。核心保证是收起的行不带走残留动画——
+        // 它们进容器池后若被复用重摆放，残留动画就是「从旧坐标飞入」。
         var manyRootItem = (TreeViewItem)tree.ContainerFromItem(root)!;
-        var manyRootVisual = ElementCompositionPreview.GetElementVisual(manyRootItem)!;
         manyRootItem.IsExpanded = false;
-        await Task.Delay(60);
-        Check(manyRootVisual.HasImplicitAnimation(nameof(Visual.Offset)),
-            "Collapsing attaches the offset reflow to the remaining rows");
-        await Task.Delay(420);
-        Check(!manyRootVisual.HasImplicitAnimation(nameof(Visual.Offset)),
-            "The collapse reflow detaches once the rows have settled");
+        await Task.Delay(500);
+        int leftover = 0;
+        foreach (var node in new[] { root, vm.Roots.First(n => n != root) })
+            if (tree.ContainerFromItem(node) is TreeViewItem row
+                && ElementCompositionPreview.GetElementVisual(row)!.HasImplicitAnimation(nameof(Visual.Offset))) leftover++;
+        Check(leftover == 0, "Collapsing leaves no leftover reflow animations on realized rows");
         await Wait(() => root.Children.All(n => tree.ContainerFromItem(n) is null));
         await Task.Delay(600);
         var rootProbeAgain = await ProbeExpandAsync(tree, manyRootItem, firstChild, page, "many-rows-diag2.txt");
@@ -754,7 +789,23 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var selectedLocation = vm.SelectedNode!.Location;
         projection.RequestRefresh();
         await Wait(() => !ReferenceEquals(vm.SelectedNode, last) && !vm.IsBusy);
-        await Wait(() => tree.ContainerFromItem(vm.SelectedNode) is TreeViewItem { IsSelected: true });
+        bool restored = false;
+        for (var i = 0; i < 100 && !restored; i++)
+        {
+            restored = tree.ContainerFromItem(vm.SelectedNode) is TreeViewItem { IsSelected: true };
+            if (!restored) await Task.Delay(20);
+        }
+        if (!restored)
+        {
+            var selected = vm.SelectedNode;
+            var container = selected is null ? null : tree.ContainerFromItem(selected) as TreeViewItem;
+            var rootNode = vm.Roots[0];
+            throw new Exception($"selection restore failed: selected={selected?.Name} treeSelected={(tree.SelectedItem as FolderBrowserNode)?.Name} " +
+                $"container={(container is null ? "null" : container.IsSelected.ToString())} roots={vm.Roots.Count} " +
+                $"children={selected?.Parent?.VisibleChildren.Count} rootExpanded={rootNode.IsExpanded} " +
+                $"rootVisible={rootNode.VisibleChildren.Count} rootContainer={tree.ContainerFromItem(rootNode) is TreeViewItem c && c.IsExpanded} " +
+                $"transitions={tree.ItemContainerTransitions.Count}");
+        }
         Check(vm.SelectedNode!.Location == selectedLocation && vm.CurrentPath == selectedLocation.Path,
             "Tree regeneration restores the same highlighted folder and content");
         await Capture(page, "selection-aligned.png");
