@@ -22,6 +22,7 @@ namespace WinUIMusicPlayer.Model
         public int DiskNumber { get; init; }
         public int TrackNumber { get; init; }
         public int Order { get; init; }
+        public int Year { get; init; }
         public DateTime CreateTime { get; init; }
         public DateTime UpdateTime { get; init; }
     }

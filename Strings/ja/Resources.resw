@@ -970,6 +970,12 @@
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>日付降順の変更</value>
   </data>
+  <data name="SortOrderYearASC" xml:space="preserve">
+    <value>年昇順</value>
+  </data>
+  <data name="SortOrderYearDESC" xml:space="preserve">
+    <value>年降順</value>
+  </data>
   <data name="UpdateTime.Text" xml:space="preserve">
     <value>更新時間</value>
   </data>

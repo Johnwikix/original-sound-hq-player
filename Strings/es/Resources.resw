@@ -970,6 +970,12 @@
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>Modificar el orden descendente de la fecha</value>
   </data>
+  <data name="SortOrderYearASC" xml:space="preserve">
+    <value>Año ASC</value>
+  </data>
+  <data name="SortOrderYearDESC" xml:space="preserve">
+    <value>Año DESC</value>
+  </data>
   <data name="UpdateTime.Text" xml:space="preserve">
     <value>Tiempo de actualización</value>
   </data>

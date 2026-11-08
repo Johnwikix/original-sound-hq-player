@@ -970,6 +970,12 @@
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>Güncelleştirme zamanı (azalan)</value>
   </data>
+  <data name="SortOrderYearASC" xml:space="preserve">
+    <value>Yıl (artan)</value>
+  </data>
+  <data name="SortOrderYearDESC" xml:space="preserve">
+    <value>Yıl (azalan)</value>
+  </data>
   <data name="UpdateTime.Text" xml:space="preserve">
     <value>Güncelleştirme zamanı</value>
   </data>

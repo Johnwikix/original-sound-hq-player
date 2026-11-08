@@ -138,10 +138,10 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     }
 
     private readonly record struct SongRow(Music Music, string? Title, string? Author, string? Album, string? Folder, string? Path,
-        int Disk, int Track, int Order, DateTime Created, DateTime Updated, int Id, AdditionalMusicMetadata Additional)
+        int Disk, int Track, int Order, int Year, DateTime Created, DateTime Updated, int Id, AdditionalMusicMetadata Additional)
     {
         public SongRow(Music music) : this(music, music.Title, music.Author, music.Album, music.LastLevelFolderPath, music.Path,
-            music.DiskNumber, music.TrackNumber, music.Order, music.CreateTime, music.UpdateTime, music.Id, AdditionalMusicMetadata.From(music))
+            music.DiskNumber, music.TrackNumber, music.Order, music.Year, music.CreateTime, music.UpdateTime, music.Id, AdditionalMusicMetadata.From(music))
         { }
         public bool Matches(string search, bool folder) => string.IsNullOrWhiteSpace(search) ||
             (Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
@@ -161,6 +161,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 case "Album":
                     c = CjkStringComparer.Compare(a.Album, b.Album);
                     return c != 0 ? c : a.Track.CompareTo(b.Track);
+                case "YearASC": return CompareYear(a, b, descending: false);
+                case "YearDESC": return CompareYear(a, b, descending: true);
                 case "CreateTimeASC": return a.Created.CompareTo(b.Created);
                 case "CreateTimeDESC": return b.Created.CompareTo(a.Created);
                 case "UpdateTimeASC": return a.Updated.CompareTo(b.Updated);
@@ -274,6 +276,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 "Album" => _songByAlbum,
                 "AlbumArtist" => _songByAlbumArtist,
                 "Genre" => _songByGenre,
+                "YearASC" => _songByYearAsc,
+                "YearDESC" => _songByYearDesc,
                 "CreateTimeASC" => _songByCreateTimeAsc,
                 "CreateTimeDESC" => _songByCreateTimeDesc,
                 "UpdateTimeASC" => _songByUpdateTimeAsc,
@@ -406,6 +410,34 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         return result != 0 ? result : string.Compare(a.Path, b.Path, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>按发行年份排序；缺少年份（含 0）的曲目始终排在末尾，同年内再按专辑/音轨给出确定顺序。</summary>
+    /// <remarks>
+    /// 一整张专辑通常同年发行，年份本身不足以区分顺序；<see cref="Array.Sort{T}(T[], int, int, IComparer{T})"/>
+    /// 不是稳定排序，没有次级键时同年级曲目每次刷新都会换位，因此沿用 <see cref="CompareMetadata"/> 的
+    /// 专辑 → 光盘 → 音轨 → 标题 → Id/路径顺序收尾。
+    /// </remarks>
+    private static int CompareYear(SongRow a, SongRow b, bool descending)
+    {
+        // 缺失值始终排在已知值之后（与 CompareMetadata 的空标签约定一致），升降序都不把未知年份顶到列表头部。
+        int result = (a.Year <= 0).CompareTo(b.Year <= 0);
+        if (result != 0) return result;
+        if (a.Year > 0)
+        {
+            result = descending ? b.Year.CompareTo(a.Year) : a.Year.CompareTo(b.Year);
+            if (result != 0) return result;
+        }
+        result = CjkStringComparer.Compare(a.Album, b.Album);
+        if (result != 0) return result;
+        result = a.Disk.CompareTo(b.Disk);
+        if (result != 0) return result;
+        result = a.Track.CompareTo(b.Track);
+        if (result != 0) return result;
+        result = CjkStringComparer.Compare(a.Title, b.Title);
+        if (result != 0) return result;
+        result = a.Id.CompareTo(b.Id);
+        return result != 0 ? result : string.Compare(a.Path, b.Path, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static readonly IComparer<Music> _songByAlbumArtist =
         Comparer<Music>.Create((a, b) => CompareMetadata(new(a), new(b), byGenre: false));
     private static readonly IComparer<Music> _songByGenre =
@@ -416,6 +448,10 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(a.Author, b.Author));
     private static readonly IComparer<Music> _songByAlbum =
         Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(a.Album, b.Album));
+    private static readonly IComparer<Music> _songByYearAsc =
+        Comparer<Music>.Create((a, b) => CompareYear(new(a), new(b), descending: false));
+    private static readonly IComparer<Music> _songByYearDesc =
+        Comparer<Music>.Create((a, b) => CompareYear(new(a), new(b), descending: true));
     private static readonly IComparer<Music> _songByCreateTimeAsc =
         Comparer<Music>.Create((a, b) => a.CreateTime.CompareTo(b.CreateTime));
     private static readonly IComparer<Music> _songByCreateTimeDesc =

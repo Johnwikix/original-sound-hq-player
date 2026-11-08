@@ -970,6 +970,12 @@
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>Update time DESC</value>
   </data>
+  <data name="SortOrderYearASC" xml:space="preserve">
+    <value>Year ASC</value>
+  </data>
+  <data name="SortOrderYearDESC" xml:space="preserve">
+    <value>Year DESC</value>
+  </data>
   <data name="UpdateTime.Text" xml:space="preserve">
     <value>Update Time</value>
   </data>

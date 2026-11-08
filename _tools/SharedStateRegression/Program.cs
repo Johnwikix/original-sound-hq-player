@@ -291,6 +291,35 @@ static async Task RunAsync()
     Check(list.FillCount == fillsBeforeStop, "Stopping must suppress delayed list publication.");
     Console.WriteLine("PASS: library cache, version invalidation, shared refresh barrier, latest search and stop suppression.");
 
+    // 年份排序：缺年份（0）始终排在末尾，同年内按专辑 → 光盘 → 音轨给出确定顺序。
+    var yearState = new AppState();
+    yearState.Library.Replace([
+        new Music(30, "b2.flac") { Year = 2005, Album = "B album", DiskNumber = 1, TrackNumber = 2, Title = "b2" },
+        new Music(31, "a1.flac") { Year = 2005, Album = "A album", DiskNumber = 1, TrackNumber = 1, Title = "a1" },
+        new Music(32, "c1.flac") { Year = 1999, Album = "C album", DiskNumber = 1, TrackNumber = 1, Title = "c1" },
+        new Music(33, "d1.flac") { Year = 0, Album = "D album", DiskNumber = 1, TrackNumber = 1, Title = "d1" },
+        new Music(34, "a2.flac") { Year = 2005, Album = "A album", DiskNumber = 2, TrackNumber = 1, Title = "a2" }
+    ]);
+    var yearProjections = new LibraryProjectionService(yearState, new LibraryQueries(yearState.Library),
+        Microsoft.Extensions.Logging.Abstractions.NullLogger<LibraryProjectionService>.Instance);
+    var yearList = new BulkObservableCollection<Music>();
+    yearState.Browse.SelectedSortOption = new() { Tag = "YearASC" };
+    await yearProjections.UpdateSongCollectionsAsync(yearList, SongViewType.All);
+    Check(string.Join(",", yearList.Select(m => m.Id)) == "32,31,34,30,33",
+        "Year ASC must order by year, then album/disc/track, and keep unknown years last.");
+    yearState.Browse.SelectedSortOption = new() { Tag = "YearDESC" };
+    await yearProjections.UpdateSongCollectionsAsync(yearList, SongViewType.All);
+    Check(string.Join(",", yearList.Select(m => m.Id)) == "31,34,30,32,33",
+        "Year DESC must reverse years but keep album track order and unknown years last.");
+    yearState.Browse.SelectedSortOption = new() { Tag = "YearASC" };
+    yearProjections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", yearState.LibraryViews.AlbumPageSource);
+    await Task.Yield();
+    var yearAlbumCards = ((List<MusicGroup>)yearState.LibraryViews.AlbumPageSource.Source!).SelectMany(g => g.Items).Select(m => m.Album);
+    Check(string.Join(",", yearAlbumCards) == "C album,A album,B album,D album",
+        "Year ASC must also order grouped album cards and keep unknown years last.");
+    await yearProjections.StopAsync();
+    Console.WriteLine("PASS: year sorting keeps album track order and defers unknown years to the end.");
+
     await FolderNavigationRegression.RunAsync();
 
     // 原始文件名检索：标签字段不含搜索词时按文件名命中；目录段不属于文件名。

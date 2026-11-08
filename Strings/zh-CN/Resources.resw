@@ -969,6 +969,12 @@
   <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
     <value>修改日期降序</value>
   </data>
+  <data name="SortOrderYearASC" xml:space="preserve">
+    <value>年份升序</value>
+  </data>
+  <data name="SortOrderYearDESC" xml:space="preserve">
+    <value>年份降序</value>
+  </data>
   <data name="UpdateTime.Text" xml:space="preserve">
     <value>修改时间</value>
   </data>

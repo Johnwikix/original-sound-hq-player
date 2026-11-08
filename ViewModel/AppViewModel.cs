@@ -98,6 +98,8 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption("Album", "SortOrderAlbum"),
             new SortOption("AlbumArtist", "SortOrderAlbumArtist"),
             new SortOption("Genre", "SortOrderGenre"),
+            new SortOption("YearASC", "SortOrderYearASC"),
+            new SortOption("YearDESC", "SortOrderYearDESC"),
             new SortOption("CreateTimeASC", "SortOrderCreateTimeASC"),
             new SortOption("CreateTimeDESC", "SortOrderCreateTimeDESC"),
             new SortOption("UpdateTimeASC", "SortOrderUpdateTimeASC"),

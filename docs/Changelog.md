@@ -1,3 +1,11 @@
+## 2026-11-08 排序增加发行年份升序/降序
+- `ViewModel/AppViewModel.cs`：`SortOptions` 在「流派」之后新增 `YearASC` / `YearDESC` 两项（资源键 `SortOrderYearASC` / `SortOrderYearDESC`），音乐库页与文件夹页共用同一列表，无需改视图。
+- `Services/LibraryProjectionService.cs`：`SongRow` 增加 `Year` 字段快照（后台比较器仍不读取可变 `Music` 属性）；新增 `CompareYear`——缺年份（`Year<=0`）无论升降序都排在末尾，同年内按专辑 → 光盘 → 音轨 → 标题 → Id/路径收尾，避免 `Array.Sort` 不稳定排序导致同年级曲目每次刷新换位；专辑/艺术家分组视图新增同语义的 `_songByYearAsc` / `_songByYearDesc`。
+- `Strings/{zh-CN,en,de,es,ja,ru,tr}/Resources.resw`：补齐 `SortOrderYearASC` / `SortOrderYearDESC` 七语言文案。
+- `_tools/SharedStateRegression`：`Music` 桩补 `Year`；新增年份排序断言，覆盖升序、降序、同年专辑内音轨顺序、缺年份置末与分组卡片顺序。
+- 兼容性：排序标签参与投影查询键与 `SavePlayState.SortOrder` 持久化；不认识新标签的旧版本启动时会回落到默认排序，不影响存量库。
+- 验证：主工程 Debug/x64 构建 0 错误；`_tools/SharedStateRegression` 新增断言全通过；未执行实机 UI 目视验证。
+
 ## 2026-11-07 修复目录树收起飞入并补上整批淡入
 - `View/Controls/TreeViewExpansionMotion.cs`：重写过渡驱动。收起时把隐式 `Visual.Offset` 动画也挂到了即将被移除的子树行上，这些容器进入容器池后被复用重摆放，残留动画让它们从旧坐标补间，即「收起后行从左上方飞入」（子项越多、视口下方没有同级项时必然复现）。现在在 `TreeViewItem.IsExpanded` 变更回调（早于框架延迟的节点同步与项目增删）识别即将离场的子树行：既不挂新动画，也摘除它们可能残留的动画；存留行照常补间，仍在 180+80ms 后统一摘除。
 - 同一文件：补上用户要求的整批淡入。容器内容变更/`Loaded` 时先把视觉透明度置 0 再补间到 1，首帧不会露全亮；窗口由扁平列表的插入事件打开（滚动虚拟化只实现容器、不插入条目，不会误淡入），450ms 后关闭。
