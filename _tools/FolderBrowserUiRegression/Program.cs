@@ -20,7 +20,9 @@ using System.Collections;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Graphics.Imaging;
+using VirtualKey = Windows.System.VirtualKey;
 using WinUIMusicPlayer;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper.Animations;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -123,6 +125,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Check(app.FolderSongs.Count == 0 && !vm.HasSongs, "Changing selection hides old playable rows during asynchronous publication");
             await Wait(() => vm.SelectedNode == album && !vm.IsBusy && app.FolderSongs.Count == 2);
             Check(!app.IsBackBtnEnable && tree.SelectedItem == album, "Nested folders remain selected without enabling a back command");
+            await CheckKeyboardNavigationAsync(tree, vm, artist, album);
             await CheckTreeMotionAsync(page, tree, vm, root, artist, album);
             page.UpdateLayout();
             var treePane = (Grid)page.FindName("TreePane");
@@ -235,6 +238,26 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
         finally { _window?.Close(); Exit(); }
     }
+    private static bool ChevronStateBackgroundsAreTransparent(ToggleButton button)
+    {
+        button.ApplyTemplate();
+        var presenter = button.FindDescendant<ContentPresenter>() ?? throw new Exception("Chevron content presenter is missing");
+        try
+        {
+            foreach (string state in new[] { "PointerOver", "Pressed", "CheckedPointerOver", "CheckedPressed" })
+            {
+                if (!VisualStateManager.GoToState(button, state, false)) return false;
+                button.UpdateLayout();
+                if (presenter.Background is not SolidColorBrush brush || brush.Color.A != 0) return false;
+            }
+            return true;
+        }
+        finally
+        {
+            VisualStateManager.GoToState(button, button.IsChecked == true ? "CheckedNormal" : "Normal", false);
+        }
+    }
+
     private async Task CheckTreeMotionAsync(FolderBrowsePage page, ListView tree, FolderViewModel vm,
         FolderBrowserNode root, FolderBrowserNode artist, FolderBrowserNode album)
     {
@@ -247,8 +270,13 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
 
         var rootItem = (ListViewItem)tree.ContainerFromItem(root)!;
         var expander = rootItem.FindDescendant<ToggleButton>()!;
-        Check(AutomationProperties.GetName(expander) == root.Name && expander.IsChecked == true,
-            "The row expander exposes its accessible name and expanded state");
+        Check(AutomationProperties.GetName(expander) == root.Name && expander.IsChecked == true
+            && ReferenceEquals(expander.Command, FolderCommands.ToggleFolderCommand),
+            "The row expander exposes its accessible name, expanded state and model command");
+        Check(FluentAnimation.GetPointerOver(expander) is null && FluentAnimation.GetPressed(expander) is null,
+            "The chevron opts out of implicit pointer-over and pressed composition animations");
+        Check(ChevronStateBackgroundsAreTransparent(expander),
+            "Collapsed and expanded chevrons keep transparent PointerOver and Pressed backgrounds");
         ((IToggleProvider)new ToggleButtonAutomationPeer(expander)).Toggle();
         Check(!root.IsExpanded && expander.IsChecked == false && vm.VisibleNodes.Count == 2
             && !vm.VisibleNodes.Contains(artist) && !vm.VisibleNodes.Contains(album),
@@ -832,6 +860,41 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         Check(vm.SelectedNode!.Location == selectedLocation && vm.CurrentPath == selectedLocation.Path,
             "Tree regeneration restores the same highlighted folder and content");
         await Capture(page, "selection-aligned.png");
+    }
+
+    private async Task CheckKeyboardNavigationAsync(ListView tree, FolderViewModel vm,
+        FolderBrowserNode artist, FolderBrowserNode album)
+    {
+        var behaviors = Microsoft.Xaml.Interactivity.Interaction.GetBehaviors(tree)
+            .OfType<KeyDownCommandBehavior>().ToDictionary(behavior => behavior.Key);
+        Check(behaviors.Count == 2, "XAML attaches left and right key command behaviors");
+        var left = behaviors[VirtualKey.Left];
+        var right = behaviors[VirtualKey.Right];
+        Check(!left.TryExecute(VirtualKey.Right) && vm.SelectedNode == album,
+            "A key behavior ignores unrelated keys without executing its command");
+        Check(!right.TryExecute(VirtualKey.Right) && vm.SelectedNode == album,
+            "Right key remains unhandled for a folder without children");
+
+        Check(left.TryExecute(VirtualKey.Left), "Left key behavior executes for a nested folder");
+        await Wait(() => vm.SelectedNode == artist && tree.SelectedItem == artist && !vm.IsBusy);
+        Check(vm.CurrentPath == artist.Path, "Left key selects the parent through the ViewModel command");
+
+        Check(right.TryExecute(VirtualKey.Right), "Right key behavior executes for an expanded folder");
+        await Wait(() => vm.SelectedNode == album && tree.SelectedItem == album && !vm.IsBusy);
+        Check(vm.CurrentPath == album.Path, "Right key selects the first child through the ViewModel command");
+
+        left.TryExecute(VirtualKey.Left);
+        await Wait(() => vm.SelectedNode == artist && !vm.IsBusy);
+        Check(left.TryExecute(VirtualKey.Left), "Left key behavior executes for an expanded folder");
+        await Wait(() => !artist.IsExpanded && !vm.VisibleNodes.Contains(album));
+        Check(vm.SelectedNode == artist, "Left key collapses the selected expanded folder");
+
+        Check(right.TryExecute(VirtualKey.Right), "Right key behavior executes for a collapsed folder");
+        await Wait(() => artist.IsExpanded && vm.VisibleNodes.Contains(album));
+        Check(vm.SelectedNode == artist, "Right key expands the selected collapsed folder");
+        Check(right.TryExecute(VirtualKey.Right), "Repeated right key behavior enters the expanded folder");
+        await Wait(() => vm.SelectedNode == album && tree.SelectedItem == album && !vm.IsBusy);
+        Check(vm.CurrentPath == album.Path, "Repeated right key enters the newly expanded folder");
     }
 
     private static void SelectNativeRow(ListView tree, FolderBrowserNode node)

@@ -19,6 +19,16 @@ namespace WinUIMusicPlayer.ViewModel
         public void Activate() { }
         public void Deactivate() { }
         public Task DropFoldersAsync(IReadOnlyList<IStorageItem> folders) => Task.CompletedTask;
+        public Task OpenFolderAsync(string path) => Task.CompletedTask;
+        public Task RescanFolderWithLoadingAsync(int id) => Task.CompletedTask;
+        public Task RemoveFolderWithLoadingAsync(int id) => Task.CompletedTask;
+    }
+}
+namespace WinUIMusicPlayer.Services
+{
+    public static class LibraryOperationGate
+    {
+        public static bool IsBusy => false;
     }
 }
 namespace WinUIMusicPlayer.View.SubView

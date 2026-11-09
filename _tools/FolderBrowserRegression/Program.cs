@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Input;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
@@ -56,3 +57,12 @@ index.Rebuild([], [], -1);
 Check(index.Roots.Count == 0 && index.Find(album.Location) is null, "Library removal drops old directory references");
 Check(StartupEntry.Normalize("Folders") == "Folders" && StartupEntry.Normalize("unknown") == "Home", "Startup supports independent folder navigation");
 Console.WriteLine($"PASS: {checks} folder browser checks");
+
+namespace WinUIMusicPlayer.Services
+{
+    public static class FolderCommands
+    {
+        public static IRelayCommand<FolderBrowserNode> ToggleFolderCommand { get; }
+            = new RelayCommand<FolderBrowserNode>(_ => { });
+    }
+}

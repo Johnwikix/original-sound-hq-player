@@ -185,6 +185,27 @@ public partial class FolderViewModel : ObservableObject
         if (current is not null && !ReferenceEquals(current, SelectedNode)) Navigate(current);
     }
 
+    [RelayCommand(CanExecute = nameof(CanNavigateIntoFolder))]
+    private void NavigateIntoFolder(FolderBrowserNode? node)
+    {
+        if (node is not { HasChildren: true }) return;
+        if (node.IsExpanded) SelectFolder(node.Children[0]);
+        else ExpandFolder(node);
+    }
+
+    private static bool CanNavigateIntoFolder(FolderBrowserNode? node) => node?.HasChildren == true;
+
+    [RelayCommand(CanExecute = nameof(CanNavigateOutOfFolder))]
+    private void NavigateOutOfFolder(FolderBrowserNode? node)
+    {
+        if (node is null) return;
+        if (node.IsExpanded) CollapseFolder(node);
+        else if (node.Parent is not null) SelectFolder(node.Parent);
+    }
+
+    private static bool CanNavigateOutOfFolder(FolderBrowserNode? node)
+        => node is not null && (node.IsExpanded || node.Parent is not null);
+
     public void ExpandFolder(FolderBrowserNode node)
     {
         if (node.IsExpanded || !node.HasChildren) return;

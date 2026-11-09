@@ -8,10 +8,11 @@ namespace WinUIMusicPlayer.Services
 {
     /// <summary>
     /// 文件夹条目命令（与 MusicCommands 同模式）：供 DataTemplate 内 x:Bind 使用，
-    /// 实际逻辑在 AddFolderViewModel，经 DI 单例解析。
+    /// 实际逻辑在对应 ViewModel，经 DI 单例解析。
     /// </summary>
     public static class FolderCommands
     {
+        public static IRelayCommand<FolderBrowserNode> ToggleFolderCommand { get; } = new RelayCommand<FolderBrowserNode>(ToggleFolder);
         public static IRelayCommand<Folder> OpenFolderCommand { get; } = new RelayCommand<Folder>(OpenFolder);
         public static IAsyncRelayCommand<Folder> RescanFolderCommand { get; } = new AsyncRelayCommand<Folder>(RescanFolderAsync, CanModify);
         public static IAsyncRelayCommand<Folder> RemoveFolderCommand { get; } = new AsyncRelayCommand<Folder>(RemoveFolderAsync, CanModify);
@@ -22,6 +23,14 @@ namespace WinUIMusicPlayer.Services
         {
             RescanFolderCommand.NotifyCanExecuteChanged();
             RemoveFolderCommand.NotifyCanExecuteChanged();
+        }
+
+        private static void ToggleFolder(FolderBrowserNode? node)
+        {
+            if (node is null) return;
+            var viewModel = App.Services.GetRequiredService<FolderViewModel>();
+            if (node.IsExpanded) viewModel.CollapseFolder(node);
+            else viewModel.ExpandFolder(node);
         }
 
         private static void OpenFolder(Folder? folder)

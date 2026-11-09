@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
+using System.Windows.Input;
+using WinUIMusicPlayer.Services;
 
 namespace WinUIMusicPlayer.Model;
 
@@ -15,5 +17,6 @@ public sealed class FolderBrowserNode(FolderLocation location, FolderBrowserNode
     public bool HasChildren => Children.Count > 0;
     public int SongCount { get; internal set; }
     public int DirectSongCount { get; internal set; }
+    public ICommand ToggleFolderCommand => FolderCommands.ToggleFolderCommand;
     public bool IsExpanded { get; set => SetProperty(ref field, value); }
 }

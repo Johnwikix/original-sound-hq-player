@@ -1,3 +1,22 @@
+## 2026-11-09 消除目录 chevron hover 并补充剪裁规则
+- `View/FolderBrowsePage.xaml`：折叠/展开按钮的 `PointerOver`、`Pressed` 背景统一透明，展开态悬停前景不再变亮；显式使用 `DefaultToggleButtonStyle`，去掉隐式样式叠加的上浮和按压缩放。
+- `View/FolderBrowsePage.xaml`、`Behaviors/SelectionChangedCommandBehavior.cs`：选择命令改为 Behavior 在事件内读取当前 `SelectedItem`，移除最后一处运行时 `Binding`，避免 `x:Bind FolderTree.SelectedItem` 在事件时序中传递旧值。
+- `AGENTS.md`：新增发布剪裁约束，禁止新增反射式 `Binding`，要求 DataTemplate 使用节点命令入口，并以全新目录执行 Release 剪裁发布验证，禁止用旧 AppX/DLL 充当证据。
+- `_tools/FolderBrowserUiRegression`：新增四种视觉状态透明背景及禁用隐式指针动画断言；选择、展开、键盘和命令绑定断言均通过。
+- 验证：主工程 Debug/x64 构建 0 错误，全新目录 Release/x64 剪裁发布成功并确认选择 Behavior 与展开命令保留；FolderBrowserRegression 21 项及 SharedStateRegression 全通过。当前桌面隐私保护使原始截屏和 PrintWindow 均为全黑，完整像素回归未能完成，未将其记为通过。
+
+## 2026-11-09 修复发布剪裁后目录无法展开
+- `View/FolderBrowsePage.xaml`、`Model/FolderBrowserNode.cs`、`Services/FolderCommands.cs`：展开按钮不再通过 `ElementName` 的运行时 `Binding` 读取 ViewModel 命令，改为与 `Music.PlayCommand` 相同的节点 `x:Bind` 入口，由 `FolderCommands` 经 DI 调用当前 `FolderViewModel`；原写法在 Release AppX 中整条 `ToggleFolderCommand` 被裁掉，未剪裁的 Debug 因此表现正常。
+- `_tools/FolderBrowserUiRegression`：执行生产 `FolderCommands` 并断言展开按钮绑定到该命令；目录与 SharedState 回归同步节点命令桩。
+- 验证：主工程 Release/x64 构建 0 错误；反编译剪裁后的 AppX DLL，确认节点命令入口和 `ToggleFolder` 实现均保留；FolderBrowserUiRegression 96 项、FolderBrowserRegression 21 项及 SharedStateRegression 全部通过。未另做安装包人工点击验收。
+
+## 2026-11-09 FolderBrowsePage 目录列表改为声明式 MVVM
+- `View/FolderBrowsePage.xaml`、`View/FolderBrowsePage.xaml.cs`：移除 ListView 的选择、展开按钮、键盘和 ViewModel 属性通知事件处理，改为命令绑定与 Behaviors；页面 code-behind 只保留激活/停用生命周期，`SelectedItem` 继续单向绑定，保留隐藏选中项语义。
+- `ViewModel/Pages/FolderViewModel.cs`：新增父子导航命令，左右键对应的展开、收起和选择判断统一归 ViewModel 所有。
+- `Behaviors/KeyDownCommandBehavior.cs`、`Behaviors/ScrollSelectedItemIntoViewBehavior.cs`：新增通用键盘命令转发与选中项滚动 Behavior；只有命令实际执行才标记按键已处理，视图不复制目录业务状态。
+- `_tools/FolderBrowserUiRegression`：接入真实 Behaviors，新增 13 项断言覆盖无关按键、叶子目录右键、父子选择、展开/收起与重复右键。
+- 验证：主工程 Debug/x64 构建 0 错误；`_tools/FolderBrowserRegression` 21 项通过；FolderBrowserUiRegression 96 项通过。键盘用例直接驱动实际 XAML Behavior 实例，未另做人工按键验收。
+
 ## 2026-11-09 文件夹目录树改为扁平 ListView
 - `Model/FolderBrowserNode.cs`、`Services/FolderBrowserIndex.cs`、`ViewModel/Pages/FolderViewModel.cs`：目录层级只保留 `Children`、`Depth` 与 `IsExpanded`；新增 ViewModel 所有的 `VisibleNodes` 前序扁平投影，展开插入可见后代、收起移除连续后代，整库重建一次生成全部展开分支；选中节点重新可见时才重新推送选择，不再依赖 TreeView 容器回写或布局修补。
 - `View/FolderBrowsePage.xaml`、`View/FolderBrowsePage.xaml.cs`：官方 TreeView 改为虚拟化 `ListView` 与自定义缩进/目录行，使用原生增删和重排过渡；展开按钮提供 UIA 开关状态，保留透明 chevron 外观、整行选择、点击与左右方向键展开/收起。

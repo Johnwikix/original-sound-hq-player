@@ -11,6 +11,13 @@
 - 控件移除 `x:Uid`、改用代码或 `x:Bind` 取词时，同步新增或改用独立资源键，不要直接复制原属性资源名。
 - 提交修改前静态检查新增的 `GetString` 调用与全部语言资源是否匹配。构建成功不能证明运行时资源解析正确。
 
+## 发布剪裁与 XAML 绑定
+
+- 新增或修改 XAML 绑定统一使用编译期可追踪的 `x:Bind`；禁止新增 `{Binding ...}`、`ElementName`/`DataContext` 运行时路径等基于反射的绑定，修改到旧写法时同步替换。
+- DataTemplate 需要调用页面 ViewModel 命令时，沿用 `Music.PlayCommand`、`FolderCommands` 的模式：在数据项暴露可 `x:Bind` 的命令入口，由共享命令经 DI 调用对应 ViewModel；不要依赖页面 `DataContext` 或模板外元素名称解析。
+- 提交前静态检查本次修改的 XAML 不含 `{Binding ...}`，并使用全新输出目录执行 Release/x64 剪裁发布及相关运行验证，不得把既有 AppX 或旧 DLL 当作本次证据；Debug 未剪裁，不能证明命令、转换器、Behavior 或模板成员在发布产物中仍然保留。
+- 若功能仅在 Release 失效，先对比剪裁后的 AppX 程序集与源码绑定链，确认成员是否被移除，再决定修复或回滚；不得只用 Debug 回归代替发布验证。
+
 ## UI 风格
 
 - 以用户当前布局为基准，保持 MVVM；设置状态和命令放在 ViewModel，视图负责布局和交互转发。

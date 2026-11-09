@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Input;
 using WinUIMusicPlayer.Model;
 
 namespace Microsoft.UI.Xaml
@@ -43,6 +44,12 @@ namespace WinUIMusicPlayer.ViewModel
 }
 namespace WinUIMusicPlayer.Services
 {
+    public static class FolderCommands
+    {
+        public static IRelayCommand<FolderBrowserNode> ToggleFolderCommand { get; }
+            = new RelayCommand<FolderBrowserNode>(_ => { });
+    }
+
     public sealed partial class MusicDatabaseService
     {
         public List<Folder> Roots { get; set; } = [];
