@@ -44,40 +44,79 @@
                             DisplayMemberPath="Name"
                             ItemsSource="{x:Bind ViewModel.MusicBrowseViewModel.RemoteSources.Choices}"
                             SelectedItem="{x:Bind ViewModel.MusicBrowseViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
-                        <TreeView
+                        <ListView
                             x:Name="FolderTree"
                             Grid.Row="2"
                             CanDragItems="False"
                             CanReorderItems="False"
-                            Collapsed="Tree_Collapsed"
-                            Expanding="Tree_Expanding"
-                            ItemsSource="{x:Bind ViewModel.Roots}"
+                            ItemsSource="{x:Bind ViewModel.VisibleNodes}"
+                            KeyDown="Tree_KeyDown"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            ScrollViewer.HorizontalScrollMode="Disabled"
                             SelectedItem="{x:Bind ViewModel.SelectedNode, Mode=OneWay}"
                             SelectionChanged="Tree_SelectionChanged"
-                            SelectionMode="Single">                            <TreeView.ItemTemplate>
+                            SelectionMode="Single">
+                            <ListView.Resources>
+                                <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="Transparent" />
+                                <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="SubtleFillColorSecondaryBrush" />
+                                <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="SubtleFillColorTertiaryBrush" />
+                                <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="TextFillColorSecondaryBrush" />
+                                <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="TextFillColorPrimaryBrush" />
+                                <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="TextFillColorSecondaryBrush" />
+                            </ListView.Resources>
+                            <ListView.ItemContainerTransitions>
+                                <TransitionCollection>
+                                    <AddDeleteThemeTransition />
+                                    <RepositionThemeTransition IsStaggeringEnabled="False" />
+                                </TransitionCollection>
+                            </ListView.ItemContainerTransitions>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="MinHeight" Value="32" />
+                                    <Setter Property="Padding" Value="8,0" />
+                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="model:FolderBrowserNode">
-                                    <TreeViewItem
-                                        HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}"
-                                        IsExpanded="{x:Bind IsExpanded, Mode=OneWay}"
-                                        ItemsSource="{x:Bind VisibleChildren}"
-                                        Loaded="TreeItem_Loaded">
-                                        <Grid
-                                            ColumnDefinitions="Auto,*"
-                                            ColumnSpacing="8"
-                                            ToolTipService.ToolTip="{x:Bind Path}">
-                                            <FontIcon
-                                                FontSize="16"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                Glyph="&#xE8B7;" />
-                                            <TextBlock
-                                                Grid.Column="1"
-                                                Text="{x:Bind Name}"
-                                                TextTrimming="CharacterEllipsis" />
+                                    <Grid
+                                        MinHeight="32"
+                                        ColumnDefinitions="Auto,Auto,*"
+                                        ColumnSpacing="8"
+                                        Margin="{x:Bind tools:BindUtils.FolderRowIndent(Depth), Mode=OneWay}"
+                                        ToolTipService.ToolTip="{x:Bind Path}">
+                                        <Grid Width="24" Height="32">
+                                            <ToggleButton
+                                                Width="24"
+                                                Height="32"
+                                                Padding="0"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center"
+                                                AutomationProperties.Name="{x:Bind Name}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="TreeRowToggle_Click"
+                                                IsChecked="{x:Bind IsExpanded, Mode=OneWay}"
+                                                IsTabStop="False"
+                                                Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(HasChildren), Mode=OneWay}">
+                                                <FontIcon FontSize="12" Glyph="{x:Bind tools:BindUtils.FolderChevronGlyph(IsExpanded), Mode=OneWay}" />
+                                            </ToggleButton>
                                         </Grid>
-                                    </TreeViewItem>
+                                        <FontIcon
+                                            Grid.Column="1"
+                                            FontSize="16"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Glyph="&#xE8B7;" />
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Text="{x:Bind Name}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </DataTemplate>
-                            </TreeView.ItemTemplate>
-                        </TreeView>
+                            </ListView.ItemTemplate>
+                        </ListView>
                     </Grid>
                     <toolkit:GridSplitter
                         x:Name="PaneSplitter"

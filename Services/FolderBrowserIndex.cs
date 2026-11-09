@@ -112,11 +112,7 @@ public sealed class FolderBrowserIndex
         int separator = displayPath.IndexOf(" / ", StringComparison.Ordinal);
         return separator > 0 ? displayPath[..separator] : "WebDAV " + sourceId;
     }
-    private static void FinishNode(FolderBrowserNode node)
-    {
-        node.Children.Sort(CompareNodes);
-        node.InitializeChildren();
-    }
+    private static void FinishNode(FolderBrowserNode node) => node.Children.Sort(CompareNodes);
     private static int CompareNodes(FolderBrowserNode a, FolderBrowserNode b)
         => StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name);
 }

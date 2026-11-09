@@ -34,6 +34,7 @@ public partial class FolderViewModel : ObservableObject
     public AppViewModel AppViewModel { get; }
     public MusicBrowseViewModel MusicBrowseViewModel { get; }
     public BulkObservableCollection<FolderBrowserNode> Roots { get; } = [];
+    public BulkObservableCollection<FolderBrowserNode> VisibleNodes { get; } = [];
     public FolderBrowserNode? SelectedNode { get; private set => SetProperty(ref field, value); }
     public string Title { get; private set => SetProperty(ref field, value); } = ToolUtils.GetString("FolderBrowserTitle");
     public string CurrentPath { get; private set => SetProperty(ref field, value); } = string.Empty;
@@ -165,15 +166,15 @@ public partial class FolderViewModel : ObservableObject
         _index.Rebuild(AppViewModel.SongsSource, _roots, state.Browse.SourceFilterId);
         foreach (var location in expanded)
             if (_index.Find(location) is { } expandedNode)
-            {
-                expandedNode.RealizeChildren();
                 expandedNode.IsExpanded = true;
-            }
-        Roots.FillFrom(CollectionsMarshal.AsSpan(_index.Roots));
         var selected = _index.Find(state.Browse.CurrentFolder);
         // 当前目录被移除时退到仍存在的最近祖先。
         for (var ancestor = previousNode?.Parent; selected is null && ancestor is not null; ancestor = ancestor.Parent)
             selected = _index.Find(ancestor.Location);
+        for (var ancestor = selected?.Parent; ancestor is not null; ancestor = ancestor.Parent)
+            ancestor.IsExpanded = true;
+        Roots.FillFrom(CollectionsMarshal.AsSpan(_index.Roots));
+        RebuildVisibleNodes();
         Navigate(selected ?? (Roots.Count > 0 ? Roots[0] : null));
     }
 
@@ -184,27 +185,61 @@ public partial class FolderViewModel : ObservableObject
         if (current is not null && !ReferenceEquals(current, SelectedNode)) Navigate(current);
     }
 
-    /// <summary>
-    /// 用户展开：实现子集并记录状态，供树重建时恢复。展开状态只经交互事件写入——
-    /// 容器与 IsExpanded 的绑定是 OneWay，避免根节点重建时框架把容器复位成折叠经 TwoWay 回写模型。
-    /// </summary>
     public void ExpandFolder(FolderBrowserNode node)
     {
-        node.RealizeChildren();
+        if (node.IsExpanded || !node.HasChildren) return;
         node.IsExpanded = true;
+        int index = VisibleNodes.IndexOf(node);
+        if (index < 0) return;
+        Stack<FolderBrowserNode> pending = new();
+        PushChildren(node, pending);
+        while (pending.TryPop(out var current))
+        {
+            VisibleNodes.Insert(++index, current);
+            if (current.IsExpanded) PushChildren(current, pending);
+        }
+        // 收起会移除列表选择；只有选中项重新可见时才重新推送。
+        if (SelectedNode is { } selected && VisibleNodes.Contains(selected))
+            for (var current = selected; current is not null; current = current.Parent)
+                if (ReferenceEquals(current, node))
+                {
+                    OnPropertyChanged(nameof(SelectedNode));
+                    break;
+                }
     }
 
-    /// <summary>用户收起：只记录状态，容器状态由绑定同步。</summary>
-    public void CollapseFolder(FolderBrowserNode node) => node.IsExpanded = false;
+    public void CollapseFolder(FolderBrowserNode node)
+    {
+        if (!node.IsExpanded) return;
+        node.IsExpanded = false;
+        int index = VisibleNodes.IndexOf(node);
+        if (index < 0) return;
+        int descendant = index + 1;
+        while (descendant < VisibleNodes.Count && VisibleNodes[descendant].Depth > node.Depth)
+            VisibleNodes.RemoveAt(descendant);
+    }
+
+    private void RebuildVisibleNodes()
+    {
+        List<FolderBrowserNode> rows = [];
+        Stack<FolderBrowserNode> pending = new();
+        for (int i = _index.Roots.Count - 1; i >= 0; i--) pending.Push(_index.Roots[i]);
+        while (pending.TryPop(out var current))
+        {
+            rows.Add(current);
+            if (current.IsExpanded) PushChildren(current, pending);
+        }
+        VisibleNodes.FillFrom(CollectionsMarshal.AsSpan(rows));
+    }
+
+    private static void PushChildren(FolderBrowserNode node, Stack<FolderBrowserNode> pending)
+    {
+        for (int i = node.Children.Count - 1; i >= 0; i--) pending.Push(node.Children[i]);
+    }
 
     private void Navigate(FolderBrowserNode? node)
     {
         if (!_active) return;
-        for (var ancestor = node?.Parent; ancestor is not null; ancestor = ancestor.Parent)
-        {
-            ancestor.RealizeChildren();
-            ancestor.IsExpanded = true;
-        }
         SelectedNode = node;
         // 清除不同目录的可操作列表，防止异步排序期间播放到上一个目录。
         if (AppViewModel.State.Browse.CurrentFolder?.Identity != node?.Location.Identity)

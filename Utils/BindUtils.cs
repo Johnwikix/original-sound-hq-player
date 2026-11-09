@@ -102,6 +102,9 @@ namespace WinUIMusicPlayer.Utils
         public static Visibility BoolToVisibilityConverter(bool isVisible)
             => isVisible ? Visibility.Visible : Visibility.Collapsed;
 
+        public static Thickness FolderRowIndent(int depth) => new(depth * 20, 0, 0, 0);
+        public static string FolderChevronGlyph(bool isExpanded) => isExpanded ? "\uE70D" : "\uE76C";
+
         public static HorizontalAlignment TextAlignmentToHorizontalAlignmentConverter(TextAlignment alignment)
             => alignment switch
             {

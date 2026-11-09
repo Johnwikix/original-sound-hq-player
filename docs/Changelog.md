@@ -1,3 +1,10 @@
+## 2026-11-09 文件夹目录树改为扁平 ListView
+- `Model/FolderBrowserNode.cs`、`Services/FolderBrowserIndex.cs`、`ViewModel/Pages/FolderViewModel.cs`：目录层级只保留 `Children`、`Depth` 与 `IsExpanded`；新增 ViewModel 所有的 `VisibleNodes` 前序扁平投影，展开插入可见后代、收起移除连续后代，整库重建一次生成全部展开分支；选中节点重新可见时才重新推送选择，不再依赖 TreeView 容器回写或布局修补。
+- `View/FolderBrowsePage.xaml`、`View/FolderBrowsePage.xaml.cs`：官方 TreeView 改为虚拟化 `ListView` 与自定义缩进/目录行，使用原生增删和重排过渡；展开按钮提供 UIA 开关状态，保留透明 chevron 外观、整行选择、点击与左右方向键展开/收起。
+- `View/Controls/TreeViewExpansionMotion.cs`：删除基于 TreeView 内部事件时序、隐式 `Visual.Offset` 和定时淡入窗口的动画补丁；同时移除 `VisibleChildren`/`HasUnrealizedChildren` 这套仅供 TreeView 使用的重复状态。
+- `_tools/FolderBrowserUiRegression`：运行时同步 Windows App SDK 2.6.5，迁移到真实 ListView；83 项断言覆盖 UIA 展开、快速反向操作、展开后立即滚动、过渡中刷新、多分支重建、隐藏选择边界、深层缩进和最终像素绘制，失败时进程返回非零退出码。
+- 验证：主工程 Debug/x64 构建 0 错误；`_tools/FolderBrowserRegression` 21 项通过；FolderBrowserUiRegression 83 项通过，并检查快速过渡、立即滚动与多分支重建截图。未执行完整主程序的人工键盘操作验收。
+
 ## 2026-11-08 排序增加发行年份升序/降序
 - `ViewModel/AppViewModel.cs`：`SortOptions` 在「流派」之后新增 `YearASC` / `YearDESC` 两项（资源键 `SortOrderYearASC` / `SortOrderYearDESC`），音乐库页与文件夹页共用同一列表，无需改视图。
 - `Services/LibraryProjectionService.cs`：`SongRow` 增加 `Year` 字段快照（后台比较器仍不读取可变 `Music` 属性）；新增 `CompareYear`——缺年份（`Year<=0`）无论升降序都排在末尾，同年内按专辑 → 光盘 → 音轨 → 标题 → Id/路径收尾，避免 `Array.Sort` 不稳定排序导致同年级曲目每次刷新换位；专辑/艺术家分组视图新增同语义的 `_songByYearAsc` / `_songByYearDesc`。

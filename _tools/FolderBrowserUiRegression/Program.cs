@@ -7,8 +7,10 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Controls;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
@@ -99,14 +101,14 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await Wait(() => !vm.IsBusy);
             Check(vm.SelectedNode is not null && !app.IsBackBtnEnable, "Initial tree selection needs no directory back navigation");
             var root = vm.Roots.Single(n => n.Path == @"D:\Music");
-            var tree = (TreeView)page.FindName("FolderTree");
+            var tree = (ListView)page.FindName("FolderTree");
             tree.SelectedItem = root;
             await Wait(() => vm.SelectedNode == root && !vm.IsBusy && app.FolderSongs.Count == 1);
             Check(app.State.Browse.CurrentFolder?.Path == root.Path, "Native tree selection updates the shared folder identity and songs");
-            await Wait(() => tree.ContainerFromItem(root) is TreeViewItem);
-            ((TreeViewItem)tree.ContainerFromItem(root)).IsExpanded = true;
+            await Wait(() => tree.ContainerFromItem(root) is ListViewItem);
+            vm.ExpandFolder(root);
             var artist = root.Children[0];
-            await Wait(() => root.VisibleChildren.Count == 1 && tree.ContainerFromItem(artist) is not null);
+            await Wait(() => vm.VisibleNodes.Contains(artist) && tree.ContainerFromItem(artist) is not null);
             Check(root.IsExpanded, "Native expansion realizes the next folder level lazily");
             SelectNativeRow(tree, artist);
             Check(ReferenceEquals(vm.SelectedNode, artist) && vm.CurrentPath == artist.Path,
@@ -114,7 +116,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await Wait(() => vm.SelectedNode == artist && !vm.IsBusy);
             Check(app.FolderSongs.Count == 0 && vm.IsEmpty && !vm.ShowAddFolder,
                 "A parent without direct songs keeps its subfolders in the tree and shows a song empty state");
-            ((TreeViewItem)tree.ContainerFromItem(artist)).IsExpanded = true;
+            vm.ExpandFolder(artist);
             var album = artist.Children[0];
             await Wait(() => tree.ContainerFromItem(album) is not null);
             tree.SelectedItem = album;
@@ -226,79 +228,77 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await failure.StopAsync();
             File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "result.txt"), _results);
         }
-        catch (Exception exception) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), "FAIL: " + exception); }
+        catch (Exception exception)
+        {
+            Environment.ExitCode = 1;
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), "FAIL: " + exception);
+        }
         finally { _window?.Close(); Exit(); }
     }
-    // 真实 TreeView 上的展开/收起 Composition 过渡：入场淡入、收起行位移补间，以及隐式动画到期摘除。
-    // 系统关闭动画时跳过，不计为产品缺陷。
-    private async Task CheckTreeMotionAsync(FolderBrowsePage page, TreeView tree, FolderViewModel vm,
+    private async Task CheckTreeMotionAsync(FolderBrowsePage page, ListView tree, FolderViewModel vm,
         FolderBrowserNode root, FolderBrowserNode artist, FolderBrowserNode album)
     {
-        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled) return;
-        // 初始建库 Reset 会暂停过渡 400ms，先等窗口过期再验证。
+        Check(tree.ItemContainerTransitions.Count == 2, "Flat folder rows use native add/delete and reposition transitions");
+        FolderBrowserNode[] expanded = vm.VisibleNodes.ToArray();
+        int rootIndex = vm.VisibleNodes.IndexOf(root);
+        Check(expanded.Length == 4 && rootIndex >= 0 && rootIndex + 2 < expanded.Length
+            && expanded[rootIndex + 1] == artist && expanded[rootIndex + 2] == album,
+            "The flat projection contains the expanded branch in preorder");
+
+        var rootItem = (ListViewItem)tree.ContainerFromItem(root)!;
+        var expander = rootItem.FindDescendant<ToggleButton>()!;
+        Check(AutomationProperties.GetName(expander) == root.Name && expander.IsChecked == true,
+            "The row expander exposes its accessible name and expanded state");
+        ((IToggleProvider)new ToggleButtonAutomationPeer(expander)).Toggle();
+        Check(!root.IsExpanded && expander.IsChecked == false && vm.VisibleNodes.Count == 2
+            && !vm.VisibleNodes.Contains(artist) && !vm.VisibleNodes.Contains(album),
+            "UIA collapse updates the model and removes exactly the visible descendants");
+        await Wait(() => tree.ContainerFromItem(artist) is null && tree.ContainerFromItem(album) is null);
+
+        ((IToggleProvider)new ToggleButtonAutomationPeer(expander)).Toggle();
+        Check(root.IsExpanded && expander.IsChecked == true && vm.VisibleNodes.SequenceEqual(expanded),
+            "UIA expansion restores every previously expanded descendant");
+        await Wait(() => tree.ContainerFromItem(artist) is ListViewItem
+            && tree.ContainerFromItem(album) is ListViewItem { IsSelected: true });
+
+        int selectionNotifications = 0;
+        void OnSelectedChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(FolderViewModel.SelectedNode)) selectionNotifications++;
+        }
+        vm.PropertyChanged += OnSelectedChanged;
+        try
+        {
+            vm.CollapseFolder(artist);
+            vm.CollapseFolder(root);
+            vm.ExpandFolder(root);
+            Check(selectionNotifications == 0 && !vm.VisibleNodes.Contains(album),
+                "Ancestor expansion does not republish a selection hidden by a collapsed parent");
+            vm.ExpandFolder(artist);
+            await Wait(() => tree.ContainerFromItem(album) is ListViewItem { IsSelected: true });
+            Check(selectionNotifications == 1 && vm.VisibleNodes.SequenceEqual(expanded),
+                "Expanding the selected branch republishes selection once it becomes visible");
+        }
+        finally
+        {
+            vm.PropertyChanged -= OnSelectedChanged;
+        }
+
+        for (int i = 0; i < 12; i++)
+        {
+            vm.CollapseFolder(root);
+            vm.ExpandFolder(root);
+            if (i % 3 == 0) await Task.Delay(16);
+        }
+        Check(vm.VisibleNodes.SequenceEqual(expanded), "Rapid expansion reversal never duplicates or drops flat rows");
+        await Wait(() => tree.ContainerFromItem(artist) is ListViewItem && tree.ContainerFromItem(album) is ListViewItem);
         await Task.Delay(500);
-        var rootContainer = (TreeViewItem)tree.ContainerFromItem(root)!;
-        var survivorContainer = (TreeViewItem)tree.ContainerFromItem(vm.Roots[1])!;
-        var rootVisual = ElementCompositionPreview.GetElementVisual(rootContainer)!;
-        var survivorVisual = ElementCompositionPreview.GetElementVisual(survivorContainer)!;
-
-        // 收起：子行已被同步移除，存留行在 Collapsed 后挂位移补间平滑收拢；
-        // 被删子树的容器已进回收池，不会带动画重摆放（不再出现从旧坐标飞入）。
-        rootContainer.IsExpanded = false;
-        bool artistGone = false, albumGone = false;
-        for (var i = 0; i < 50 && !(artistGone && albumGone); i++)
-        {
-            artistGone |= tree.ContainerFromItem(artist) is null;
-            albumGone |= tree.ContainerFromItem(album) is null;
-            await Task.Delay(10);
-        }
-        Check(artistGone && albumGone, "Collapsing removes the subtree rows from the flat list");
-        // 收起会回收移除点下方的容器；按条目重取幸存行容器，它应带着位移补间。
-        survivorContainer = (TreeViewItem)tree.ContainerFromItem(vm.Roots[1])!;
-        survivorVisual = ElementCompositionPreview.GetElementVisual(survivorContainer)!;
-        bool driven = false;
-        for (var i = 0; i < 50 && !driven; i++)
-        {
-            driven = survivorVisual.HasImplicitAnimation(nameof(Visual.Offset));
-            if (!driven) await Task.Delay(10);
-        }
-        Check(driven, "Collapsing attaches the offset reflow to the remaining rows");
-        // 被移除的子树行不允许带任何残留动画：它们进容器池后若被复用重摆放就会飞入。
-        Check(tree.ContainerFromItem(artist) is null && tree.ContainerFromItem(album) is null,
-            "Removed subtree rows leave the flat list without carrying animations");
-        await Task.Delay(700);
-        Check(!rootVisual.HasImplicitAnimation(nameof(Visual.Offset)) && !survivorVisual.HasImplicitAnimation(nameof(Visual.Offset)),
-            "The collapse reflow detaches once the rows have settled");
-
-        // 再展开：新行在最终位置淡入（不位移），结束后行必须画满且不带任何裁剪。
-        rootContainer.IsExpanded = true;
-        TreeViewItem? artistItem = null;
-        for (var i = 0; i < 100 && artistItem is null; i++)
-        {
-            artistItem = tree.ContainerFromItem(artist) as TreeViewItem;
-            if (artistItem is null) await Task.Delay(5);
-        }
-        if (artistItem is null) throw new Exception("Expanded row never realized");
-        var artistVisual = ElementCompositionPreview.GetElementVisual(artistItem)!;
-        var displaced = false;
-        double restY = double.NaN;
-        for (var i = 0; i < 30; i++)
-        {
-            double y = artistItem.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).Y;
-            if (double.IsNaN(restY)) restY = y;
-            displaced |= Math.Abs(y - restY) > 1;
-            await Task.Delay(8);
-        }
-        var midFrame = WindowCapture.ReadFrame(_window);
-        await WindowCapture.SaveAsync(midFrame, Path.Combine(AppContext.BaseDirectory, "tree-motion-mid.png"));
-        Check(!displaced, "Revealed rows never move: they are laid out directly at their final position");
-        // 淡入进行中行合法地处于半透明；结束后必须画满且不带任何裁剪或残留的零透明度。
-        await Task.Delay(700);
+        var artistItem = (ListViewItem)tree.ContainerFromItem(artist)!;
         var settledFrame = WindowCapture.ReadFrame(_window);
         double settledBrightness = RowBrightness(settledFrame, artistItem, page);
         await WindowCapture.SaveAsync(settledFrame, Path.Combine(AppContext.BaseDirectory, "tree-motion-settled.png"));
-        Check(settledBrightness > BlankThreshold && artistVisual.Clip is null,
-            $"Revealed rows stay fully painted and unclipped after the transition: settled={settledBrightness:0.0}");
+        Check(settledBrightness > BlankThreshold,
+            $"Rows remain painted after rapid native transitions: settled={settledBrightness:0.0}");
     }
 
     /// <summary>
@@ -306,21 +306,19 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     /// 以及过渡结束后两行都真的画满（不会停在透明或半透明状态）。
     /// 只统计位置已稳定的帧——展开瞬间父行还占着子行的目标位置，会读到父行。
     /// </summary>
-    private async Task<FadeTrace> MeasureRowRevealAsync(TreeView tree, TreeViewItem container, FolderBrowserNode first,
-        FolderBrowserNode later, FrameworkElement page)
+    private async Task<FadeTrace> MeasureRowRevealAsync(FolderViewModel vm, ListView tree, FolderBrowserNode container,
+        FolderBrowserNode first, FolderBrowserNode later, FrameworkElement page)
     {
-        // 父行在展开瞬间还占着子行的目标位置：布局完成前采样会读到父行内容，误判成「先亮后暗」。
-        double parentY = container.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).Y;
-        double? firstLastY = null, laterLastY = null;
-        // 必须是折叠状态，否则设 IsExpanded=true 不会触发 Expanding。
+        var containerItem = (FrameworkElement)tree.ContainerFromItem(container)!;
+        double parentY = containerItem.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).Y;
         if (container.IsExpanded)
         {
-            container.IsExpanded = false;
-            await Task.Delay(700);
+            vm.CollapseFolder(container);
+            await Task.Delay(300);
         }
         var trace = new FadeTrace();
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        container.IsExpanded = true;
+        vm.ExpandFolder(container);
         for (var i = 0; i < 70; i++)
         {
             var frame = WindowCapture.ReadFrame(_window);
@@ -330,12 +328,12 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await Task.Delay(2);
         }
         // 采样结束恢复折叠：后续用例依赖「节点尚未展开」这个前提。
-        container.IsExpanded = false;
-        await Task.Delay(400);
+        vm.CollapseFolder(container);
+        await Task.Delay(300);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "fade-trace.txt"), trace.ToString());
         return trace;
 
-        double Brightness(WindowCapture.Frame frame, TreeView owner, FolderBrowserNode node, FrameworkElement host)
+        double Brightness(WindowCapture.Frame frame, ListView owner, FolderBrowserNode node, FrameworkElement host)
         {
             if (owner.ContainerFromItem(node) is not FrameworkElement row) return -1;
             // 父行在展开瞬间还占着子行的目标位置，布局完成前采样会读到父行内容。
@@ -428,8 +426,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     /// 触发一次展开并采样三件事：新增行是否一出现就在最终位置、缩进是否漂移、行出现的那一刻是否已经画满。
     /// 展开在采样循环内部触发，保证行出现的第一帧就落在采样窗口里。
     /// </summary>
-    private async Task<ExpandProbe> ProbeExpandAsync(TreeView tree, TreeViewItem container, FolderBrowserNode measured,
-        FrameworkElement page, string diagName, FolderBrowserNode? reflowProbe = null)
+    private async Task<ExpandProbe> ProbeExpandAsync(FolderViewModel vm, ListView tree, FolderBrowserNode container,
+        FolderBrowserNode measured, FrameworkElement page, string diagName)
     {
         var probe = new ExpandProbe();
         var samples = new System.Text.StringBuilder();
@@ -442,7 +440,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             if (!triggered)
             {
                 var expandWatch = System.Diagnostics.Stopwatch.StartNew();
-                container.IsExpanded = true;
+                vm.ExpandFolder(container);
                 expandWatch.Stop();
                 probe.ExpandMilliseconds = expandWatch.Elapsed.TotalMilliseconds;
                 triggered = true;
@@ -463,15 +461,13 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
                 }
             }
             else samples.Append("none ");
-            if (reflowProbe is not null && tree.ContainerFromItem(reflowProbe) is TreeViewItem below)
-                probe.ReflowAttached |= ElementCompositionPreview.GetElementVisual(below)!.HasImplicitAnimation(nameof(Visual.Offset));
             await Task.Delay(4);
         }
         if (tree.ContainerFromItem(measured) is FrameworkElement settledRow)
             probe.PaintSettled = RowBrightness(WindowCapture.ReadFrame(_window), settledRow, page);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, diagName),
             $"node={measured.Name} displacement={probe.Displacement:0.0} indent={probe.IndentShift:0.0} " +
-            $"paintOnAppear={probe.PaintOnAppear:0.0} paintSettled={probe.PaintSettled:0.0} reflow={probe.ReflowAttached} " +
+            $"paintOnAppear={probe.PaintOnAppear:0.0} paintSettled={probe.PaintSettled:0.0} " +
             $"expandMs={probe.ExpandMilliseconds:0.00}\n{samples}");
         return probe;
     }
@@ -494,8 +490,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         /// <summary>行出现那一刻的亮度；低于背景阈值说明行出现了却没画出来。</summary>
         public double PaintOnAppear { get; set; } = -1;
         public double PaintSettled { get; set; } = -1;
-        public bool ReflowAttached { get; set; }
-        /// <summary>展开事件处理（含行面板收集与隐式动画挂载）的耗时。</summary>
+        /// <summary>展开事件处理与扁平集合更新的耗时。</summary>
         public double ExpandMilliseconds { get; set; }
     }
 
@@ -541,7 +536,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         for (int i = 1; i <= 24; i++) songs.Add(new() { FolderPath = $@"D:\music\专辑{i:00}", Title = $"album {i}" });
         foreach (var name in new[] { "沙中之火OST", "生路OST", "覆潮之下OST", "喧闹法则OST", "午间逸话OST", "傀影与猩红孤钻OST" })
             songs.Add(new() { FolderPath = $@"D:\music\arknight\{name}", Title = name });
-        // 子目录下有多个目录：展开父级后这些行位于父级 TreeViewItem 自己的嵌套面板里。
+        // 多个子目录用于验证同一扁平列表中的深层行。
         foreach (var name in new[] { "剧场版", "TV版", "OVA", "原声集", "广播剧" })
             songs.Add(new() { FolderPath = $@"D:\music\高达\{name}", Title = name });
         const string boxPath = @"D:\music\高达\高达30周年CD-BOX [FLAC]";
@@ -556,14 +551,12 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         double windowScale = page.XamlRoot.RasterizationScale;
         _window.AppWindow.Resize(new((int)(1320 * windowScale), (int)(900 * windowScale)));
         await Wait(() => page.ActualWidth > 1000);
-        var tree = (TreeView)page.FindName("FolderTree");
+        var tree = (ListView)page.FindName("FolderTree");
         var root = vm.Roots.Single(n => n.Path == @"D:\music");
 
-        // 用户报告：淡入有闪烁，且逐行阶梯会让总时长随行数变化。现在改成所有行同时淡入。
-        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行的亮度序列。
-        // 初始建库 Reset 会暂停过渡挂载（120ms 窗口），先等窗口过期再测量。
+        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证原生批量过渡。
         await Task.Delay(300);
-        var fadeTrace = await MeasureRowRevealAsync(tree, (TreeViewItem)tree.ContainerFromItem(root)!,
+        var fadeTrace = await MeasureRowRevealAsync(vm, tree, root,
             root.Children[0], root.Children[Math.Min(10, root.Children.Count - 1)], page);
         Check(fadeTrace.Regressions <= 2,
             $"Revealed rows never dim after appearing: regression={fadeTrace.Regressions:0.0} {fadeTrace}");
@@ -575,49 +568,38 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         Check(fadeTrace.InitialLater < fadeTrace.FinalLater - 5,
             $"Added rows fade in as a batch: later={fadeTrace.InitialLater:0.0}->{fadeTrace.FinalLater:0.0}");
 
-        // 用户报告：展开后行先停在偏下位置、几百毫秒才归位（进入动画没走完）。
-        // 断言行从出现的第一帧起就在最终位置，且缩进全程不变。
+        // 逐帧采样布局位置与缩进，并检查最终绘制。
         var firstChild = root.Children[5];
-        var rootProbe = await ProbeExpandAsync(tree, (TreeViewItem)tree.ContainerFromItem(root)!,
+        var rootProbe = await ProbeExpandAsync(vm, tree, root,
             firstChild, page, "many-rows-diag.txt");
         Check(rootProbe.Displacement <= 1,
             $"Expanding rows stay at their final position: displacement={rootProbe.Displacement:0.0} children={root.Children.Count}");
         Check(rootProbe.IndentShift <= 1,
             $"Expanding rows keep their indent: shift={rootProbe.IndentShift:0.0}");
-        // 每行独立淡入后必须回到完全不透明：历史上透明度动画中断会让行永久停在未渲染状态。
+        // 过渡结束后必须完整绘制，不能残留透明或半透明的行。
         Check(rootProbe.PaintSettled > BlankThreshold,
             $"Revealed rows end fully painted: brightness={rootProbe.PaintSettled:0.0}");
         var afterReveal = await MeasureRealizedRowsAsync(page, tree, "many-rows-after.png");
         Check(afterReveal.Length == 0, "No realized row is left transparent after the reveal " + afterReveal);
 
-        // 同级目录缩进必须一致：错位说明容器回收后没有重新应用层级缩进。
+        // 同级目录的文本缩进必须一致。
         Check(SiblingIndentSpread(page, tree, root.Children) == 0,
             "Sibling folders share the same indent after expanding: " + DescribeIndents(page, tree, root.Children));
 
-        // 收起方向：这个场景展开后视口被整片子树占满，下方存留行不在视口内，
-        // 因此没有可补间的行（正确行为）。核心保证是收起的行不带走残留动画——
-        // 它们进容器池后若被复用重摆放，残留动画就是「从旧坐标飞入」。
-        var manyRootItem = (TreeViewItem)tree.ContainerFromItem(root)!;
-        manyRootItem.IsExpanded = false;
-        await Task.Delay(500);
-        int leftover = 0;
-        foreach (var node in new[] { root, vm.Roots.First(n => n != root) })
-            if (tree.ContainerFromItem(node) is TreeViewItem row
-                && ElementCompositionPreview.GetElementVisual(row)!.HasImplicitAnimation(nameof(Visual.Offset))) leftover++;
-        Check(leftover == 0, "Collapsing leaves no leftover reflow animations on realized rows");
+        // 大分支收起后只保留根行，再展开验证投影与绘制。
+        vm.CollapseFolder(root);
+        Check(vm.VisibleNodes.Count == 2, "Collapsing a large branch leaves only the two roots");
         await Wait(() => root.Children.All(n => tree.ContainerFromItem(n) is null));
-        await Task.Delay(600);
-        var rootProbeAgain = await ProbeExpandAsync(tree, manyRootItem, firstChild, page, "many-rows-diag2.txt");
+        await Task.Delay(300);
+        var rootProbeAgain = await ProbeExpandAsync(vm, tree, root, firstChild, page, "many-rows-diag2.txt");
         Check(rootProbeAgain.Displacement <= 1 && rootProbeAgain.PaintSettled > BlankThreshold,
             $"Re-expanding keeps rows in place and painted: displacement={rootProbeAgain.Displacement:0.0} paint={rootProbeAgain.PaintSettled:0.0}");
         await Task.Delay(800);
 
-        // 用户报告：子目录下还有多个目录时展开看不到动画。这类行的容器在父级 TreeViewItem
-        // 自己的嵌套面板里，必须同样补间位移、同样播放入场。
+        // 深层目录在同一扁平列表中展开，验证布局与绘制。
         var gundam = root.Children.Single(n => n.Name == "高达");
-        var belowSibling = root.Children[1];
-        var nestedProbe = await ProbeExpandAsync(tree, (TreeViewItem)tree.ContainerFromItem(gundam)!,
-            gundam.Children[0], page, "nested-rows-diag.txt", belowSibling);
+        var nestedProbe = await ProbeExpandAsync(vm, tree, gundam,
+            gundam.Children[0], page, "nested-rows-diag.txt");
         Check(nestedProbe.Displacement <= 1,
             $"Nested rows stay at their final position: displacement={nestedProbe.Displacement:0.0} children={gundam.Children.Count}");
         Check(nestedProbe.IndentShift <= 1,
@@ -626,12 +608,13 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             $"Nested rows end up fully painted: settled={nestedProbe.PaintSettled:0.0}");
         Check(SiblingIndentSpread(page, tree, gundam.Children) == 0,
             "Nested siblings share the same indent after expanding: " + DescribeIndents(page, tree, gundam.Children));
-        // 展开点下方的行即使属于另一层面板，也要跟着平滑位移，否则整块是「瞬间跳出来」的观感。
-        Check(nestedProbe.ReflowAttached,
-            "Rows below a nested expansion attach the offset reflow even across nested panels");
+        Check(vm.VisibleNodes.IndexOf(gundam.Children[0]) == vm.VisibleNodes.IndexOf(gundam) + 1,
+            "Nested descendants are inserted directly after their parent in the flat list");
+        Check(RowContentX(page, tree, gundam.Children[0]) > RowContentX(page, tree, gundam),
+            "Nested rows increase their content indentation");
 
         var boxNode = gundam.Children.Single(n => n.Name.StartsWith("高达30周年"));
-        await ExpandAsync(tree, boxNode);
+        await ExpandAsync(vm, tree, boxNode);
         await Wait(() => boxNode.Children.All(n => tree.ContainerFromItem(n) is not null));
         page.UpdateLayout();
         await Task.Delay(600);
@@ -640,18 +623,18 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         Check(firstRound.Length == 0, "Deep nested folders render every realized row on first expansion " + firstRound);
 
         // 收起再展开同一节点：用户报告的丢失场景。
-        ((TreeViewItem)tree.ContainerFromItem(boxNode)!).IsExpanded = false;
+        vm.CollapseFolder(boxNode);
         await Wait(() => boxNode.Children.All(n => tree.ContainerFromItem(n) is null));
-        await Task.Delay(500);
-        await ExpandAsync(tree, boxNode);
+        await Task.Delay(300);
+        await ExpandAsync(vm, tree, boxNode);
         var reExpandRound = await MeasureRowsAsync(page, tree, boxNode.Children, "deep-tree-reexpand.png");
         Check(reExpandRound.Length == 0, "Deep nested folders render every realized row after collapse and re-expand " + reExpandRound);
 
         // 收起根节点再展开：整棵子树重建，仍要逐行画出来。
-        ((TreeViewItem)tree.ContainerFromItem(root)!).IsExpanded = false;
+        vm.CollapseFolder(root);
         await Wait(() => tree.ContainerFromItem(boxNode) is null);
-        await Task.Delay(500);
-        await ExpandAsync(tree, root);
+        await Task.Delay(300);
+        await ExpandAsync(vm, tree, root);
         var rebuildRound = await MeasureRowsAsync(page, tree, boxNode.Children, "deep-tree-rebuild.png");
         Check(rebuildRound.Length == 0, "Deep nested folders render every realized row after collapsing the root " + rebuildRound);
 
@@ -664,32 +647,72 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Check(scrolledRound.Length == 0, "Scrolling keeps every realized row painted " + scrolledRound);
             Check(SiblingIndentSpread(page, tree, root.Children) == 0,
                 "Sibling folders keep the same indent after scrolling: " + DescribeIndents(page, tree, root.Children));
+            scroll.ChangeView(null, 0, null, true);
+            vm.CollapseFolder(root);
+            vm.ExpandFolder(root);
+            scroll.ChangeView(null, 400, null, true);
+            var immediateScroll = await MeasureRealizedRowsAsync(page, tree, "deep-tree-immediate-scroll.png");
+            Check(immediateScroll.Length == 0, "Scrolling during the expansion transition keeps recycled rows painted " + immediateScroll);
         }
+
+        var arknight = root.Children.Single(n => n.Name == "arknight");
+        vm.ExpandFolder(arknight);
+        tree.SelectedItem = root;
+        await Wait(() => vm.SelectedNode == root && !vm.IsBusy);
+        vm.CollapseFolder(root);
+        vm.ExpandFolder(root);
+        var previousRoot = root;
+        projection.RequestRefresh();
+        await Wait(() => !ReferenceEquals(vm.Roots.Single(n => n.Path == @"D:\music"), previousRoot) && !vm.IsBusy);
+        root = vm.Roots.Single(n => n.Path == @"D:\music");
+        gundam = root.Children.Single(n => n.Name == "高达");
+        arknight = root.Children.Single(n => n.Name == "arknight");
+        boxNode = gundam.Children.Single(n => n.Name.StartsWith("高达30周年"));
+        Check(root.IsExpanded && gundam.IsExpanded && arknight.IsExpanded && boxNode.IsExpanded,
+            "Refresh during a transition preserves every expanded branch");
+        Check(gundam.Children.All(vm.VisibleNodes.Contains) && arknight.Children.All(vm.VisibleNodes.Contains)
+            && boxNode.Children.All(vm.VisibleNodes.Contains),
+            "Rebuild materializes all expanded branches rather than only the selected path");
+        Check(vm.VisibleNodes.Distinct().Count() == vm.VisibleNodes.Count && ReferenceEquals(vm.SelectedNode, root),
+            "Rebuild keeps flat row identities unique and restores the selected root");
+        await Wait(() => tree.ContainerFromItem(root) is ListViewItem { IsSelected: true });
+        await Capture(page, "deep-tree-refresh.png");
     }
 
-    /// <summary>同级行的布局缩进差（DIP），非零即为错位；缩进来自布局，与位移动画无关。</summary>
-    private static double SiblingIndentSpread(FolderBrowsePage page, TreeView tree, IReadOnlyList<FolderBrowserNode> nodes)
+    private static double RowContentX(FolderBrowsePage page, ListView tree, FolderBrowserNode node)
+    {
+        if (tree.ContainerFromItem(node) is not ListViewItem item || FindText(item, node.Name) is not { } text)
+            return double.NaN;
+        return text.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X;
+    }
+
+    /// <summary>同级行文本的布局缩进差（DIP），非零即为错位。</summary>
+    private static double SiblingIndentSpread(FolderBrowsePage page, ListView tree, IReadOnlyList<FolderBrowserNode> nodes)
     {
         List<double> indents = [];
         foreach (var node in nodes)
-            if (tree.ContainerFromItem(node) is TreeViewItem item)
-                indents.Add(item.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X);
+        {
+            double x = RowContentX(page, tree, node);
+            if (!double.IsNaN(x)) indents.Add(x);
+        }
         if (indents.Count < 2) return 0;
         indents.Sort();
         return indents[^1] - indents[0];
     }
 
-    private static string DescribeIndents(FolderBrowsePage page, TreeView tree, IReadOnlyList<FolderBrowserNode> nodes)
+    private static string DescribeIndents(FolderBrowsePage page, ListView tree, IReadOnlyList<FolderBrowserNode> nodes)
     {
         List<string> parts = [];
         foreach (var node in nodes)
-            if (tree.ContainerFromItem(node) is TreeViewItem item)
-                parts.Add($"{node.Name}@{item.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point()).X:0.0}");
+        {
+            double x = RowContentX(page, tree, node);
+            if (!double.IsNaN(x)) parts.Add($"{node.Name}@{x:0.0}");
+        }
         return string.Join(", ", parts);
     }
 
     /// <summary>检查面板里所有已实现且完整可见的行是否都绘制了内容。</summary>
-    private async Task<string> MeasureRealizedRowsAsync(FolderBrowsePage page, TreeView tree, string shotName)
+    private async Task<string> MeasureRealizedRowsAsync(FolderBrowsePage page, ListView tree, string shotName)
     {
         page.UpdateLayout();
         await Task.Delay(300);
@@ -701,7 +724,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         if (tree.FindDescendant<ItemsStackPanel>() is { } panel)
             foreach (var child in panel.Children)
             {
-                if (child is not TreeViewItem item) continue;
+                if (child is not ListViewItem item) continue;
                 var origin = item.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point());
                 // 视口边缘被裁切的行只画出一部分，亮度不能代表是否绘制内容。
                 if (origin.Y < viewTop + 4 || origin.Y + item.ActualHeight > viewBottom - 4) continue;
@@ -716,7 +739,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     }
 
     /// <summary>逐行像素校验：已实现且可见的行必须画出内容，不能只占布局位置。</summary>
-    private async Task<string> MeasureRowsAsync(FolderBrowsePage page, TreeView tree,
+    private async Task<string> MeasureRowsAsync(FolderBrowsePage page, ListView tree,
         IReadOnlyList<FolderBrowserNode> nodes, string shotName)
     {
         await Wait(() => nodes.All(n => tree.ContainerFromItem(n) is not null));
@@ -727,7 +750,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         int checkedRows = 0;
         foreach (var node in nodes)
         {
-            if (tree.ContainerFromItem(node) is not TreeViewItem item) { blank.Add($"{node.Name}:no-container"); continue; }
+            if (tree.ContainerFromItem(node) is not ListViewItem item) { blank.Add($"{node.Name}:no-container"); continue; }
             double brightness = RowBrightness(shot, item, page);
             if (brightness < 0) continue;
             checkedRows++;
@@ -738,11 +761,11 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         return blank.Count == 0 ? "" : "[" + string.Join(", ", blank) + "]";
     }
 
-    private static async Task ExpandAsync(TreeView tree, FolderBrowserNode node)
+    private static async Task ExpandAsync(FolderViewModel vm, ListView tree, FolderBrowserNode node)
     {
-        await Wait(() => tree.ContainerFromItem(node) is TreeViewItem);
-        ((TreeViewItem)tree.ContainerFromItem(node)!).IsExpanded = true;
-        await Wait(() => node.Children.Count == 0 || node.VisibleChildren.Count == node.Children.Count);
+        await Wait(() => tree.ContainerFromItem(node) is ListViewItem);
+        vm.ExpandFolder(node);
+        await Wait(() => !node.HasChildren || node.Children.All(vm.VisibleNodes.Contains));
     }
 
     private async Task DragSplitterAsync(GridSplitter splitter, double delta)
@@ -766,11 +789,11 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         frame.Navigate(typeof(FolderBrowsePage));
         await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsBusy && vm.Roots.Count == 1);
         var page = (FolderBrowsePage)frame.Content;
-        var tree = (TreeView)page.FindName("FolderTree");
+        var tree = (ListView)page.FindName("FolderTree");
         var root = vm.Roots[0];
-        await Wait(() => tree.ContainerFromItem(root) is TreeViewItem);
-        ((TreeViewItem)tree.ContainerFromItem(root)).IsExpanded = true;
-        await Wait(() => root.VisibleChildren.Count == names.Length && root.Children.All(n => tree.ContainerFromItem(n) is not null));
+        await Wait(() => tree.ContainerFromItem(root) is ListViewItem);
+        vm.ExpandFolder(root);
+        await Wait(() => root.Children.Count == names.Length && root.Children.All(n => tree.ContainerFromItem(n) is not null));
         foreach (int index in new[] { 4, 0, 6, 1, 5, 2, 3 })
         {
             var node = root.Children.Single(n => n.Name == names[index]);
@@ -792,18 +815,18 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         bool restored = false;
         for (var i = 0; i < 100 && !restored; i++)
         {
-            restored = tree.ContainerFromItem(vm.SelectedNode) is TreeViewItem { IsSelected: true };
+            restored = tree.ContainerFromItem(vm.SelectedNode) is ListViewItem { IsSelected: true };
             if (!restored) await Task.Delay(20);
         }
         if (!restored)
         {
             var selected = vm.SelectedNode;
-            var container = selected is null ? null : tree.ContainerFromItem(selected) as TreeViewItem;
+            var container = selected is null ? null : tree.ContainerFromItem(selected) as ListViewItem;
             var rootNode = vm.Roots[0];
             throw new Exception($"selection restore failed: selected={selected?.Name} treeSelected={(tree.SelectedItem as FolderBrowserNode)?.Name} " +
                 $"container={(container is null ? "null" : container.IsSelected.ToString())} roots={vm.Roots.Count} " +
-                $"children={selected?.Parent?.VisibleChildren.Count} rootExpanded={rootNode.IsExpanded} " +
-                $"rootVisible={rootNode.VisibleChildren.Count} rootContainer={tree.ContainerFromItem(rootNode) is TreeViewItem c && c.IsExpanded} " +
+                $"children={selected?.Parent?.Children.Count} rootExpanded={rootNode.IsExpanded} " +
+                $"rootVisible={vm.VisibleNodes.Count} rootContainer={tree.ContainerFromItem(rootNode) is not null} " +
                 $"transitions={tree.ItemContainerTransitions.Count}");
         }
         Check(vm.SelectedNode!.Location == selectedLocation && vm.CurrentPath == selectedLocation.Path,
@@ -811,14 +834,23 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         await Capture(page, "selection-aligned.png");
     }
 
-    private static void SelectNativeRow(TreeView tree, FolderBrowserNode node)
+    private static void SelectNativeRow(ListView tree, FolderBrowserNode node)
     {
-        var container = tree.ContainerFromItem(node) as TreeViewItem ?? throw new Exception("Folder row is not realized");
-        var peer = FrameworkElementAutomationPeer.CreatePeerForElement(container) ?? new TreeViewItemAutomationPeer(container);
-        var provider = peer.GetPattern(PatternInterface.SelectionItem) as ISelectionItemProvider
-            ?? throw new Exception("Folder row has no native selection provider");
-        provider.Select();
-        if (!container.IsSelected) throw new Exception("Native row did not become selected");
+        var container = tree.ContainerFromItem(node) as ListViewItem ?? throw new Exception("Folder row is not realized");
+        container.IsSelected = true;
+        if (!container.IsSelected || !ReferenceEquals(tree.SelectedItem, node))
+            throw new Exception("Native row did not become selected");
+    }
+
+    private static TextBlock? FindText(DependencyObject parent, string value)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is TextBlock text && text.Text == value) return text;
+            if (FindText(child, value) is { } nested) return nested;
+        }
+        return null;
     }
 
     private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject

@@ -27,6 +27,8 @@ namespace WinUIMusicPlayer.Utils
     public static class BindUtils
     {
         public static Visibility BoolToVisibilityConverter(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public static Thickness FolderRowIndent(int depth) => new(depth * 20, 0, 0, 0);
+        public static string FolderChevronGlyph(bool isExpanded) => isExpanded ? "\uE70D" : "\uE76C";
     }
 }
 namespace WinUIMusicPlayer.Model

@@ -44,10 +44,8 @@ Check(Find(1, "webdav://1/Library/album") != Find(1, "webdav://1/Library/Album")
 Check(!Find(1, "webdav://1/Library/Album").Location.Matches(songs[7]), "Remote sources with the same name remain distinct");
 Check(Find(1, "webdav://1/Library/Disc%2FOne").Parent?.Path == "webdav://1/Library", "Encoded slash never creates a fake ancestor");
 Check(Find(1, "webdav://1").Name == "Server", "Remote root has the source display name");
-Check(local.VisibleChildren.Count == 0 && local.HasUnrealizedChildren, "Collapsed branches do not publish their descendants");
-local.RealizeChildren();
-local.RealizeChildren();
-Check(local.VisibleChildren.Count == local.Children.Count, "Repeated expansion does not duplicate nodes");
+Check(!local.IsExpanded && local.HasChildren, "Collapsed branches keep their hierarchy without UI containers");
+Check(local.Children.All(n => n.Parent == local && n.Depth == local.Depth + 1), "Folder rows derive depth from their stable parent links");
 index.Rebuild(songs, folders, -2);
 Check(index.Roots.Count == 2 && index.Roots.All(n => n.Location.SourceId != 0), "Remote filter excludes local scan roots");
 index.Rebuild(songs, folders, 2);
