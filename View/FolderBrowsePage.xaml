@@ -80,8 +80,8 @@
                             </ListView.Resources>
                             <ListView.ItemContainerTransitions>
                                 <TransitionCollection>
-                                    <AddDeleteThemeTransition />
-                                    <RepositionThemeTransition IsStaggeringEnabled="False" />
+                                    
+                                    <RepositionThemeTransition IsStaggeringEnabled="True" />
                                 </TransitionCollection>
                             </ListView.ItemContainerTransitions>
                             <ListView.ItemContainerStyle>
