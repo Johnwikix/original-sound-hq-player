@@ -40,8 +40,8 @@
                             Grid.Row="1"
                             Margin="4,0,0,0"
                             HorizontalAlignment="Stretch"
-                            BorderBrush="Transparent"
                             Background="Transparent"
+                            BorderBrush="Transparent"
                             BorderThickness="0"
                             DisplayMemberPath="Name"
                             ItemsSource="{x:Bind ViewModel.MusicBrowseViewModel.RemoteSources.Choices}"
@@ -80,7 +80,7 @@
                             </ListView.Resources>
                             <ListView.ItemContainerTransitions>
                                 <TransitionCollection>
-                                    
+                                    <AddDeleteThemeTransition />
                                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                                 </TransitionCollection>
                             </ListView.ItemContainerTransitions>
@@ -96,9 +96,9 @@
                                 <DataTemplate x:DataType="model:FolderBrowserNode">
                                     <Grid
                                         MinHeight="32"
+                                        Margin="{x:Bind tools:BindUtils.FolderRowIndent(Depth), Mode=OneWay}"
                                         ColumnDefinitions="Auto,Auto,*"
                                         ColumnSpacing="8"
-                                        Margin="{x:Bind tools:BindUtils.FolderRowIndent(Depth), Mode=OneWay}"
                                         ToolTipService.ToolTip="{x:Bind Path}">
                                         <Grid Width="24" Height="32">
                                             <ToggleButton

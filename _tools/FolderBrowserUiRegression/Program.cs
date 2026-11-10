@@ -261,7 +261,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     private async Task CheckTreeMotionAsync(FolderBrowsePage page, ListView tree, FolderViewModel vm,
         FolderBrowserNode root, FolderBrowserNode artist, FolderBrowserNode album)
     {
-        Check(tree.ItemContainerTransitions.Count == 2, "Flat folder rows use native add/delete and reposition transitions");
+        Check(tree.ItemContainerTransitions.Count == 1
+            && tree.ItemContainerTransitions[0] is RepositionThemeTransition { IsStaggeringEnabled: false },
+            "Flat folder rows skip add/delete fades and reposition without staggering");
         FolderBrowserNode[] expanded = vm.VisibleNodes.ToArray();
         int rootIndex = vm.VisibleNodes.IndexOf(root);
         Check(expanded.Length == 4 && rootIndex >= 0 && rootIndex + 2 < expanded.Length
@@ -582,7 +584,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var tree = (ListView)page.FindName("FolderTree");
         var root = vm.Roots.Single(n => n.Path == @"D:\music");
 
-        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证原生批量过渡。
+        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证新增行无需增删淡入即可完整绘制。
         await Task.Delay(300);
         var fadeTrace = await MeasureRowRevealAsync(vm, tree, root,
             root.Children[0], root.Children[Math.Min(10, root.Children.Count - 1)], page);
@@ -591,10 +593,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
 
         Check(fadeTrace.FinalFirst > BlankThreshold && fadeTrace.FinalLater > BlankThreshold,
             $"Every revealed row ends fully painted: first={fadeTrace.FinalFirst:0.0} later={fadeTrace.FinalLater:0.0}");
-        // 整批淡入：后一行从背景亮度一路升到最终亮度；第一行首帧可能仍是展开前的旧帧，
-        // 因此用后一行验证淡入，用回退断言保证没有「先亮后暗」。
-        Check(fadeTrace.InitialLater < fadeTrace.FinalLater - 5,
-            $"Added rows fade in as a batch: later={fadeTrace.InitialLater:0.0}->{fadeTrace.FinalLater:0.0}");
+        // 增删淡入已移除；完整绘制应在短暂布局与截图管线延迟内完成。
+        Check(fadeTrace.SettleMilliseconds >= 0 && fadeTrace.SettleMilliseconds <= 150,
+            $"Added rows paint without the add/delete fade wait: settled={fadeTrace.SettleMilliseconds}ms {fadeTrace}");
 
         // 逐帧采样布局位置与缩进，并检查最终绘制。
         var firstChild = root.Children[5];
