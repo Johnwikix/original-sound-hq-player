@@ -1,3 +1,13 @@
+## 2026-11-10 加固批量集合的输入、通知与派发边界
+- `Model/BulkObservableCollection.cs`：派发失败显式结束任务；批量输入先验证/物化，修复自身别名、重叠 Span、异常枚举、null 删除与重复计数；采用标准区间插入和几何扩容，排序失败不改变原集合。
+- `Model/BulkObservableCollection.cs`：单项与批量入口共用线程/重入守卫；保留现有 WinUI 底层批量修改后补发逐项通知的策略，事件读取已提交项，不再依赖可被回调修改的输入 List。
+- `_tools/BulkCollectionRegression`：直接链接生产集合源码，覆盖 20 个边界场景，派发桩分别验证延后执行、拒绝与异常完成；此测试不替代真实 WinUI 回归。
+
+## 2026-11-10 目录展开收起改为底层区间批量更新
+- `Model/BulkObservableCollection.cs`、`ViewModel/Pages/FolderViewModel.cs`：可见后代先按前序收集，再一次完成底层 List 区间插入/删除，消除逐行 `Insert`/`RemoveAt` 的重复移位。实测 WinUI ListView 不同步多项目 Remove，因此保留有序单项目 Add/Remove 通知、选择恢复和现有原生过渡；通知次数不变。
+- `_tools/FolderBrowserUiRegression`、`_tools/SharedStateRegression`：新增批量操作的通知顺序与索引用例，回归配置与当前 XAML 对齐。
+- 验证：主工程 Debug/x64 构建 0 错误，全新目录 Release/x64 剪裁发布成功；FolderBrowserRegression 21 项、SharedStateRegression 及 FolderBrowserUiRegression 99 项全部通过。未做完整主程序人工操作验收。
+
 ## 2026-11-09 消除目录 chevron hover 并补充剪裁规则
 - `View/FolderBrowsePage.xaml`：折叠/展开按钮的 `PointerOver`、`Pressed` 背景统一透明，展开态悬停前景不再变亮；显式使用 `DefaultToggleButtonStyle`，去掉隐式样式叠加的上浮和按压缩放。
 - `View/FolderBrowsePage.xaml`、`Behaviors/SelectionChangedCommandBehavior.cs`：选择命令改为 Behavior 在事件内读取当前 `SelectedItem`，移除最后一处运行时 `Binding`，避免 `x:Bind FolderTree.SelectedItem` 在事件时序中传递旧值。

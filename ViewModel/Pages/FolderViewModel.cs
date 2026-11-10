@@ -212,13 +212,15 @@ public partial class FolderViewModel : ObservableObject
         node.IsExpanded = true;
         int index = VisibleNodes.IndexOf(node);
         if (index < 0) return;
+        List<FolderBrowserNode> descendants = [];
         Stack<FolderBrowserNode> pending = new();
         PushChildren(node, pending);
         while (pending.TryPop(out var current))
         {
-            VisibleNodes.Insert(++index, current);
+            descendants.Add(current);
             if (current.IsExpanded) PushChildren(current, pending);
         }
+        VisibleNodes.InsertRangeWithItemNotifications(index + 1, descendants);
         // 收起会移除列表选择；只有选中项重新可见时才重新推送。
         if (SelectedNode is { } selected && VisibleNodes.Contains(selected))
             for (var current = selected; current is not null; current = current.Parent)
@@ -236,8 +238,8 @@ public partial class FolderViewModel : ObservableObject
         int index = VisibleNodes.IndexOf(node);
         if (index < 0) return;
         int descendant = index + 1;
-        while (descendant < VisibleNodes.Count && VisibleNodes[descendant].Depth > node.Depth)
-            VisibleNodes.RemoveAt(descendant);
+        while (descendant < VisibleNodes.Count && VisibleNodes[descendant].Depth > node.Depth) descendant++;
+        VisibleNodes.RemoveRangeWithItemNotifications(index + 1, descendant - index - 1);
     }
 
     private void RebuildVisibleNodes()

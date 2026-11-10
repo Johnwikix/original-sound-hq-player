@@ -11,260 +11,293 @@ namespace WinUIMusicPlayer.Model
 {
     public class BulkObservableCollection<T> : ObservableCollection<T>
     {
-        private readonly DispatcherQueue _dispatcher = DispatcherQueue.GetForCurrentThread();
+        private readonly DispatcherQueue? _dispatcher = DispatcherQueue.GetForCurrentThread();
         private readonly List<T> _itemsList;
+        private bool _isMutating;
 
         private static readonly PropertyChangedEventArgs s_countArgs = new(nameof(Count));
         private static readonly PropertyChangedEventArgs s_indexerArgs = new("Item[]");
         private static readonly NotifyCollectionChangedEventArgs s_resetArgs = new(NotifyCollectionChangedAction.Reset);
 
         public BulkObservableCollection() => _itemsList = (List<T>)Items;
+        public BulkObservableCollection(IEnumerable<T> collection) : base(collection) => _itemsList = (List<T>)Items;
+        public BulkObservableCollection(List<T> list) : base(list) => _itemsList = (List<T>)Items;
 
-        public BulkObservableCollection(IEnumerable<T> collection) : base(collection)
-            => _itemsList = (List<T>)Items;
+        // 输入在所属 UI 队列执行时读取；调用方须保持输入稳定直到返回的 Task 完成。
+        public Task ReplaceAllAsync(IEnumerable<T> items) =>
+            items is null ? Task.CompletedTask : DispatchAsync(() => ExecuteReplaceAll(items));
 
-        public BulkObservableCollection(List<T> list) : base(list)
-            => _itemsList = (List<T>)Items;
+        public Task AddRangeAsync(IEnumerable<T> items) =>
+            items is null ? Task.CompletedTask : DispatchAsync(() => AddRange(items));
 
-        /// <summary>
-        /// 异步将集合内容更新为新集合（并集/替换），仅触发一次通知
-        /// </summary>
-        public async Task ReplaceAllAsync(IEnumerable<T> items)
+        private async Task DispatchAsync(Action action)
         {
-            if (items == null) return;
-
-            if (_dispatcher.HasThreadAccess)
+            var dispatcher = _dispatcher ?? throw new InvalidOperationException(
+                "Async collection updates require construction on a DispatcherQueue thread.");
+            if (dispatcher.HasThreadAccess)
             {
-                ExecuteReplaceAll(items);
+                action();
                 return;
             }
 
-            var tcs = new TaskCompletionSource();
-            _dispatcher.TryEnqueue(() =>
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!dispatcher.TryEnqueue(() =>
             {
                 try
                 {
-                    ExecuteReplaceAll(items);
-                    tcs.SetResult();
+                    action();
+                    completion.TrySetResult();
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
-                    tcs.SetException(ex);
+                    completion.TrySetException(exception);
                 }
-            });
-
-            await tcs.Task;
+            }))
+            {
+                throw new InvalidOperationException("The collection DispatcherQueue rejected the update.");
+            }
+            await completion.Task.ConfigureAwait(false);
         }
 
         private void ExecuteReplaceAll(IEnumerable<T> items)
         {
-            if (_itemsList.Count == 0 && IsKnownEmpty(items)) return;
+            using var mutation = BeginMutation();
+            var source = PrepareItems(items);
+            if (_itemsList.Count == 0 && source.Count == 0) return;
+            // 枚举和扩容均在 Clear 前完成，输入失败不会丢失旧内容。
+            _itemsList.EnsureCapacity(source.Count);
             _itemsList.Clear();
-            _itemsList.AddRange(items);
-            RaiseChangeNotifications();
-        }
-
-        /// <summary>
-        /// 异步批量添加
-        /// </summary>
-        public async Task AddRangeAsync(IEnumerable<T> items)
-        {
-            if (items == null || IsKnownEmpty(items)) return;
-
-            if (_dispatcher.HasThreadAccess)
-            {
-                ExecuteAddRange(items);
-                return;
-            }
-
-            var tcs = new TaskCompletionSource();
-            _dispatcher.TryEnqueue(() =>
-            {
-                try
-                {
-                    ExecuteAddRange(items);
-                    tcs.SetResult();
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-            });
-
-            await tcs.Task;
-        }
-
-        private void ExecuteAddRange(IEnumerable<T> items)
-        {
-            if (items == null || IsKnownEmpty(items)) return;
-            _itemsList.AddRange(items);
+            _itemsList.AddRange(source);
             RaiseChangeNotifications();
         }
 
         public void AddRange(IEnumerable<T> items)
         {
-            ExecuteAddRange(items);
+            if (items is null) return;
+            using var mutation = BeginMutation();
+            var source = PrepareItems(items);
+            if (source.Count == 0) return;
+            _itemsList.AddRange(source);
+            RaiseChangeNotifications();
         }
 
         public void AddRange(ReadOnlySpan<T> source)
         {
-            if (source.Length == 0) return;
-
-            var list = _itemsList;
-            int oldCount = list.Count;
-            int need = oldCount + source.Length;
-            if (list.Capacity < need) list.Capacity = need;
-            CollectionsMarshal.SetCount(list, need);
-            source.CopyTo(CollectionsMarshal.AsSpan(list).Slice(oldCount));
+            using var mutation = BeginMutation();
+            if (source.IsEmpty) return;
+            int oldCount = _itemsList.Count;
+            int need = checked(oldCount + source.Length);
+            _itemsList.EnsureCapacity(need);
+            CollectionsMarshal.SetCount(_itemsList, need);
+            source.CopyTo(CollectionsMarshal.AsSpan(_itemsList).Slice(oldCount));
             RaiseChangeNotifications();
         }
 
         public void InsertRange(int index, IEnumerable<T> items)
         {
+            using var mutation = BeginMutation();
+            ValidateInsertIndex(index);
             if (items is null) return;
-
-            if (items is ICollection<T> coll)
-            {
-                if (coll.Count == 0) return;
-                if (ReferenceEquals(coll, _itemsList))
-                {
-                    _itemsList.InsertRange(index, coll);
-                }
-                else
-                {
-                    InsertRangeCore(_itemsList, index, coll);
-                }
-                RaiseChangeNotifications();
-                return;
-            }
-
-            _itemsList.InsertRange(index, items);
+            var source = PrepareItems(items);
+            if (source.Count == 0) return;
+            _ = checked(_itemsList.Count + source.Count);
+            _itemsList.InsertRange(index, source);
             RaiseChangeNotifications();
         }
 
-        private static void InsertRangeCore(List<T> dst, int index, ICollection<T> src)
+        // 保留现有 WinUI 批量策略：底层先到最终态，再按索引补发逐项事件。
+        // 这不是逐项修改的中间态契约；通知期间禁止任何入口重入修改集合。
+        public void InsertRangeWithItemNotifications(int index, List<T> items)
         {
-            int oldCount = dst.Count;
-            int insertCount = src.Count;
-            int need = oldCount + insertCount;
-            if (dst.Capacity < need) dst.Capacity = need;
-
-            CollectionsMarshal.SetCount(dst, need);
-            var span = CollectionsMarshal.AsSpan(dst);
-            span.Slice(index, oldCount - index).CopyTo(span.Slice(index + insertCount));
-
-            var target = span.Slice(index, insertCount);
-            switch (src)
+            using var mutation = BeginMutation();
+            ValidateInsertIndex(index);
+            ArgumentNullException.ThrowIfNull(items);
+            int count = items.Count;
+            if (count == 0) return;
+            _ = checked(_itemsList.Count + count);
+            _itemsList.InsertRange(index, items);
+            for (int i = 0; i < count; i++)
             {
-                case T[] arr:
-                    arr.AsSpan().CopyTo(target);
-                    break;
-                case List<T> srcList:
-                    CollectionsMarshal.AsSpan(srcList).CopyTo(target);
-                    break;
-                default:
-                    int i = 0;
-                    foreach (var item in src)
-                    {
-                        target[i++] = item;
-                    }
-                    break;
+                // 读取已提交的集合，不再借用可能被订阅者修改的输入 List。
+                RaiseChangeNotifications(new(NotifyCollectionChangedAction.Add, _itemsList[index + i], index + i));
             }
+        }
+
+        public void RemoveRangeWithItemNotifications(int index, int count)
+        {
+            using var mutation = BeginMutation();
+            ValidateRange(index, count);
+            if (count == 0) return;
+            var removed = _itemsList.GetRange(index, count);
+            _itemsList.RemoveRange(index, count);
+            foreach (var item in removed)
+                RaiseChangeNotifications(new(NotifyCollectionChangedAction.Remove, item, index));
         }
 
         public void FillFrom(ReadOnlySpan<T> source)
         {
-            var list = _itemsList;
-            if (list.Capacity < source.Length)
-                list.Capacity = source.Length;
-            CollectionsMarshal.SetCount(list, source.Length);
-            source.CopyTo(CollectionsMarshal.AsSpan(list));
+            using var mutation = BeginMutation();
+            int count = source.Length;
+            if (count > _itemsList.Count)
+            {
+                _itemsList.EnsureCapacity(count);
+                CollectionsMarshal.SetCount(_itemsList, count);
+                source.CopyTo(CollectionsMarshal.AsSpan(_itemsList));
+            }
+            else
+            {
+                // source 可能是自身切片，缩短 Count 会清除尾部引用，必须先复制。
+                source.CopyTo(CollectionsMarshal.AsSpan(_itemsList));
+                CollectionsMarshal.SetCount(_itemsList, count);
+            }
             RaiseChangeNotifications();
         }
 
         public void RemoveRange(IEnumerable<T> items)
         {
-            if (items == null) return;
+            if (items is null) return;
+            using var mutation = BeginMutation();
+            var source = PrepareItems(items);
+            if (source.Count == 0) return;
 
-            var snapshot = items as ICollection<T>;
-            if (snapshot == null)
+            if (source.Count == 1)
             {
-                var copy = new List<T>();
-                foreach (var item in items)
-                {
-                    copy.Add(item);
-                }
-                snapshot = copy;
-            }
-
-            if (snapshot.Count == 0) return;
-
-            if (snapshot.Count == 1)
-            {
-                foreach (var item in snapshot)
-                {
-                    _itemsList.Remove(item);
-                }
+                foreach (var item in source) _itemsList.Remove(item);
             }
             else
             {
-                RemoveRangeCore(snapshot);
+                RemoveRangeCore(source);
             }
-
             RaiseChangeNotifications();
         }
 
-        private void RemoveRangeCore(ICollection<T> toRemove)
+        private void RemoveRangeCore(ICollection<T> source)
         {
-            var counts = new Dictionary<T, int>(toRemove.Count);
-            foreach (var item in toRemove)
+#pragma warning disable CS8714 // T may be nullable; null keys are counted separately below.
+            var counts = new Dictionary<T, int>(source.Count);
+            int nullCount = 0;
+            foreach (var item in source)
             {
-                ref int c = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, item, out _);
-                c++;
+                if (item is null)
+                {
+                    nullCount++;
+                    continue;
+                }
+                ref int count = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, item, out _);
+                count++;
+#pragma warning restore CS8714
             }
 
-            var itemsList = _itemsList;
             int write = 0;
-            for (int i = 0; i < itemsList.Count; i++)
+            for (int i = 0; i < _itemsList.Count; i++)
             {
-                var item = itemsList[i];
-                if (counts.TryGetValue(item, out var count) && count > 0)
+                var item = _itemsList[i];
+                if (item is null)
+                {
+                    if (nullCount > 0)
+                    {
+                        nullCount--;
+                        continue;
+                    }
+                }
+                else if (counts.TryGetValue(item, out int count) && count > 0)
                 {
                     counts[item] = count - 1;
+                    continue;
                 }
-                else
-                {
-                    itemsList[write++] = item;
-                }
+                _itemsList[write++] = item;
             }
-            if (write < itemsList.Count)
-            {
-                itemsList.RemoveRange(write, itemsList.Count - write);
-            }
+            if (write < _itemsList.Count)
+                _itemsList.RemoveRange(write, _itemsList.Count - write);
         }
 
+        // 借用视图只在下一次集合修改前有效；不得跨异步边界保存。
         public ReadOnlySpan<T> AsSpan() => CollectionsMarshal.AsSpan(_itemsList);
 
         public void SortInPlace(IComparer<T> comparer)
         {
-            CollectionsMarshal.AsSpan(_itemsList).Sort(comparer);
+            using var mutation = BeginMutation();
+            var sorted = _itemsList.ToArray();
+            Array.Sort(sorted, comparer);
+            sorted.AsSpan().CopyTo(CollectionsMarshal.AsSpan(_itemsList));
             RaiseChangeNotifications();
         }
 
-        /// <summary>
-        /// 统一触发 Count 和 Reset 通知（复用静态缓存的事件参数，零分配）
-        /// </summary>
-        private void RaiseChangeNotifications()
+        private static ICollection<T> PrepareItems(IEnumerable<T> items)
+        {
+            // List/数组为已物化的独立输入；包括 this 的其他 IEnumerable 先快照，
+            // 避免自身别名、单次枚举和枚举异常在修改后才被发现。
+            return items is List<T> or T[] ? (ICollection<T>)items : new List<T>(items);
+        }
+
+        private void ValidateInsertIndex(int index)
+        {
+            if ((uint)index > (uint)_itemsList.Count)
+                throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        private void ValidateRange(int index, int count)
+        {
+            if ((uint)index > (uint)_itemsList.Count)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            if ((uint)count > (uint)(_itemsList.Count - index))
+                throw new ArgumentOutOfRangeException(nameof(count));
+        }
+
+        private MutationScope BeginMutation()
+        {
+            if (_dispatcher is not null && !_dispatcher.HasThreadAccess)
+                throw new InvalidOperationException("Collection updates must run on their DispatcherQueue thread.");
+            if (_isMutating)
+                throw new InvalidOperationException("Cannot modify a collection during an update or notification.");
+            CheckReentrancy();
+            _isMutating = true;
+            return new MutationScope(this);
+        }
+
+        private readonly struct MutationScope(BulkObservableCollection<T> owner) : IDisposable
+        {
+            public void Dispose() => owner._isMutating = false;
+        }
+
+        // 继承的单项入口也参与同一守卫，防止批量通知回调绕过保护。
+        protected override void InsertItem(int index, T item)
+        {
+            using var mutation = BeginMutation();
+            base.InsertItem(index, item);
+        }
+
+        protected override void RemoveItem(int index)
+        {
+            using var mutation = BeginMutation();
+            base.RemoveItem(index);
+        }
+
+        protected override void SetItem(int index, T item)
+        {
+            using var mutation = BeginMutation();
+            base.SetItem(index, item);
+        }
+
+        protected override void ClearItems()
+        {
+            using var mutation = BeginMutation();
+            base.ClearItems();
+        }
+
+        protected override void MoveItem(int oldIndex, int newIndex)
+        {
+            using var mutation = BeginMutation();
+            base.MoveItem(oldIndex, newIndex);
+        }
+
+        private void RaiseChangeNotifications() => RaiseChangeNotifications(s_resetArgs);
+
+        private void RaiseChangeNotifications(NotifyCollectionChangedEventArgs args)
         {
             OnPropertyChanged(s_countArgs);
             OnPropertyChanged(s_indexerArgs);
-            OnCollectionChanged(s_resetArgs);
+            OnCollectionChanged(args);
         }
-
-        /// <summary>
-        /// 仅通过 Count 判断空集合，不做枚举（避免消费一次性 IEnumerable）
-        /// </summary>
-        private static bool IsKnownEmpty(IEnumerable<T> items) =>
-            items is IReadOnlyCollection<T> { Count: 0 };
     }
 }

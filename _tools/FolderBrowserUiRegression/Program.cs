@@ -17,6 +17,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Graphics.Imaging;
@@ -261,9 +262,10 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     private async Task CheckTreeMotionAsync(FolderBrowsePage page, ListView tree, FolderViewModel vm,
         FolderBrowserNode root, FolderBrowserNode artist, FolderBrowserNode album)
     {
-        Check(tree.ItemContainerTransitions.Count == 1
-            && tree.ItemContainerTransitions[0] is RepositionThemeTransition { IsStaggeringEnabled: false },
-            "Flat folder rows skip add/delete fades and reposition without staggering");
+        Check(tree.ItemContainerTransitions.Count == 2
+            && tree.ItemContainerTransitions[0] is AddDeleteThemeTransition
+            && tree.ItemContainerTransitions[1] is RepositionThemeTransition { IsStaggeringEnabled: true },
+            "Flat folder rows keep native add/delete and staggered reposition transitions");
         FolderBrowserNode[] expanded = vm.VisibleNodes.ToArray();
         int rootIndex = vm.VisibleNodes.IndexOf(root);
         Check(expanded.Length == 4 && rootIndex >= 0 && rootIndex + 2 < expanded.Length
@@ -290,6 +292,34 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             "UIA expansion restores every previously expanded descendant");
         await Wait(() => tree.ContainerFromItem(artist) is ListViewItem
             && tree.ContainerFromItem(album) is ListViewItem { IsSelected: true });
+
+        List<NotifyCollectionChangedEventArgs> bulkChanges = [];
+        void OnVisibleNodesChanged(object? sender, NotifyCollectionChangedEventArgs args) => bulkChanges.Add(args);
+        vm.VisibleNodes.CollectionChanged += OnVisibleNodesChanged;
+        try
+        {
+            vm.CollapseFolder(root);
+            vm.ExpandFolder(root);
+        }
+        finally
+        {
+            vm.VisibleNodes.CollectionChanged -= OnVisibleNodesChanged;
+        }
+        Check(bulkChanges.Count == 4
+            && bulkChanges[0].Action == NotifyCollectionChangedAction.Remove
+            && bulkChanges[0].OldItems?[0] == artist
+            && bulkChanges[0].OldStartingIndex == rootIndex + 1
+            && bulkChanges[1].Action == NotifyCollectionChangedAction.Remove
+            && bulkChanges[1].OldItems?[0] == album
+            && bulkChanges[1].OldStartingIndex == rootIndex + 1
+            && bulkChanges[2].Action == NotifyCollectionChangedAction.Add
+            && bulkChanges[2].NewItems?[0] == artist
+            && bulkChanges[2].NewStartingIndex == rootIndex + 1
+            && bulkChanges[3].Action == NotifyCollectionChangedAction.Add
+            && bulkChanges[3].NewItems?[0] == album
+            && bulkChanges[3].NewStartingIndex == rootIndex + 2,
+            "Bulk updates preserve ordered single-item notifications required by WinUI");
+        await Wait(() => tree.ContainerFromItem(album) is ListViewItem { IsSelected: true });
 
         int selectionNotifications = 0;
         void OnSelectedChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
@@ -584,7 +614,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var tree = (ListView)page.FindName("FolderTree");
         var root = vm.Roots.Single(n => n.Path == @"D:\music");
 
-        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证新增行无需增删淡入即可完整绘制。
+        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证范围新增仍使用原生批量过渡。
         await Task.Delay(300);
         var fadeTrace = await MeasureRowRevealAsync(vm, tree, root,
             root.Children[0], root.Children[Math.Min(10, root.Children.Count - 1)], page);
@@ -593,9 +623,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
 
         Check(fadeTrace.FinalFirst > BlankThreshold && fadeTrace.FinalLater > BlankThreshold,
             $"Every revealed row ends fully painted: first={fadeTrace.FinalFirst:0.0} later={fadeTrace.FinalLater:0.0}");
-        // 增删淡入已移除；完整绘制应在短暂布局与截图管线延迟内完成。
-        Check(fadeTrace.SettleMilliseconds >= 0 && fadeTrace.SettleMilliseconds <= 150,
-            $"Added rows paint without the add/delete fade wait: settled={fadeTrace.SettleMilliseconds}ms {fadeTrace}");
+        // 整批淡入：范围通知仍应让后一行从背景亮度升到最终亮度，且不能先亮后暗。
+        Check(fadeTrace.InitialLater < fadeTrace.FinalLater - 5,
+            $"Added rows fade in as a batch after range insertion: later={fadeTrace.InitialLater:0.0}->{fadeTrace.FinalLater:0.0}");
 
         // 逐帧采样布局位置与缩进，并检查最终绘制。
         var firstChild = root.Children[5];

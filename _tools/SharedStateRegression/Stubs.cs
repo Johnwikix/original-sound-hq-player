@@ -39,6 +39,8 @@ namespace WinUIMusicPlayer.Model
         public BulkObservableCollection(IEnumerable<T> items) : base(items) { }
         public void AddRange(IEnumerable<T> items) { foreach (var item in items) Add(item); }
         public void InsertRange(int index, IEnumerable<T> items) { foreach (var item in items) Insert(index++, item); }
+        public void InsertRangeWithItemNotifications(int index, List<T> items) { foreach (var item in items) Insert(index++, item); }
+        public void RemoveRangeWithItemNotifications(int index, int count) { while (count-- > 0) RemoveAt(index); }
     }
 }
 namespace WinUIMusicPlayer.Utils
