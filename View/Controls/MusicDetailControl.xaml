@@ -87,11 +87,14 @@
                     <PivotItem.Header><TextBlock Text="{x:Bind tools:ToolUtils.GetString('SongVersions')}" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
                     <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsTabStop="False">
                     <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="12" Padding="0,12,0,16">
-                        <TextBlock Text="{x:Bind ViewModel.VersionSummary, Mode=OneWay}" TextWrapping="Wrap" />
-                        <Grid Grid.Row="1" ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Text="{x:Bind ViewModel.VersionSummary, Mode=OneWay}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                            <ProgressRing Grid.Column="1" Width="20" Height="20" IsActive="{x:Bind ViewModel.IsVersionBusy, Mode=OneWay}"
+                                Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsVersionBusy), Mode=OneWay}" />
+                        </Grid>
+                        <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
                             <Button HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsLink')}" Command="{x:Bind ViewModel.LinkVersionCommand, Mode=OneWay}" />
                             <Button Grid.Column="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsUseAuto')}" Command="{x:Bind ViewModel.UseAutomaticCommand, Mode=OneWay}" />
-                            <ProgressRing Grid.Column="2" Width="20" Height="20" IsActive="{x:Bind ViewModel.IsVersionBusy, Mode=OneWay}" />
                         </Grid>
                         <ListView Grid.Row="2" MaxHeight="360" ItemsSource="{x:Bind ViewModel.Versions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedVersion, Mode=TwoWay}" SelectionMode="Single">
                             <ListView.ItemTemplate>
