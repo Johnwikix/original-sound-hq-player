@@ -114,11 +114,13 @@ public partial class MusicDatabaseService
                             music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.CodecId, music.EncodingKind, music.Id);
                         if (music.AdditionalMetadataRead)
                             MusicMetadataStorage.Save(db, music.Id, AdditionalMusicMetadata.From(music));
+                        MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, music.Album);
                     }
                     if (embedded.TryGetValue(music, out var document))
                         WinUIMusicPlayer.Services.Lyrics.LyricsRepository.AddEmbeddedInTransaction(db, music.Id, document);
                 }
             });
+            await ApplyAutomaticSongLinksAsync(added);
             if (added.Count > 0 && onBatchInserted is not null)
                 await onBatchInserted(added);
             return (added, updated);

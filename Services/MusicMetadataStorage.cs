@@ -10,7 +10,7 @@ public static class MusicMetadataStorage
 {
     /// <summary>判断事务连接是否已经启用歌曲分组。</summary>
     public static bool HasSongs(SQLiteConnection db) => db.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0;
-    /// <summary>为扫描新文件建立独立歌曲；旧夹具／旧库未启用分组时保持兼容。</summary>
+    /// <summary>为扫描新文件建立身份并排入自动关联；旧库未启用分组时保持兼容。</summary>
     public static void AttachSong(SQLiteConnection db, Music music)
     {
         if (music.SongId > 0 || !HasSongs(db)) return;
@@ -18,6 +18,15 @@ public static class MusicMetadataStorage
             music.Title, music.Author, music.Album, music.IsFavorite, music.Order, music.Id);
         music.SongId = db.ExecuteScalar<int>("SELECT last_insert_rowid()");
         db.Execute("UPDATE Music SET SongId=? WHERE Id=?", music.SongId, music.Id);
+    }
+
+    /// <summary>单版本歌曲跟随标签变更更新关联身份；多版本组的文件编辑不隐式拆组。</summary>
+    public static void UpdateSongIdentity(SQLiteConnection db, int musicId, string title, string author, string album)
+    {
+        if (!HasSongs(db)) return;
+        db.Execute("UPDATE Song SET Title=?,Artist=?,Album=?,Revision=Revision+1 WHERE Id=(SELECT SongId FROM Music WHERE Id=?) " +
+            "AND (SELECT COUNT(*) FROM Music WHERE SongId=Song.Id AND IsDetached=0)=1 AND (Title<>? OR Artist<>? OR Album<>?)",
+            title, author, album, musicId, title, author, album);
     }
     private static readonly string[] Fields = ["AlbumArtist", "Genre", "Composer", "Lyricist", "Conductor", "CatalogNumber"];
     private const string UpdateSql = "UPDATE Music SET AlbumArtist=?,Genre=?,Composer=?,Lyricist=?,Conductor=?,CatalogNumber=?,AdditionalMetadataRead=1 WHERE Id=?";

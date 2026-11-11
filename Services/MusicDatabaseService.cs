@@ -113,6 +113,7 @@ namespace WinUIMusicPlayer.Services
                     await Versions.InitializeAsync(DbPath);
                     Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
                     await Lyrics.InitializeAsync(DbPath);
+                    await Versions.ApplyAutomaticLinksAsync(Lyrics);
                     await _dbConnection.CreateTableAsync<LastPlayListState>();
                     await _dbConnection.CreateTableAsync<SubFolder>();
                     await _dbConnection.CreateTableAsync<UsbDeviceMusic>();

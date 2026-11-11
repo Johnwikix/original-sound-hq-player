@@ -31,6 +31,7 @@ try
     await RegressionSuite.RunAsync(root);
     await ReadonlyQueryChecks.RunAsync(root);
     await MetadataRegression.RunAsync(root);
+    await AutomaticLinkChecks.RunAsync(root);
 }
 catch (Exception exception) { Console.WriteLine(exception); throw; }
 finally

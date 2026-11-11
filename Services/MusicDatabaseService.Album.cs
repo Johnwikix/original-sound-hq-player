@@ -34,6 +34,7 @@ public partial class MusicDatabaseService
                         edit.Album ?? music.Album, edit.Year ?? music.Year, updated, music.Id);
                     // 文件全量六项可选标签已在上面读出，此处连同修改一并入库并置已读标记。
                     MusicMetadataStorage.Save(db, music.Id, tags);
+                    MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, edit.Album ?? music.Album);
                 });
                 // 提交成功后发布事实到内存对象；失败曲目保持原值，用户可重试。
                 if (edit.Album is { } album) music.Album = album;
@@ -54,6 +55,8 @@ public partial class MusicDatabaseService
                 failed.Add(path);
             }
         }
+        if (await ApplyAutomaticSongLinksAsync(tracks) > 0 && AppViewModel is not null)
+            await AppViewModel.RefreshSongsSourceAsync();
         return failed;
     }
 
@@ -93,8 +96,11 @@ public partial class MusicDatabaseService
             foreach (var music in tracks)
             {
                 if (edit.Album is not null || edit.Year is not null)
+                {
                     db.Execute("UPDATE Music SET Album=?,Year=? WHERE Id=?",
                         edit.Album ?? music.Album, edit.Year ?? music.Year, music.Id);
+                    MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, edit.Album ?? music.Album);
+                }
                 if (edit.AlbumArtist is not null || edit.Genre is not null)
                     // 只动已读取可选标签的行；AdditionalMetadataRead=0 的旧库行维持空值+懒读语义。
                     db.Execute("UPDATE Music SET AlbumArtist=?,Genre=? WHERE Id=? AND AdditionalMetadataRead=1",
@@ -113,5 +119,7 @@ public partial class MusicDatabaseService
                 if (edit.Genre is { } genre) music.Genre = genre;
             }
         }
+        if (await ApplyAutomaticSongLinksAsync(tracks) > 0 && AppViewModel is not null)
+            await AppViewModel.RefreshSongsSourceAsync();
     }
 }

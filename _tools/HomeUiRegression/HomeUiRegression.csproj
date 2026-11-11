@@ -11,7 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <TrimmerRootDescriptor Include="SongVersionTrimmerRoots.xml" />
-    <Compile Include="../../Model/SongRecord.cs;../../Services/SongVersionPolicy.cs;../../Services/SongVersionStore.cs;../../Services/LibraryOperationGate.cs;../../Services/MusicVersionDialogs.cs;../../ViewModel/Controls/MusicVersionItem.cs;../../ViewModel/Controls/MusicVersionDialogViewModel.cs;../../View/Controls/MusicVersionDialogControl.xaml.cs" />
+    <Compile Include="../../Model/SongRecord.cs;../../Services/SongVersionPolicy.cs;../../Services/SongVersionStore*.cs;../../Services/LibraryOperationGate.cs;../../Services/MusicVersionDialogs.cs;../../ViewModel/Controls/MusicVersionItem.cs;../../ViewModel/Controls/MusicVersionDialogViewModel.cs;../../View/Controls/MusicVersionDialogControl.xaml.cs" />
     <Page Include="../../View/Controls/MusicVersionDialogControl.xaml" Link="View/Controls/MusicVersionDialogControl.xaml" />
     <Compile Include="../../Controls/AutoScrollView.cs;../../Controls/RedirectVisualView.cs;../../Controls/CompositionShadow*.cs" />
     <Page Include="../../Themes/Generic.xaml" Link="Themes/Generic.xaml" />

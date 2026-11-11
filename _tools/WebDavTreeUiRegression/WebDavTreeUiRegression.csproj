@@ -39,4 +39,5 @@
     <Compile Include="../../Services/MusicMetadataStorage.cs" />
   </ItemGroup>
   <ItemGroup><Compile Include="../../Model/SongRecord.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../../Services/SongVersionStore*.cs;../../Services/SongVersionPolicy.cs;../../Services/MusicDatabaseService.Automatic.cs" /></ItemGroup>
 </Project>

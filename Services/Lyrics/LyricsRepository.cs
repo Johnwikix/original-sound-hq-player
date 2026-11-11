@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -45,6 +46,70 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
     {
         if (_hasSongs && await database.FindAsync<VersionLyricsOverrideRecord>(musicId) is { } own) return own.Snapshot();
         return await GetSharedAsync(musicId, token);
+    }
+
+    /// <summary>按有界批次迁移自动关联所需的默认歌词，避免每个候选多次异步查询。</summary>
+    public async Task EnsureSharedForSongsAsync(IReadOnlyList<int> songIds, CancellationToken token = default)
+    {
+        for (int start = 0; start < songIds.Count; start += 256)
+        {
+            token.ThrowIfCancellationRequested();
+            var ids = new List<int>(Math.Min(256, songIds.Count - start));
+            for (int i = start; i < Math.Min(start + 256, songIds.Count); i++) ids.Add(songIds[i]);
+            var missing = await database.QueryAsync<SongRecord>($"SELECT s.* FROM Song s WHERE s.Id IN ({string.Join(',', ids)}) " +
+                "AND NOT EXISTS(SELECT 1 FROM SongLyrics WHERE SongId=s.Id)").ConfigureAwait(false);
+            if (missing.Count == 0) continue;
+            // 来源身份由建组时保留；硬删除过来源的旧库从仍存在的版本恢复。
+            await database.RunInTransactionAsync(db =>
+            {
+                foreach (var song in missing)
+                    if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM Music WHERE Id=?", song.LyricsSourceMusicId) == 0)
+                        song.LyricsSourceMusicId = db.ExecuteScalar<int>("SELECT MIN(Id) FROM Music WHERE SongId=?", song.Id);
+            }).ConfigureAwait(false);
+            List<int> sources = new(missing.Count);
+            foreach (var song in missing) if (song.LyricsSourceMusicId > 0) sources.Add(song.LyricsSourceMusicId);
+            if (sources.Count == 0) continue;
+            string numbers = string.Join(',', sources);
+            var records = await database.QueryAsync<MusicLyricsRecord>($"SELECT * FROM MusicLyricsV2 WHERE MusicId IN ({numbers})").ConfigureAwait(false);
+            var legacy = await database.QueryAsync<MusicLyrics>($"SELECT * FROM MusicLyrics WHERE MusicId IN ({numbers})").ConfigureAwait(false);
+            Dictionary<int, MusicLyricsRecord> documents = new(records.Count);
+            Dictionary<int, MusicLyrics> originals = new(legacy.Count);
+            foreach (var row in records) documents[row.MusicId] = row;
+            foreach (var row in legacy) originals[row.MusicId] = row;
+            await Task.Run(() =>
+            {
+                foreach (int id in sources)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (documents.TryGetValue(id, out var existing))
+                    {
+                        if (existing.SchemaVersion != 2) throw new InvalidOperationException("Unsupported lyrics schema version.");
+                        continue;
+                    }
+                    originals.TryGetValue(id, out var old);
+                    var converted = LyricsLegacyMigration.Convert(old, parser, token);
+                    converted.MusicId = id;
+                    documents.Add(id, converted);
+                }
+            }, token).ConfigureAwait(false);
+            await database.RunInTransactionAsync(db =>
+            {
+                token.ThrowIfCancellationRequested();
+                foreach (var song in missing)
+                {
+                    if (song.LyricsSourceMusicId <= 0) continue;
+                    var current = db.Find<MusicLyricsRecord>(song.LyricsSourceMusicId);
+                    if (current is null)
+                    {
+                        current = documents[song.LyricsSourceMusicId];
+                        if (LyricsLegacyMigration.Fingerprint(db.Find<MusicLyrics>(current.MusicId)) != current.MigratedFromHash) continue;
+                        db.Insert(current, "OR IGNORE");
+                    }
+                    if (current.SchemaVersion != 2) throw new InvalidOperationException("Unsupported lyrics schema version.");
+                    db.Insert(SongLyricsRecord.From(song.Id, current.Snapshot()), "OR IGNORE");
+                }
+            }).ConfigureAwait(false);
+        }
     }
 
     /// <summary>获取组内默认文档，不使用该版本的独立覆盖。</summary>
@@ -138,8 +203,8 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
             int owner = own ? -musicId : songId;
             if (expectedOwnerId != 0 && expectedOwnerId != owner) throw new InvalidOperationException("LyricsEditConflict");
             int updated = own
-                ? db.Execute("UPDATE VersionLyricsOverride SET Lyrics=?,LyricsFormat=?,TranslatedLyrics=?,PronunciationLyrics=?,Revision=Revision+1 WHERE MusicId=? AND Revision=?",
-                    document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, musicId, expectedRevision)
+                ? db.Execute("UPDATE VersionLyricsOverride SET Lyrics=?,LyricsFormat=?,TranslatedLyrics=?,PronunciationLyrics=?,SourceKind=?,SourceKey=?,Diagnostic='',Revision=Revision+1 WHERE MusicId=? AND Revision=?",
+                    document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, kind, sourceKey, musicId, expectedRevision)
                 : db.Execute("UPDATE SongLyrics SET Lyrics=?,LyricsFormat=?,TranslatedLyrics=?,PronunciationLyrics=?,SourceKind=?,SourceKey=?,Revision=Revision+1,Diagnostic='' " +
                     "WHERE SongId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=? AND SongId=?)",
                     document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, kind, sourceKey, songId, expectedRevision, musicId, songId);

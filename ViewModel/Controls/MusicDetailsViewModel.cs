@@ -196,7 +196,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
             if (versions.Count == 0) { CloseRequested?.Invoke(this, EventArgs.Empty); return; }
             Versions.Clear();
             MusicVersionItem? choice = null;
-            List<LyricsEditorViewModel> changedOwners = [];
+            List<LyricsEditorViewModel> documentsToReload = [];
             foreach (var version in versions)
             {
                 Music item = _app.FindById(version.Id) ?? version;
@@ -205,8 +205,9 @@ public sealed class MusicDetailsViewModel : ObservableObject
                     existing.Editor.Metadata.ApplyReloaded(version);
                     item = existing.Editor.Music;
                     int expectedOwner = version.HasVersionLyrics ? -version.Id : version.SongId;
-                    if (existing.Editor.Lyrics.DocumentOwnerId != 0 && existing.Editor.Lyrics.DocumentOwnerId != expectedOwner)
-                        changedOwners.Add(existing.Editor.Lyrics);
+                    if (existing.Editor.Lyrics.DocumentOwnerId != 0 &&
+                        (existing.Editor.Lyrics.DocumentOwnerId != expectedOwner || !existing.Editor.Lyrics.HasChanges))
+                        documentsToReload.Add(existing.Editor.Lyrics);
                     item.SongId = version.SongId;
                     item.SongPreferredMusicId = version.SongPreferredMusicId;
                     item.HasVersionLyrics = version.HasVersionLyrics;
@@ -218,7 +219,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
                 if (version.Id == selected) choice = row;
             }
             SelectedVersion = choice ?? Versions[0];
-            foreach (var lyrics in changedOwners)
+            foreach (var lyrics in documentsToReload)
             {
                 if (_closing) return;
                 await lyrics.ReloadIfUnchangedAsync();

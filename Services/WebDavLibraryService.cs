@@ -277,8 +277,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
                     if (changed.Count != 0) await PublishBatchAsync(changed).ConfigureAwait(false);
                 }
                 // 元数据就地更新不重排列表；实际写入后收敛一次排序与各页投影。
-                if (applied != 0) await App.MainWindow.DispatcherQueue.EnqueueAsync(
-                    () => { if (!_stop.IsCancellationRequested) _library?.NotifySongsSourceChanged(); }).ConfigureAwait(false);
+                if (applied != 0 && _library is not null) await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false);
             }
             Publish(new(source.Id, "Completed", found, tagged));
         }
@@ -304,6 +303,9 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             var current = _library.FindById(item.Id);
             if (current is null) { added.Add(item); continue; }
             current.IsRemoteOffline = item.IsRemoteOffline;
+            current.SongId = item.SongId;
+            current.SongPreferredMusicId = item.SongPreferredMusicId;
+            current.HasVersionLyrics = item.HasVersionLyrics;
             current.Title = item.Title; current.Author = item.Author; current.Album = item.Album;
             current.TrackNumber = item.TrackNumber; current.DiskNumber = item.DiskNumber; current.Year = item.Year;
             current.BitDepth = item.BitDepth; current.BitRate = item.BitRate; current.SampleRate = item.SampleRate;

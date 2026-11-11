@@ -47,6 +47,9 @@ namespace WinUIMusicPlayer.Model
     public class Music
     {
         public int SongId { get; set; }
+        [SQLite.Ignore] public int? SongPreferredMusicId { get; set; }
+        [SQLite.Ignore] public bool HasVersionLyrics { get; set; }
+        [SQLite.Ignore] public bool IsRemoteCached { get; set; }
         public long MetadataRevision { get; set; }
         public string CodecId { get; set; } = "test";
         public int EncodingKind { get; set; }

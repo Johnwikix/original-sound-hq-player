@@ -78,9 +78,15 @@ public sealed class VersionLyricsOverrideRecord
     public string? PronunciationLyrics { get; set; }
     /// <summary>获取或设置并发修订。</summary>
     public long Revision { get; set; } = 1;
+    /// <summary>获取或设置原始来源，保留用户明确清空歌词的意图。</summary>
+    public string SourceKind { get; set; } = "VersionOverride";
+    /// <summary>获取或设置原始来源标识。</summary>
+    public string SourceKey { get; set; } = "";
+    /// <summary>获取或设置原始迁移诊断。</summary>
+    public string Diagnostic { get; set; } = "";
     /// <summary>创建带独立所有者标识的快照。</summary>
     public LyricsSnapshot Snapshot() => new(new(new(Lyrics, LyricsFormat), TranslatedLyrics, PronunciationLyrics), Revision,
-        "VersionOverride", "", "", -MusicId);
+        SourceKind, SourceKey, Diagnostic, -MusicId);
 }
 
 /// <summary>保存可恢复分组操作的前后快照。</summary>
@@ -110,5 +116,33 @@ public sealed class SongVersionSchemaRecord
     /// <summary>获取或设置唯一记录键。</summary>
     [PrimaryKey] public int Id { get; set; } = 1;
     /// <summary>获取或设置已完成结构版本。</summary>
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
+}
+
+/// <summary>保存歌曲的规范化自动关联键及用户拆分例外；不改变文件标签。</summary>
+[Table("SongAutoLink")]
+public sealed class SongAutoLinkRecord
+{
+    /// <summary>获取或设置歌曲身份。</summary>
+    [PrimaryKey] public int SongId { get; set; }
+    /// <summary>获取或设置完整三项标签的关联键；不完整时为空。</summary>
+    [Indexed] public string? MatchKey { get; set; }
+    /// <summary>获取或设置是否因手动拆分或撤销合并而跳过自动关联。</summary>
+    public bool IsExcluded { get; set; }
+}
+
+/// <summary>持久化需要重新计算关联键的歌曲，事务提交后可继续处理。</summary>
+[Table("SongAutoLinkDirty")]
+public sealed class SongAutoLinkDirtyRecord
+{
+    /// <summary>获取或设置待处理歌曲身份。</summary>
+    [PrimaryKey] public int SongId { get; set; }
+}
+
+/// <summary>持久化可能有重复项的关联键，歌词读取失败或退出后可重试。</summary>
+[Table("SongAutoLinkPending")]
+public sealed class SongAutoLinkPendingRecord
+{
+    /// <summary>获取或设置待处理的关联键。</summary>
+    [PrimaryKey] public string MatchKey { get; set; } = "";
 }

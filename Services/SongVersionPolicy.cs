@@ -8,6 +8,18 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>定义重复文件候选和稳定自动选版；不读取文件、不访问网络。</summary>
 public static class SongVersionPolicy
 {
+    /// <summary>为完整三项标签生成无分隔符碰撞的索引键，保留 Live、Remaster 等限定词。</summary>
+    public static string? GetMatchKey(string title, string artist, string album)
+    {
+        string t = Normalize(title ?? ""), a = Normalize(artist ?? ""), b = Normalize(album ?? "");
+        if (t.Length == 0 || a.Length == 0 || b.Length == 0 || UnknownLabels.Contains(t) || UnknownLabels.Contains(a) || UnknownLabels.Contains(b)) return null;
+        t = t.ToUpperInvariant();
+        a = a.ToUpperInvariant();
+        b = b.ToUpperInvariant();
+        return string.Concat(t.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", t,
+            a.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", a,
+            b.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", b);
+    }
     /// <summary>判断三项完整元数据是否一致，保留版本限定词。</summary>
     public static bool Matches(Music left, Music right) => Known(left.Title) && Known(left.Author) && Known(left.Album)
         && Known(right.Title) && Known(right.Author) && Known(right.Album)

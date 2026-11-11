@@ -19,6 +19,9 @@ if (args.Length == 2 && args[0] == "--verify-publish")
         ["WinUIMusicPlayer.Model.VersionLyricsOverrideRecord"] = ["get_MusicId", "set_MusicId"],
         ["WinUIMusicPlayer.Model.SongVersionOperationRecord"] = ["get_BeforeJson", "set_BeforeJson", "get_AfterJson", "set_AfterJson"],
         ["WinUIMusicPlayer.Model.SongVersionSchemaRecord"] = ["get_Version", "set_Version"],
+        ["WinUIMusicPlayer.Model.SongAutoLinkRecord"] = ["get_SongId", "set_SongId", "get_MatchKey", "set_MatchKey", "get_IsExcluded", "set_IsExcluded"],
+        ["WinUIMusicPlayer.Model.SongAutoLinkDirtyRecord"] = ["get_SongId", "set_SongId"],
+        ["WinUIMusicPlayer.Model.SongAutoLinkPendingRecord"] = ["get_MatchKey", "set_MatchKey"],
         ["WinUIMusicPlayer.View.Controls.MusicDetailControl"] = ["InitializeComponent"],
         ["WinUIMusicPlayer.View.Controls.MusicVersionDialogControl"] = ["InitializeComponent"],
         ["WinUIMusicPlayer.View.MusicDetailsPanel"] = ["Open"],
@@ -68,6 +71,7 @@ Directory.CreateDirectory(root);
 var database = new SQLiteAsyncConnection(Path.Combine(root, "library.db"));
 try
 {
+    await AutomaticChecks.RunAsync(root, Check);
     await database.CreateTableAsync<Music>();
     await database.CreateTableAsync<PlayListMusic>();
     await database.CreateTableAsync<MusicLyrics>();
@@ -110,7 +114,7 @@ try
     var lyrics = new LyricsRepository(database, new LyricsParser());
     await lyrics.InitializeAsync(database.DatabasePath);
     Check(File.Exists(database.DatabasePath + ".song-v1.bak"), "consistent backup before grouping");
-    Check(await database.Table<SongRecord>().CountAsync() == 2, "upgrade does not auto merge");
+    Check(await database.Table<SongRecord>().CountAsync() == 2, "schema phase preserves version identities before the automatic pass");
     await store.InitializeAsync(database.DatabasePath);
     Check(await database.Table<SongRecord>().CountAsync() == 2, "migration is idempotent");
     Check((await database.FindAsync<Music>(flac.Id)).SongId > 0, "original version identity retained");

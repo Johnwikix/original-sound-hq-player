@@ -35,10 +35,12 @@ public partial class MusicDatabaseService
                 title, author, album, track, disk, year, updated, id, metadataRevision) != 1) throw new InvalidOperationException("MusicMetadataConflict");
             if (additional is { } tags) MusicMetadataStorage.Save(db, id, tags);
             if (coverPath is not null) db.Execute("UPDATE Music SET CoverOverridePath=?,ImageHash=? WHERE Id=?", coverPath, Path.GetFileNameWithoutExtension(coverPath), id);
-            UpdateSingleSongIdentity(db, id, title, author, album);
+            MusicMetadataStorage.UpdateSongIdentity(db, id, title, author, album);
         });
         music.MetadataRevision = metadataRevision + 1;
         if (coverPath is not null) { music.CoverOverridePath = coverPath; music.ImageHash = Path.GetFileNameWithoutExtension(coverPath); }
+        if (await ApplyAutomaticSongLinksAsync([music]) > 0 && AppViewModel is not null)
+            await AppViewModel.RefreshSongsSourceAsync();
     }
 
     /// <summary>持久化编辑快照，供后台在文件释放后写入；重复编辑替换旧任务。</summary>
@@ -97,12 +99,14 @@ public partial class MusicDatabaseService
                 if (request.MetadataVersion == 1)
                     MusicMetadataStorage.Save(db, musicId, new(request.AlbumArtist, request.Genre, request.Composer, request.Lyricist, request.Conductor, request.CatalogNumber));
                 if (coverPath is not null) db.Execute("UPDATE Music SET CoverOverridePath=?,ImageHash=? WHERE Id=?", coverPath, Path.GetFileNameWithoutExtension(coverPath), musicId);
-                UpdateSingleSongIdentity(db, musicId, request.Title, request.Author, request.Album);
+                MusicMetadataStorage.UpdateSongIdentity(db, musicId, request.Title, request.Author, request.Album);
             });
             music.MetadataRevision = metadataRevision + 1;
             if (coverPath is not null) { music.CoverOverridePath = coverPath; music.ImageHash = Path.GetFileNameWithoutExtension(coverPath); }
         }
         finally { _metadataGate.Release(); }
+        if (await ApplyAutomaticSongLinksAsync([music]) > 0 && AppViewModel is not null)
+            await AppViewModel.RefreshSongsSourceAsync();
     }
 
     private async Task<string> SaveVersionCoverAsync(int musicId, byte[] bytes, CancellationToken token)
@@ -124,14 +128,6 @@ public partial class MusicDatabaseService
             }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
         }, token);
-    }
-
-    private static void UpdateSingleSongIdentity(SQLite.SQLiteConnection db, int musicId, string title, string author, string album)
-    {
-        if (!MusicMetadataStorage.HasSongs(db)) return;
-        db.Execute("UPDATE Song SET Title=?,Artist=?,Album=?,Revision=Revision+1 WHERE Id=(SELECT SongId FROM Music WHERE Id=?) " +
-            "AND (SELECT COUNT(*) FROM Music WHERE SongId=Song.Id AND IsDetached=0)=1 AND (Title<>? OR Artist<>? OR Album<>?)",
-            title, author, album, musicId, title, author, album);
     }
 
     /// <summary>串行尝试持久化任务，仅在标签保存成功后删除任务。</summary>

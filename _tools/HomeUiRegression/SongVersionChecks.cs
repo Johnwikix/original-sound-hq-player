@@ -22,8 +22,8 @@ internal sealed partial class RegressionApplication
         await database.InsertAsync(first);
         await database.InsertAsync(second);
         await data.InitializeVersionsAsync();
-        var preview = await data.Versions.PreviewMergeAsync(first.Id, second.Id, data.Lyrics);
-        await data.Versions.MergeAsync(preview, preview.TargetSongId, false);
+        await data.Versions.ApplyAutomaticLinksAsync(data.Lyrics);
+        Check((await data.Versions.GetVersionsAsync(first.Id)).Count == 2, "existing duplicates are linked automatically before opening details");
         var versions = await data.Versions.GetVersionsAsync(first.Id);
         app.Replace(versions);
         first = versions[0];

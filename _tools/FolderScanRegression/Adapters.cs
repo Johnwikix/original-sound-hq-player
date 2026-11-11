@@ -139,6 +139,8 @@ namespace WinUIMusicPlayer.Services
         public Task<Music?> FindMusicByPathAsync(string path) => _dbConnection.FindWithQueryAsync<Music>(
             "SELECT * FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path)!;
         public Lyrics.LyricsRepository Lyrics { get; }
+        public SongVersionStore Versions { get; set; } = null!;
+        private ViewModel.AppViewModel? AppViewModel => null;
         public MusicDatabaseService(string path)
         {
             _dbConnection = new(path);

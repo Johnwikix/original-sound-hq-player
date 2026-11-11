@@ -52,6 +52,12 @@ public sealed partial class TestApp : Application
         File.WriteAllText(ResultPath, "STARTED");
         try
         {
+            if (Environment.GetCommandLineArgs().Contains("--auto-links"))
+            {
+                await CheckAutomaticRemoteAsync();
+                File.WriteAllText(ResultPath, "PASS: 4 production SQLite remote automatic-link checks; no HTTP request or user library access.");
+                return;
+            }
             var host = new Grid();
             _window = new Window { Content = host, Title = "WebDAV TreeView UI regression" };
             _window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 1000));

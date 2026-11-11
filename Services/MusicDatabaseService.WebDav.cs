@@ -131,6 +131,7 @@ public partial class MusicDatabaseService
                 changed.Add(music);
             }
         });
+        await ApplyAutomaticSongLinksAsync(changed);
         return (changed, visibleAdds);
     }
 
@@ -196,11 +197,13 @@ public partial class MusicDatabaseService
                     music.Title, music.Author, music.Album, music.TrackNumber, music.DiskNumber, music.Year, music.SampleRate, music.Channel,
                     music.BitDepth, music.BitRate, music.Duration, music.UpdateTime, music.CodecId, music.EncodingKind, music.Id);
                 if (metadata.AdditionalMetadata is { } additional) MusicMetadataStorage.Save(db, music.Id, additional);
+                MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, music.Album);
                 result = music;
             }
             remote.MetadataState = status;
             db.Update(remote);
         });
+        if (result is not null) await ApplyAutomaticSongLinksAsync([result]);
         return result;
     }
 

@@ -13,6 +13,8 @@ namespace WinUIMusicPlayer.Services
     {
         private readonly SQLiteAsyncConnection _dbConnection = connection;
         public Task WhenInitialized => Task.CompletedTask;
+        public SongVersionStore Versions { get; set; } = null!;
+        public Lyrics.LyricsRepository Lyrics { get; } = new(connection, new Lyrics.LyricsParser());
     }
     public sealed record WebDavScanStatus(int SourceId, string Phase, int Found, int Tagged, string? Error = null);
     public sealed class WebDavLibraryService(MusicDatabaseService? database = null)
@@ -61,7 +63,8 @@ namespace WinUIMusicPlayer.Services.WebDav
 {
     public sealed class RemoteAudioCache { public long GetSize() => 0; public void Clear() { } }
     public sealed record RemoteMetadata(string Title, string Artist, string Album, int Track, int Disc, int Year,
-        int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs, AdditionalMusicMetadata? AdditionalMetadata = null);
+        int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs, AdditionalMusicMetadata? AdditionalMetadata = null,
+        string CodecId = "", int EncodingKind = 0);
 }
 namespace WinUIMusicPlayer.ViewModel
 {

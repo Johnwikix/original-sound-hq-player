@@ -216,7 +216,11 @@ namespace WinUIMusicPlayer.ViewModel
             State.LibraryViews.PropertyChanged += OnPreferencesStateChanged;
         }
 
-        private void OnBrowseStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(e);
+        private void OnBrowseStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            _appendedSongIds = null;
+            OnPropertyChanged(e);
+        }
 
         private void OnPlaybackStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -353,6 +357,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void NotifySongsSourceChanged()
         {
+            _appendedSongIds = null;
             SongsSourceChanged?.Invoke();
             _libraryQueries.Invalidate();
             RefreshPlayListSummaries();
@@ -469,6 +474,8 @@ namespace WinUIMusicPlayer.ViewModel
             State.Queue.ReconcileLibrary(songs, CurrentPlayingMusic);
         }
 
+        private HashSet<int>? _appendedSongIds;
+
         /// <summary>
         /// UI-thread scan publication. Append only the new items; keep the existing viewport and selection.
         /// Sorting/grouping are reconciled once on completion (or when the user explicitly changes the view).
@@ -476,6 +483,12 @@ namespace WinUIMusicPlayer.ViewModel
         public void AppendSongsBatch(IReadOnlyList<Music> batch)
         {
             if (batch.Count == 0) return;
+            if (_appendedSongIds is null)
+            {
+                _appendedSongIds = new HashSet<int>();
+                foreach (var existing in ListSongs)
+                    if (existing.SongId > 0) _appendedSongIds.Add(existing.SongId);
+            }
             SongsSource.AddRange(batch);
             _libraryQueries.Invalidate();
             LibraryEmptyVisibility = Visibility.Collapsed;
@@ -484,7 +497,7 @@ namespace WinUIMusicPlayer.ViewModel
                 // WinUI ListView does not support multi-item Add notifications. Bounded per-item Add
                 // avoids Reset/re-sorting the entire library every 500 ms and preserves realized rows.
                 if (string.IsNullOrWhiteSpace(SearchText) || LibraryProjectionService.MusicMatchesSearch(music, SearchText))
-                    ListSongs.Add(music);
+                    if (music.SongId <= 0 || _appendedSongIds.Add(music.SongId)) ListSongs.Add(music);
             }
         }
 
