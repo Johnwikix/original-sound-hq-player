@@ -2692,7 +2692,8 @@ SHA-256: {5}
     <value>Klasör ve şarkı bölmelerinin genişliğini ayarla</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>Sürümler</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>Otomatik: önce kayıpsız, sonra yerel dosya veya tam önbellek.</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Otomatik çalma önce kullanılabilir yerel dosyaları, ardından tam önbelleğe alınmış sürümleri ve son olarak çevrimiçi sürümleri seçer. Karşılaştırılabilir sürümlerde daha yüksek ses kalitesi tercih edilir.</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>Eksik sürümü kaldır</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>Tercih edilen sürüm sabit; kullanılamazsa normal çalma diğerine geçebilir.</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>Tercih edilen</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>Çalıyor</value></data>

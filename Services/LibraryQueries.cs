@@ -87,7 +87,9 @@ public sealed class LibraryQueries(LibraryState library)
         foreach (var version in versions) if (MatchesSource(version, sourceId)) available.Add(version);
         if (available.Count == 0) return null;
         var selected = SongVersionPolicy.Order(available, available[0].SongPreferredMusicId)[0];
-        _displayVersions[(songId, sourceId)] = selected;
+        // 全组缺失时缓存可能是唯一可播副本。下一次查询应观察最新缓存状态。
+        if (!selected.IsMissing || selected.SongPreferredMusicId == selected.Id)
+            _displayVersions[(songId, sourceId)] = selected;
         return selected;
     }
 

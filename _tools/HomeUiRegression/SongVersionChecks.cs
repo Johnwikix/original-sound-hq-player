@@ -81,7 +81,31 @@ internal sealed partial class RegressionApplication
             var request = (MusicDetailsRequest)model.PlayParameter!;
             Check(request.ExactVersion && request.Music.Id == second.Id, "details play binds an explicit version request");
             await model.UseAutomaticCommand.ExecuteAsync(null);
-            Check((await data.Versions.GetSongAsync(second.Id))!.PreferredMusicId is null, "automatic preference can be restored");
+            Check((await data.Versions.GetSongAsync(second.Id))!.PreferredMusicId is null && model.Music.Id == first.Id,
+                "automatic preference selects the best available file in the open details");
+            await database.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=?", first.Id);
+            await app.RefreshSongsSourceAsync();
+            await Wait(() => model.Music.Id == second.Id && list.SelectedIndex == 1);
+            StackPanel? VersionPanel(int index) => list.ContainerFromIndex(index) is ListViewItem row
+                ? Descendants<StackPanel>(row).FirstOrDefault(panel => panel.Children.Count == 3 &&
+                    panel.Children[0] is Grid && panel.Children[1] is TextBlock && panel.Children[2] is TextBlock) : null;
+            await Wait(() => VersionPanel(0) is { Opacity: > 0.44 and < 0.46 });
+            Check(VersionPanel(1)?.Opacity == 1, "the missing version dims as a whole and the available version stays at full opacity");
+            list.SelectedIndex = 0;
+            var remove = Descendants<Button>(control).Single(button => button.Command == model.RemoveMissingVersionCommand);
+            await Wait(() => model.Music.Id == first.Id && remove.IsEnabled && remove.Visibility == Visibility.Visible);
+            var inspected = model.SelectedVersion;
+            await app.RefreshSongsSourceAsync();
+            await Wait(() => model.SelectedVersion != inspected);
+            Check(model.Music.Id == first.Id, "refresh preserves an explicitly inspected missing row");
+            await database.ExecuteAsync("UPDATE Music SET IsMissing=0 WHERE Id=?", first.Id);
+            await app.RefreshSongsSourceAsync();
+            await Wait(() => !model.Music.IsMissing && !model.RemoveMissingVersionCommand.CanExecute(null) && remove.Visibility == Visibility.Collapsed);
+            await Wait(() => VersionPanel(0)?.Opacity == 1);
+            Check(!model.RemoveMissingVersionCommand.CanExecute(null),
+                "restored files regain full opacity and cannot be removed as missing");
+            list.SelectedIndex = 1;
+            await Wait(() => model.Music.Id == second.Id);
             var dialog = new MusicVersionDialogControl(new MusicVersionDialogViewModel(versions, true, "Preview") { TargetLyrics = "A", OtherLyrics = "B" });
             window.Content = dialog;
             await Wait(() => dialog.IsLoaded);
@@ -111,10 +135,33 @@ internal sealed partial class RegressionApplication
             await Wait(() => model.Versions.Count == 3 && model.Editor.Lyrics.DocumentOwnerId == -second.Id);
             list.SelectedIndex = 0;
             await Wait(() => model.Music.Id == first.Id && model.Editor.Lyrics.DocumentOwnerId == -first.Id);
+            string savedText = model.Editor.Lyrics.OriginalText;
             model.Editor.Lyrics.OriginalText = "[00:01.00]Independent override draft";
             list.SelectedIndex = 1;
             await Wait(() => model.Music.Id == second.Id);
             Check(!model.Editor.Lyrics.OriginalText.Contains("Independent override"), "merge ownership changes detach per-version override drafts");
+            await database.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=?", third.Id);
+            await app.RefreshSongsSourceAsync();
+            await Wait(() => model.Versions.Any(row => row.Music.Id == third.Id && row.Music.IsMissing));
+            list.SelectedIndex = 2;
+            await Wait(() => model.Music.Id == third.Id && !model.Editor.IsBusy);
+            Check(!remove.IsEnabled, "a draft in another version protects the group from removal");
+            list.SelectedIndex = 0;
+            model.Editor.Lyrics.OriginalText = savedText;
+            list.SelectedIndex = 2;
+            await Wait(() => remove.IsEnabled);
+            await model.RemoveMissingVersionCommand.ExecuteAsync(null);
+            Check(model.Versions.Count == 2 && model.Music.Id == first.Id && app.FindById(third.Id) is null,
+                "removing the selected missing row refreshes the library and selects the best remaining version");
+            await database.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE SongId=?", first.SongId);
+            await app.RefreshSongsSourceAsync();
+            await Wait(() => model.Versions.All(row => row.Music.IsMissing) && remove.IsEnabled);
+            await model.RemoveMissingVersionCommand.ExecuteAsync(null);
+            bool closeRequested = false;
+            model.CloseRequested += (_, _) => closeRequested = true;
+            await Wait(() => model.Versions.Count == 1 && remove.IsEnabled);
+            await model.RemoveMissingVersionCommand.ExecuteAsync(null);
+            Check(closeRequested && model.Versions.Count == 0, "removing the last missing version closes its details");
         }
         finally
         {

@@ -60,8 +60,9 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     public Task ResumeCurrentAsync()
     {
         var music = state.CurrentPlayingMusic;
-        return music is { IsRemote: true } ? SelectMusicAsync(music, state.State.Queue.CurrentEntryId, resumeInterrupted: true, exactVersion: true)
-            : Task.CompletedTask;
+        if (music is not { IsRemote: true }) return Task.CompletedTask;
+        return SelectMusicAsync(music, state.State.Queue.CurrentEntryId, resumeInterrupted: true,
+            exactVersion: !music.IsMissing && !music.IsDetached);
     }
 
     private Task SelectMusicAsync(Music music, long entryId, bool resumeInterrupted, bool exactVersion)

@@ -29,7 +29,9 @@ public sealed class MusicDetailsViewModel : ObservableObject
     private IDisposable? _session;
     private Task _playlistTask = Task.CompletedTask, _versionsTask = Task.CompletedTask, _mutationTask = Task.CompletedTask;
     private Task? _stopTask;
-    private bool _started, _closing;
+    private bool _started, _closing, _reloadRequested;
+    private MusicVersionItem? _selectedVersion;
+    private int _inspectedMissingVersionId;
     private MusicDetailsRequest? _playbackRequest;
     /// <summary>获取当前版本编辑器，其他版本草稿仍由会话保留。</summary>
     public MusicDetailsEditorViewModel Editor { get; private set => SetProperty(ref field, value); }
@@ -48,11 +50,12 @@ public sealed class MusicDetailsViewModel : ObservableObject
     /// <summary>获取或设置查看版本，不改变实际播放和首选。</summary>
     public MusicVersionItem? SelectedVersion
     {
-        get;
+        get => _selectedVersion;
         set
         {
-            if (value is null || _closing || !SetProperty(ref field, value)) return;
-            SelectVersion(value.Music);
+            if (value is null || _closing || value == _selectedVersion) return;
+            _inspectedMissingVersionId = value.Music.IsMissing ? value.Music.Id : 0;
+            ShowVersion(value);
         }
     }
     /// <summary>获取是否正在执行版本操作。</summary>
@@ -79,6 +82,8 @@ public sealed class MusicDetailsViewModel : ObservableObject
     public IAsyncRelayCommand LinkVersionCommand { get; }
     /// <summary>获取拆出命令。</summary>
     public IAsyncRelayCommand SplitVersionCommand { get; }
+    /// <summary>获取移除当前缺失版本的命令。</summary>
+    public IAsyncRelayCommand RemoveMissingVersionCommand { get; }
     /// <summary>获取有条件撤销命令。</summary>
     public IAsyncRelayCommand UndoVersionCommand { get; }
     /// <summary>获取恢复共享歌词命令。</summary>
@@ -113,10 +118,11 @@ public sealed class MusicDetailsViewModel : ObservableObject
         _versionSessions.Add(editor.Music.Id, new(editor, spectrogram));
         PreparePlaylistMenuCommand = new RelayCommand(PrepareMenu);
         _add = new AsyncRelayCommand<PlaylistTarget>(EnqueueAdd, CanAdd, AsyncRelayCommandOptions.AllowConcurrentExecutions);
-        SetPreferredCommand = new AsyncRelayCommand(() => MutateAsync(() => _database.Versions.SetPreferredAsync(Music.Id, Music.Id)), CanManage);
-        UseAutomaticCommand = new AsyncRelayCommand(() => MutateAsync(() => _database.Versions.SetPreferredAsync(Music.Id, null)), CanManage);
+        SetPreferredCommand = new AsyncRelayCommand(() => SetPreferenceAsync(automatic: false), CanManage);
+        UseAutomaticCommand = new AsyncRelayCommand(() => SetPreferenceAsync(automatic: true), CanManage);
         LinkVersionCommand = new AsyncRelayCommand(() => MutateAsync(LinkAsync), () => CanRestructure() && _dialogs is not null);
         SplitVersionCommand = new AsyncRelayCommand(() => MutateAsync(SplitAsync), () => CanRestructure() && Versions.Count > 1);
+        RemoveMissingVersionCommand = new AsyncRelayCommand(RemoveMissingAsync, CanRemoveMissing);
         UndoVersionCommand = new AsyncRelayCommand(() => MutateAsync(UndoAsync), CanRestructure);
         UseSharedLyricsCommand = new AsyncRelayCommand(() => MutateAsync(() => _database.Versions.UseSharedLyricsAsync(Music.Id)),
             () => CanManage() && Music.HasVersionLyrics && !Editor.Lyrics.HasChanges);
@@ -134,7 +140,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
         _app.SharedFavoriteChanged += SharedFavoriteChanged;
         _app.PropertyChanged += AppChanged;
         Editor.Start();
-        _versionsTask = ReloadVersionsAsync();
+        LibraryChanged();
     }
     private bool CanManage() => !_closing && !IsVersionBusy && Music.Id > 0 && _database.Versions is not null;
     private bool CanRestructure()
@@ -158,11 +164,14 @@ public sealed class MusicDetailsViewModel : ObservableObject
         UseAutomaticCommand.NotifyCanExecuteChanged();
         LinkVersionCommand.NotifyCanExecuteChanged();
         SplitVersionCommand.NotifyCanExecuteChanged();
+        RemoveMissingVersionCommand.NotifyCanExecuteChanged();
         UndoVersionCommand.NotifyCanExecuteChanged();
         UseSharedLyricsCommand.NotifyCanExecuteChanged();
     }
-    private void SelectVersion(Music music)
+    private void ShowVersion(MusicVersionItem row)
     {
+        if (!SetProperty(ref _selectedVersion, row, nameof(SelectedVersion))) return;
+        Music music = row.Music;
         if (!_versionSessions.TryGetValue(music.Id, out var session))
         {
             if (_factory is null) return;
@@ -185,7 +194,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
         if (_playbackRequest is not null) PlayParameter = _playbackRequest with { Music = Music, ExactVersion = true };
         NotifyVersionCommands();
     }
-    private async Task ReloadVersionsAsync()
+    private async Task ReloadVersionsAsync(bool chooseAutomatic = false)
     {
         try
         {
@@ -193,13 +202,16 @@ public sealed class MusicDetailsViewModel : ObservableObject
             var versions = selected > 0 && _database.Versions is not null
                 ? await _database.Versions.GetVersionsAsync(selected) : new List<Music> { Music };
             if (_closing) return;
-            if (versions.Count == 0) { CloseRequested?.Invoke(this, EventArgs.Empty); return; }
+            selected = Music.Id;
             Versions.Clear();
+            if (versions.Count == 0) { CloseRequested?.Invoke(this, EventArgs.Empty); return; }
             MusicVersionItem? choice = null;
             List<LyricsEditorViewModel> documentsToReload = [];
             foreach (var version in versions)
             {
                 Music item = _app.FindById(version.Id) ?? version;
+                version.IsRemoteCached = item.IsRemoteCached;
+                version.IsRemoteOffline = item.IsRemoteOffline;
                 if (_versionSessions.TryGetValue(version.Id, out var existing))
                 {
                     existing.Editor.Metadata.ApplyReloaded(version);
@@ -212,13 +224,25 @@ public sealed class MusicDetailsViewModel : ObservableObject
                     item.SongPreferredMusicId = version.SongPreferredMusicId;
                     item.HasVersionLyrics = version.HasVersionLyrics;
                     item.IsFavorite = version.IsFavorite;
-                    item.IsMissing = version.IsMissing;
+                    item.IsRemoteCached = version.IsRemoteCached;
+                    item.IsRemoteOffline = version.IsRemoteOffline;
                 }
+                item.IsMissing = version.IsMissing;
                 var row = new MusicVersionItem(item);
                 Versions.Add(row);
                 if (version.Id == selected) choice = row;
             }
-            SelectedVersion = choice ?? Versions[0];
+            if (choice?.Music.IsMissing != true) _inspectedMissingVersionId = 0;
+            else if (_selectedVersion is null && _playbackRequest?.ExactVersion == true) _inspectedMissingVersionId = selected;
+            bool followMissing = choice?.Music.IsMissing == true && versions[0].SongPreferredMusicId is null && _inspectedMissingVersionId != selected;
+            if (chooseAutomatic || choice is null || followMissing)
+            {
+                int best = SongVersionPolicy.Order(versions, versions[0].SongPreferredMusicId)[0].Id;
+                foreach (var row in Versions)
+                    if (row.Music.Id == best) { choice = row; break; }
+                _inspectedMissingVersionId = 0;
+            }
+            ShowVersion(choice!);
             foreach (var lyrics in documentsToReload)
             {
                 if (_closing) return;
@@ -235,24 +259,39 @@ public sealed class MusicDetailsViewModel : ObservableObject
         VersionSummary = ToolUtils.GetString(Music.SongPreferredMusicId is null ? "SongVersionsAuto" : "SongVersionsManual");
         NotifyVersionCommands();
     }
-    private Task MutateAsync(Func<Task> action)
-        => !CanManage() ? Task.CompletedTask : _mutationTask = MutateCoreAsync(action);
-    private async Task MutateCoreAsync(Func<Task> action)
+    private Task SetPreferenceAsync(bool automatic)
+    {
+        int id = Music.Id;
+        return MutateAsync(() => _database.Versions.SetPreferredAsync(id, automatic ? null : id), id, automatic);
+    }
+    private Task MutateAsync(Func<Task> action, int? versionStateId = null, bool chooseAutomatic = false)
+        => !CanManage() ? Task.CompletedTask : _mutationTask = MutateCoreAsync(action, versionStateId, chooseAutomatic);
+    private async Task MutateCoreAsync(Func<Task> action, int? versionStateId, bool chooseAutomatic)
     {
         IsVersionBusy = true;
         VersionMessage = "";
         try
         {
             await action();
+            await _versionsTask;
+            if (versionStateId is int id)
+                await _database.PublishVersionStateAsync(id);
+            else
+                await _app.RefreshSongsSourceAsync();
             if (_closing) return;
-            await _app.RefreshSongsSourceAsync();
-            await ReloadVersionsAsync();
+            _reloadRequested = false;
+            await ReloadVersionsAsync(chooseAutomatic);
+            if (_closing || Versions.Count == 0) return;
             await Editor.Lyrics.ReloadIfUnchangedAsync();
             if (!_closing) VersionMessage = ToolUtils.GetString("SongVersionsSaved");
         }
         catch (OperationCanceledException) { }
         catch (Exception exception) { if (!_closing) ReportVersionError(exception); }
-        finally { IsVersionBusy = false; }
+        finally
+        {
+            IsVersionBusy = false;
+            if (_reloadRequested) LibraryChanged();
+        }
     }
     private async Task LinkAsync()
     {
@@ -275,6 +314,17 @@ public sealed class MusicDetailsViewModel : ObservableObject
         using var lease = await LibraryOperationGate.EnterAsync();
         await _database.Versions.UndoAsync(operation.Id);
     }
+    private bool CanRemoveMissing() => SelectedVersion?.Music.IsMissing == true && CanRestructure();
+    private Task RemoveMissingAsync()
+    {
+        if (!CanRemoveMissing()) return Task.CompletedTask;
+        int musicId = SelectedVersion!.Music.Id;
+        return MutateAsync(async () =>
+        {
+            using var lease = await LibraryOperationGate.EnterAsync();
+            await _database.Versions.RemoveMissingVersionAsync(musicId);
+        }, musicId);
+    }
     private async Task SplitAsync()
     {
         using var lease = await LibraryOperationGate.EnterAsync();
@@ -294,7 +344,17 @@ public sealed class MusicDetailsViewModel : ObservableObject
     }
     private void LibraryChanged()
     {
-        if (!_closing && !IsVersionBusy && _versionsTask.IsCompleted) _versionsTask = ReloadVersionsAsync();
+        if (_closing) return;
+        _reloadRequested = true;
+        if (!IsVersionBusy && _versionsTask.IsCompleted) _versionsTask = ReloadPendingVersionsAsync();
+    }
+    private async Task ReloadPendingVersionsAsync()
+    {
+        while (_reloadRequested && !_closing && !IsVersionBusy)
+        {
+            _reloadRequested = false;
+            await ReloadVersionsAsync();
+        }
     }
     private void SharedFavoriteChanged()
     {

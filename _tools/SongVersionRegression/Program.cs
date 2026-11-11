@@ -12,10 +12,10 @@ if (args.Length == 2 && args[0] == "--verify-publish")
     var metadata = pe.GetMetadataReader();
     var required = new Dictionary<string, string[]>
     {
-        ["WinUIMusicPlayer.ViewModel.MusicDetailsViewModel"] = ["get_Editor", "get_Versions", "get_SelectedVersion", "set_SelectedVersion", "get_SetPreferredCommand", "get_LinkVersionCommand", "get_SplitVersionCommand", "get_UndoVersionCommand", "get_VersionDraftHint"],
-        ["WinUIMusicPlayer.ViewModel.MusicVersionItem"] = ["get_TechnicalInfo", "get_Path", "get_StateText"],
+        ["WinUIMusicPlayer.ViewModel.MusicDetailsViewModel"] = ["get_Editor", "get_Versions", "get_SelectedVersion", "set_SelectedVersion", "get_SetPreferredCommand", "get_LinkVersionCommand", "get_SplitVersionCommand", "get_RemoveMissingVersionCommand", "get_UndoVersionCommand", "get_VersionDraftHint"],
+        ["WinUIMusicPlayer.ViewModel.MusicVersionItem"] = ["get_TechnicalInfo", "get_Path", "get_StateText", "RowOpacity"],
         ["WinUIMusicPlayer.Model.Music"] = ["get_TitleFromFileName", "set_TitleFromFileName", "get_MetadataRevision"],
-        ["WinUIMusicPlayer.Services.SongVersionStore"] = ["ReadLibraryAsync", "GetCandidatesAsync", "IndexMemberTags"],
+        ["WinUIMusicPlayer.Services.SongVersionStore"] = ["ReadLibraryAsync", "GetCandidatesAsync", "IndexMemberTags", "RemoveMissingVersionAsync"],
         ["WinUIMusicPlayer.State.PlaybackQueueState"] = ["SequentialEntryIdAt", "Replace", "InsertNext"],
         ["WinUIMusicPlayer.Model.SongRecord"] = ["get_Id", "set_Id", "get_PreferredMusicId", "set_PreferredMusicId", "get_IsFavorite"],
         ["WinUIMusicPlayer.Model.SongLyricsRecord"] = ["get_SongId", "set_SongId", "get_Revision", "set_Revision"],
@@ -135,6 +135,13 @@ try
         SongVersionPolicy.Order([sameDepth, studio, cd]).SequenceEqual([studio, sameDepth, cd]), "PCM depth and rate are stable across containers and input order");
     var cached = new Music { Id = 17, SourceId = 5, EncodingKind = 2, IsRemoteCached = true };
     Check(SongVersionPolicy.Order([flac, cached, mp3], forPlayback: true).SequenceEqual([mp3, cached, flac]), "playback orders local, complete cache, then online");
+    mp3.IsMissing = true;
+    Check(SongVersionPolicy.Order([mp3, flac])[0] == flac, "available remote beats missing local for automatic display");
+    Check(SongVersionPolicy.Order([mp3, flac], mp3.Id)[0] == mp3, "a manually pinned missing file remains identifiable");
+    cached.IsMissing = true;
+    Check(SongVersionPolicy.Order([mp3, cached, flac], forPlayback: true)[0] == cached, "a complete cache can play even after its origin disappears");
+    Check(SongVersionPolicy.Order([mp3, cached])[0] == cached, "all origins missing still shows the version with a complete cache");
+    mp3.IsMissing = false;
     var dsd = new Music { Id = 9, EncodingKind = 1, Channel = 2, BitDepth = 1, SampleRate = 2822400, CodecId = "DSD" };
     Check(SongVersionPolicy.Order([studio, dsd, cd]).SequenceEqual([dsd, studio, cd]), "DSD and PCM keep independent comparison groups");
     Check(SongVersionPolicy.Matches(flac, new Music { Title = " Ｓｏｎｇ ", Author = "artist", Album = "Album" }), "candidate normalization preserves Unicode compatibility and ignores outer whitespace");
@@ -194,6 +201,18 @@ try
     Check((await lyrics.GetSharedAsync(flac.Id)).Document.Original.Content.Contains("Edited"), "later edits preserved");
     await database.RunInTransactionAsync(db => LyricsRepository.SaveInTransaction(db, flac.Id, current.Document, -1, "User", false));
     Check((await lyrics.GetSharedAsync(flac.Id)).Revision == current.Revision + 1, "metadata-only save does not advance shared lyrics");
+    await Conflict(() => store.RemoveMissingVersionAsync(mp3.Id), "a restored or available file cannot be removed as missing");
+    await database.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=?", flac.Id);
+    await store.SetPreferredAsync(flac.Id, flac.Id);
+    await store.RemoveMissingVersionAsync(flac.Id);
+    var remaining = (await store.GetVersionsAsync(flac.Id)).Single();
+    Check(remaining.Id == mp3.Id && remaining.SongPreferredMusicId is null && remaining.IsFavorite, "removing a missing preferred version keeps the song and restores automatic selection");
+    Check((await lyrics.GetSharedAsync(mp3.Id)).Document.Original.Content.Contains("Edited") &&
+        await database.Table<PlayListMusic>().CountAsync() == 2, "removal keeps shared lyrics and both playlist occurrences");
+    await Conflict(() => store.RemoveMissingVersionAsync(flac.Id), "a stale second removal is rejected");
+    await database.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=?", mp3.Id);
+    await store.RemoveMissingVersionAsync(mp3.Id);
+    Check((await store.GetVersionsAsync(mp3.Id)).Count == 0 && (await store.GetSongAsync(mp3.Id))!.IsFavorite, "removal of the last version preserves the recoverable song identity");
     Console.WriteLine($"{checks} checks passed");
 }
 finally

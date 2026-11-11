@@ -30,6 +30,10 @@ static async Task RunAsync()
     await using var library = new WebDavLibraryService(new(), transport, cache, NullLogger<WebDavLibraryService>.Instance)
         { Root = origin.Root };
     library.Attach(state);
+    library.MissingAtOrigin = network.Id;
+    Check(!await library.CanPlayAsync(network, true, default) && library.Connects == 0,
+        "reachable server cannot make an uncached missing track playable or trigger a source probe");
+    library.MissingAtOrigin = 0;
     var statistics = new PlaybackStatsService();
     var remote = new RemotePlaybackService(library, transport, cache, state, statistics, NullLogger<RemotePlaybackService>.Instance);
     var player = new BassPlayerCommandService();
@@ -87,6 +91,10 @@ static async Task RunAsync()
         "offline cache selection bypasses real availability probe and credential lookup");
     Check((await peer.ReadAsync(0, origin.Bytes.Length - 1)).AsSpan().SequenceEqual(origin.Bytes),
         "real IPC session plays complete cached bytes with origin shut down");
+    library.MissingAtOrigin = network.Id;
+    Check(await library.CanPlayAsync(network, true, default) && library.Connects == connectsAfterFailure,
+        "confirmed missing origin is still playable from the complete file cache");
+    library.MissingAtOrigin = 0;
     cache.Clear();
     Check((await peer.ReadAsync(0, 1023)).Length == 1024, "clearing cache preserves current playback lease");
     await coordinator.PlayAsync(local);

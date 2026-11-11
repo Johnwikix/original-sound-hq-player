@@ -65,6 +65,13 @@ public sealed class PlaybackCommands : IDisposable, INotifyPropertyChanged
             (_state.CurrentPlayingMusic?.IsRemote == true ? remote.WantsPlay : _state.IsPlaying));
         if (pausing && _state.State.Playback.PendingSelection is not null)
             _services.GetRequiredService<PlaybackCoordinator>().CancelPendingSelection();
+        if (!pausing && !_state.IsPlaying && _state.State.Playback.PendingSelection is null &&
+            _state.CurrentPlayingMusic is { IsRemote: false, SongId: > 0 } current && (current.IsMissing || current.IsDetached) &&
+            _state.State.Queue.RequestedVersion(_state.State.Queue.CurrentEntryId) == 0)
+        {
+            await _services.GetRequiredService<PlaybackCoordinator>().PlayAsync(current, _state.State.Queue.CurrentEntryId);
+            return;
+        }
         if (_state.CurrentPlayingMusic?.IsRemote == true)
         {
             if (remote.NeedsStart)

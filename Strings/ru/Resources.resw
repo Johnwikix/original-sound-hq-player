@@ -2692,7 +2692,8 @@ SHA-256: {5}
     <value>Изменить ширину областей папок и композиций</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>Версии</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>Авто: сначала без потерь, затем локальные файлы или полный кэш.</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>При автоматическом выборе сначала используются доступные локальные файлы, затем полностью кэшированные и онлайн-версии. Из сопоставимых версий выбирается вариант с более высоким качеством звука.</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>Убрать отсутствующую версию</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>Предпочтительная версия закреплена; при недоступности возможна замена.</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>Предпочтительная</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>Воспроизводится</value></data>

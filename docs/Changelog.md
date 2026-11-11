@@ -1,3 +1,10 @@
+## 2026-11-11 自动避开缺失版本，支持从歌曲详情移除缺失记录
+
+- `SongVersionPolicy`、`PlaybackQueueState` 在曲库确认文件缺失后为自动歌曲和队列出现项选择同组版本，保留来源范围与固定版本约束。
+- `MusicDatabaseService` 处理单个版本的删除、移除或首选变更时只回读同组记录，复用其他曲目的内存对象和 USB 匹配结果。
+- `WebDavLibraryService` 在播放前核对远端文件的缺失记录，保留完整缓存的播放能力。
+- `MusicDetailControl`、`MusicDetailsViewModel`、`SongVersionStore` 将缺失版本整行置灰，支持选中后移除，并保留同一首歌的收藏、歌词和歌单记录。
+
 ## 2026-11-11 恢复目录原生让位过渡并修复收起样式闪现
 
 - `View/FolderBrowsePage.xaml`、`View/Controls/FolderTreeMotion.cs`：恢复 `RepositionThemeTransition IsStaggeringEnabled="True"`，删除自定义 Offset/让位动画，仅为增删保留短时淡入淡出。

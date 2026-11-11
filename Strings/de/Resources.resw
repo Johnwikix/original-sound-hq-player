@@ -2692,7 +2692,8 @@ SHA-256: {5}
     <value>Breite der Ordner- und Titelbereiche anpassen</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>Versionen</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>Automatisch: verlustfrei bevorzugen, dann lokale Dateien oder vollständigen Cache.</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Die automatische Wiedergabe bevorzugt verfügbare lokale Dateien, dann vollständig zwischengespeicherte und schließlich Online-Versionen. Bei vergleichbaren Versionen hat die höhere Audioqualität Vorrang.</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>Fehlende Version entfernen</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>Bevorzugte Version festgelegt; bei Nichtverfügbarkeit ist Ersatz möglich.</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>Bevorzugt</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>Wiedergabe</value></data>

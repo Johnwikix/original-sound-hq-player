@@ -21,6 +21,18 @@ internal static class AutomaticLinkChecks
                 "external import returns already-linked, decorated version with retained embedded lyric conflict");
             var group = await database.Versions.GetVersionsAsync(first.Id);
             Check(group.Count == 2 && group[0].Genre == "Jazz" && group[1].Genre == "Rock", "real scan transaction retains version-specific tags");
+            File.WriteAllText(first.Path, "present");
+            File.WriteAllText(second.Path, "present");
+            File.Delete(first.Path);
+            await database.ReconcileExternalImportsAsync();
+            group = await database.Versions.GetVersionsAsync(first.Id);
+            Check(group.Single(m => m.Id == first.Id).IsMissing && SongVersionPolicy.Order(group)[0].Id == second.Id,
+                "real directory reconciliation keeps the deleted row and chooses the surviving sibling");
+            File.WriteAllText(first.Path, "restored");
+            await database.ReconcileExternalImportsAsync();
+            group = await database.Versions.GetVersionsAsync(first.Id);
+            Check(group.All(m => !m.IsMissing) && SongVersionPolicy.Order(group)[0].Id == first.Id,
+                "restoring the original path returns its version to automatic selection");
             var third = new Music { Path = Path.Combine(root, "auto-third.wav"), Title = "Other", Author = "Artist", Album = "Album" };
             await database.AddExternalFileAsync(third, "[00:03.00]Third");
             var document = await database.Lyrics.GetAsync(third.Id);

@@ -2692,7 +2692,8 @@ SHA-256: {5}
     <value>フォルダーと曲の領域の幅を調整</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>バージョン</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>自動：可逆形式を優先し、同等ならローカルまたは完全なキャッシュを使用します。</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>自動再生では、利用可能なローカルファイル、完全にキャッシュされたバージョン、オンラインのバージョンの順に選びます。同種のバージョンでは音質が高いものを優先します。</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>見つからないバージョンを削除</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>優先バージョンを固定中。通常再生では利用不可の場合に代替を使用します。</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>優先</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>再生中</value></data>

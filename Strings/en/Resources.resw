@@ -2692,7 +2692,8 @@ SHA-256: {5}
     <value>Resize folder and song panes</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>Versions</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>Automatic: prefer lossless, then local files or complete caches.</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Automatic playback prefers available local files, then complete caches, then online versions. Higher audio quality wins among comparable versions.</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>Remove missing version</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>Preferred version is fixed; normal playback may fall back if unavailable.</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>Preferred</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>Playing</value></data>

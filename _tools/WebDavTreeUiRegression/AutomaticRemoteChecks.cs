@@ -38,6 +38,12 @@ public sealed partial class TestApp
             await db.MarkRemoteSourceScannedAsync(source.Id, "different-run");
             Check((await db.Versions.GetVersionsAsync(local.Id)).Count == 2 && (await db.Versions.GetSongAsync(remote.Id))!.IsFavorite,
                 "missing remote file retains its automatically associated song and favorite");
+            Check((await db.GetVisibleRemoteTracksAsync()).Single().MusicId == remote.Id,
+                "a missing attached remote track remains eligible for the complete-cache check");
+            await db.Versions.RemoveMissingVersionAsync(remote.Id);
+            Check((await db.GetVisibleRemoteTracksAsync()).Count == 0 &&
+                (await db.Versions.GetVersionsAsync(local.Id)).Single().Id == local.Id,
+                "explicit removal drops the remote cache-status lookup while keeping the local version");
         }
         finally
         {

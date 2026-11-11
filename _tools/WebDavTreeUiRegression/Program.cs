@@ -55,7 +55,7 @@ public sealed partial class TestApp : Application
             if (Environment.GetCommandLineArgs().Contains("--auto-links"))
             {
                 await CheckAutomaticRemoteAsync();
-                File.WriteAllText(ResultPath, "PASS: 4 production SQLite remote automatic-link checks; no HTTP request or user library access.");
+                File.WriteAllText(ResultPath, "PASS: 6 production SQLite remote version checks; no HTTP request or user library access.");
                 return;
             }
             var host = new Grid();

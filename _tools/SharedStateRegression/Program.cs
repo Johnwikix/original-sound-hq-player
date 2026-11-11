@@ -316,6 +316,29 @@ static async Task RunAsync()
     var scopedItems = groupedProjection.GetPlaylistItems(25, null, 9);
     Check(scopedItems.Select(item => item.EntryId).SequenceEqual([81, 83]) && scopedItems.All(item => item.Music.Id == 702),
         "a filtered playlist resolves ordinary occurrences in scope and hides out-of-scope fixed files");
+    var localVersion = groupedState.Library.Songs[0];
+    var remoteVersion = groupedState.Library.Songs[1];
+    var versionQueue = new PlaybackQueueState();
+    versionQueue.Replace([localVersion, localVersion]);
+    long automaticEntry = versionQueue.EntryIdAt(0), fixedEntry = versionQueue.EntryIdAt(1);
+    versionQueue.SetRequestedVersion(fixedEntry, localVersion.Id);
+    localVersion.IsMissing = true;
+    groupedQueries.Invalidate();
+    Check(groupedQueries.FindDisplayVersion(71) == remoteVersion && groupedQueries.FindDisplayVersion(71, 0) == localVersion,
+        "missing automatic representative switches only within its source filter");
+    versionQueue.ReconcileLibrary(groupedQueries.GetIdIndex(), null, groupedQueries.FindDisplayVersion);
+    Check(versionQueue.Playing.SequenceEqual([remoteVersion, localVersion]) && versionQueue.EntryIdAt(0) == automaticEntry,
+        "refresh substitutes the automatic occurrence and keeps the fixed duplicate");
+    versionQueue.Replace([localVersion, localVersion]);
+    automaticEntry = versionQueue.EntryIdAt(0);
+    versionQueue.SetRequestedVersion(versionQueue.EntryIdAt(1), localVersion.Id);
+    versionQueue.SelectEntry(automaticEntry, localVersion);
+    groupedState.Library.Replace([remoteVersion]);
+    versionQueue.ReconcileLibrary(groupedQueries.GetIdIndex(), localVersion, groupedQueries.FindDisplayVersion);
+    Check(versionQueue.IndexOf(localVersion) == 0 && versionQueue.CaptureMusicIds().SequenceEqual([remoteVersion.Id]),
+        "removing the current file preserves the song cursor and saves the surviving file for restart");
+    Check(versionQueue.Playing.SequenceEqual([remoteVersion]) && versionQueue.EntryIdAt(0) == automaticEntry,
+        "removal keeps the automatic occurrence and its identity while dropping the detached fixed queue entry");
     await groupedProjection.StopAsync();
     Console.WriteLine("PASS: grouped library counts, alternate-info search and concrete folder versions.");
 

@@ -162,10 +162,12 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
     public Task<SongRecord?> GetSongAsync(int musicId) => database.FindWithQueryAsync<SongRecord>(
         "SELECT s.* FROM Song s JOIN Music m ON m.SongId=s.Id WHERE m.Id=?", musicId)!;
 
+    internal const string VersionsQuery = "SELECT * FROM Music WHERE SongId=(SELECT SongId FROM Music WHERE Id=?) AND IsDetached=0 ORDER BY Id";
+
     /// <summary>获取全部仍在组内的版本，包含暂时缺失文件。</summary>
     public async Task<List<Music>> GetVersionsAsync(int musicId)
     {
-        var versions = await database.QueryAsync<Music>("SELECT * FROM Music WHERE SongId=(SELECT SongId FROM Music WHERE Id=?) AND IsDetached=0 ORDER BY Id", musicId);
+        var versions = await database.QueryAsync<Music>(VersionsQuery, musicId);
         await DecorateAsync(versions);
         return versions;
     }
@@ -190,6 +192,17 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
         if (preferred is int id && db.ExecuteScalar<int>("SELECT COUNT(*) FROM Music WHERE Id=? AND SongId=? AND IsDetached=0", id, music.SongId) != 1)
             throw Conflict();
         db.Execute("UPDATE Song SET PreferredMusicId=?,Revision=Revision+1 WHERE Id=?", preferred, music.SongId);
+    });
+
+    /// <summary>从曲库移除已确认缺失的版本，保留歌曲和文件身份供同路径重新入库。</summary>
+    public Task RemoveMissingVersionAsync(int musicId, CancellationToken token = default) => database.RunInTransactionAsync(db =>
+    {
+        token.ThrowIfCancellationRequested();
+        if (db.Execute("UPDATE Music SET IsDetached=1 WHERE Id=? AND IsMissing=1 AND IsDetached=0", musicId) != 1)
+            throw Conflict();
+        db.Execute("UPDATE Song SET PreferredMusicId=NULLIF(PreferredMusicId,?),Revision=Revision+1 " +
+            "WHERE Id=(SELECT SongId FROM Music WHERE Id=?)", musicId, musicId);
+        db.Execute("DELETE FROM VersionMatch WHERE MusicId=?", musicId);
     });
 
     /// <summary>创建带完整恢复资料的合并预览。</summary>

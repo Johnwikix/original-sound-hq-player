@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer.Model
     {
         public int SongId { get; set; }
         public int? SongPreferredMusicId { get; set; }
+        public bool IsMissing { get; set; }
         public bool IsDetached { get; set; }
         public bool IsRemoteCached { get; set; }
         public string Title { get; set; } = "";

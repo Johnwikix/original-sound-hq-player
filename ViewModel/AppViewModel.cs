@@ -453,6 +453,24 @@ namespace WinUIMusicPlayer.ViewModel
             PublishSongsSourceChanged(reconcilePlayback: true);
         }
 
+        internal void ApplyVersionState(int musicId, IReadOnlyList<Music> members)
+        {
+            bool retained = false;
+            foreach (var member in members)
+            {
+                if (member.Id == musicId) retained = true;
+                if (FindById(member.Id) is not { } file) continue;
+                file.IsMissing = member.IsMissing;
+                file.SongPreferredMusicId = member.SongPreferredMusicId;
+            }
+            if (!retained && FindById(musicId) is { } removed)
+            {
+                removed.IsDetached = true;
+                SongsSource.Remove(removed);
+            }
+            PublishSongsSourceChanged(reconcilePlayback: true);
+        }
+
         private void ReconcilePlaybackLibrary()
         {
             if (CurrentPlayingMusic is null && State.Queue.Sequential.Count == 0) return;
@@ -472,7 +490,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 detached.IsDetached = true;
             }
-            State.Queue.ReconcileLibrary(songs, CurrentPlayingMusic);
+            State.Queue.ReconcileLibrary(songs, CurrentPlayingMusic, _libraryQueries.FindDisplayVersion);
         }
 
         private HashSet<int>? _appendedSongIds;

@@ -151,6 +151,11 @@ namespace WinUIMusicPlayer.Services
     public partial class MusicDatabaseService
     {
         public SongVersionStore Versions { get; private set; } = null!;
+        public async Task PublishVersionStateAsync(int musicId)
+        {
+            var app = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ViewModel.AppViewModel>(App.Services);
+            await app.RefreshSongsSourceAsync();
+        }
         public async Task InitializeVersionsAsync()
         {
             Versions = new(_dbConnection);
@@ -249,8 +254,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task RefreshVersionsCoreAsync(CancellationToken token)
         {
             var db = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Services.MusicDatabaseService>(App.Services);
-            var songs = await db.GetDbConnection().Table<Music>().ToListAsync();
-            await db.Versions.DecorateAsync(songs);
+            var songs = (await db.Versions.ReadLibraryAsync(false)).Music;
             token.ThrowIfCancellationRequested();
             Replace(songs);
         }

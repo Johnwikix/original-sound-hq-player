@@ -881,6 +881,18 @@ namespace WinUIMusicPlayer.Services
             finally { _libraryPublishGate.Release(); }
         }
 
+        /// <summary>单个版本的可用性或首选变化只回读这一首歌；与全库快照按相同顺序发布。</summary>
+        internal async Task PublishVersionStateAsync(int musicId)
+        {
+            await _libraryPublishGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var members = await Versions.GetVersionsAsync(musicId).ConfigureAwait(false);
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() => AppViewModel.ApplyVersionState(musicId, members)).ConfigureAwait(false);
+            }
+            finally { _libraryPublishGate.Release(); }
+        }
+
         internal async Task PublishLibrarySnapshotAsync(CancellationToken token)
         {
             await _libraryPublishGate.WaitAsync(token).ConfigureAwait(false);
@@ -1360,28 +1372,7 @@ namespace WinUIMusicPlayer.Services
             {
                 // 磁盘删除只改变版本可用性，歌词、收藏、歌单和历史仍可恢复。
                 await _dbConnection.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=?", musicId);
-                await AppViewModel.RefreshSongsSourceAsync();
-                var usbMusicGroups = App.Services.GetRequiredService<UsbDeviceService>().MusicOnDevice.AsValueEnumerable()
-                    .GroupBy(u => u.Title)
-                    .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
-                foreach (var music in AppViewModel.SongsSource)
-                {
-                    music.IsExistOnDevice = 0;
-                    if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-                    {
-                        music.IsExistOnDevice = 1;
-                        foreach (var usbMusic in matchingItems)
-                        {
-                            if (music.Author == usbMusic.Author &&
-                                music.Album == usbMusic.Album &&
-                                music.Extension == usbMusic.Extension)
-                            {
-                                music.IsExistOnDevice = 2;
-                                break;
-                            }
-                        }
-                    }
-                }
+                await PublishVersionStateAsync(musicId);
             }
             catch (Exception e)
             {
@@ -1418,7 +1409,14 @@ namespace WinUIMusicPlayer.Services
 
         public Music? LoadCurrentPlayingMusic(int? lastPlayedMusicId)
         {
-            return AppViewModel.SongsSource.FirstOrDefault(m => m.Id == lastPlayedMusicId);
+            var saved = lastPlayedMusicId is int id ? AppViewModel.FindById(id) : null;
+            var queue = AppViewModel.State.Queue;
+            if (saved is { IsMissing: false } || queue.CurrentEntryId == 0 || queue.RequestedVersion(queue.CurrentEntryId) > 0)
+                return saved;
+            // 实际播放文件可能在上次退出前被移除；普通出现项已持久化同组的可用版本。
+            for (int i = 0; i < queue.Playing.Count; i++)
+                if (queue.EntryIdAt(i) == queue.CurrentEntryId) return queue.Playing[i];
+            return saved;
         }
 
         public async Task SavePlayStateAsync(SavePlayState playState, IEnumerable<Music> currentPlayingList)

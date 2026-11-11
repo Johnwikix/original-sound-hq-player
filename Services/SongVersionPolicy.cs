@@ -128,7 +128,14 @@ public static class SongVersionPolicy
     internal static bool InScope(Music music, int sourceId) => !music.IsDetached &&
         (sourceId == -1 || sourceId == music.SourceId || sourceId == -2 && music.IsRemote);
 
-    private static int Source(Music music, bool playback) => !music.IsRemote ? 0 : playback && music.IsRemoteCached ? 1 : 2;
+    private static int Source(Music music, bool playback)
+    {
+        bool cached = music.IsRemote && music.IsRemoteCached;
+        int source = !music.IsRemote ? 0 : playback && cached ? 1 : 2;
+        if (!music.IsMissing) return source;
+        if (cached) return playback ? source : 3;
+        return source + 4;
+    }
     private static string Codec(Music music) => !string.IsNullOrEmpty(music.CodecId) ? music.CodecId.ToUpperInvariant() : (music.Extension ?? "").ToUpperInvariant();
     private static int Kind(Music music) => music.EncodingKind switch { 1 => 0, 2 => 1, _ => 2 };
 }

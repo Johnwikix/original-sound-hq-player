@@ -21,6 +21,13 @@ namespace WinUIMusicPlayer.Services
         public string Root = "";
         public bool RejectCredentials;
         public int MissingTrack;
+        public int MissingAtOrigin;
+        public sealed record TrackRow(WebDavEntry Entry, bool Missing)
+        {
+            public string Href => Entry.Href;
+            public string ETag => Entry.ETag;
+            public long Length => Entry.Length;
+        }
         public int Connects;
         public event Action<int, bool>? SourceAvailabilityChanged;
         public void Attach(AppViewModel state) => _library = state;
@@ -30,10 +37,10 @@ namespace WinUIMusicPlayer.Services
             if (RejectCredentials) throw new InvalidOperationException("cached playback requested credentials");
             return new(new Uri(Root), "", "");
         }
-        public Task<(WebDavSource Source, WebDavEntry Track)> ResolveAsync(Music music) => music.Id == MissingTrack
-            ? Task.FromException<(WebDavSource, WebDavEntry)>(new WebDavException("ResourceMissing"))
-            : Task.FromResult((new WebDavSource(music.SourceId), Entry));
-        public static WebDavEntry ToEntry(WebDavEntry entry) => entry;
+        public Task<(WebDavSource Source, TrackRow Track)> ResolveAsync(Music music) => music.Id == MissingTrack
+            ? Task.FromException<(WebDavSource, TrackRow)>(new WebDavException("ResourceMissing"))
+            : Task.FromResult((new WebDavSource(music.SourceId), new TrackRow(Entry, music.Id == MissingAtOrigin)));
+        public static WebDavEntry ToEntry(TrackRow track) => track.Entry;
         public async ValueTask DisposeAsync()
         {
             _stop.Cancel();

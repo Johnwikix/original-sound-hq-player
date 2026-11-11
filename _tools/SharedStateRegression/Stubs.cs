@@ -6,6 +6,7 @@ namespace WinUIMusicPlayer.Model
     {
         public int SongId { get; init; }
         public int? SongPreferredMusicId { get; init; }
+        public bool IsMissing { get; set; }
         public bool IsDetached { get; init; }
         public bool IsRemoteCached { get; init; }
         public string CodecId { get; init; } = "";

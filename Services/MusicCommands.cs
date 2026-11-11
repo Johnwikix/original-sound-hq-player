@@ -196,11 +196,7 @@ namespace WinUIMusicPlayer.Services
             _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateLyricsOffsetAsync(music.Id, value);
         }
 
-        public static async Task RemoveMusicAsync(Music music)
-        {
-            await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(music.Id);
-            var app = App.Services.GetRequiredService<AppViewModel>();
-            app.RefreshAllViews();
-        }
+        public static Task RemoveMusicAsync(Music music)
+            => App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(music.Id);
     }
 }

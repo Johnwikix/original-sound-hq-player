@@ -37,7 +37,7 @@ public sealed partial class WebDavLibraryService
             }
         });
         token.ThrowIfCancellationRequested();
-        return cached || await EnsureAvailableAsync(source, token, retryImmediately).ConfigureAwait(false);
+        return cached || !track.Missing && await EnsureAvailableAsync(source, token, retryImmediately).ConfigureAwait(false);
     }
 
     /// <summary>对单个来源执行一次轻量在线检查；不会扫描目录内容。</summary>

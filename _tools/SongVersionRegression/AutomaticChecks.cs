@@ -191,6 +191,15 @@ internal static class AutomaticChecks
             watch.Stop();
             check(await db.Table<SongAutoLinkDirtyRecord>().CountAsync() == 0 && await db.Table<SongAutoLinkPendingRecord>().CountAsync() == 0, "large-library dirty and pending queues drain completely");
             Console.WriteLine($"SCALE unchanged automatic pass: {watch.ElapsedMilliseconds} ms");
+            var versionsPlan = await db.QueryAsync<QueryPlanRow>("EXPLAIN QUERY PLAN " + SongVersionStore.VersionsQuery, 3);
+            check(versionsPlan.All(step => !step.Detail.StartsWith("SCAN Music")), "single-song refresh uses indexed member lookup even in the 100000-file library");
+            await db.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=3");
+            watch.Restart();
+            await store.RemoveMissingVersionAsync(3);
+            var remainingVersions = await store.GetVersionsAsync(3);
+            watch.Stop();
+            check(remainingVersions.Count == 1 && remainingVersions[0].Id == 4, "single removal publishes only the remaining member of its song");
+            Console.WriteLine($"SCALE removal transaction and group read: {watch.Elapsed.TotalMilliseconds:F1} ms");
             var first = await db.GetAsync<Music>(1);
             await store.SplitAsync(2, lyrics);
             await store.ApplyAutomaticLinksAsync(lyrics);

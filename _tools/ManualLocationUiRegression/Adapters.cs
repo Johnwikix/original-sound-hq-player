@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
+        public bool IsMissing { get; set; }
         public int SongId { get; set; }
         private int _id;
         internal static long IdentityReads;

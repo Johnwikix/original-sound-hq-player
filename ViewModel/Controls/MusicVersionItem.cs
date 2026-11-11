@@ -12,6 +12,8 @@ public sealed class MusicVersionItem : ObservableObject
     public MusicVersionItem(Music music) => Music = music;
     /// <summary>获取具体文件版本。</summary>
     public Music Music { get; }
+    /// <summary>缺失文件的整行使用弱化显示，仍可选中查看或移除。</summary>
+    public static double RowOpacity(bool isMissing) => isMissing ? 0.45 : 1.0;
     /// <summary>获取版本标题。</summary>
     public string Title => string.IsNullOrEmpty(Music.Extension) ? Music.Title : Music.Extension.ToUpperInvariant();
     /// <summary>获取各版本自己的音频信息。</summary>

@@ -2694,7 +2694,8 @@ SHA-256：{5}
     <value>调整文件夹和歌曲区域宽度</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>版本</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>自动选择：优先无损，同级优先本地或完整缓存。</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>自动播放优先使用可用的本地文件，其次是完整缓存和在线版本。同类版本优先选择较高音质。</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>移除缺失版本</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>已固定首选版本；不可用时普通播放可回退。</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>首选</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>正在播放</value></data>

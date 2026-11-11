@@ -2692,7 +2692,8 @@ SHA-256: {5}
     <value>Ajustar el ancho de carpetas y canciones</value>
   </data>
   <data name="SongVersions" xml:space="preserve"><value>Versiones</value></data>
-  <data name="SongVersionsAuto" xml:space="preserve"><value>Automático: priorizar sin pérdida y después archivos locales o caché completa.</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>La reproducción automática da prioridad a los archivos locales disponibles, seguidos de las versiones en caché completa y las versiones en línea. Entre versiones comparables, se elige la de mayor calidad.</value></data>
+  <data name="SongVersionsRemoveMissing" xml:space="preserve"><value>Quitar versión ausente</value></data>
   <data name="SongVersionsManual" xml:space="preserve"><value>Versión preferida fijada; la reproducción normal puede usar otra si no está disponible.</value></data>
   <data name="SongVersionsPreferred" xml:space="preserve"><value>Preferida</value></data>
   <data name="SongVersionsPlaying" xml:space="preserve"><value>Reproduciendo</value></data>

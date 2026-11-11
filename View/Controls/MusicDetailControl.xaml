@@ -96,7 +96,7 @@
                         <ListView Grid.Row="2" MaxHeight="360" ItemsSource="{x:Bind ViewModel.Versions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedVersion, Mode=TwoWay}" SelectionMode="Single">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:MusicVersionItem">
-                                    <StackPanel Spacing="4" Padding="0,8">
+                                    <StackPanel Spacing="4" Padding="0,8" Opacity="{x:Bind vm:MusicVersionItem.RowOpacity(Music.IsMissing), Mode=OneWay}">
                                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                                             <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
                                             <TextBlock Grid.Column="1" Text="{x:Bind StateText, Mode=OneWay}" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -107,11 +107,14 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
-                        <Grid Grid.Row="3" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                        <Grid Grid.Row="3" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Button HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsSetPreferred')}" Command="{x:Bind ViewModel.SetPreferredCommand, Mode=OneWay}" />
                             <Button Grid.Column="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsSplit')}" Command="{x:Bind ViewModel.SplitVersionCommand, Mode=OneWay}" />
                             <Button Grid.Row="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsUndo')}" Command="{x:Bind ViewModel.UndoVersionCommand, Mode=OneWay}" />
                             <Button Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsUseSharedLyrics')}" Command="{x:Bind ViewModel.UseSharedLyricsCommand, Mode=OneWay}" />
+                            <Button Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}"
+                                Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.Music.IsMissing), Mode=OneWay}"
+                                Content="{x:Bind tools:ToolUtils.GetString('SongVersionsRemoveMissing')}" Command="{x:Bind ViewModel.RemoveMissingVersionCommand, Mode=OneWay}" />
                         </Grid>
                         <StackPanel Grid.Row="4" Spacing="4">
                             <TextBlock Text="{x:Bind ViewModel.VersionDraftHint, Mode=OneWay}" TextWrapping="Wrap" FontSize="12" />

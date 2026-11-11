@@ -693,6 +693,31 @@ internal static class Regression
         Check(queue.EntryIdAt(0) != queue.SequentialEntryIdAt(0) && queue.PlaylistEntry(queue.SequentialEntryIdAt(0)) == 41,
             "clicking the first playlist relation resolves the original occurrence in a reversed shuffle");
 
+        string deletedPath = Path.GetTempFileName(), remainingPath = Path.GetTempFileName();
+        try
+        {
+            using var deleted = new Scenario();
+            var high = new Music(504) { SongId = 72, EncodingKind = 1, Path = deletedPath };
+            var low = new Music(505) { SongId = 72, EncodingKind = 2, Path = remainingPath };
+            deleted.State.LibrarySongs = [high, low];
+            deleted.State.CurrentPlayingList = [high];
+            File.Delete(deletedPath);
+            await deleted.Coordinator.PlayAtAsync(0);
+            Check(deleted.Player.Played.SequenceEqual([low]), "playback opens the surviving local version even before a scan sees the deletion");
+            high.IsMissing = true;
+            deleted.State.CurrentPlayingMusic = high;
+            deleted.State.IsPlaying = false;
+            deleted.Lifecycle.TransitionTo(AppPhase.WaitingForAgreement);
+            deleted.Lifecycle.TransitionTo(AppPhase.Initializing);
+            deleted.Lifecycle.TransitionTo(AppPhase.Ready);
+            using var services = new ServiceCollection().AddSingleton(deleted.Player).AddSingleton(deleted.Remote)
+                .AddSingleton(deleted.Coordinator).BuildServiceProvider();
+            using var commands = new PlaybackCommands(deleted.Lifecycle, deleted.State, services);
+            await commands.PlayCommand.ExecuteAsync(null);
+            Check(deleted.Player.Played.SequenceEqual([low, low]), "Play on a paused missing automatic version reopens its available sibling");
+        }
+        finally { File.Delete(deletedPath); File.Delete(remainingPath); }
+
         using var opening = new Scenario();
         opening.State.LibrarySongs = [preferred, fallback];
         opening.State.CurrentPlayingList = [fallback];

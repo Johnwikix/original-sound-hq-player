@@ -121,18 +121,20 @@ public sealed class PlaybackQueueState : ObservableObject
         PublishOrder();
     }
     /// <summary>库刷新按条目批量替换引用，保留顺序和游标；避免每首更新都重建整条队列。</summary>
-    public void ReconcileLibrary(IReadOnlyDictionary<int, Music> songs, Music? current)
+    public void ReconcileLibrary(IReadOnlyDictionary<int, Music> songs, Music? current, Func<int, int, Music?>? findDisplayVersion = null)
     {
         var updated = new Dictionary<long, Entry>(_entries.Count);
         int written = 0;
         for (int i = 0; i < _entries.Count; i++)
         {
             var entry = _entries[i];
-            if (entry.Music.Id != current?.Id)
-            {
-                if (!songs.TryGetValue(entry.Music.Id, out var music)) continue;
-                entry = entry with { Music = music };
-            }
+            songs.TryGetValue(entry.Music.Id, out var refreshed);
+            bool currentFile = entry.Music.Id == current?.Id && (_currentEntryId == 0 || entry.Id == _currentEntryId);
+            var music = currentFile ? entry.Music : refreshed;
+            if ((refreshed is null || refreshed.IsMissing) && entry.Music.SongId > 0 && RequestedVersion(entry.Id) == 0)
+                music = findDisplayVersion?.Invoke(refreshed?.SongId ?? entry.Music.SongId, SourceScope(entry.Id)) ?? music;
+            if (music is null) continue;
+            entry = entry with { Music = music };
             _entries[written++] = entry;
             updated.Add(entry.Id, entry);
         }
