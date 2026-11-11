@@ -7,8 +7,8 @@ namespace WinUIMusicPlayer.Model.Recommendations;
 /// <summary>保存下一批次和最近曝光；只持久化有界ID快照，不保存Music或推荐评分。</summary>
 public sealed class HomeRecommendationState
 {
-    internal const int RecentBatchLimit = 3;
-    internal const int SongsPerBatchLimit = 68;
+    internal const int RecentBatchLimit = 8;
+    internal const int SongsPerBatchLimit = 68 + 2 * 12;
     internal const long ExposureLifetimeTicks = 7 * TimeSpan.TicksPerDay;
 
     public int SchemaVersion { get; init; } = 1;
@@ -20,7 +20,7 @@ public sealed class HomeRecommendationState
     internal static bool IsRecentExposure(long ticks, DateTime nowUtc) =>
         ticks > 0 && ticks <= nowUtc.Ticks && nowUtc.Ticks - ticks < ExposureLifetimeTicks;
 
-    /// <summary>过期、未来时间和空记录不占据最近三批名额，保留首次曝光时间而非读取时间。</summary>
+    /// <summary>过期、未来时间和空记录不占据近期曝光名额，保留首次曝光时间而非读取时间。</summary>
     public HomeRecommendationState Normalize(DateTime nowUtc)
     {
         if (SchemaVersion != 1) throw new NotSupportedException("Unsupported home recommendation state schema.");
@@ -56,6 +56,8 @@ public sealed class HomeRecommendationState
             Add(page.Discovery);
             Add(page.Featured);
             Add(page.Cards);
+            Add(page.Soundalikes);
+            Add(page.Rediscover);
             if (ids.Count > 0)
                 exposures.Add(new() { ExposedAtUtcTicks = page.ExposedAtUtcTicks, MusicIds = ids.ToArray() });
 

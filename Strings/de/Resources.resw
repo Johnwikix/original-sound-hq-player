@@ -2564,6 +2564,9 @@ SHA-256: {5}
   <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Vorherige Auswahl</value></data>
   <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Nächste Auswahl</value></data>
   <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Zuletzt oft gehört</value></data>
+  <data name="HomeSoundalikesTitle.Text" xml:space="preserve"><value>Ähnlicher Sound</value></data>
+  <data name="HomeRediscoverTitle.Text" xml:space="preserve"><value>Lange nicht gehört</value></data>
+  <data name="HomeReasonRediscover" xml:space="preserve"><value>Früher gespielt, in den letzten 30 Tagen ohne gewertete Wiedergabe</value></data>
   <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Weitere Genres entdecken</value></data>
   <data name="HomeLoading.Text" xml:space="preserve"><value>Deine Musik wird vorbereitet</value></data>
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Platz für deine Musik</value></data>

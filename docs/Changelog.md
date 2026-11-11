@@ -1,3 +1,17 @@
+## 2026-11-11 首页推荐换批、共用队列与主题栏目
+
+- `HomeRecommendationService` 在候选截断前计入最近八批曝光，主推荐按相关度加权无放回抽样，并保留高匹配位置和歌手、专辑多样性约束。
+- `HomeViewModel` 让轮播、侧卡和「为你推荐」共用最多 28 首的队列，详情可在同一队列播放指定版本。换批保留在播队列，推荐发布满半小时或跨日后回到首页会更新一批。
+- `HomePage.xaml`、`Strings/*/Resources.resw` 新增「相似听感」和「好久没听」。每栏有至少 4 首符合条件的独立录音时显示，最多 12 首。
+- 验证覆盖 226 项推荐回归和 40 项剪裁 WinUI 检查。7,281 首历史副本的 12 批主推荐覆盖从 151 首增至 288 首，留出指标见 `docs/RecommendationAlgorithmResearch.md`。
+
+## 2026-11-11 缩短目录增删动画，保留原生让位
+
+- `FolderTreeAnimations` 读取 Windows 原生 AddDelete 的缩放、透明度曲线，入场等待降为 30ms，增删动画的 Duration 缩短为一半。
+- `FolderTreeMotion` 只管理增删效果及离场副本；`FolderBrowsePage.xaml` 保持原有 `RepositionThemeTransition IsStaggeringEnabled="True"`，让位时长和错峰不变，不添加自定义位移动画。
+- `_tools/FolderBrowserUiRegression` 检查原生让位仍在、未被自定义 Translation 接管，且只有增删等待和时长缩短；覆盖快速反向、滚动回收与增删动画收尾。
+- 验证：全新目录 Release/x64 主程序剪裁发布成功，自包含 link 剪裁后的真实 WinUI 回归 111 项通过；静态核对让位 XAML 与原版本完全一致。未做完整主程序人工目测或切换系统动画设置。
+
 ## 2026-11-11 对齐歌曲详情的版本操作按钮
 
 - `View/Controls/MusicDetailControl.xaml` 将版本加载指示器移至说明文字旁，统一上下两组按钮的等宽双列布局，修正列分界和右边缘错位。

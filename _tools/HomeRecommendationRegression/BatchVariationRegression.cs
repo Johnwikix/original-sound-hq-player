@@ -21,7 +21,7 @@ internal static class BatchVariationRegression
         var next = service.Build(tracks, [], now, 1, default, audio);
         int overlap = Primary(first).Intersect(Primary(next)).Count();
         Console.WriteLine($"MEASURE: distinct acoustic scores, consecutive primary overlap {overlap}/28.");
-        Check(overlap < 28, "refresh changes primary membership with distinct source scores");
+        Check(overlap <= 18, "refresh changes primary membership with distinct source scores");
 
         var recent = new List<HomeRecommendation> { first };
         for (int batch = 1; batch <= 8; batch++)
@@ -40,6 +40,22 @@ internal static class BatchVariationRegression
             recent.Insert(0, result);
             if (recent.Count > HomeRecommendationService.RecentBatchLimit) recent.RemoveAt(recent.Count - 1);
         }
+
+        var large = Enumerable.Range(1, 1200).Select(id => new RecommendationTrack(id, ["Artist " + id],
+            "Album " + id, "", "", 2020, false, true, 0, "Song " + id)).ToArray();
+        var graded = large.ToDictionary(track => track.Id, track => 1f - track.Id / 1500f);
+        recent.Clear();
+        var coverage = new HashSet<int>();
+        for (int batch = 0; batch < 12; batch++)
+        {
+            var page = service.Build(large, [], now, batch, default, graded, recentRecommendations: recent);
+            var ids = Primary(page);
+            Check(ids.All(id => id <= 600), "large-library rotation stays above the acoustic background " + batch);
+            coverage.UnionWith(ids);
+            recent.Insert(0, page);
+        }
+        Console.WriteLine($"MEASURE: 12 batches, {coverage.Count} distinct tracks across 336 primary slots.");
+        Check(coverage.Count >= 230, "sustained rotation reaches beyond the old 200-track recall window");
 
         var allHeard = tracks.Select(track => track with { PlayCount = 5, Genre = track.Id <= 60 ? "Jazz" : "Metal" }).ToArray();
         HomeListening[] history = [new() { MusicId = 1, Weight = 5, Count = 5, LastPlayedTicks = now.Ticks }];

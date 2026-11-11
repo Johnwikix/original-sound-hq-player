@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="../../Helper/Animations/*.cs" />
     <Compile Include="../../View/Controls/FolderTreeMotion.cs" />
+    <Compile Include="../../View/Controls/FolderTreeAnimations.cs" />
     <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />
     <Page Include="../../Style/BtnStyle.xaml" Link="Style/BtnStyle.xaml" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />

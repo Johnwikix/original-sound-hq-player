@@ -84,6 +84,22 @@ internal static class ShelfPolicyRegression
         var familiar = service.Build(familiarTracks, [Listen(1, 15), Listen(2, 10), Listen(3, 1)], now, 0, default, acoustic);
         Check(familiar.Familiar.Take(2).Select(song => song.MusicId).SequenceEqual([1, 2]),
             "familiar ranking follows effective listening rather than the acoustic relevance gate");
+        var themed = Enumerable.Range(1, 320).Select(id => Track(id, "") with { PlayCount = id % 2 }).ToArray();
+        var scores = themed.ToDictionary(track => track.Id, track => 1f - track.Id / 400f);
+        var recentHistory = Enumerable.Range(1, 80).Select(id => Listen(id, 2)).ToArray();
+        var page = service.Build(themed, recentHistory, now, 10, default, scores);
+        Check(page.Soundalikes is { Count: 12 } && page.Soundalikes.All(song => song.MusicId <= 160 && song.Reason == RecommendationReason.Audio),
+            "similar sounds needs positive above-background acoustic evidence");
+        Check(page.Rediscover is { Count: 12 } && page.Rediscover.All(song => song.MusicId > 80 && song.MusicId % 2 == 1),
+            "listen again requires past playback and excludes qualified listening in the last month");
+        var pageIds = NewSongs(page).Concat(page.Familiar).Concat(page.Rediscover!).Concat(page.Soundalikes!).Select(song => song.MusicId).ToArray();
+        Check(pageIds.Distinct().Count() == pageIds.Length, "new shelves share page-wide recording exclusions");
+        var flat = themed.ToDictionary(track => track.Id, _ => .8f);
+        var noEvidence = service.Build(themed.Select(t => t with { PlayCount = 0, IsFavorite = t.Id == 1 }).ToArray(), [], now, 0, default, flat);
+        Check(noEvidence.Soundalikes is { Count: 0 } && noEvidence.Rediscover is { Count: 0 },
+            "flat audio scores and absent playback cannot fabricate a themed shelf");
+        var scarce = service.Build(themed.Take(31).ToArray(), [], now, 0, default, scores);
+        Check(scarce.Soundalikes is { Count: 0 } && scarce.Rediscover is { Count: 0 }, "three spare songs do not displace primary slots or create a short themed shelf");
         return checks;
     }
 }

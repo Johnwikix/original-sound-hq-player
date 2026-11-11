@@ -2566,6 +2566,9 @@ SHA-256：{5}
   <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>上一个主题</value></data>
   <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>下一个主题</value></data>
   <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>最近常听</value></data>
+  <data name="HomeSoundalikesTitle.Text" xml:space="preserve"><value>相似听感</value></data>
+  <data name="HomeRediscoverTitle.Text" xml:space="preserve"><value>好久没听</value></data>
+  <data name="HomeReasonRediscover" xml:space="preserve"><value>以前播放过，近 30 天没有有效收听记录</value></data>
   <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>换个流派听听</value></data>
   <data name="HomeLoading.Text" xml:space="preserve"><value>正在准备你的音乐</value></data>
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>从你的音乐开始</value></data>

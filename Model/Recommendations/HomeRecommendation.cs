@@ -21,7 +21,7 @@ public sealed class HomeListening
 }
 
 /// <summary>标识推荐理由，展示层负责本地化。</summary>
-public enum RecommendationReason { Explore, Artist, Genre, Favorite, Familiar, Audio, Community }
+public enum RecommendationReason { Explore, Artist, Genre, Favorite, Familiar, Audio, Community, Rediscover }
 
 /// <summary>保存推荐曲目 ID 与有数据依据的理由。</summary>
 public sealed record RecommendedSong(int MusicId, RecommendationReason Reason, string Detail = "");
@@ -29,7 +29,8 @@ public sealed record RecommendedSong(int MusicId, RecommendationReason Reason, s
 /// <summary>保存一次完整推荐快照；播放队列不跟随此快照的后续刷新。</summary>
 public sealed record HomeRecommendation(IReadOnlyList<RecommendedSong> Songs,
     IReadOnlyList<RecommendedSong> Familiar, IReadOnlyList<RecommendedSong> Discovery, bool IsColdStart,
-    IReadOnlyList<RecommendedSong>? Featured = null, IReadOnlyList<RecommendedSong>? Cards = null)
+    IReadOnlyList<RecommendedSong>? Featured = null, IReadOnlyList<RecommendedSong>? Cards = null,
+    IReadOnlyList<RecommendedSong>? Soundalikes = null, IReadOnlyList<RecommendedSong>? Rediscover = null)
 {
     /// <summary>用作近期曝光输入时的UTC时间；展示层以首次实际发布时间覆盖。</summary>
     public long ExposedAtUtcTicks { get; init; }

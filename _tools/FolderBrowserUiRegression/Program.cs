@@ -267,8 +267,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     {
         Check(tree.ItemContainerTransitions.Count == 1
             && tree.ItemContainerTransitions[0] is RepositionThemeTransition { IsStaggeringEnabled: true },
-            "Folder rows keep the original native staggered reposition transition");
-        await Task.Delay(350);
+            "Reposition keeps the original native transition, duration and stagger");
+        var motion = ReadField<object>(page, "_treeMotion");
+        await Wait(() => !ReadField<bool>(motion, "_animating") && !ReadField<bool>(motion, "_layoutPending"));
         FolderBrowserNode[] expanded = vm.VisibleNodes.ToArray();
         int rootIndex = vm.VisibleNodes.IndexOf(root);
         Check(expanded.Length == 4 && rootIndex >= 0 && rootIndex + 2 < expanded.Length
@@ -294,11 +295,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             "UIA collapse updates the model and removes exactly the visible descendants");
         var overlay = (Canvas)page.FindName("FolderMotionOverlay");
         Check(!overlay.IsHitTestVisible && overlay.Children.Count == 2
-            && ((ListViewItem)overlay.Children[0]).Tag is ScalarKeyFrameAnimation
-                { Duration.TotalMilliseconds: 90, DelayTime.TotalMilliseconds: 0 }
-            && ((ListViewItem)overlay.Children[1]).Tag is ScalarKeyFrameAnimation
-                { Duration.TotalMilliseconds: 90, DelayTime.TotalMilliseconds: 16 },
-            "Only removed visible rows retain noninteractive templates with staggered 90ms fades");
+            && IsNativeExitGroup(((ListViewItem)overlay.Children[0]).Tag, 0)
+            && IsNativeExitGroup(((ListViewItem)overlay.Children[1]).Tag, 0),
+            "Only add/delete scale and opacity use double speed; native reposition remains independent");
         foreach (ListViewItem ghost in overlay.Children)
         {
             ghost.ApplyTemplate();
@@ -330,6 +329,18 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             "UIA expansion restores every previously expanded descendant");
         await Wait(() => tree.ContainerFromItem(artist) is ListViewItem
             && tree.ContainerFromItem(album) is ListViewItem { IsSelected: true });
+        await Task.Delay(30);
+        var animations = ReadField<object>(motion, "_animations");
+        var enterOpacity = ReadField<ScalarKeyFrameAnimation>(animations, "_showOpacity");
+        var enterScale = ReadField<Vector3KeyFrameAnimation>(animations, "_showScale");
+        var nativeAdded = new Windows.UI.Core.AnimationMetrics.AnimationDescription(
+            Windows.UI.Core.AnimationMetrics.AnimationEffect.AddToGrid, Windows.UI.Core.AnimationMetrics.AnimationEffectTarget.Added);
+        var nativeOpacity = nativeAdded.Animations.OfType<Windows.UI.Core.AnimationMetrics.OpacityAnimation>().Single();
+        var nativeScale = nativeAdded.Animations.OfType<Windows.UI.Core.AnimationMetrics.ScaleAnimation>().Single();
+        Check(enterOpacity.Duration == nativeOpacity.Duration / 2 && enterScale.Duration == nativeScale.Duration / 2
+            && enterOpacity.DelayTime == TimeSpan.FromMilliseconds(30)
+            && enterScale.DelayTime == TimeSpan.FromMilliseconds(30),
+            "Add/delete durations are shortened and entrance waits are 30ms; native reposition remains unchanged");
 
         List<NotifyCollectionChangedEventArgs> bulkChanges = [];
         void OnVisibleNodesChanged(object? sender, NotifyCollectionChangedEventArgs args) => bulkChanges.Add(args);
@@ -390,27 +401,50 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
         Check(vm.VisibleNodes.SequenceEqual(expanded), "Rapid expansion reversal never duplicates or drops flat rows");
         await Wait(() => tree.ContainerFromItem(artist) is ListViewItem && tree.ContainerFromItem(album) is ListViewItem);
-        await Task.Delay(500);
+        await Wait(() => !ReadField<bool>(motion, "_animating") && !ReadField<bool>(motion, "_layoutPending"));
         var artistItem = (ListViewItem)tree.ContainerFromItem(artist)!;
+        // 原生让位独立异步完成；自定义增删收尾不代表这一帧已经提交到屏幕。
+        await Wait(() => RowBrightness(WindowCapture.ReadFrame(_window), artistItem, page) > BlankThreshold);
         var settledFrame = WindowCapture.ReadFrame(_window);
         double settledBrightness = RowBrightness(settledFrame, artistItem, page);
         await WindowCapture.SaveAsync(settledFrame, Path.Combine(AppContext.BaseDirectory, "tree-motion-settled.png"));
         Check(settledBrightness > BlankThreshold,
-            $"Rows remain painted after rapid composition transitions: settled={settledBrightness:0.0}");
+            $"Rows remain painted after rapidly reversing native motion: settled={settledBrightness:0.0}");
         Check(ElementCompositionPreview.GetElementVisual(artistItem).ImplicitAnimations is null,
-            "Add/delete fades do not install custom implicit layout animations");
+            "Native motion uses explicit animation ownership without implicit layout animations");
         Check(overlay.Children.Count == 0, "Completed motion releases every retained removal template");
 
         var earlierRoot = vm.VisibleNodes[0];
         var movingVisual = ElementCompositionPreview.GetElementVisual((ListViewItem)tree.ContainerFromItem(root)!);
         vm.ExpandFolder(earlierRoot);
+        await Task.Delay(30);
+        Check(movingVisual.Properties.TryGetVector3("Translation", out _) != CompositionGetValueStatus.Succeeded,
+            "Add/delete effects never enable or control Translation on surviving rows");
         Check(movingVisual.ImplicitAnimations is null,
-            "Surviving rows use native reposition without a parallel composition Offset animation");
-        await Task.Delay(350);
+            "Surviving rows keep XAML layout Offset free of competing implicit animations");
+        await Task.Delay(750);
         Check(movingVisual.ImplicitAnimations is null,
-            "Native reposition remains free of custom Offset animation tracking");
+            "Surviving rows keep native reposition without custom implicit animations");
+        Check(!ReadField<bool>(motion, "_animating") && !ReadField<bool>(motion, "_layoutPending")
+            && ReadField<System.Collections.IDictionary>(motion, "_snapshot").Count == 0
+            && overlay.Children.Count == 0,
+            "Motion completion resets every transient row state");
         vm.CollapseFolder(earlierRoot);
     }
+
+    private static bool IsNativeExitGroup(object? value, double delay)
+    {
+        if (value is not CompositionAnimationGroup group) return false;
+        var animations = group.ToArray();
+        return animations.Length == 2
+            && animations.OfType<ScalarKeyFrameAnimation>().Any(a => a.Target == "Opacity"
+                && a.Duration.TotalMilliseconds == 50 && a.DelayTime.TotalMilliseconds == delay)
+            && animations.OfType<Vector3KeyFrameAnimation>().Any(a => a.Target == "Scale"
+                && a.Duration.TotalMilliseconds == 50 && a.DelayTime.TotalMilliseconds == delay);
+    }
+
+    private static T ReadField<T>(object instance, string name) => (T)instance.GetType()
+        .GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(instance)!;
 
     /// <summary>
     /// 展开时逐帧采样两行亮度，验证两件事：行出现后不会先亮后暗（闪烁），
@@ -425,12 +459,12 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         if (container.IsExpanded)
         {
             vm.CollapseFolder(container);
-            await Task.Delay(300);
+            await Task.Delay(750);
         }
         var trace = new FadeTrace();
         var watch = System.Diagnostics.Stopwatch.StartNew();
         vm.ExpandFolder(container);
-        for (var i = 0; i < 70; i++)
+        while (watch.ElapsedMilliseconds < 1100)
         {
             var frame = WindowCapture.ReadFrame(_window);
             long at = watch.ElapsedMilliseconds;
@@ -440,7 +474,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
         // 采样结束恢复折叠：后续用例依赖「节点尚未展开」这个前提。
         vm.CollapseFolder(container);
-        await Task.Delay(300);
+        await Task.Delay(750);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "fade-trace.txt"), trace.ToString());
         return trace;
 
@@ -458,15 +492,12 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     {
         private readonly List<(long At, double First, double Later)> _samples = [];
         public void Record(long at, double first, double later) => _samples.Add((at, first, later));
-        public void Append(string text) => _text += text;
-        private string _text = "";
         public override string ToString() =>
             $"first={Describe(_samples.Select(x => x.First))} later={Describe(_samples.Select(x => x.Later))} " +
-            $"step={StepMilliseconds}ms regress={Regressions:0.0} {_text}";
+            $"regress={Regressions:0.0}";
 
         private static string Describe(IEnumerable<double> values) =>
             string.Join(",", values.Where(v => v >= 0).Select(v => v.ToString("0")));
-        private static readonly double[] Empty = [];
 
         /// <summary>第一行亮度回退的幅度：出现「先亮后暗」时为正。</summary>
         public double Regressions
@@ -499,31 +530,6 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             }
         }
 
-        /// <summary>两行首次达到半亮（106）的时间差；负数说明后一行并没有更晚。</summary>
-        public long StepMilliseconds => ReachedAt(x => x.Later) - ReachedAt(x => x.First);
-
-        private long ReachedAt(Func<(long At, double First, double Later), double> pick)
-        {
-            foreach (var sample in _samples)
-            {
-                double value = pick(sample);
-                if (value >= 106) return sample.At;
-            }
-            return -1;
-        }
-
-        /// <summary>后一行达到最终亮度（-2 容差）的时刻，用来衡量整段过渡的总时长。</summary>
-        public long SettleMilliseconds
-        {
-            get
-            {
-                var settled = FinalLater - 2;
-                foreach (var sample in _samples)
-                    if (sample.Later >= settled) return sample.At;
-                return -1;
-            }
-        }
-
         public double InitialFirst => _samples.FirstOrDefault(x => x.First >= 0).First;
         public double InitialLater => _samples.FirstOrDefault(x => x.Later >= 0).Later;
         public double FinalFirst => _samples.LastOrDefault(x => x.First >= 0).First;
@@ -545,7 +551,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var triggered = false;
         var firstFrame = false;
         long firstSeenAt = 0;
-        long deadline = Environment.TickCount64 + 700;
+        long deadline = Environment.TickCount64 + 1100;
         while (Environment.TickCount64 < deadline)
         {
             if (!triggered)
@@ -559,7 +565,11 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             if (tree.ContainerFromItem(measured) is FrameworkElement row)
             {
                 var origin = row.TransformToVisual(page).TransformPoint(new Windows.Foundation.Point());
-                probe.TrackPosition(origin.X, origin.Y);
+                // 原生缩放会移动绘制边缘；布局槽应保持稳定，新增行也不应额外平移。
+                var slot = Microsoft.UI.Xaml.Controls.Primitives.LayoutInformation.GetLayoutSlot(row);
+                probe.TrackPosition(slot.X, slot.Y);
+                if (ElementCompositionPreview.GetElementVisual(row).Properties.TryGetVector3("Translation", out var translation) == CompositionGetValueStatus.Succeeded)
+                    probe.TrackTranslation(translation);
                 samples.Append($"{origin.Y:0.0} ");
                 if (firstSeenAt == 0) firstSeenAt = Environment.TickCount64;
                 // 行出现后 40ms 抓一帧：位移/裁剪/淡入这类过渡此时仍在进行，而未上屏的一帧噪声已经排除。
@@ -594,6 +604,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             if (y < _minY) _minY = y;
             if (y > _maxY) _maxY = y;
         }
+        public void TrackTranslation(System.Numerics.Vector3 value)
+            => TranslationDisplacement = Math.Max(TranslationDisplacement, value.Length());
+        public double TranslationDisplacement { get; private set; }
         /// <summary>行在纵向上的位移幅度：非零说明新增行先停在偏移位置再归位。</summary>
         public double Displacement => _maxY > _minY ? _maxY - _minY : 0;
         /// <summary>行在横向上的漂移：非零说明缩进在过渡中被改动。</summary>
@@ -665,7 +678,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var tree = (ListView)page.FindName("FolderTree");
         var root = vm.Roots.Single(n => n.Path == @"D:\music");
 
-        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证短时错峰动画及最终绘制。
+        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证原生入场及最终绘制。
         await Task.Delay(300);
         var fadeTrace = await MeasureRowRevealAsync(vm, tree, root,
             root.Children[0], root.Children[Math.Min(10, root.Children.Count - 1)], page);
@@ -682,10 +695,10 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var firstChild = root.Children[5];
         var rootProbe = await ProbeExpandAsync(vm, tree, root,
             firstChild, page, "many-rows-diag.txt");
-        Check(rootProbe.Displacement <= 1,
-            $"Expanding rows stay at their final position: displacement={rootProbe.Displacement:0.0} children={root.Children.Count}");
+        Check(rootProbe.Displacement <= 1 && rootProbe.TranslationDisplacement <= 0.01,
+            $"Added rows keep their layout slots without extra translation during native scaling: displacement={rootProbe.Displacement:0.0} children={root.Children.Count}");
         Check(rootProbe.IndentShift <= 1,
-            $"Expanding rows keep their indent: shift={rootProbe.IndentShift:0.0}");
+            $"Added rows keep their layout indentation during native scaling: shift={rootProbe.IndentShift:0.0}");
         // 过渡结束后必须完整绘制，不能残留透明或半透明的行。
         Check(rootProbe.PaintSettled > BlankThreshold,
             $"Revealed rows end fully painted: brightness={rootProbe.PaintSettled:0.0}");
@@ -702,7 +715,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         await Wait(() => root.Children.All(n => tree.ContainerFromItem(n) is null));
         await Task.Delay(300);
         var rootProbeAgain = await ProbeExpandAsync(vm, tree, root, firstChild, page, "many-rows-diag2.txt");
-        Check(rootProbeAgain.Displacement <= 1 && rootProbeAgain.PaintSettled > BlankThreshold,
+        Check(rootProbeAgain.Displacement <= 1 && rootProbeAgain.TranslationDisplacement <= 0.01 && rootProbeAgain.PaintSettled > BlankThreshold,
             $"Re-expanding keeps rows in place and painted: displacement={rootProbeAgain.Displacement:0.0} paint={rootProbeAgain.PaintSettled:0.0}");
         await Task.Delay(800);
 
@@ -710,8 +723,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var gundam = root.Children.Single(n => n.Name == "高达");
         var nestedProbe = await ProbeExpandAsync(vm, tree, gundam,
             gundam.Children[0], page, "nested-rows-diag.txt");
-        Check(nestedProbe.Displacement <= 1,
-            $"Nested rows stay at their final position: displacement={nestedProbe.Displacement:0.0} children={gundam.Children.Count}");
+        Check(nestedProbe.Displacement <= 1 && nestedProbe.TranslationDisplacement <= 0.01,
+            $"Nested rows retain their layout slots without extra translation: displacement={nestedProbe.Displacement:0.0} children={gundam.Children.Count}");
         Check(nestedProbe.IndentShift <= 1,
             $"Nested rows keep their indent: shift={nestedProbe.IndentShift:0.0}");
         Check(nestedProbe.PaintSettled > BlankThreshold,

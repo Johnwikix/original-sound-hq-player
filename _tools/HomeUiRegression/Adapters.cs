@@ -198,9 +198,11 @@ namespace WinUIMusicPlayer.Services
     public sealed class PlaybackCoordinator(WinUIMusicPlayer.ViewModel.AppViewModel app, PlaybackStatsService statistics)
     {
         public int LastId;
-        public async Task PlayAsync(Music music)
+        public bool LastExactVersion;
+        public async Task PlayAsync(Music music, long entryId = 0, bool exactVersion = false)
         {
             LastId = music.Id;
+            LastExactVersion = exactVersion;
             app.CurrentPlayingMusic = music;
             statistics.Notify();
             await Task.Yield();

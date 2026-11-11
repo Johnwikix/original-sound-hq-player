@@ -77,6 +77,14 @@
                         ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging" Visibility="{x:Bind ShowCount(ViewModel.Discovery.Count), Mode=OneWay}">
                         <controls:RecommendationShelf.Header><TextBlock x:Uid="HomeDiscoveryTitle" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
                     </controls:RecommendationShelf>
+                    <controls:RecommendationShelf x:Name="SoundalikesShelf" ItemsSource="{x:Bind ViewModel.Soundalikes, Mode=OneWay}"
+                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging" Visibility="{x:Bind ShowCount(ViewModel.Soundalikes.Count), Mode=OneWay}">
+                        <controls:RecommendationShelf.Header><TextBlock x:Uid="HomeSoundalikesTitle" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
+                    </controls:RecommendationShelf>
+                    <controls:RecommendationShelf x:Name="RediscoverShelf" ItemsSource="{x:Bind ViewModel.Rediscover, Mode=OneWay}"
+                        ItemTemplate="{StaticResource SongTemplate}" Paging="Shelf_Paging" Visibility="{x:Bind ShowCount(ViewModel.Rediscover.Count), Mode=OneWay}">
+                        <controls:RecommendationShelf.Header><TextBlock x:Uid="HomeRediscoverTitle" FontSize="22" FontWeight="SemiBold" /></controls:RecommendationShelf.Header>
+                    </controls:RecommendationShelf>
                 </StackPanel>
                 <Canvas x:Name="PreviewLayer" SizeChanged="PreviewLayer_SizeChanged">
                     <controls:HomeSongPreview x:Name="SongPreview" Visibility="Collapsed" Song="{x:Bind ViewModel.PreviewSong, Mode=OneWay}" ViewModel="{x:Bind ViewModel}"

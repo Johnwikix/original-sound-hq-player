@@ -15,7 +15,7 @@ internal static class StatePersistenceRegression
             Console.WriteLine("PASS: " + name);
         }
         int[] All(HomeRecommendation page) => page.Songs.Concat(page.Familiar).Concat(page.Discovery)
-            .Concat(page.Featured ?? []).Concat(page.Cards ?? []).Select(song => song.MusicId).ToArray();
+            .Concat(page.Featured ?? []).Concat(page.Cards ?? []).Concat(page.Soundalikes ?? []).Concat(page.Rediscover ?? []).Select(song => song.MusicId).ToArray();
         var tracks = Enumerable.Range(1, 360).Select(id => new RecommendationTrack(id, ["Artist " + id],
             "Album " + id, "Artist " + id, "", 2020, false, true, 0, "Song " + id)).ToArray();
         var audio = tracks.ToDictionary(track => track.Id, track => 1f - track.Id * .0025f);
@@ -39,7 +39,7 @@ internal static class StatePersistenceRegression
                 "restart restores actual song IDs and original exposure time without renewing it");
             var restored = loaded.Restore(now.AddHours(2));
             var restarted = service.Build(tracks, [], now.AddHours(2), loaded.NextBatch, default, audio, recentRecommendations: restored);
-            Check(All(restarted).Length == 28 && All(restarted).Intersect(All(first)).Count() <= 7,
+            Check(All(restarted).Length == 40 && All(restarted).Intersect(All(first)).Count() <= 10,
                 "same-day restart rotates previously published recommendations");
 
             var beforeExpiry = now.AddDays(7).AddTicks(-1);
@@ -61,19 +61,25 @@ internal static class StatePersistenceRegression
                 "expired batches do not consume a recent-batch attenuation slot");
 
             HomeRecommendation allShelves = new([new(1, RecommendationReason.Artist)], [new(2, RecommendationReason.Familiar)],
-                [new(3, RecommendationReason.Explore)], false, [new(4, RecommendationReason.Audio)], [new(5, RecommendationReason.Community)])
+                [new(3, RecommendationReason.Explore)], false, [new(4, RecommendationReason.Audio)], [new(5, RecommendationReason.Community)],
+                [new(6, RecommendationReason.Audio)], [new(7, RecommendationReason.Rediscover)])
                 { ExposedAtUtcTicks = now.Ticks };
             var captured = HomeRecommendationState.Capture(int.MaxValue, [allShelves, first, old, first], now);
             Check(captured.NextBatch == int.MinValue && captured.Recent.Length == 3
-                && captured.Recent[0].MusicIds.SequenceEqual([1, 2, 3, 4, 5]),
+                && captured.Recent[0].MusicIds.SequenceEqual([1, 2, 3, 4, 5, 6, 7]),
                 "all shelves persist within three live batches and counter wraparound remains valid");
+            var many = Enumerable.Range(1, 12).Select(id => new HomeRecommendation(
+                [new(id, RecommendationReason.Audio)], [], [], false) { ExposedAtUtcTicks = now.AddMinutes(-id).Ticks }).ToArray();
+            var bounded = HomeRecommendationState.Capture(12, many, now).Restore(now);
+            Check(bounded.Select(page => page.Songs.Single().MusicId).SequenceEqual(Enumerable.Range(1, 8)),
+                "only the eight newest batches survive capture and restore, newest first");
             var oversized = new HomeRecommendationState
             {
                 NextBatch = 23,
                 Recent = [new() { ExposedAtUtcTicks = now.Ticks, MusicIds = Enumerable.Range(1, 1000).Prepend(-1).Prepend(1).ToArray() }]
             }.Normalize(now);
-            Check(oversized.Recent[0].MusicIds.Length == 68
-                && oversized.Recent[0].MusicIds.Distinct().Count() == 68 && oversized.Recent[0].MusicIds.All(id => id > 0),
+            Check(oversized.Recent[0].MusicIds.Length == HomeRecommendationState.SongsPerBatchLimit
+                && oversized.Recent[0].MusicIds.Distinct().Count() == HomeRecommendationState.SongsPerBatchLimit && oversized.Recent[0].MusicIds.All(id => id > 0),
                 "loaded exposure is bounded and rejects invalid or duplicate IDs");
 
             await database.ExecuteAsync("UPDATE HomeRecommendationState SET StateJson=? WHERE Id=1", "{broken");

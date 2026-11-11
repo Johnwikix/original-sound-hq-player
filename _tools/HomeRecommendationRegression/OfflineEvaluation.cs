@@ -51,7 +51,7 @@ internal static class OfflineEvaluation
         public List<ShelfCounts> FullSnapshotShelves { get; set; } = [];
         public List<string> Notes { get; set; } = [];
     }
-    internal sealed record ShelfCounts(string Model, int Batch, int Primary, int Familiar, int Discovery);
+    internal sealed record ShelfCounts(string Model, int Batch, int Primary, int Familiar, int Discovery, int Soundalikes, int Rediscover);
     internal sealed class Manifest
     {
         public DateTime NowUtc { get; set; }
@@ -104,12 +104,19 @@ internal static class OfflineEvaluation
                     "Main20 is the displayed Songs shelf; Primary28 includes carousel and side cards. No target labels enter model fitting."]
             };
             var fullAudio = await AudioPreferenceScorer.ScoreAsync(repository, tracks, history, default);
-            for (int batch = 0; batch < 3; batch++)
+            var recent = new List<HomeRecommendation>();
+            var coverage = new HashSet<int>();
+            for (int batch = 0; batch < 12; batch++)
             {
-                var result = new HomeRecommendationService().Build(tracks, history, manifest.NowUtc, batch, default, fullAudio);
-                var counts = new ShelfCounts("current", batch, result.Songs.Count, result.Familiar.Count, result.Discovery.Count);
+                var result = new HomeRecommendationService().Build(tracks, history, manifest.NowUtc, batch, default, fullAudio,
+                    recentRecommendations: recent);
+                var counts = new ShelfCounts("current", batch, result.Songs.Count, result.Familiar.Count, result.Discovery.Count,
+                    result.Soundalikes?.Count ?? 0, result.Rediscover?.Count ?? 0);
+                var primary = result.Songs.Concat(result.Featured ?? []).Concat(result.Cards ?? []).Select(song => song.MusicId);
+                coverage.UnionWith(primary);
                 report.FullSnapshotShelves.Add(counts);
-                Console.WriteLine($"full-snapshot | batch={batch} | primary={counts.Primary} | familiar={counts.Familiar} | discovery={counts.Discovery}");
+                Console.WriteLine($"full-snapshot | batch={batch} | primary={counts.Primary} | familiar={counts.Familiar} | discovery={counts.Discovery} | soundalikes={counts.Soundalikes} | rediscover={counts.Rediscover} | distinct primary to date={coverage.Count}");
+                recent.Insert(0, result);
             }
             for (int fold = 0; fold < 5; fold++)
             {
@@ -189,7 +196,7 @@ internal static class OfflineEvaluation
         var metric = report.Metrics.Find(row => row.Scenario == scenario && row.Model == model);
         if (metric is null) { metric = new() { Scenario = scenario, Model = model }; report.Metrics.Add(metric); }
         var primary = (result.Featured ?? []).Concat(result.Cards ?? []).Concat(result.Songs).ToArray();
-        var all = primary.Concat(result.Familiar).Concat(result.Discovery).ToArray();
+        var all = primary.Concat(result.Familiar).Concat(result.Discovery).Concat(result.Rediscover ?? []).Concat(result.Soundalikes ?? []).ToArray();
         if (all.Select(song => song.MusicId).Distinct().Count() != all.Length) throw new Exception("Duplicate page recording in " + model);
         var mainKeys = result.Songs.Take(20).Select(song => GroupKey(tracks[song.MusicId])).ToArray();
         var (hits, ndcg) = ScoreRanking(mainKeys, targets);

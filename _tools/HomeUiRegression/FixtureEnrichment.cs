@@ -7,9 +7,10 @@ internal sealed class FixtureEnrichment : IAudioRecommendationSource, ICommunity
     public event Action? Changed { add { } remove { } }
     public CommunitySignals Snapshot => CommunitySignals.Empty;
     public IReadOnlyList<RecommendationTrack> LastTracks { get; private set; } = [];
+    public Dictionary<int, float> Scores { get; set; } = [];
     public Task<Dictionary<int,float>> GetScoresAsync(IReadOnlyList<RecommendationTrack> tracks, IReadOnlyList<HomeListening> history, CancellationToken token)
     {
         LastTracks = tracks;
-        return Task.FromResult(new Dictionary<int,float>());
+        return Task.FromResult(Scores);
     }
 }

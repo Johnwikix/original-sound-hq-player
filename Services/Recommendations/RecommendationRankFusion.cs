@@ -30,6 +30,7 @@ internal static class RecommendationRankFusion
             _count++;
             _sum += value;
         }
+        internal readonly bool HasContrast => _count > 1 && _max - _min > 1e-8;
         internal readonly bool Retain(double value) => value > 0
             && (_count <= 1 || _max - _min <= 1e-8 || value > _sum / _count);
     }

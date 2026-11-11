@@ -9,7 +9,7 @@ internal enum RecommendationSources { Metadata = 1, Audio = 2, Community = 4, Al
 
 /// <summary>保存单批次规范化元数据，由推荐构建过程拥有。</summary>
 internal readonly record struct RecommendationFeatures(RecommendationTrack Track, string[] Artists,
-    string[] Genres, string AlbumKey, string RecordingKey, bool IsCollected = false)
+    string[] Genres, string AlbumKey, string RecordingKey, bool IsCollected = false, double ExposureWeight = 1)
 {
     /// <summary>标题含Instrumental（忽略大小写）的版本降低75%展示权重，不改变偏好训练。</summary>
     internal double InstrumentalWeight => Track.Title?.Contains("Instrumental", StringComparison.OrdinalIgnoreCase) == true ? .25 : 1;
@@ -18,6 +18,6 @@ internal readonly record struct RecommendationFeatures(RecommendationTrack Track
     internal double RecommendationWeight => (IsCollected ? .1 : 1) * InstrumentalWeight;
 }
 
-/// <summary>保存来源评分或融合后的排序分；TieBreaker是供同分排序和最终随机重排共用的批次随机值。</summary>
+/// <summary>保存来源评分或融合后的排序分；TieBreaker是来源内同分排序使用的批次随机值。</summary>
 internal readonly record struct RecommendationCandidate(RecommendationFeatures Features, double Score,
     double Affinity, RecommendationReason Reason, string Detail, double TieBreaker = 0);

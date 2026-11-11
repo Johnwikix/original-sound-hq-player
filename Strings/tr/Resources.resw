@@ -2564,6 +2564,9 @@ SHA-256: {5}
   <data name="HomePrevious.AutomationProperties.Name" xml:space="preserve"><value>Önceki seçim</value></data>
   <data name="HomeNext.AutomationProperties.Name" xml:space="preserve"><value>Sonraki seçim</value></data>
   <data name="HomeFamiliarTitle.Text" xml:space="preserve"><value>Son zamanlarda sık dinlenenler</value></data>
+  <data name="HomeSoundalikesTitle.Text" xml:space="preserve"><value>Benzer tınılar</value></data>
+  <data name="HomeRediscoverTitle.Text" xml:space="preserve"><value>Uzun zamandır dinlemediklerin</value></data>
+  <data name="HomeReasonRediscover" xml:space="preserve"><value>Daha önce çalındı, ancak son 30 günde geçerli bir dinleme kaydı yok</value></data>
   <data name="HomeDiscoveryTitle.Text" xml:space="preserve"><value>Farklı türleri keşfet</value></data>
   <data name="HomeLoading.Text" xml:space="preserve"><value>Müziğiniz hazırlanıyor</value></data>
   <data name="HomeEmptyTitle.Text" xml:space="preserve"><value>Müziğinizle başlayın</value></data>
