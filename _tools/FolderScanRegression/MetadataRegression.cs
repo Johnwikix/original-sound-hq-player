@@ -26,6 +26,8 @@ internal static class MetadataRegression
         Check((await db.Connection.FindAsync<Music>(music.Id)).Genre == "Jazz", "additional tags stored with editor transaction");
         cover[0] = 9;
         Check((await db.Connection.FindAsync<PendingMetadataWrite>(filePath)).Cover![0] == 1, "cover snapshot");
+        Check(File.Exists(music.CoverOverridePath) && (await File.ReadAllBytesAsync(music.CoverOverridePath))[0] == 1,
+            "version cover original is durable outside the regenerable cache");
         using (var held = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             await db.FlushMetadataWritesAsync(default);
@@ -58,6 +60,14 @@ internal static class MetadataRegression
         finally { ToolUtils.WriteMetadata = writer; }
         await db.FlushMetadataWritesAsync(default);
         Check(await db.Connection.Table<PendingMetadataWrite>().CountAsync() == 0, "failed write can recover");
+        var beforeReplacement = await db.Lyrics.GetAsync(music.Id);
+        await db.QueueMetadataWriteAsync(music, null, beforeReplacement.Document, beforeReplacement.Revision, lyricsChanged: false);
+        await File.WriteAllTextAsync(filePath, "a different file now occupies this path");
+        await db.FlushMetadataWritesAsync(default);
+        Check((await db.Connection.FindAsync<PendingMetadataWrite>(filePath)).LastError == "SongVersionsFileChanged" &&
+            await File.ReadAllTextAsync(filePath) == "a different file now occupies this path", "queued metadata never writes to a replaced file");
+        await db.Connection.DeleteAllAsync<PendingMetadataWrite>();
+        await File.WriteAllTextAsync(filePath, "latest");
         // An upgraded old queue row has no value in the newly added preservation column.
         await db.Connection.ExecuteAsync("INSERT INTO PendingMetadataWrite(Path,Title,Lyrics,Krc,LyricsSchemaVersion) VALUES(?,?,?,?,0)",
             filePath, "legacy queue", "[00:01.00]line candidate", "[1000,1000]word(1000,1000)");
@@ -69,10 +79,12 @@ internal static class MetadataRegression
                 migrated.LegacyLyrics == "[00:01.00]line candidate" && migrated.Krc == "[1000,1000]word(1000,1000)", "legacy queue keeps both source snapshots while locked");
         }
         await db.FlushMetadataWritesAsync(default);
-        Check(ToolUtils.LastWrittenMusic is { AdditionalMetadataRead: false }, "legacy queue must preserve unrecorded optional file tags");
+        Check((await db.Connection.FindAsync<PendingMetadataWrite>(filePath)).LastError == "SongVersionsFileChanged" &&
+            await File.ReadAllTextAsync(filePath) == "latest", "legacy queue without file identity is retained for explicit resave");
+        await db.Connection.DeleteAllAsync<PendingMetadataWrite>();
         await db.Connection.InsertAsync(new PendingMetadataWrite { Path = filePath, Title = "invalid queue", Lyrics = "untimed unknown" });
         await db.FlushMetadataWritesAsync(default);
-        Check(await db.Connection.Table<PendingMetadataWrite>().CountAsync() == 1 && await File.ReadAllTextAsync(filePath) == "legacy queue", "unconvertible legacy lyrics cannot silently erase audio tags");
+        Check(await db.Connection.Table<PendingMetadataWrite>().CountAsync() == 1 && await File.ReadAllTextAsync(filePath) == "latest", "unconvertible legacy lyrics cannot silently erase audio tags");
         await db.Connection.DeleteAllAsync<PendingMetadataWrite>();
         var unknownMusic = new Music { Path = Path.Combine(root, "unknown-metadata.mp3"), Title = "old title" };
         await File.WriteAllTextAsync(unknownMusic.Path, "existing file lyrics");
@@ -84,12 +96,8 @@ internal static class MetadataRegression
         var savedUnknown = await db.Lyrics.GetAsync(unknownMusic.Id);
         Check(savedUnknown.Document == unknown.Document && savedUnknown.SourceKind == unknown.SourceKind && savedUnknown.Diagnostic == unknown.Diagnostic &&
             (await db.Connection.FindAsync<Music>(unknownMusic.Id)).Title == "metadata-only title", "real metadata transaction retains unknown lyrics and diagnostics");
-        try
-        {
-            await db.SaveDetailsAsync(unknownMusic, unknown.Document, unknown.Revision, default, lyricsChanged: false);
-            throw new Exception("metadata-only edit ignored revision conflict");
-        }
-        catch (InvalidOperationException ex) when (ex.Message == "LyricsEditConflict") { }
+        await db.SaveDetailsAsync(unknownMusic, unknown.Document, unknown.Revision, default, lyricsChanged: false);
+        Check((await db.Lyrics.GetAsync(unknownMusic.Id)).Revision == unknown.Revision, "metadata-only save does not acquire or advance lyric ownership");
         await db.QueueMetadataWriteAsync(unknownMusic, null, savedUnknown.Document, savedUnknown.Revision, lyricsChanged: false);
         Check((await db.Connection.FindAsync<PendingMetadataWrite>(unknownMusic.Path)).PreserveFileLyrics, "unknown unchanged lyrics queue a metadata-only tag write");
         await db.Connection.CloseAsync();
@@ -106,7 +114,7 @@ internal static class MetadataRegression
         await db.Connection.InsertAsync(queuedTags);
         var queuedRevision = (await db.Lyrics.GetAsync(queuedTags.Id)).Revision;
         await db.QueueMetadataWriteAsync(queuedTags, null, LyricsDocument.Empty, queuedRevision);
-        var unreadEditor = new Music { Id = queuedTags.Id, Path = queuedTags.Path, Title = "later core edit" };
+        var unreadEditor = new Music { Id = queuedTags.Id, Path = queuedTags.Path, Title = "later core edit", MetadataRevision = queuedTags.MetadataRevision };
         queuedRevision = (await db.Lyrics.GetAsync(queuedTags.Id)).Revision;
         await db.QueueMetadataWriteAsync(unreadEditor, null, LyricsDocument.Empty, queuedRevision);
         var retainedTags = await db.Connection.FindAsync<PendingMetadataWrite>(queuedTags.Path);

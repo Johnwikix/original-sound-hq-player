@@ -25,10 +25,13 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
     private Task? _stopTask;
     private Task _operationTask = Task.CompletedTask;
     private bool _stopped;
+    private bool _coverDirty;
     /// <summary>获取规范曲目，仅成功提交后发布标签。</summary>
     public Music Music { get; }
     /// <summary>获取与 MusicDetailsWindow 相同的标签草稿。</summary>
     public MusicMetadataEditorViewModel Metadata { get; }
+    /// <summary>获取标签、封面或歌词是否有未保存输入。</summary>
+    public bool HasChanges => Metadata.HasChanges || Lyrics.HasChanges || _coverDirty;
     /// <summary>获取与 MusicDetailsWindow 相同的原文、翻译、注音和恢复命令。</summary>
     public LyricsEditorViewModel Lyrics { get; }
     /// <summary>获取暂存封面；不直接改写正在播放的图片。</summary>
@@ -166,6 +169,11 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
             _closed.Token.ThrowIfCancellationRequested();
             if (online && bytes is null) throw new InvalidOperationException(ToolUtils.GetString("FailedObtainCover"));
             await ApplyCoverAsync(bytes);
+            if (bytes is not null)
+            {
+                _coverDirty = true;
+                OnPropertyChanged(nameof(HasChanges));
+            }
         }
         catch (OperationCanceledException) when (_stopped) { }
         catch (Exception ex) { ReportError(ex); }
@@ -194,9 +202,15 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
         {
             var snapshot = Metadata.Capture();
             if (file) snapshot.UpdateTime = DateTime.Now;
-            bool saved = await Lyrics.SaveAsync(file ? _cover : null, queueMetadata: file, metadataDraft: snapshot);
-            bool committed = ReferenceEquals(Lyrics.LastCommittedMetadata, snapshot);
-            bool unchanged = committed && Metadata.AcceptSaved(snapshot);
+            bool metadataChanged = Metadata.HasChanges || _coverDirty || file;
+            bool saved = await Lyrics.SaveAsync(_coverDirty ? _cover : null, queueMetadata: file, metadataDraft: metadataChanged ? snapshot : null);
+            bool committed = metadataChanged ? ReferenceEquals(Lyrics.LastCommittedMetadata, snapshot) : saved;
+            bool unchanged = committed && (!metadataChanged || Metadata.AcceptSaved(snapshot));
+            if (committed)
+            {
+                _coverDirty = false;
+                OnPropertyChanged(nameof(HasChanges));
+            }
             // 即使保存期间离开页面，已经提交的数据库事实仍须发布到规范曲目。
             if (committed) _host.MetadataChanged();
             if (!_stopped && saved && unchanged)

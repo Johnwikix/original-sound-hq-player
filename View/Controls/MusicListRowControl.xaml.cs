@@ -1,5 +1,6 @@
 using WinUIMusicPlayer.Controls;
 using System;
+using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -15,6 +16,20 @@ public sealed partial class MusicListRowControl : UserControl
 
     public static readonly DependencyProperty ShowTrackNumbersProperty = DependencyProperty.Register(
         nameof(ShowTrackNumbers), typeof(bool), typeof(MusicListRowControl), new PropertyMetadata(false));
+    /// <summary>提供歌单出现项命令，普通行沿用 Music 命令。</summary>
+    public static readonly DependencyProperty RowPlayCommandProperty = DependencyProperty.Register(
+        nameof(RowPlayCommand), typeof(ICommand), typeof(MusicListRowControl), new PropertyMetadata(null));
+    /// <summary>提供歌单出现项参数。</summary>
+    public static readonly DependencyProperty RowPlayParameterProperty = DependencyProperty.Register(
+        nameof(RowPlayParameter), typeof(object), typeof(MusicListRowControl), new PropertyMetadata(null));
+    /// <summary>获取或设置出现项命令。</summary>
+    public ICommand? RowPlayCommand { get => (ICommand?)GetValue(RowPlayCommandProperty); set => SetValue(RowPlayCommandProperty, value); }
+    /// <summary>获取或设置出现项参数。</summary>
+    public object? RowPlayParameter { get => GetValue(RowPlayParameterProperty); set => SetValue(RowPlayParameterProperty, value); }
+    /// <summary>解析编译期可追踪的播放入口。</summary>
+    public ICommand? PlayFor(ICommand? command, Music? music) => command ?? music?.PlayCommand;
+    /// <summary>解析编译期可追踪的参数。</summary>
+    public object? ParameterFor(object? parameter, Music? music) => parameter ?? music;
 
     public Music? Music
     {

@@ -107,12 +107,18 @@ public sealed class PlaybackSelectionTracker
             }
             if (_app.SelectedPlaybackMusic is not { } current) return;
             object? match = null;
+            long queueEntry = _app.State.Playback.PendingSelection?.EntryId ?? _app.State.Queue.CurrentEntryId;
+            int playlistEntry = _app.State.Queue.PlaylistEntry(queueEntry);
             foreach (var item in _list.Items)
             {
                 var music = item is PlayListMusicItem wrapper ? wrapper.Music : item as Music;
                 if (music is null) continue;
+                if (item is PlayListMusicItem occurrence && playlistEntry > 0 && occurrence.EntryId == playlistEntry)
+                { match = item; break; }
+                if (item is PlayListMusicItem && playlistEntry > 0) continue;
                 if (ReferenceEquals(music, current)) { match = item; break; }
                 if (match is null && CurrentTrackLookup.Matches(music, current)) match = item;
+                if (match is null && music.SongId > 0 && music.SongId == current.SongId) match = item;
             }
             if (match is not null && !ReferenceEquals(_list.SelectedItem, match)) _list.SelectedItem = match;
         }

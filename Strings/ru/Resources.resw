@@ -2691,4 +2691,39 @@ SHA-256: {5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>Изменить ширину областей папок и композиций</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>Версии</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Авто: сначала без потерь, затем локальные файлы или полный кэш.</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>Предпочтительная версия закреплена; при недоступности возможна замена.</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>Предпочтительная</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>Воспроизводится</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>Свои тексты</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>Файл отсутствует</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>Нет связи</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>Доступна</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>Воспроизвести эту версию</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>Сделать предпочтительной</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>Выбирать автоматически</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>Связать существующую версию</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>Выделить в отдельную песню</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>Отменить последнее объединение</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>Использовать общий текст</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>Других песен с совпадающими названием, исполнителем и альбомом нет.</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>Выберите совпадающий файл. Теги и обложки сохраняются отдельно. Ремастеры и другие исполнения не объединяйте.</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>Подтвердить объединение</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>Файлы не меняются. Избранное объединяется. Позиции плейлиста сохраняются и используют выбор версии. Выберите общий текст; отличающиеся тексты сохранятся отдельно и для восстановления. Воспроизведение продолжится.</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>Общий текст по умолчанию</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>Использовать текст текущей песни</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>Использовать текст связанной песни</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>Свернуть повторы в плейлистах (по умолчанию сохраняются)</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>Подтвердить</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>Данные изменились или версии не совпадают. Обновите и проверьте снова.</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>Поздние изменения не позволяют безопасно отменить. Сохраните данные и при необходимости разделите версии.</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>Нет операций для отмены.</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>Сохранено.</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>Эта версия или все версии в выбранном диапазоне недоступны.</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>Файл изменился. Задание записи сохранено; проверьте цель.</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>Теги изменены другой операцией. Сохраните черновик и проверьте.</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>Сохраните черновики версий перед объединением, отделением или отменой.</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>Версий: {0}; избранных групп: {1}; записей в плейлистах: {2}, из них {3} повторов можно свернуть.</value></data>
 </root>

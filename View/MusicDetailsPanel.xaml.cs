@@ -34,7 +34,8 @@ public sealed partial class MusicDetailsPanel : UserControl
             var editor = factory.Create(request.Music);
             ViewModel = new MusicDetailsViewModel(editor, app, App.Services.GetRequiredService<MusicDatabaseService>(),
                 App.Services.GetRequiredService<EditorSessions>(), App.GetLogger<MusicDetailsPanel>(),
-                MusicCommands.DetailsPlayCommand, request, factory.CreateSpectrogram(request.Music));
+                MusicCommands.DetailsPlayCommand, request, factory.CreateSpectrogram(request.Music),
+                factory: factory, dialogs: new MusicVersionDialogs(() => DetailView.XamlRoot));
             ViewModel.CloseRequested += CloseRequested;
             ViewModel.Start();
             app.IsBackBtnEnable = true;

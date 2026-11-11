@@ -1,0 +1,40 @@
+<UserControl
+    x:Class="WinUIMusicPlayer.View.Controls.MusicVersionDialogControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel"
+    xmlns:tools="using:WinUIMusicPlayer.Utils">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="640">
+    <StackPanel Spacing="16" MinWidth="300" MaxWidth="560">
+        <TextBlock Text="{x:Bind ViewModel.Description}" TextWrapping="Wrap" />
+        <ListView ItemsSource="{x:Bind ViewModel.Versions}" SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}"
+                  SelectionMode="Single" MaxHeight="220">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="vm:MusicVersionItem">
+                    <StackPanel Padding="0,6" Spacing="4">
+                        <TextBlock Text="{x:Bind Music.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{x:Bind TechnicalInfo}" FontSize="12" />
+                        <TextBlock Text="{x:Bind Path}" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <StackPanel Spacing="12" Visibility="{x:Bind VisibilityFor(ViewModel.IsMerging)}">
+            <TextBlock Text="{x:Bind ViewModel.Impact}" TextWrapping="Wrap" />
+            <Expander Header="{x:Bind tools:ToolUtils.GetString('SongVersionsLyricsTarget')}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <ScrollViewer MaxHeight="160"><TextBlock Text="{x:Bind ViewModel.TargetLyrics}" TextWrapping="Wrap" IsTextSelectionEnabled="True" /></ScrollViewer>
+            </Expander>
+            <Expander Header="{x:Bind tools:ToolUtils.GetString('SongVersionsLyricsOther')}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <ScrollViewer MaxHeight="160"><TextBlock Text="{x:Bind ViewModel.OtherLyrics}" TextWrapping="Wrap" IsTextSelectionEnabled="True" /></ScrollViewer>
+            </Expander>
+            <ComboBox Header="{x:Bind tools:ToolUtils.GetString('SongVersionsSharedLyricsChoice')}"
+                      SelectedIndex="{x:Bind ViewModel.LyricsChoiceIndex, Mode=TwoWay}" HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="{x:Bind tools:ToolUtils.GetString('SongVersionsLyricsTarget')}" />
+                <ComboBoxItem Content="{x:Bind tools:ToolUtils.GetString('SongVersionsLyricsOther')}" />
+            </ComboBox>
+            <CheckBox Content="{x:Bind tools:ToolUtils.GetString('SongVersionsCollapseDuplicates')}"
+                      IsChecked="{x:Bind ViewModel.CollapseDuplicates, Mode=TwoWay}" />
+        </StackPanel>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

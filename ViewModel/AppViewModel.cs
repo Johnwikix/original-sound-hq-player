@@ -336,12 +336,20 @@ namespace WinUIMusicPlayer.ViewModel
 
         public Music? FindById(int id) => _libraryQueries.FindById(id);
         public bool TryFindById(int id, out Music? music) => _libraryQueries.TryFindById(id, out music);
+        /// <summary>获取同歌曲的文件版本索引，供播放时解析。</summary>
+        public IReadOnlyList<Music> FindVersions(int songId) => _libraryQueries.GetVersions(songId);
+        /// <summary>返回列表使用的稳定代表文件。</summary>
+        public Music? FindDisplayVersion(int songId, int sourceId = -1) => _libraryQueries.FindDisplayVersion(songId, sourceId);
         public Music? FindFirstByAlbum(string? album) => _libraryQueries.FindFirstByAlbum(album);
         public Music? FindFirstByArtist(string? artist) => _libraryQueries.FindFirstByArtist(artist);
         public int GetAlbumSongCount(string? album) => _libraryQueries.GetAlbumSongCount(album);
         public void NotifyIdIndexChanged() => _libraryQueries.Invalidate();
 
         public event Action? SongsSourceChanged;
+        /// <summary>在 UI 线程发布共享收藏投影，不触发旧数据库回读覆盖新意图。</summary>
+        public event Action? SharedFavoriteChanged;
+        /// <summary>通知已打开详情同步共享收藏。</summary>
+        public void NotifySharedFavoriteChanged() => SharedFavoriteChanged?.Invoke();
 
         public void NotifySongsSourceChanged()
         {
@@ -449,6 +457,15 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var songs = new Dictionary<int, Music>(SongsSource.Count);
             foreach (var song in SongsSource) songs.TryAdd(song.Id, song);
+            if (CurrentPlayingMusic is { } playing && songs.TryGetValue(playing.Id, out var refreshed))
+            {
+                // 保留音频会话与文件快照，仅同步已经提交的歌曲归属和共享状态。
+                playing.SongId = refreshed.SongId;
+                playing.SongPreferredMusicId = refreshed.SongPreferredMusicId;
+                playing.IsFavorite = refreshed.IsFavorite;
+                playing.Order = refreshed.Order;
+                playing.HasVersionLyrics = refreshed.HasVersionLyrics;
+            }
             State.Queue.ReconcileLibrary(songs, CurrentPlayingMusic);
         }
 

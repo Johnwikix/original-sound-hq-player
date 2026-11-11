@@ -17,4 +17,4 @@ public sealed record ParsedLyricLine(string Text, double StartMs, double EndMs,
     ImmutableArray<ParsedLyricWord> Words, string Translation, string Pronunciation = "");
 
 public sealed record LyricsSnapshot(LyricsDocument Document, long Revision, string SourceKind,
-    string SourceKey, string Diagnostic = "");
+    string SourceKey, string Diagnostic = "", int OwnerId = 0);

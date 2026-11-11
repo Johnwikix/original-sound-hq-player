@@ -35,6 +35,25 @@ internal static class FavoriteRegression
         LastFmFavoriteChange Change(bool loved) => new(1, track, loved, loved ? 7 : 0);
         try
         {
+            var grouped = new SQLiteAsyncConnection(Path.Combine(directory, "grouped.db"));
+            try
+            {
+                await grouped.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,SongId INTEGER,IsFavorite INTEGER,[Order] INTEGER)");
+                await grouped.ExecuteAsync("CREATE TABLE Song(Id INTEGER PRIMARY KEY,IsFavorite INTEGER,FavoriteOrder INTEGER,Revision INTEGER)");
+                await grouped.ExecuteAsync("INSERT INTO Song VALUES(10,0,0,1)");
+                await grouped.ExecuteAsync("INSERT INTO Music VALUES(1,10,0,0),(2,10,0,0)");
+                var shared = new LastFmFavoriteStore(() => grouped);
+                await shared.SaveLocalAsync(new(1, track, true, 7), null, null);
+                check(await grouped.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Music WHERE IsFavorite=1") == 2 &&
+                    await grouped.ExecuteScalarAsync<int>("SELECT IsFavorite FROM Song WHERE Id=10") == 1, "Favorite writes update song ownership and every version in one transaction.");
+                await shared.SaveOrderAsync([new(2, 19)]);
+                check(await grouped.ExecuteScalarAsync<int>("SELECT FavoriteOrder FROM Song WHERE Id=10") == 19 &&
+                    await grouped.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Music WHERE [Order]=19") == 2, "Favorite sorting is shared by all file versions.");
+                await shared.SaveLocalAsync(new(2, track, false, 0), null, null);
+                check(await grouped.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Music WHERE IsFavorite=1") == 0 &&
+                    await grouped.ExecuteScalarAsync<int>("SELECT IsFavorite FROM Song WHERE Id=10") == 0, "Unfavoriting any version clears the shared song favorite.");
+            }
+            finally { await grouped.CloseAsync(); }
             var lifecycle = new AppLifecycle();
             var tasks = new ApplicationTasks(lifecycle);
             var finishWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

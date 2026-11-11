@@ -27,6 +27,7 @@
     <Compile Include="../../Model/Folder.cs" />
     <Compile Include="../../Model/SubFolder.cs" />
     <Compile Include="../../Model/MusicLyrics.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyricsRecord.cs" />
+    <Compile Include="../../Model/SongRecord.cs" />
     <Compile Include="../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs" />
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../AudioConverters/FFmpegMetadataProbe.cs" />

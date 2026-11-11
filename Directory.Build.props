@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Shared by project references: artifact outputs must never become implicit source or XAML inputs. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\artifacts\**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

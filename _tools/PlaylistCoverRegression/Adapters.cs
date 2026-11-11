@@ -14,6 +14,17 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
+        public int SongId { get; set; }
+        public int? SongPreferredMusicId { get; set; }
+        public bool IsDetached { get; set; }
+        public bool IsRemoteCached { get; set; }
+        public string Title { get; set; } = "";
+        public string CodecId { get; set; } = "";
+        public string Extension { get; set; } = "";
+        public int EncodingKind { get; set; }
+        public int SampleRate { get; set; }
+        public int Channel { get; set; }
+        public int BitRate { get; set; }
         public int Id { get; set; }
         public string Album { get; set; } = "";
         public string Author { get; set; } = "";

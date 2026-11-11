@@ -194,7 +194,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public PlayListMusicItem? LocateCurrentTrack()
         {
-            var target = CurrentTrackLookup.Find(Songs, AppViewModel.SelectedPlaybackMusic);
+            long queueEntry = AppViewModel.State.Playback.PendingSelection?.EntryId ?? AppViewModel.State.Queue.CurrentEntryId;
+            int entry = AppViewModel.State.Queue.PlaylistEntry(queueEntry);
+            PlayListMusicItem? target = null;
+            if (entry > 0) foreach (var item in Songs) if (item.EntryId == entry) { target = item; break; }
+            target ??= CurrentTrackLookup.Find(Songs, AppViewModel.SelectedPlaybackMusic);
             if (target is not null) SelectedMusic = target;
             return target;
         }
@@ -214,11 +218,10 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         public async Task MusicListView_DoubleTappedAsync(PlayListMusicItem? item = null)
         {
             if (!AppViewModel.CanStartPlayback) return;
-            var target = (item ?? SelectedMusic)?.Music;
-            if (target is not null && MusicBrowseViewModel is not null)
+            var selected = item ?? SelectedMusic;
+            if (selected is not null && MusicBrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = ToMusicCollection(AppViewModel.PlayListSongs);
-                await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
+                await MusicCommands.PlayPlaylistEntryAsync(selected);
             }
         }
 
@@ -232,7 +235,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             for (int i = 0; i < songs.Count; i++)
             {
                 songs[i].PlayListOrder = songs.Count - i;
-                snapshot[i] = new PlayListMusicItem { Music = songs[i].Music, PlayListOrder = songs[i].PlayListOrder };
+                snapshot[i] = new PlayListMusicItem { EntryId = songs[i].EntryId, RequestedMusicId = songs[i].RequestedMusicId, Music = songs[i].Music, PlayListOrder = songs[i].PlayListOrder };
             }
             return ObserveCommandAsync(async () =>
             {
@@ -247,9 +250,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (MusicBrowseViewModel is null) return;
             var plm = AppViewModel.PlayListSongs;
             if (plm.Count == 0) return;
-            var seqList = ToMusicCollection(plm);
-            AppViewModel.SequentialPlayingList = seqList;
-            await MusicBrowseViewModel.PlayMusic(music: seqList[0], IsChangeList: true);
+            await MusicCommands.PlayPlaylistEntryAsync(plm[0]);
         }
 
         private void OnExport()
@@ -297,21 +298,15 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (MusicBrowseViewModel is null) return;
             if (SelectedMusics.Count == 1)
             {
-                var seqList = ToMusicCollection(AppViewModel.PlayListSongs);
-                AppViewModel.SequentialPlayingList = seqList;
-                await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
+                await MusicCommands.PlayPlaylistEntryAsync(SelectedMusics[0]);
             }
             else if (SelectedMusics.Count > 1)
             {
-                var seqList = ToMusicCollection(SelectedMusics);
-                AppViewModel.SequentialPlayingList = seqList;
-                await MusicBrowseViewModel.PlayMusic(music: seqList[0], IsChangeList: true);
+                await MusicCommands.PlayPlaylistEntryAsync(SelectedMusics[0], playlistItems: SelectedMusics.ToArray());
             }
             else if (SelectedMusic?.Music is { } target)
             {
-                var seqList = ToMusicCollection(AppViewModel.PlayListSongs);
-                AppViewModel.SequentialPlayingList = seqList;
-                await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
+                await MusicCommands.PlayPlaylistEntryAsync(SelectedMusic);
             }
         }
 
@@ -368,14 +363,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 var selected = SelectedMusics.ToArray();
                 var ids = new List<int>(selected.Length);
                 for (int i = 0; i < selected.Length; i++)
-                    ids.Add(selected[i].Music.Id);
-                await _db.DeleteAllMusicFromPlayList(playListId, ids);
+                    ids.Add(selected[i].EntryId);
+                await _db.RemovePlaylistEntriesAsync(playListId, ids);
                 if (AppViewModel.CurrentPlayList?.Id == playListId) AppViewModel.PlayListSongs.RemoveRange(selected);
             }
             else if (SelectedMusic is not null)
             {
                 var selected = SelectedMusic;
-                await _db.RemoveMusicFromPlayList(playListId, selected.Music.Id);
+                await _db.RemovePlaylistEntriesAsync(playListId, [selected.EntryId]);
                 if (AppViewModel.CurrentPlayList?.Id == playListId) AppViewModel.PlayListSongs.Remove(selected);
             }
         }

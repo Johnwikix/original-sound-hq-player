@@ -5,6 +5,12 @@ namespace WinUIMusicPlayer.Model;
 /// <summary>保存可跨重启恢复的标签写入快照；同一路径以最后一次编辑为准。</summary>
 public sealed class PendingMetadataWrite
 {
+    /// <summary>排队时的具体版本身份；旧任务为零，须重新明确保存后才能回写。</summary>
+    public int MusicId { get; set; }
+    /// <summary>排队时的文件长度，防止同一路径被其他文件替换。</summary>
+    public long FileLength { get; set; }
+    /// <summary>排队时的 UTC 修改时间。</summary>
+    public long FileLastWriteTicks { get; set; }
     /// <summary>获取或设置规范化文件路径。</summary>
     [PrimaryKey, Collation("NOCASE")]
     public string Path { get; set; } = "";

@@ -146,6 +146,19 @@ public sealed partial class PlaybackCoordinator
                 _candidateEntry = queue.EntryIdAt(index);
             }
         }
+        if (_candidateNext is not null)
+        {
+            int exact = queue.RequestedVersion(_candidateEntry);
+            if (exact > 0)
+            {
+                foreach (var version in state.SongsSource) if (version.Id == exact) { _candidateNext = version; break; }
+            }
+            else if (_candidateNext.SongId > 0)
+            {
+                var versions = OrderedVersions(_candidateNext, queue.SourceScope(_candidateEntry));
+                if (versions.Count > 0) _candidateNext = versions[0];
+            }
+        }
         current.PropertyChanged += CandidateMusicChanged;
         if (_candidateNext != null && _candidateNext != current)
             _candidateNext.PropertyChanged += CandidateMusicChanged;
@@ -267,6 +280,10 @@ public sealed partial class PlaybackCoordinator
         try
         {
             state.State.Queue.SelectEntry(plan.EntryId, plan.Next);
+            BeginVersionIntent(plan.Next, plan.EntryId, state.State.Queue.RequestedVersion(plan.EntryId) > 0, true);
+            _versionConfirmed = true;
+            _activeIntent = (plan.Next, plan.EntryId, _intentExact, _intentMayAdvance, true);
+            _activeSelectionVersion = _selectionVersion;
             state.CurrentPlayingMusic = plan.Next;
             state.RemotePlaybackStatus = "";
             try { statistics.StartSession(plan.Next); _ = tasks.RunAsync(_ => statistics.RecordPlaybackStartAsync(plan.Next)); }

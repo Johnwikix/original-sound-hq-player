@@ -2691,4 +2691,39 @@ SHA-256: {5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>Resize folder and song panes</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>Versions</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Automatic: prefer lossless, then local files or complete caches.</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>Preferred version is fixed; normal playback may fall back if unavailable.</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>Preferred</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>Playing</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>Own lyrics</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>Missing file</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>Offline</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>Available</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>Play this version</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>Set as preferred</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>Choose automatically</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>Link an existing version</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>Separate into a song</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>Undo last grouping change</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>Use shared lyrics</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>No other library song has matching title, artist and album.</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>Choose a matching library file. Tags and covers stay separate. Keep remasters and different performances apart.</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>Confirm song grouping</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>Files stay unchanged. Favorites are combined. Playlist positions remain and follow song preferences. Choose shared lyrics; differing lyrics remain as version overrides and recovery data. Playback continues.</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>Default shared lyrics</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>Use current song lyrics</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>Use linked song lyrics</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>Collapse duplicate playlist positions (kept by default)</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>Song data changed or versions do not match. Refresh and review again.</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>Later edits prevent a safe one-click undo. Keep current data and separate versions as needed.</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>No grouping change to undo.</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>This version, or all versions in the song&apos;s scope, is unavailable.</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>The file identity changed. The pending write is retained; review the target.</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>Another operation changed this version&apos;s tags. Keep the draft and review.</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>Save version drafts before linking, splitting, or undoing.</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} versions; {1} favorited groups; {2} playlist entries, including {3} optional duplicate entries.</value></data>
 </root>

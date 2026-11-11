@@ -40,11 +40,13 @@ public partial class MusicDatabaseService
             parameters[0] = source.Id;
             // 保留收藏、歌单映射和元数据；重新纳入范围后扫描可复用原曲目 ID。
             db.Execute(sql.ToString(), parameters.ToArray());
+            if (MusicMetadataStorage.HasSongs(db))
+                db.Execute("UPDATE Music SET IsMissing=1 WHERE Id IN (SELECT MusicId FROM RemoteTrack WHERE SourceId=? AND Missing=1)", source.Id);
         });
     }
-    /// <summary>缺失或已排除的远程曲目保留在数据库中，但不进入可见曲库。</summary>
+    /// <summary>保留缺失版本的资料和歌曲共享状态，显式解绑的墓碑不进入曲库。</summary>
     public Task<List<Music>> GetVisibleMusicAsync() => _dbConnection.QueryAsync<Music>(
-        "SELECT Music.* FROM Music WHERE SourceId = 0 OR EXISTS (SELECT 1 FROM RemoteTrack WHERE MusicId = Music.Id AND Missing = 0) ORDER BY Title");
+        "SELECT Music.* FROM Music WHERE IsDetached=0 ORDER BY Title");
     public Task<RemoteTrack?> GetRemoteTrackAsync(int musicId) => _dbConnection.FindAsync<RemoteTrack>(musicId)!;
     public Task<List<RemoteTrack>> GetVisibleRemoteTracksAsync() => _dbConnection.Table<RemoteTrack>().Where(track => !track.Missing).ToListAsync();
     public Task<Music?> GetRemoteMusicAsync(int sourceId, string href) =>
@@ -104,6 +106,7 @@ public partial class MusicDatabaseService
                         CreateTime = DateTime.Now, UpdateTime = DateTime.Now
                     };
                     db.Insert(music);
+                    MusicMetadataStorage.AttachSong(db, music);
                     remote = new RemoteTrack { MusicId = music.Id, SourceId = source.Id, Href = entry.Href, ParentHref = parent };
                     visibleAdds++;
                 }
@@ -122,6 +125,8 @@ public partial class MusicDatabaseService
                 remote.Modified = modified;
                 remote.SeenRun = run;
                 remote.Missing = false;
+                music.IsMissing = false;
+                db.Execute("UPDATE Music SET IsMissing=0 WHERE Id=?", music.Id);
                 db.InsertOrReplace(remote);
                 changed.Add(music);
             }
@@ -131,10 +136,22 @@ public partial class MusicDatabaseService
 
     /// <summary>返回本次转入缺失（Missing 1←0）的行数；已是缺失的行不再计数，返回值即可见移除数。</summary>
     public Task<int> MarkRemoteDirectoryScannedAsync(int sourceId, string parent, string run) =>
-        _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND ParentHref = ? COLLATE BINARY AND SeenRun <> ? AND Missing = 0", sourceId, parent, run);
+        MarkRemoteMissingAsync(sourceId, parent, run);
 
-    public Task<int> MarkRemoteSourceScannedAsync(int sourceId, string run) =>
-        _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND SeenRun <> ? AND Missing = 0", sourceId, run);
+    public Task<int> MarkRemoteSourceScannedAsync(int sourceId, string run) => MarkRemoteMissingAsync(sourceId, null, run);
+
+    private async Task<int> MarkRemoteMissingAsync(int sourceId, string? parent, string run)
+    {
+        int changed = 0;
+        await _dbConnection.RunInTransactionAsync(db =>
+        {
+            string predicate = parent is null ? "SourceId=? AND SeenRun<>?" : "SourceId=? AND ParentHref=? COLLATE BINARY AND SeenRun<>?";
+            object[] args = parent is null ? [sourceId, run] : [sourceId, parent, run];
+            if (MusicMetadataStorage.HasSongs(db)) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id IN (SELECT MusicId FROM RemoteTrack WHERE " + predicate + ")", args);
+            changed = db.Execute("UPDATE RemoteTrack SET Missing=1 WHERE Missing=0 AND " + predicate, args);
+        });
+        return changed;
+    }
     public Task RetryDeferredRemoteMetadataAsync(int sourceId) =>
         _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET MetadataState = 'Pending' WHERE SourceId = ? AND MetadataState = 'Deferred'", sourceId);
 
@@ -170,12 +187,14 @@ public partial class MusicDatabaseService
                 music.BitDepth = metadata.BitDepth;
                 music.BitRate = metadata.BitRate;
                 music.Duration = TimeSpan.FromMilliseconds(metadata.DurationMs);
+                music.CodecId = metadata.CodecId;
+                music.EncodingKind = metadata.EncodingKind;
                 if (metadata.AdditionalMetadata is { } tags) tags.ApplyTo(music);
                 music.UpdateTime = DateTime.Now;
                 // 仅更新元数据，不覆盖在 UI 上并发发生的收藏、统计和歌词偏移。
-                db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,SampleRate=?,Channel=?,BitDepth=?,BitRate=?,Duration=?,UpdateTime=? WHERE Id=?",
+                db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,SampleRate=?,Channel=?,BitDepth=?,BitRate=?,Duration=?,UpdateTime=?,CodecId=?,EncodingKind=?,MetadataRevision=MetadataRevision+1 WHERE Id=?",
                     music.Title, music.Author, music.Album, music.TrackNumber, music.DiskNumber, music.Year, music.SampleRate, music.Channel,
-                    music.BitDepth, music.BitRate, music.Duration, music.UpdateTime, music.Id);
+                    music.BitDepth, music.BitRate, music.Duration, music.UpdateTime, music.CodecId, music.EncodingKind, music.Id);
                 if (metadata.AdditionalMetadata is { } additional) MusicMetadataStorage.Save(db, music.Id, additional);
                 result = music;
             }
@@ -189,9 +208,7 @@ public partial class MusicDatabaseService
     {
         foreach (int id in db.QueryScalars<int>("SELECT MusicId FROM RemoteTrack WHERE SourceId = ?", sourceId))
         {
-            db.Execute("DELETE FROM PlayListMusic WHERE MusicId = ?", id);
-            WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, id);
-            db.Delete<Music>(id);
+                    db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", id);
         }
         db.Execute("DELETE FROM RemoteTrack WHERE SourceId = ?", sourceId);
         db.Delete<WebDavSource>(sourceId);

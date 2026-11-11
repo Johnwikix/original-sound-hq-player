@@ -15,4 +15,5 @@
     <Compile Include="../../State/PlaybackState.cs;../../Services/PlaybackCoordinator.cs;../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../Services/ShutdownCoordinator.cs;../../Services/RemotePlaybackService.cs;../../Services/WebDavLibraryService.Availability.cs" />
     <Compile Include="../../Services/WebDav/*.cs" Exclude="../../Services/WebDav/RemoteMetadataProbe.cs" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../../Services/SongVersionPolicy.cs" /></ItemGroup>
 </Project>

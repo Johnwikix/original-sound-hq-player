@@ -20,11 +20,18 @@ namespace WinUIMusicPlayer.Model
     public sealed class PlayList { }
     public sealed class PlayListMusicItem
     {
+        public int EntryId { get; set; }
+        public int? RequestedMusicId { get; set; }
         public Music Music { get; set; } = new(1, "");
         public int PlayListOrder { get; set; }
     }
     public sealed record MusicGroup(string Key, List<Music> Items);
-    public sealed record PlaylistLink(int MusicId, int PlayListId, int Order);
+    public sealed record PlaylistLink(int MusicId, int PlayListId, int Order)
+    {
+        public int Id { get; init; }
+        public int SongId { get; init; }
+        public int? RequestedMusicId { get; init; }
+    }
     public static partial class AppData { public static List<PlaylistLink> AllPlayListMusics { get; } = []; }
 }
 namespace WinUIMusicPlayer.Utils

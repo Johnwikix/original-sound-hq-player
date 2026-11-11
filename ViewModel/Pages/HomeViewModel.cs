@@ -109,7 +109,8 @@ public sealed class HomeViewModel : ObservableObject
         {
             var editor = _editors.Create(song.Music);
             presentation = new MusicDetailsViewModel(editor, _app, _database, _editorSessions, _logger,
-                song.PlayCommand, song, _editors.CreateSpectrogram(song.Music), song.Reason);
+                MusicCommands.DetailsPlayCommand, new MusicDetailsRequest(song.Music, null), _editors.CreateSpectrogram(song.Music), song.Reason,
+                factory: _editors, dialogs: new MusicVersionDialogs());
             presentation.Start();
         }
         catch (Exception ex)
@@ -454,17 +455,34 @@ public sealed class HomeViewModel : ObservableObject
                     if (_snapshotVersion != version)
                     {
                         var playlistIds = await _database.GetRecommendationPlaylistIdsAsync(token);
-                        snapshot = new RecommendationTrack[_app.SongsSource.Count];
-                        for (int i = 0; i < snapshot.Length; i++)
+                        var tracks = new List<RecommendationTrack>(_app.SongsSource.Count);
+                        HashSet<int> includedSongs = [];
+                        for (int i = 0; i < _app.SongsSource.Count; i++)
                         {
                             token.ThrowIfCancellationRequested();
                             if (revision != _revision || version != _app.State.Library.Version) break;
                             var m = _app.SongsSource[i];
-                            snapshot[i] = new(m.Id, ArtistHelper.GetArtistNames(m.Author), m.Album, m.AlbumArtist,
-                                m.Genre, m.Year, m.IsFavorite, m.IsPlayable, m.PlayCount, m.Title, playlistIds.Contains(m.Id));
+                            if (m.SongId > 0 && !includedSongs.Add(m.SongId)) continue;
+                            bool playable = m.IsPlayable, inPlaylist = playlistIds.Contains(m.Id);
+                            int plays = m.PlayCount;
+                            if (m.SongId > 0)
+                            {
+                                m = _app.FindDisplayVersion(m.SongId) ?? m;
+                                plays = 0;
+                                playable = false;
+                                foreach (var versionFile in _app.FindVersions(m.SongId))
+                                {
+                                    plays += versionFile.PlayCount;
+                                    playable |= versionFile.IsPlayable;
+                                    inPlaylist |= playlistIds.Contains(versionFile.Id);
+                                }
+                            }
+                            tracks.Add(new(m.Id, ArtistHelper.GetArtistNames(m.Author), m.Album, m.AlbumArtist,
+                                m.Genre, m.Year, m.IsFavorite, playable, plays, m.Title, inPlaylist));
                             if (i % 512 == 511) await Task.Yield();
                         }
                         if (revision != _revision || version != _app.State.Library.Version) { _dirty = true; continue; }
+                        snapshot = tracks.ToArray();
                         _snapshot = snapshot;
                         _snapshotVersion = version;
                     }
@@ -479,7 +497,7 @@ public sealed class HomeViewModel : ObservableObject
                         catch { _historyDirty = true; throw; }
                         _historyDay = now.Date;
                     }
-                    var history = _history;
+                    var history = GroupListeningVersions(_history);
                     int batch = _batch;
                     // 仅已发布的其他批次计入曝光；同批次的后台重算保持一致的输入。
                     var recent = batch == _publishedBatch ? _recentRecommendations[1..] : _recentRecommendations;
@@ -523,6 +541,21 @@ public sealed class HomeViewModel : ObservableObject
             }
         }
         finally { _running = false; }
+    }
+
+    private IReadOnlyList<HomeListening> GroupListeningVersions(IReadOnlyList<HomeListening> source)
+    {
+        var grouped = new Dictionary<int, HomeListening>(source.Count);
+        foreach (var row in source)
+        {
+            var file = _app.FindById(row.MusicId);
+            int id = file?.SongId > 0 ? (_app.FindDisplayVersion(file.SongId)?.Id ?? row.MusicId) : row.MusicId;
+            if (!grouped.TryGetValue(id, out var combined)) grouped.Add(id, combined = new HomeListening { MusicId = id });
+            combined.Count += row.Count;
+            combined.Weight += row.Weight;
+            combined.LastPlayedTicks = Math.Max(combined.LastPlayedTicks, row.LastPlayedTicks);
+        }
+        return new List<HomeListening>(grouped.Values);
     }
 
     private async Task LoadRecommendationStateAsync(CancellationToken token)

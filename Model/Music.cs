@@ -12,6 +12,22 @@ namespace WinUIMusicPlayer.Model
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
+        /// <summary>获取或设置所属歌曲；文件版本身份仍使用 Id。</summary>
+        [Indexed] public int SongId { get; set; }
+        /// <summary>获取或设置标签并发修订。</summary>
+        public long MetadataRevision { get; set; }
+        /// <summary>获取或设置实际编码标识；未知时为空。</summary>
+        public string CodecId { get; set; } = "";
+        /// <summary>获取或设置编码类别：0 未知、1 无损、2 有损。</summary>
+        public int EncodingKind { get; set; }
+        /// <summary>获取或设置确认缺失状态；保留用户资料。</summary>
+        public bool IsMissing { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsPlayable)); } }
+        /// <summary>获取或设置已从库解绑但为恢复保留的状态。</summary>
+        public bool IsDetached { get; set; }
+        /// <summary>获取或设置共享歌曲的手动首选投影。</summary>
+        [Ignore] public int? SongPreferredMusicId { get; set; }
+        /// <summary>获取或设置是否使用独立版本歌词。</summary>
+        [Ignore] public bool HasVersionLyrics { get; set; }
         public int SourceId { get; set; }
         [Ignore] public bool IsRemote => SourceId != 0;
         /// <summary>当前版本的完整网络音频已提交到缓存目录；不持久化此文件系统状态。</summary>
@@ -31,7 +47,7 @@ namespace WinUIMusicPlayer.Model
             }
         }
         /// <summary>供自动切歌和传输控制使用的最近状态；手动播放仍须进入服务重新探活。</summary>
-        [Ignore] public bool IsPlayable => IsRemoteCached || !IsRemoteOffline;
+        [Ignore] public bool IsPlayable => !IsDetached && (IsRemoteCached || !IsMissing && !IsRemoteOffline);
         [Ignore] public bool CanEditFile => !IsRemote;
         public string Path { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
@@ -86,6 +102,8 @@ namespace WinUIMusicPlayer.Model
         [Ignore]
         public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;
         public string ImageHash { get; set => SetProperty(ref field, value); } = string.Empty;
+        /// <summary>获取或设置本版本的数据库封面原件，不随可重建缓存清理。</summary>
+        public string CoverOverridePath { get; set; } = "";
         public DateTime CreateTime { get; set => SetProperty(ref field, value); }
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 

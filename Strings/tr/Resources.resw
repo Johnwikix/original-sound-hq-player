@@ -2691,4 +2691,39 @@ SHA-256: {5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>Klasör ve şarkı bölmelerinin genişliğini ayarla</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>Sürümler</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Otomatik: önce kayıpsız, sonra yerel dosya veya tam önbellek.</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>Tercih edilen sürüm sabit; kullanılamazsa normal çalma diğerine geçebilir.</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>Tercih edilen</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>Çalıyor</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>Ayrı şarkı sözü</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>Dosya eksik</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>Çevrimdışı</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>Kullanılabilir</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>Bu sürümü çal</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>Tercih edilen yap</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>Otomatik seç</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>Mevcut sürümü bağla</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>Ayrı şarkıya ayır</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>Son gruplamayı geri al</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>Ortak sözleri kullan</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>Aynı başlık, sanatçı ve albüme sahip başka şarkı yok.</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>Eşleşen dosyayı seçin. Etiket ve kapaklar ayrı kalır. Remaster ve farklı icraları ayırın.</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>Şarkı grubunu onayla</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>Dosyalar değişmez. Favoriler birleşir. Liste konumları korunur ve sürüm tercihini izler. Ortak sözleri seçin; farklı sözler ayrı ve kurtarma için saklanır. Çalma sürer.</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>Varsayılan ortak sözler</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>Geçerli şarkının sözleri</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>Bağlanan şarkının sözleri</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>Tekrarlanan liste konumlarını birleştir (varsayılan korunur)</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>Onayla</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>Şarkı verileri değişti veya sürümler eşleşmiyor. Yenileyip inceleyin.</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>Sonraki değişiklikler güvenli geri almayı engelliyor. Verileri koruyup sürümleri ayırın.</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>Geri alınacak gruplama yok.</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>Kaydedildi.</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>Bu sürüm veya kapsamdaki tüm sürümler kullanılamıyor.</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>Dosya kimliği değişti. Bekleyen yazma korundu; hedefi inceleyin.</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>Bu sürümün etiketleri başka işlemle değişti. Taslağı koruyup inceleyin.</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>İlişkilendirme, ayırma veya geri alma öncesinde sürüm taslaklarını kaydedin.</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} sürüm; {1} favori grup; {2} çalma listesi girdisi, {3} isteğe bağlı yinelenen girdi.</value></data>
 </root>

@@ -4,7 +4,8 @@ using Windows.Storage;
 
 await FolderAccessRegression.RunAsync();
 
-string root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "FolderScanRegression-" + Guid.NewGuid());
+string artifactsRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "artifacts"));
+string root = Path.Combine(artifactsRoot, "FolderScanRegression-" + Guid.NewGuid());
 Directory.CreateDirectory(root);
 try
 {
@@ -31,10 +32,13 @@ try
     await ReadonlyQueryChecks.RunAsync(root);
     await MetadataRegression.RunAsync(root);
 }
-
+catch (Exception exception) { Console.WriteLine(exception); throw; }
 finally
 {
     ToolUtils.SlowFile.TrySetResult();
+    SQLite.SQLiteAsyncConnection.ResetPool();
+    if (!Path.GetFullPath(root).StartsWith(artifactsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("Unsafe fixture directory");
     // SQLite 异步连接句柄可能晚于断言释放（仅清理竞态,与检查结果无关）：小步重试后仍失败则留给系统临时目录清理。
     for (int attempt = 0; ; attempt++)
     {

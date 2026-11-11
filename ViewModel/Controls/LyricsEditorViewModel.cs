@@ -21,24 +21,35 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     private readonly ApplicationTasks _tasks;
     private readonly ILlmTranslationService? _llm;
     private readonly CancellationTokenSource _closed = new();
-    private LyricsDocument _savedDocument = LyricsDocument.Empty;
-    private long _revision;
-    private long _draftVersion;
-    private bool _loaded;
+    private LyricsEditDraft _draft = new();
+    private LyricsDocument _savedDocument { get => _draft.SavedDocument; set => _draft.SavedDocument = value; }
+    private long _revision { get => _draft.Revision; set => _draft.Revision = value; }
+    private int _ownerId { get => _draft.OwnerId; set => _draft.OwnerId = value; }
+    internal int DocumentOwnerId => _ownerId;
+    private long _draftVersion { get => _draft.Version; set => _draft.Version = value; }
+    private bool _loaded { get => _draft.Loaded; set => _draft.Loaded = value; }
     private bool _disposed;
     private Task _operationTask = Task.CompletedTask;
 
-    public string OriginalText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
-    public string TranslationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
-    public string PronunciationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
+    public string OriginalText { get => _draft.OriginalText; set => _draft.OriginalText = value; }
+    public string TranslationText { get => _draft.TranslationText; set => _draft.TranslationText = value; }
+    public string PronunciationText { get => _draft.PronunciationText; set => _draft.PronunciationText = value; }
+    /// <summary>获取文本是否包含未提交修改。</summary>
+    public bool HasChanges => _loaded && (OriginalText != _savedDocument.Original.Content ||
+        TranslationText != (_savedDocument.TranslationLrc ?? "") || PronunciationText != (_savedDocument.PronunciationLrc ?? ""));
     public string Status { get => field; private set => SetProperty(ref field, value); } = "";
     public string Error { get => field; private set => SetProperty(ref field, value); } = "";
     public bool IsBusy
     {
-        get => field;
-        private set
+        get => _draft.IsBusy;
+        private set => _draft.IsBusy = value;
+    }
+    private void DraftChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        OnPropertyChanged(args.PropertyName);
+        OnPropertyChanged(nameof(HasChanges));
+        if (args.PropertyName == nameof(IsBusy))
         {
-            if (!SetProperty(ref field, value)) return;
             OnPropertyChanged(nameof(CanSave));
             OnPropertyChanged(nameof(CanSaveFile));
             RefreshCommand.NotifyCanExecuteChanged();
@@ -66,13 +77,14 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         _online = online;
         _tasks = tasks;
         _llm = llm;
+        _draft.PropertyChanged += DraftChanged;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => _loaded && !IsBusy && !_disposed);
         ExportCommand = new AsyncRelayCommand(ExportAsync, () => _loaded && !IsBusy && !_disposed && !_music.IsRemote);
         TranslateCommand = new AsyncRelayCommand(TranslateAsync, () => _loaded && !IsBusy && !_disposed && _llm is not null);
         RestoreLegacyCommand = new AsyncRelayCommand<string>(RestoreAsync, _ => _loaded && !IsBusy && !_disposed);
     }
 
-    public Task LoadAsync() => RunAsync(async token =>
+    public Task LoadAsync() => _loaded ? _draft.Operation : RunAsync(async token =>
     {
         if (_music.Id <= 0)
         {
@@ -89,6 +101,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         var snapshot = await _database.Lyrics.GetAsync(_music.Id, token);
         token.ThrowIfCancellationRequested();
         _revision = snapshot.Revision;
+        _ownerId = snapshot.OwnerId;
         _savedDocument = snapshot.Document;
         if (_draftVersion == 0) SetDocument(snapshot.Document);
         var legacy = await _database.GetDbConnection().FindAsync<MusicLyrics>(_music.Id);
@@ -100,6 +113,51 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CanSaveFile));
         TranslateCommand.NotifyCanExecuteChanged();
     });
+
+    /// <summary>复用同组默认歌词草稿；版本覆盖仍保持独立。</summary>
+    public void ShareDraftWith(LyricsEditorViewModel source)
+    {
+        if (ReferenceEquals(_draft, source._draft) || _music.HasVersionLyrics || source._music.HasVersionLyrics ||
+            _music.SongId <= 0 || _music.SongId != source._music.SongId || HasChanges) return;
+        _draft.PropertyChanged -= DraftChanged;
+        _draft = source._draft;
+        _draft.PropertyChanged += DraftChanged;
+        OnPropertyChanged(nameof(OriginalText));
+        OnPropertyChanged(nameof(TranslationText));
+        OnPropertyChanged(nameof(PronunciationText));
+        OnPropertyChanged(nameof(CanSave));
+    }
+
+    /// <summary>归属修改后仅重读没有未保存输入的文档。</summary>
+    public async Task ReloadIfUnchangedAsync()
+    {
+        await WhenIdleAsync();
+        if (_disposed) return;
+        if (HasChanges)
+        {
+            var saved = await _database.Lyrics.GetAsync(_music.Id);
+            if (saved.OwnerId != _ownerId)
+            {
+                // 合并／拆分后旧的共享草稿不能再把输入传播到另一个所有者。
+                var original = _draft;
+                original.PropertyChanged -= DraftChanged;
+                _draft = new LyricsEditDraft
+                {
+                    SavedDocument = original.SavedDocument, Revision = original.Revision, OwnerId = original.OwnerId,
+                    Loaded = original.Loaded, OriginalText = original.OriginalText, TranslationText = original.TranslationText,
+                    PronunciationText = original.PronunciationText, Version = original.Version
+                };
+                _draft.PropertyChanged += DraftChanged;
+            }
+            if (saved.Document == _savedDocument) { _revision = saved.Revision; _ownerId = saved.OwnerId; }
+            else Error = ToolUtils.GetString("LyricsEditConflict");
+            return;
+        }
+        _draft.PropertyChanged -= DraftChanged;
+        _draft = new();
+        _draft.PropertyChanged += DraftChanged;
+        await LoadAsync();
+    }
 
     public Task ReadEmbeddedAsync() => RunAsync(async token =>
     {
@@ -165,9 +223,12 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
                 if (!OneShotLyricsCache.SaveEdited(_music.Path, document, _revision)) throw new InvalidOperationException("LyricsEditConflict");
             }
             else if (queueMetadata)
-                await _database.QueueMetadataWriteAsync(metadataDraft ?? _music, cover, document, _revision, token, lyricsChanged: lyricsChanged);
-            else await _database.SaveDetailsAsync(metadataDraft ?? _music, document, _revision, token, lyricsChanged: lyricsChanged);
-            _revision++;
+                await _database.QueueMetadataWriteAsync(metadataDraft ?? _music, cover, document, _revision, token, lyricsChanged: lyricsChanged, expectedOwnerId: _ownerId);
+            else if (metadataDraft is not null)
+                await _database.SaveDetailsAsync(metadataDraft, document, _revision, token, lyricsChanged: lyricsChanged, expectedOwnerId: _ownerId, cover: cover);
+            else if (lyricsChanged && !await _database.Lyrics.SaveAsync(_music.Id, document, _revision, "User", token: token, expectedOwnerId: _ownerId))
+                throw new InvalidOperationException("LyricsEditConflict");
+            if (lyricsChanged || _music.Id <= 0) _revision++;
             _savedDocument = document;
             LastCommittedMetadata = metadataDraft;
             // A binding notification can arrive after the transaction commits. Treat an
@@ -275,12 +336,14 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>等待已经接受的真实操作；被守卫拒绝的重复命令不会替换此任务。</summary>
-    public Task WhenIdleAsync() => _operationTask;
+    public Task WhenIdleAsync() => _draft.Operation;
 
     private Task RunAsync(Func<CancellationToken, Task> action)
     {
         if (_disposed || IsBusy) return Task.CompletedTask;
-        return _operationTask = RunCoreAsync(action);
+        _operationTask = RunCoreAsync(action);
+        _draft.Operation = _operationTask;
+        return _operationTask;
     }
     private async Task RunCoreAsync(Func<CancellationToken, Task> action)
     {
@@ -316,6 +379,21 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         if (_disposed) return;
         _disposed = true;
         _closed.Cancel();
-        if (!IsBusy) _closed.Dispose();
+        _draft.PropertyChanged -= DraftChanged;
+        if (_operationTask.IsCompleted) _closed.Dispose();
     }
+}
+
+/// <summary>同一详情中共享歌词的文本及修订；不持有窗口或文件资源。</summary>
+internal sealed class LyricsEditDraft : ObservableObject
+{
+    internal LyricsDocument SavedDocument = LyricsDocument.Empty;
+    internal long Revision, Version;
+    internal int OwnerId;
+    internal bool Loaded;
+    internal Task Operation = Task.CompletedTask;
+    internal string OriginalText { get => field; set { if (SetProperty(ref field, value)) Version++; } } = "";
+    internal string TranslationText { get => field; set { if (SetProperty(ref field, value)) Version++; } } = "";
+    internal string PronunciationText { get => field; set { if (SetProperty(ref field, value)) Version++; } } = "";
+    internal bool IsBusy { get; set => SetProperty(ref field, value); }
 }

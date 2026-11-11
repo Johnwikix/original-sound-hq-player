@@ -2691,4 +2691,39 @@ SHA-256: {5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>Ajustar el ancho de carpetas y canciones</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>Versiones</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Automático: priorizar sin pérdida y después archivos locales o caché completa.</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>Versión preferida fijada; la reproducción normal puede usar otra si no está disponible.</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>Preferida</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>Reproduciendo</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>Letra propia</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>Archivo ausente</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>Sin conexión</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>Disponible</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>Reproducir esta versión</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>Establecer como preferida</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>Elegir automáticamente</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>Vincular versión existente</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>Separar como canción</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>Deshacer última agrupación</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>Usar letra compartida</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>No hay otra canción con el mismo título, artista y álbum.</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>Elija un archivo coincidente. Etiquetas y portadas se conservan. Separe remasterizaciones y otras interpretaciones.</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>Confirmar agrupación</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>Los archivos no cambian. Se combinan favoritos. Las posiciones de lista permanecen y siguen la preferencia. Elija letra compartida; las distintas se conservan por versión y para recuperar. La reproducción continúa.</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>Letra compartida predeterminada</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>Usar letra de canción actual</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>Usar letra de canción vinculada</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>Combinar posiciones duplicadas (se conservan por defecto)</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>Confirmar</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>Los datos cambiaron o las versiones no coinciden. Actualice y revise.</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>Los cambios posteriores impiden deshacer sin sobrescribir. Conserve los datos y separe versiones.</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>No hay agrupaciones que deshacer.</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>Guardado.</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>Esta versión o todas las versiones del ámbito no están disponibles.</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>La identidad del archivo cambió. Se conserva la escritura pendiente; revise el destino.</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>Otra operación cambió las etiquetas. Conserve el borrador y revise.</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>Guarda los borradores antes de vincular, separar o deshacer.</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} versiones; {1} grupos favoritos; {2} entradas de listas, con {3} duplicados opcionales.</value></data>
 </root>

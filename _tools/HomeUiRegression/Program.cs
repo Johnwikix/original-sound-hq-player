@@ -138,6 +138,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             App.MainWindow = window;
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 820));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
+            if (Environment.GetCommandLineArgs().Contains("--song-versions"))
+            {
+                await CheckSongVersionsAsync(window, data, app, editorFactory);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--spectrogram-memory"))
             {
                 await CheckSpectrogramMemoryAsync(window, data, app);

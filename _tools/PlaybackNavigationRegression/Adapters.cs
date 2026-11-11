@@ -58,6 +58,19 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music(int id, int source = 0) : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
+        public int SongId { get; set; }
+        public int? SongPreferredMusicId { get; set; }
+        public bool IsDetached { get; set; }
+        public bool IsMissing { get; set; }
+        public string Title { get; set; } = "Song";
+        public string Author { get; set; } = "Artist";
+        public string Album { get; set; } = "Album";
+        public string CodecId { get; set; } = "";
+        public string Extension { get; set; } = "";
+        public int EncodingKind { get; set; }
+        public int SampleRate { get; set; }
+        public int BitRate { get; set; }
+        public int Channel { get; set; }
         public string Path { get; set => SetProperty(ref field, value); } = source == 0 ? System.IO.Path.GetFullPath($"track-{id}.wav") : $"webdav://{source}/dav/tone.flac";
         public TimeSpan Duration { get; set; }
         public int Id => id;
@@ -73,7 +86,7 @@ namespace WinUIMusicPlayer.Model
             get;
             set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsPlayable)); }
         }
-        public bool IsPlayable => IsRemoteCached || !IsRemoteOffline;
+        public bool IsPlayable => !IsDetached && (IsRemoteCached || !IsMissing && !IsRemoteOffline);
     }
     public sealed record WebDavSource(int Id)
     {
@@ -151,7 +164,9 @@ namespace WinUIMusicPlayer.ViewModel
         public string RemotePlaybackStatus { get; set; } = "";
         public List<string> UILyrics { get; set; } = [];
         public AppState State { get; } = new();
-        public System.Collections.ObjectModel.ObservableCollection<Music> SongsSource => CurrentPlayingList;
+        public List<Music>? LibrarySongs { get; set; }
+        public IEnumerable<Music> SongsSource => LibrarySongs is not null ? LibrarySongs : CurrentPlayingList;
+        public IReadOnlyList<Music> FindVersions(int songId) => SongsSource.Where(m => m.SongId == songId).ToArray();
         public string MusicCoverCache => WinUIMusicPlayer.Model.AppSettings.MusicCoverCache;
         public void RefreshDataSource() { }
         public void StartProgressTimer() { }
@@ -274,6 +289,8 @@ namespace WinUIMusicPlayer.Services
         }
         public List<Music> Played { get; } = [];
         public event Action<Music, long, bool>? Failed;
+        public event Action<Music, BassPlayerIpc.Shared.ProgressSnapshot, bool>? PlaybackStarted;
+        public void Confirm(Music music) => PlaybackStarted?.Invoke(music, new(1, _generation, 0, 10000, 0, true), false);
         private long _generation;
         public int PreservedStops { get; private set; }
         public long BeginSelection(Music music, bool resumeInterrupted = false)

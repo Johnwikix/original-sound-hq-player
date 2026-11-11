@@ -8,6 +8,17 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>迁移并持久化可选标签；不触发媒体扫描，也不覆盖播放统计。</summary>
 public static class MusicMetadataStorage
 {
+    /// <summary>判断事务连接是否已经启用歌曲分组。</summary>
+    public static bool HasSongs(SQLiteConnection db) => db.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0;
+    /// <summary>为扫描新文件建立独立歌曲；旧夹具／旧库未启用分组时保持兼容。</summary>
+    public static void AttachSong(SQLiteConnection db, Music music)
+    {
+        if (music.SongId > 0 || !HasSongs(db)) return;
+        db.Execute("INSERT INTO Song(Title,Artist,Album,IsFavorite,FavoriteOrder,Revision,LyricsSourceMusicId) VALUES(?,?,?,?,?,1,?)",
+            music.Title, music.Author, music.Album, music.IsFavorite, music.Order, music.Id);
+        music.SongId = db.ExecuteScalar<int>("SELECT last_insert_rowid()");
+        db.Execute("UPDATE Music SET SongId=? WHERE Id=?", music.SongId, music.Id);
+    }
     private static readonly string[] Fields = ["AlbumArtist", "Genre", "Composer", "Lyricist", "Conductor", "CatalogNumber"];
     private const string UpdateSql = "UPDATE Music SET AlbumArtist=?,Genre=?,Composer=?,Lyricist=?,Conductor=?,CatalogNumber=?,AdditionalMetadataRead=1 WHERE Id=?";
 

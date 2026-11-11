@@ -86,6 +86,8 @@ public class InitialFileScan
         public static async Task<bool> Deduplication(CancellationToken cancellationToken = default)
         {
             var database = App.Services.GetRequiredService<MusicDatabaseService>();
+            // 归组后不得沿用直接删除重复行的旧清理，避免丢掉独立歌词与出现项。
+            if (await database.GetDbConnection().ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0) return false;
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var duplicates = new List<Music>();
             foreach (var music in await database.GetMusicListAsync())

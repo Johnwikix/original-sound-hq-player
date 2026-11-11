@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <Compile Include="../../Services/PlaybackCoordinator.Gapless.cs" />
+    <Compile Include="../../Services/SongVersionPolicy.cs" />
     <Compile Include="../../State/PlaybackQueueState.cs" />
     <Compile Include="../../State/PlaybackState.cs;../../Services/WebDav/WebDavAvailability.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

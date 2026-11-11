@@ -409,6 +409,8 @@ namespace WinUIMusicPlayer.Utils
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (!string.IsNullOrEmpty(music.CoverOverridePath) && File.Exists(music.CoverOverridePath))
+                return await File.ReadAllBytesAsync(music.CoverOverridePath, cancellationToken);
             if (music.IsRemote)
             {
                 var remotePicture = await App.Services.GetRequiredService<WebDavLibraryService>()
@@ -1077,6 +1079,13 @@ namespace WinUIMusicPlayer.Utils
                     UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                 };
                 AudioMetadataTags.Read(track).ApplyTo(music);
+                music.CodecId = track.AudioFormat.ShortName ?? "";
+                music.EncodingKind = track.CodecFamily switch
+                {
+                    ATL.AudioData.AudioDataIOFactory.CF_LOSSLESS => 1,
+                    ATL.AudioData.AudioDataIOFactory.CF_LOSSY => 2,
+                    _ => 0
+                };
                 return (music, lyrics);
             }
             catch (Exception ex)

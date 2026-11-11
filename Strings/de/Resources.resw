@@ -2691,4 +2691,39 @@ SHA-256: {5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>Breite der Ordner- und Titelbereiche anpassen</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>Versionen</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>Automatisch: verlustfrei bevorzugen, dann lokale Dateien oder vollständigen Cache.</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>Bevorzugte Version festgelegt; bei Nichtverfügbarkeit ist Ersatz möglich.</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>Bevorzugt</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>Wiedergabe</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>Eigener Liedtext</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>Datei fehlt</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>Offline</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>Verfügbar</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>Diese Version abspielen</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>Als bevorzugt festlegen</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>Automatisch wählen</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>Vorhandene Version verknüpfen</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>Als eigenen Titel abtrennen</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>Letzte Gruppierung rückgängig</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>Gemeinsamen Liedtext verwenden</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>Kein weiterer Bibliothekstitel mit gleichem Titel, Interpret und Album.</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>Passende Datei wählen. Tags und Cover bleiben getrennt. Remaster und andere Aufführungen separat lassen.</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>Titelgruppierung bestätigen</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>Dateien bleiben unverändert. Favoriten werden vereinigt. Listenpositionen bleiben und folgen der Versionswahl. Gemeinsamen Text wählen; andere Texte bleiben als Versionstext und Sicherung. Wiedergabe läuft weiter.</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>Gemeinsamer Standardtext</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>Text des aktuellen Titels</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>Text des verknüpften Titels</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>Doppelte Listenpositionen zusammenfassen (standardmäßig behalten)</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>Bestätigen</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>Titeldaten geändert oder Versionen passen nicht. Aktualisieren und erneut prüfen.</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>Spätere Änderungen verhindern sicheres Rückgängigmachen. Daten behalten und Versionen bei Bedarf trennen.</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>Keine Gruppierung zum Rückgängigmachen.</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>Gespeichert.</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>Diese Version oder alle Versionen im Bereich sind nicht abspielbar.</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>Dateiidentität geändert. Schreibauftrag bleibt erhalten; Ziel prüfen.</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>Tags wurden anderweitig geändert. Entwurf behalten und prüfen.</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>Versionsentwürfe vor dem Verknüpfen, Trennen oder Rückgängigmachen speichern.</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} Versionen; {1} favorisierte Gruppen; {2} Wiedergabelisteneinträge, davon {3} optionale Duplikate.</value></data>
 </root>

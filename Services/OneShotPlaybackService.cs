@@ -207,7 +207,7 @@ public sealed class OneShotPlaybackService : IDisposable
             var cached = OneShotLyricsCache.Load(imported.Path);
             if (cached is null || (string.IsNullOrWhiteSpace(cached.Document.Original.Content) && cached.SourceKind != "User")) return;
             await _databaseService.Lyrics.SaveAsync(imported.Id, cached.Document, snapshot.Revision,
-                cached.SourceKind == "User" ? "User" : "OneShotCache")
+                cached.SourceKind == "User" ? "User" : "OneShotCache", expectedOwnerId: snapshot.OwnerId)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

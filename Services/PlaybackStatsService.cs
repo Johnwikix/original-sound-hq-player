@@ -88,6 +88,7 @@ namespace WinUIMusicPlayer.Services
             var session = new PlaybackHistory
             {
                 MusicId = music.Id,
+                SongIdAtPlay = music.SongId,
                 Title = music.Title,
                 Author = music.Author,
                 Album = music.Album,
@@ -311,7 +312,9 @@ namespace WinUIMusicPlayer.Services
                 "SELECT COALESCE(Title, '') AS Title, COALESCE(Author, '') AS Artist, COALESCE(MAX(Album), '') AS Album, " +
                 "MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
-                "GROUP BY Title, Artist ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
+                "GROUP BY COALESCE(NULLIF((SELECT SongId FROM Music WHERE Id=PlaybackHistory.MusicId),0),NULLIF(SongIdAtPlay,0),-MusicId), " +
+                "CASE WHEN MusicId=0 THEN Title END, CASE WHEN MusicId=0 THEN Author END, CASE WHEN MusicId=0 THEN Album END " +
+                "ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
                 startTicks, endTicks, topLimit);
             cancellationToken.ThrowIfCancellationRequested();
 

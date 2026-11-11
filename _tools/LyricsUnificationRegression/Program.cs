@@ -137,7 +137,7 @@ old.Krc = qrc.Original.Content; old.TKrc = "untimed";
 Check(LyricsLegacyMigration.Convert(old, parser).Diagnostic.Length > 0, "failed translation normalization is diagnosed");
 
 
-string folder = Path.Combine(Path.GetTempPath(), "lyrics-v2-regression-" + Guid.NewGuid().ToString("N"));
+string folder = Path.Combine(Environment.CurrentDirectory, "artifacts", "lyrics-v2-regression-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(folder);
 
 var tagLyrics = new ATL.LyricsInfo();

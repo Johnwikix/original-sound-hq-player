@@ -46,6 +46,14 @@ namespace WinUIMusicPlayer.Model
 {
     public class Music
     {
+        public int SongId { get; set; }
+        public long MetadataRevision { get; set; }
+        public string CodecId { get; set; } = "test";
+        public int EncodingKind { get; set; }
+        public bool IsMissing { get; set; }
+        public bool IsDetached { get; set; }
+        public string CoverOverridePath { get; set; } = "";
+        public string ImageHash { get; set; } = "";
         public int SourceId { get; set; }
         [SQLite.Ignore] public bool IsRemote => SourceId != 0;
         [SQLite.Ignore] public string? EmbeddedLyrics { get; set; }

@@ -58,9 +58,9 @@ namespace WinUIMusicPlayer.Services
             token.ThrowIfCancellationRequested();
             return AdditionalMusicMetadata.From(music);
         }
-        public Task SaveDetailsAsync(Music music, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged = true)
+        public Task SaveDetailsAsync(Music music, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged = true, int expectedOwnerId = 0, byte[]? cover = null)
             => SaveEditorAsync(music, null, document, revision, token, lyricsChanged, false);
-        public Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged = true)
+        public Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged = true, int expectedOwnerId = 0)
             => SaveEditorAsync(music, cover, document, revision, token, lyricsChanged, true);
         private async Task SaveEditorAsync(Music music, byte[]? cover, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged, bool queue)
         {

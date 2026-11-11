@@ -2,6 +2,7 @@ using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -23,6 +24,15 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private long _playingVersion, _playingGeneration;
     private readonly HashSet<long> _failedEntries = [];
     private (Music Music, long Generation, bool Advance)? _deferredFailure;
+    private (Music Music, long Entry, bool Exact, bool MayAdvance, bool Confirmed)? _activeIntent;
+    private long _activeSelectionVersion;
+    private readonly HashSet<int> _attemptedVersions = [];
+    private readonly HashSet<int> _probedVersionSources = [];
+    private Music? _intentMusic;
+    private long _intentEntry;
+    private int _intentScope = -1;
+    private bool _intentExact, _intentMayAdvance, _versionConfirmed;
+    private long _versionDeadline;
     public event Action<Music, CancellationToken>? TrackStarted;
     /// <summary>UI-thread notification after the engine confirms this playback occurrence.</summary>
     public event Action<Music, BassPlayerIpc.Shared.ProgressSnapshot>? PlaybackConfirmed;
@@ -43,26 +53,29 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index));
     }
 
-    public Task PlayAsync(Music music, long entryId = 0)
-        => SelectMusicAsync(music, entryId, resumeInterrupted: false);
+    public Task PlayAsync(Music music, long entryId = 0, bool exactVersion = false)
+        => SelectMusicAsync(music, entryId, resumeInterrupted: false, exactVersion);
 
     /// <summary>播放按钮恢复同一首断流歌曲；主动选曲仍从曲首开始。</summary>
     public Task ResumeCurrentAsync()
     {
         var music = state.CurrentPlayingMusic;
-        return music is { IsRemote: true } ? SelectMusicAsync(music, state.State.Queue.CurrentEntryId, resumeInterrupted: true)
+        return music is { IsRemote: true } ? SelectMusicAsync(music, state.State.Queue.CurrentEntryId, resumeInterrupted: true, exactVersion: true)
             : Task.CompletedTask;
     }
 
-    private Task SelectMusicAsync(Music music, long entryId, bool resumeInterrupted)
+    private Task SelectMusicAsync(Music music, long entryId, bool resumeInterrupted, bool exactVersion)
     {
-        if (_disposed || !state.CanStartPlayback || music is null || (!music.IsRemote && !music.IsPlayable)) return Task.CompletedTask;
+        if (_disposed || !state.CanStartPlayback || music is null) return Task.CompletedTask;
         _failedEntries.Clear();
+        if (entryId == 0) entryId = state.State.Queue.EntryIdAt(state.State.Queue.IndexOf(music));
+        if (exactVersion && !resumeInterrupted) state.State.Queue.SetRequestedVersion(entryId, music.Id);
+        int requested = state.State.Queue.RequestedVersion(entryId);
+        BeginVersionIntent(music, entryId, exactVersion || requested > 0, false);
         return RunSelectionAsync(async token =>
         {
-            if (await IsAvailableAsync(music, token, retryImmediately: true))
-                await PlayCoreAsync(music, entryId, token, resumeInterrupted);
-        }, music, entryId != 0 ? entryId : state.State.Queue.EntryIdAt(state.State.Queue.IndexOf(music)));
+            if (!await PlayVersionIntentAsync(token, resumeInterrupted)) ShowVersionFailure();
+        }, music, entryId);
     }
 
     private Task RunSelectionAsync(Func<CancellationToken, Task> operation, Music music, long entryId)
@@ -77,6 +90,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             _registered = true;
             shutdown.RegisterCleanup(Dispose);
             remote.Failed += OnRemoteFailed;
+            remote.PlaybackStarted += OnRemotePlaybackStarted;
         }
         return tasks.RunAsync(stoppingToken => RunSelectionCoreAsync(operation, stoppingToken, version));
     }
@@ -96,10 +110,18 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             if (version == _selectionVersion)
             {
                 SetPending(null);
+                bool failedExact = _intentExact && _activeSelectionVersion != version;
+                if (_activeSelectionVersion != version && _activeIntent is { } active && ReferenceEquals(state.CurrentPlayingMusic, active.Music))
+                {
+                    // 新选曲未开始时，当前会话仍由原有播放意图负责失败恢复。
+                    BeginVersionIntent(active.Music, active.Entry, active.Exact, active.MayAdvance);
+                    _attemptedVersions.Add(active.Music.Id);
+                    _versionConfirmed = active.Confirmed;
+                }
                 _playingVersion = version;
                 var failure = _deferredFailure;
                 _deferredFailure = null;
-                if (failure is { } deferred) OnRemoteFailed(deferred.Music, deferred.Generation, deferred.Advance);
+                if (!failedExact && failure is { } deferred) OnRemoteFailed(deferred.Music, deferred.Generation, deferred.Advance);
             }
         }
     }
@@ -130,6 +152,21 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             _deferredFailure = (music, generation, advance);
             return;
         }
+        if (!_versionConfirmed && !_intentExact && _intentMusic?.SongId > 0)
+        {
+            _ = RunSelectionAsync(async token =>
+            {
+                if (!await PlayVersionIntentAsync(token)) AdvanceAfterVersionFailure();
+            }, _intentMusic, _intentEntry);
+            return;
+        }
+        if (_intentExact || !_intentMayAdvance) { ShowVersionFailure(); return; }
+        AdvanceAfterVersionFailure();
+    }
+
+    private void AdvanceAfterVersionFailure()
+    {
+        if (!_intentMayAdvance) { ShowVersionFailure(); return; }
         _failedEntries.Add(state.State.Queue.CurrentEntryId);
         int count = state.CurrentPlayingList.Count;
         if (count == 0) { player.MusicEnd(); return; }
@@ -156,14 +193,15 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             SetPending(new(music, entryId));
             if (!_failedEntries.Contains(entryId))
             {
-                bool available = await IsAvailableAsync(music, token);
+                BeginVersionIntent(music, entryId, state.State.Queue.RequestedVersion(entryId) > 0, true);
+                var available = await ResolveVersionAsync(token);
                 token.ThrowIfCancellationRequested();
                 // 等待网络期间换队列、删除或重排条目时，不让旧导航请求覆盖新选择。
                 if (!ReferenceEquals(list, state.CurrentPlayingList) || list.Count != count ||
                     state.State.Queue.EntryIdAt(index) != entryId || !ReferenceEquals(list[index], music)) return;
-                if (available)
+                if (available is not null)
                 {
-                    await PlayCoreAsync(music, entryId, token);
+                    await PlayCoreAsync(available, entryId, token);
                     return;
                 }
             }
@@ -175,18 +213,100 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
 
     private async Task<bool> IsAvailableAsync(Music music, CancellationToken token, bool retryImmediately = false)
     {
-        if (!music.IsRemote) return music.IsPlayable;
+        if (!music.IsRemote) return music.IsPlayable && (music.SongId <= 0 || await Task.Run(() => File.Exists(music.Path), token));
         try
         {
             return await library.CanPlayAsync(music, retryImmediately, token);
         }
-        catch (WebDavException ex) when (ex.Code is "ResourceMissing" or "SourceUnavailable") { return false; }
+        catch (WebDavException) { return false; }
+    }
+
+    private void BeginVersionIntent(Music music, long entryId, bool exact, bool mayAdvance)
+    {
+        _intentMusic = music;
+        _intentEntry = entryId;
+        _intentScope = state.State.Queue.SourceScope(entryId);
+        _intentExact = exact;
+        _intentMayAdvance = mayAdvance;
+        _versionConfirmed = false;
+        _versionDeadline = Environment.TickCount64 + 30000;
+        _attemptedVersions.Clear();
+        _probedVersionSources.Clear();
+    }
+
+    private List<Music> OrderedVersions(Music music, int sourceScope)
+    {
+        List<Music> versions = [];
+        if (music.SongId > 0)
+            foreach (var version in state.FindVersions(music.SongId))
+                if (version.SongId == music.SongId && !version.IsDetached &&
+                    (sourceScope == -1 || sourceScope == -2 && version.IsRemote || sourceScope == version.SourceId)) versions.Add(version);
+        if (versions.Count == 0 && !music.IsDetached && (sourceScope == -1 || sourceScope == -2 && music.IsRemote || sourceScope == music.SourceId)) versions.Add(music);
+        return SongVersionPolicy.Order(versions, music.SongPreferredMusicId, forPlayback: true);
+    }
+
+    private async Task<Music?> ResolveVersionAsync(CancellationToken token)
+    {
+        if (_intentMusic is not { } requested) return null;
+        List<Music> versions = _intentExact ? [requested] : OrderedVersions(requested, _intentScope);
+        int pinned = state.State.Queue.RequestedVersion(_intentEntry);
+        if (_intentExact && pinned > 0 && pinned != requested.Id)
+        {
+            versions.Clear();
+            foreach (var version in state.SongsSource) if (version.Id == pinned) { versions.Add(version); break; }
+        }
+        foreach (var version in versions)
+        {
+            token.ThrowIfCancellationRequested();
+            if (Environment.TickCount64 >= _versionDeadline) return null;
+            if (!_attemptedVersions.Add(version.Id)) continue;
+            using var probe = CancellationTokenSource.CreateLinkedTokenSource(token);
+            probe.CancelAfter(TimeSpan.FromMilliseconds(Math.Max(1, _versionDeadline - Environment.TickCount64)));
+            bool retryImmediately = !_intentMayAdvance && _probedVersionSources.Add(version.SourceId);
+            try { if (await IsAvailableAsync(version, probe.Token, retryImmediately)) return version; }
+            catch (OperationCanceledException) when (!token.IsCancellationRequested) { return null; }
+        }
+        return null;
+    }
+
+    private async Task<bool> PlayVersionIntentAsync(CancellationToken token, bool resumeInterrupted = false)
+    {
+        var version = await ResolveVersionAsync(token);
+        if (version is null) return false;
+        await PlayCoreAsync(version, _intentEntry, token, resumeInterrupted);
+        return true;
+    }
+
+    private void ShowVersionFailure()
+    {
+        state.State.Shell.InfoBarTitle = Utils.ToolUtils.GetString("Error");
+        state.State.Shell.InfoBarMessage = Utils.ToolUtils.GetString("SongVersionsUnavailable");
+        state.State.Shell.InfoBarIsOpen = true;
+    }
+
+    private void OnRemotePlaybackStarted(Music music, BassPlayerIpc.Shared.ProgressSnapshot progress, bool resumed)
+        => ConfirmVersion(music);
+
+    private void ConfirmVersion(Music music)
+    {
+        if (ReferenceEquals(state.CurrentPlayingMusic, music) && _activeIntent is { } active)
+        {
+            _activeIntent = active with { Confirmed = true, MayAdvance = active.MayAdvance || !active.Exact };
+            if (_playingVersion == _selectionVersion)
+            {
+                _versionConfirmed = true;
+                _intentExact = active.Exact;
+                _intentMayAdvance |= !_intentExact;
+            }
+        }
     }
 
     private async Task PlayCoreAsync(Music music, long entryId, CancellationToken token, bool resumeInterrupted = false)
     {
         token.ThrowIfCancellationRequested();
         if (_disposed || !state.CanStartPlayback) return;
+        bool exact = _intentExact && (!resumeInterrupted || state.State.Queue.RequestedVersion(entryId) > 0);
+        bool mayAdvance = _intentMayAdvance;
         long previousEpoch = 0;
         long remoteGeneration = music.IsRemote ? remote.BeginSelection(music, resumeInterrupted) : 0;
         _playingGeneration = remoteGeneration;
@@ -204,6 +324,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         {
             if (_disposed || !state.CanStartPlayback || token.IsCancellationRequested) return;
             state.State.Queue.SelectEntry(entryId, music);
+            _activeIntent = (music, entryId, exact, mayAdvance, false);
+            _activeSelectionVersion = _selectionVersion;
             state.CurrentPlayingMusic = music;
             state.RemotePlaybackStatus = music.IsRemote ? Utils.ToolUtils.GetString("WebDavOpening") : "";
             if (music.IsRemote) { state.IsPlaying = false; state.StopProgressTimer(); }
@@ -230,7 +352,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         {
             // Enqueueing a command alone does not prove the decoder started. Seek and
             // lyric reload never enter this path. Keep confirmation outside selection arbitration.
-            long deadline = Environment.TickCount64 + 10000;
+            long deadline = Math.Min(Environment.TickCount64 + 10000, _versionDeadline);
             while (Environment.TickCount64 < deadline)
             {
                 token.ThrowIfCancellationRequested();
@@ -241,13 +363,25 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                     {
                         if (!_disposed && state.CanPublishState && !token.IsCancellationRequested
                             && ReferenceEquals(state.CurrentPlayingMusic, music))
+                        {
+                            ConfirmVersion(music);
                             PlaybackConfirmed?.Invoke(music, progress);
+                        }
                     });
                     await statistics.RecordPlaybackStartAsync(music);
                     return;
                 }
                 await Task.Delay(50, token);
             }
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                if (_disposed || token.IsCancellationRequested || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
+                if (_intentExact || _intentMusic?.SongId <= 0) { ShowVersionFailure(); return; }
+                _ = RunSelectionAsync(async retry =>
+                {
+                    if (!await PlayVersionIntentAsync(retry)) AdvanceAfterVersionFailure();
+                }, _intentMusic!, _intentEntry);
+            });
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception ex) { logger.LogError(ex, "确认播放开始失败"); }
@@ -262,6 +396,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         _presentation?.Dispose();
         _presentation = null;
         remote.Failed -= OnRemoteFailed;
+        remote.PlaybackStarted -= OnRemotePlaybackStarted;
         state.State.Playback.PendingSelection = null;
         SelectionChanged = null;
         TrackStarted = null;

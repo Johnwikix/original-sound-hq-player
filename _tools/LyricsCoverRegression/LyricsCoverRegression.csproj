@@ -22,4 +22,5 @@
     <Compile Include="../../Helper/DefaultCoverPaletteCache.cs" Link="DefaultCoverPaletteCache.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Impressionist/PaletteResult.cs" Link="PaletteResult.cs" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../../Model/SongRecord.cs" /></ItemGroup>
 </Project>

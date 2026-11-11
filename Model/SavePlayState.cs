@@ -4,6 +4,14 @@ namespace WinUIMusicPlayer.Model
 {
     public class SavePlayState
     {
+        /// <summary>获取或设置队列存档版本；旧 JSON 默认零。</summary>
+        public int SchemaVersion { get; set; }
+        /// <summary>获取或设置各出现项的固定版本。</summary>
+        public int[]? QueueRequestedVersionIds { get; set; }
+        /// <summary>获取或设置各出现项的来源限制。</summary>
+        public int[]? QueueSourceScopes { get; set; }
+        /// <summary>获取或设置来源歌单出现项。</summary>
+        public int[]? QueuePlaylistEntryIds { get; set; }
         public PlayMode PlayMode { get; set; } = PlayMode.ListLoop;
         public int? LastPlayedMusicId { get; set; }
         public long[]? QueueEntryIds { get; set; }

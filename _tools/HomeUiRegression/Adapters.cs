@@ -150,6 +150,14 @@ namespace WinUIMusicPlayer.Services
     }
     public partial class MusicDatabaseService
     {
+        public SongVersionStore Versions { get; private set; } = null!;
+        public async Task InitializeVersionsAsync()
+        {
+            Versions = new(_dbConnection);
+            await Versions.InitializeAsync(_dbConnection.DatabasePath);
+            await Lyrics.InitializeAsync(_dbConnection.DatabasePath);
+        }
+        public Task GetPlayListMusic() => Task.CompletedTask;
         private readonly SQLiteAsyncConnection _dbConnection;
         private Task _initialized = Task.CompletedTask;
         public Task PlaylistGate { get; set; } = Task.CompletedTask;
@@ -229,6 +237,20 @@ namespace WinUIMusicPlayer.ViewModel
         public Visibility LibraryEmptyVisibility { get; set; } = Visibility.Collapsed;
         public void NotifySongsSourceChanged() => SongsSourceChanged?.Invoke();
         public event Action? SongsSourceChanged;
+        public event Action? SharedFavoriteChanged;
+        public IReadOnlyList<Music> FindVersions(int songId) => SongsSource.Where(m => m.SongId == songId).ToArray();
+        public Music? FindDisplayVersion(int songId, int source = -1) => Services.SongVersionPolicy.Order(FindVersions(songId), FindVersions(songId).FirstOrDefault()?.SongPreferredMusicId).FirstOrDefault();
+        public Task RefreshSongsSourceAsync(CancellationToken token = default) => RefreshVersionsCoreAsync(token);
+        private async Task RefreshVersionsCoreAsync(CancellationToken token)
+        {
+            var db = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Services.MusicDatabaseService>(App.Services);
+            var songs = await db.GetDbConnection().Table<Music>().ToListAsync();
+            await db.Versions.DecorateAsync(songs);
+            token.ThrowIfCancellationRequested();
+            Replace(songs);
+        }
+        public void RefreshAllViews() { }
+        public void LoadLyricsToUI(Music music) { }
         public Music? FindById(int id) => SongsSource.Find(m => m.Id == id);
         public void Replace(List<Music> songs)
         {

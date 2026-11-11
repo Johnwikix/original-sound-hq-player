@@ -67,7 +67,11 @@ namespace WinUIMusicPlayer.View.Controls
         }
 
         private void MusicRow_SongInvoked(object sender, Music music)
-            => App.Services.GetRequiredService<LibraryNavigationService>().ShowSongDetails(music, (sender as MusicListRowControl)?.CoverElement, (sender as MusicListRowControl)?.TitleElement);
+        {
+            var row = sender as MusicListRowControl;
+            int entry = (row?.RowPlayParameter as PlayListMusicItem)?.EntryId ?? 0;
+            App.Services.GetRequiredService<LibraryNavigationService>().ShowSongDetails(music, row?.CoverElement, row?.TitleElement, entry);
+        }
 
         private void MusicRow_ArtistInvoked(object sender, Music music)
             => ViewModel.AuthorTextBlock_Tapped(music.Author);
@@ -94,14 +98,14 @@ namespace WinUIMusicPlayer.View.Controls
             int n = selectedItems.Count;
             var buffer = _selectedBuffer.AsSpan();
             int written = 0;
-            int clickedMusicId = clickedItem.Music.Id;
+            int clickedEntryId = clickedItem.EntryId;
             bool isCurrentItemSelected = false;
             for (int i = 0; i < n && written < buffer.Length; i++)
             {
                 if (selectedItems[i] is PlayListMusicItem plm)
                 {
                     buffer[written++] = plm;
-                    if (plm.Music.Id == clickedMusicId) isCurrentItemSelected = true;
+                    if (plm.EntryId == clickedEntryId) isCurrentItemSelected = true;
                 }
             }
 

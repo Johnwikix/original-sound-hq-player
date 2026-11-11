@@ -279,6 +279,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             // SequentialPlayingList 是唯一状态源：赋值后 CurrentPlayingList 自动跟随（随机模式自动洗牌）。
             AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(folderSongs);
+            AppViewModel.State.Queue.ConfigureSource(music.SourceId, exactFiles: true);
             _ = PlayMusic(music, IsChangeList: true);
         }
 

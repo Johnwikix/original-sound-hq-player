@@ -30,6 +30,8 @@ namespace WinUIMusicPlayer.Services
     {
         private SQLiteAsyncConnection _dbConnection;
         public WinUIMusicPlayer.Services.Lyrics.LyricsRepository Lyrics { get; private set; } = null!;
+        /// <summary>获取歌曲版本存储；在数据库就绪后可用。</summary>
+        public SongVersionStore Versions { get; private set; } = null!;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private string? _settingsPath;
         private string SettingsPath => _settingsPath ??= GetSettingsFilePath();
@@ -86,6 +88,7 @@ namespace WinUIMusicPlayer.Services
                 InitalizeDbPath();
                 if (_dbConnection is null)
                 {
+                    await SelectSongVersionDatabasePathAsync();
                     _dbConnection = new SQLiteAsyncConnection(DbPath);
                     await _dbConnection.CreateTableAsync<Music>();
                     await _dbConnection.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
@@ -100,20 +103,23 @@ namespace WinUIMusicPlayer.Services
                     await MusicMetadataStorage.EnsureSchemaAsync(_dbConnection);
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
-                    Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
-                    await Lyrics.InitializeAsync(DbPath);
                     await _dbConnection.CreateTableAsync<Folder>();
                     await _dbConnection.CreateTableAsync<SaveEqualizer>();
                     await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
                     await _dbConnection.CreateTableAsync<PlayList>();
                     await EnsurePlayListSortOrderAsync();
                     await _dbConnection.CreateTableAsync<PlayListMusic>();
+                    Versions = new SongVersionStore(_dbConnection);
+                    await Versions.InitializeAsync(DbPath);
+                    Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
+                    await Lyrics.InitializeAsync(DbPath);
                     await _dbConnection.CreateTableAsync<LastPlayListState>();
                     await _dbConnection.CreateTableAsync<SubFolder>();
                     await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
                     try
                     {
                         await _dbConnection.CreateTableAsync<PlaybackHistory>();
+                        await _dbConnection.ExecuteAsync("UPDATE PlaybackHistory SET SongIdAtPlay=COALESCE((SELECT SongId FROM Music WHERE Id=PlaybackHistory.MusicId),0) WHERE SongIdAtPlay IS NULL OR SongIdAtPlay=0");
                         await _dbConnection.ExecuteAsync(
                             "CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
                     }
@@ -442,10 +448,9 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.ExecuteAsync("ALTER TABLE PendingMetadataWrite ADD COLUMN PronunciationLrc TEXT NULL");
         }
 
-        public async Task UpdateMusicInfo(Music music)
-        {
-            await _dbConnection.UpdateAsync(music);
-        }
+        /// <summary>只提交封面标识；迟到图片读取不能整行写回旧归属。</summary>
+        public Task UpdateMusicInfo(Music music)
+            => _dbConnection.ExecuteAsync("UPDATE Music SET ImageHash=? WHERE Id=? AND Path=?", music.ImageHash, music.Id, music.Path);
 
         public Task UpdateLyricsOffsetAsync(int musicId, int offset)
             => _dbConnection.ExecuteAsync("UPDATE Music SET LyricsOffsetMs = ? WHERE Id = ?", offset, musicId);
@@ -491,9 +496,11 @@ namespace WinUIMusicPlayer.Services
                 {
                     ref readonly var plm = ref plmSpan[i];
                     if (plm.PlayListId != playListId) continue;
-                    if (!AppViewModel.TryFindById(plm.MusicId, out var m) || m is null) continue;
+                    var m = plm.RequestedMusicId is int fixedId ? AppViewModel.FindById(fixedId)
+                        : plm.SongId > 0 ? AppViewModel.FindDisplayVersion(plm.SongId) : AppViewModel.FindById(plm.MusicId);
+                    if (m is null) continue;
                     if (hasSearch && !LibraryProjectionService.MusicMatchesSearch(m, search)) continue;
-                    buf[written++] = new PlayListMusicItem { Music = m, PlayListOrder = plm.Order };
+                    buf[written++] = new PlayListMusicItem { EntryId = plm.Id, RequestedMusicId = plm.RequestedMusicId, Music = m, PlayListOrder = plm.Order };
                 }
 
                 var slice = buf.AsSpan(0, written);
@@ -522,8 +529,8 @@ namespace WinUIMusicPlayer.Services
                     {
                         var m = items[i];
                         conn.Execute(
-                            "UPDATE PlayListMusic SET [Order]=? WHERE PlayListId=? AND MusicId=?",
-                            m.PlayListOrder, playListId, m.Music.Id);
+                            "UPDATE PlayListMusic SET [Order]=? WHERE PlayListId=? AND Id=?",
+                            m.PlayListOrder, playListId, m.EntryId);
                     }
                 });
             }
@@ -557,60 +564,25 @@ namespace WinUIMusicPlayer.Services
 
         public async Task AddMusicListToPlayList(IEnumerable<Music> musics, int playListId)
         {
-            PlayListMusic lastplayListMusic = await _dbConnection.Table<PlayListMusic>()
-                                          .Where(m => m.PlayListId == playListId)
-                                          .OrderByDescending(m => m.Order)
-                                          .FirstOrDefaultAsync();
-            var maxOrder = lastplayListMusic?.Order ?? 0;
-
-            // 优化3: 批量收集后一次 InsertAllAsync，减少多次 await 往返
-            var toInsert = new List<PlayListMusic>();
-            foreach (var music in musics)
+            var ids = musics.Select(static music => music.Id).ToArray();
+            await _dbConnection.RunInTransactionAsync(db =>
             {
-                var existingRecord = await _dbConnection.Table<PlayListMusic>()
-                   .Where(plm => plm.PlayListId == playListId && plm.MusicId == music.Id)
-                   .FirstOrDefaultAsync();
-                if (existingRecord is not null)
+                int order = db.ExecuteScalar<int>("SELECT COALESCE(MAX([Order]),0) FROM PlayListMusic WHERE PlayListId=?", playListId);
+                foreach (int id in ids)
                 {
-                    continue;
+                    var music = db.Find<Music>(id);
+                    if (music is null || music.IsDetached) continue;
+                    if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM PlayListMusic WHERE PlayListId=? AND SongId=?", playListId, music.SongId) > 0) continue;
+                    db.Insert(new PlayListMusic { PlayListId = playListId, MusicId = id, SongId = music.SongId, Order = ++order });
                 }
-                maxOrder++;
-                toInsert.Add(new PlayListMusic
-                {
-                    PlayListId = playListId,
-                    MusicId = music.Id,
-                    Order = maxOrder
-                });
-            }
-            if (toInsert.Count > 0)
-            {
-                await _dbConnection.InsertAllAsync(toInsert);
-            }
+            });
             await GetPlayListMusic();
         }
 
         public async Task AddMusicToPlayList(int playListId, int musicId)
         {
-            var existingRecord = await _dbConnection.Table<PlayListMusic>()
-               .Where(plm => plm.PlayListId == playListId && plm.MusicId == musicId)
-               .FirstOrDefaultAsync();
-            if (existingRecord is null)
-            {
-                PlayListMusic lastplayListMusic = await _dbConnection.Table<PlayListMusic>()
-                                          .Where(m => m.PlayListId == playListId)
-                                          .OrderByDescending(m => m.Order)
-                                          .FirstOrDefaultAsync();
-                // 优化4: 简化 maxOrder 计算逻辑，去掉多余分支
-                int newOrder = (lastplayListMusic?.Order ?? 0) + 1;
-                var playListMusic = new PlayListMusic
-                {
-                    PlayListId = playListId,
-                    MusicId = musicId,
-                    Order = newOrder
-                };
-                await _dbConnection.InsertAsync(playListMusic);
-            }
-            await GetPlayListMusic();
+            var music = await _dbConnection.FindAsync<Music>(musicId);
+            if (music is not null) await AddMusicListToPlayList([music], playListId);
         }
 
         private async Task<int> GetMaxOrder()
@@ -957,6 +929,7 @@ namespace WinUIMusicPlayer.Services
             string localizedUnknownAlbum = ToolUtils.GetString("UnknownAlbum");
             string localizedUnknownArtist = ToolUtils.GetString("UnknownArtist");
             var musicList = await GetVisibleMusicAsync();
+            await Versions.DecorateAsync(musicList);
 
             // 优化7: AppData.UnknownAlbums / UnknownArtists 建议在 AppData 中改为 HashSet<string>
             // 以将 Contains 从 O(n) 降为 O(1)，此处调用方式不变，修改点在 AppData 定义处
@@ -978,7 +951,11 @@ namespace WinUIMusicPlayer.Services
 
         public ObservableCollection<Music> GetFavoriteMusicFromMem(string search = null)
         {
-            return new(AppViewModel.SongsSource.Where(m => m.IsFavorite == true).OrderByDescending(m => m.Order));
+            var included = new HashSet<int>();
+            return new(AppViewModel.SongsSource.Where(m => m.IsFavorite && (m.SongId <= 0 || included.Add(m.SongId)))
+                .Select(m => m.SongId > 0 ? AppViewModel.FindDisplayVersion(m.SongId) ?? m : m)
+                .Where(m => string.IsNullOrWhiteSpace(search) || LibraryProjectionService.MusicMatchesSearch(m, search))
+                .OrderByDescending(m => m.Order));
         }
 
         public IEnumerable<Music> GetArtistMusicFromMem(string artist, string search = null)
@@ -1039,7 +1016,8 @@ namespace WinUIMusicPlayer.Services
                 }
                 AppViewModel.CurrentPlayMode = playState.PlayMode;
                 AppViewModel.State.Queue.RestoreEntries(playState.QueueEntryIds, playState.QueueOrderIds,
-                    playState.QueueMusicIds, playState.CurrentQueueEntryId);
+                    playState.QueueMusicIds, playState.CurrentQueueEntryId, playState.QueueRequestedVersionIds,
+                    playState.QueueSourceScopes, legacyExact: playState.SchemaVersion == 0, playlistEntries: playState.QueuePlaylistEntryIds);
                 AppViewModel.CurrentPlayingMusic = LoadCurrentPlayingMusic(playState.LastPlayedMusicId);
                 AppViewModel.Volume = playState.Volume;
                 AppViewModel.TempVolume = playState.Volume;
@@ -1386,10 +1364,9 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                await _dbConnection.DeleteAsync<Music>(musicId);
-                AppViewModel.SongsSource.Clear();
-                AppViewModel.SongsSource.AddRange(await _dbConnection.Table<Music>().ToListAsync());
-                AppViewModel.NotifySongsSourceChanged();
+                // 磁盘删除只改变版本可用性，歌词、收藏、歌单和历史仍可恢复。
+                await _dbConnection.ExecuteAsync("UPDATE Music SET IsMissing=1 WHERE Id=?", musicId);
+                await AppViewModel.RefreshSongsSourceAsync();
                 var usbMusicGroups = App.Services.GetRequiredService<UsbDeviceService>().MusicOnDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
                     .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
@@ -1428,6 +1405,15 @@ namespace WinUIMusicPlayer.Services
                 // The library connection is ready before Last.fm starts. Resolve only at this legacy
                 // command boundary, avoiding a constructor cycle with the borrowed library store.
                 await App.Services.GetRequiredService<LastFmService>().SaveFavoriteAsync(change);
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    if (!AppViewModel.CanPublishState || music.IsFavorite != change.Loved || music.Order != change.Order) return;
+                    foreach (var version in AppViewModel.FindVersions(music.SongId))
+                    { version.IsFavorite = change.Loved; version.Order = change.Order; }
+                    AppViewModel.NotifyIdIndexChanged();
+                    AppViewModel.NotifySharedFavoriteChanged();
+                    AppViewModel.RefreshAllViews();
+                });
                 PublishRecommendationPreferencesChanged();
             }
             catch (Exception ex)

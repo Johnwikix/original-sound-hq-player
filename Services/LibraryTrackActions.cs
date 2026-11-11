@@ -36,7 +36,7 @@ public sealed class LibraryTrackActions(AppState state, MusicDatabaseService dat
                             if (!OneShotLyricsCache.SaveEdited(music.Path, document, externalRevision))
                                 Report(new InvalidOperationException(ToolUtils.GetString("LyricsEditConflict")));
                         }
-                        else if (!await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token))
+                        else if (!await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token, expectedOwnerId: stored.OwnerId))
                             Report(new InvalidOperationException(ToolUtils.GetString("LyricsEditConflict")));
                     }
                     catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }

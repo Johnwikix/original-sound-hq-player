@@ -25,6 +25,7 @@
     <Compile Include="../../Model/Stats/MonthLabel.cs" />
     <Compile Include="../../Services/LibraryProjectionService.cs" />
     <Compile Include="../../Services/LibraryQueries.cs" />
+    <Compile Include="../../Services/SongVersionPolicy.cs" />
     <Compile Include="../../State/LibraryState.cs" />
     <Compile Include="../../Model/FolderLocation.cs;../../State/BrowseState.cs;../../State/BrowsePagePosition.cs" />
     <Compile Include="../../ViewModel/Pages/FolderViewModel.cs;../../Services/FolderBrowserIndex.cs;../../Model/FolderBrowserNode.cs" />

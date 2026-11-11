@@ -64,7 +64,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         if (music.IsRemote && document is not null && stored is not null && stored.SourceKind != "User" &&
             document != stored.Document)
         {
-            bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "RemoteSidecar", music.Path, token).ConfigureAwait(false);
+            bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "RemoteSidecar", music.Path, token, stored.OwnerId).ConfigureAwait(false);
             stored = await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false);
             if (!saved) document = stored.Document;
         }
@@ -90,7 +90,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
             {
                 if (stored is not null)
                 {
-                    bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token).ConfigureAwait(false);
+                    bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token, expectedOwnerId: stored.OwnerId).ConfigureAwait(false);
                     if (!saved) document = (await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false)).Document;
                 }
                 else if (!OneShotLyricsCache.TrySave(music.Path, document, externalRevision))
@@ -110,7 +110,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 if (music.Id > 0 && stored is not null)
                 {
                     bool saved = await database.Lyrics.SaveAsync(music.Id, translated, stored.Revision,
-                        "Llm", music.IsRemote ? music.Path : "", token).ConfigureAwait(false);
+                        "Llm", music.IsRemote ? music.Path : "", token, stored.OwnerId).ConfigureAwait(false);
                     if (!saved)
                     {
                         var current = await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false);

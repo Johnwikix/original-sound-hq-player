@@ -100,6 +100,7 @@ public partial class MusicDatabaseService
                         if (db.ExecuteScalar<int>("SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", music.Path) != 0)
                             continue;
                         db.Insert(music);
+                        MusicMetadataStorage.AttachSong(db, music);
                         added.Add(music);
                     }
                     else
@@ -107,10 +108,10 @@ public partial class MusicDatabaseService
                         // Update only metadata; favorite/order/play count/lyrics offsets may change during a scan.
                         updated += db.Execute("UPDATE Music SET Title=?, Author=?, Album=?, Duration=?, FolderPath=?, LastLevelFolderPath=?, " +
                             "Extension=?, BitDepth=?, BitRate=?, SampleRate=?, Channel=?, TrackNumber=?, DiskNumber=?, Year=?, " +
-                            "CreateTime=?, UpdateTime=? WHERE Id=?",
+                            "CreateTime=?, UpdateTime=?,CodecId=?,EncodingKind=?,IsMissing=0,MetadataRevision=MetadataRevision+1 WHERE Id=?",
                             music.Title, music.Author, music.Album, music.Duration, music.FolderPath, music.LastLevelFolderPath,
                             music.Extension, music.BitDepth, music.BitRate, music.SampleRate, music.Channel,
-                            music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.Id);
+                            music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.CodecId, music.EncodingKind, music.Id);
                         if (music.AdditionalMetadataRead)
                             MusicMetadataStorage.Save(db, music.Id, AdditionalMusicMetadata.From(music));
                     }
@@ -160,8 +161,8 @@ public partial class MusicDatabaseService
             {
                 foreach (var music in songs)
                 {
-                    db.Delete<Music>(music.Id);
-                    WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
+                    if (MusicMetadataStorage.HasSongs(db)) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", music.Id);
+                    else { db.Delete<Music>(music.Id); WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id); }
                 }
                 db.Execute("DELETE FROM SubFolder WHERE FolderId = ?", folderId);
                 db.Delete<Folder>(folderId);
@@ -243,7 +244,7 @@ public partial class MusicDatabaseService
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     remaining.Remove(path, out var old);
-                    if (old is null || (updateExisting && (!onlyChanged || File.GetLastWriteTime(path) != old.UpdateTime)))
+                    if (old is null || old.IsMissing || (updateExisting && (!onlyChanged || File.GetLastWriteTime(path) != old.UpdateTime)))
                         yield return (path, old);
                     else onFilesChecked?.Invoke(1);
                 }
@@ -268,7 +269,7 @@ public partial class MusicDatabaseService
             foreach (var music in remaining.Values)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
+                if (!music.IsMissing && LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
             }
             if (missing.Count > 0)
             {
@@ -277,8 +278,8 @@ public partial class MusicDatabaseService
                     cancellationToken.ThrowIfCancellationRequested();
                     foreach (var music in missing)
                     {
-                        db.Delete<Music>(music.Id);
-                        WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
+                        if (MusicMetadataStorage.HasSongs(db)) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", music.Id);
+                        else { db.Delete<Music>(music.Id); WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id); }
                     }
                 });
                 changes += missing.Count;
@@ -314,8 +315,8 @@ public partial class MusicDatabaseService
                     cancellationToken.ThrowIfCancellationRequested();
                     foreach (var music in batch)
                     {
-                        db.Delete<Music>(music.Id);
-                        WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
+                        if (MusicMetadataStorage.HasSongs(db)) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", music.Id);
+                        else { db.Delete<Music>(music.Id); WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id); }
                     }
                 });
         }
@@ -355,6 +356,7 @@ public partial class MusicDatabaseService
             var owned = await GetExternalImportRowsAsync(cancellationToken);
             if (owned.Count == 0) return false;
             var missing = new List<Music>();
+            var restored = new List<int>();
             foreach (var group in owned.GroupBy(
                          music => Path.GetPathRoot(music.Path) ?? string.Empty, StringComparer.OrdinalIgnoreCase))
             {
@@ -365,8 +367,9 @@ public partial class MusicDatabaseService
                     cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
-                        if (LibraryPath.IsConfirmedMissing(music.Path, Path.GetDirectoryName(music.Path) ?? music.Path))
+                        if (LibraryPath.IsConfirmedMissing(music.Path, Path.GetDirectoryName(music.Path) ?? music.Path) && !music.IsMissing)
                             missing.Add(music);
+                        else if (music.IsMissing && File.Exists(music.Path)) restored.Add(music.Id);
                     }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
@@ -374,9 +377,14 @@ public partial class MusicDatabaseService
                     }
                 }
             }
-            if (missing.Count == 0) return false;
-            await DeletedMusicList(missing, cancellationToken);
-            return true;
+            if (restored.Count > 0)
+                await _dbConnection.RunInTransactionAsync(db =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    foreach (int id in restored) db.Execute("UPDATE Music SET IsMissing=0 WHERE Id=?", id);
+                });
+            if (missing.Count > 0) await DeletedMusicList(missing, cancellationToken);
+            return missing.Count > 0 || restored.Count > 0;
         }
 
         /// <summary>盘根是否可达：DriveInfo 为元数据查询；IsReady=false 或根访问异常按不可达保留整组。</summary>
@@ -403,8 +411,8 @@ public partial class MusicDatabaseService
             {
                 foreach (var music in owned)
                 {
-                    db.Delete<Music>(music.Id);
-                    WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
+                    if (MusicMetadataStorage.HasSongs(db)) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", music.Id);
+                    else { db.Delete<Music>(music.Id); WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id); }
                 }
                 db.Delete<Folder>(external.Id);
             });

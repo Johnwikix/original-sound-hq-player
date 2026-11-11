@@ -2693,4 +2693,39 @@ SHA-256：{5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>调整文件夹和歌曲区域宽度</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>版本</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>自动选择：优先无损，同级优先本地或完整缓存。</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>已固定首选版本；不可用时普通播放可回退。</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>首选</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>正在播放</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>独立歌词</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>文件缺失</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>离线</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>可用</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>播放此版本</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>设为首选</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>自动选择</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>关联已有版本</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>拆出为独立歌曲</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>撤销上次分组操作</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>使用共享歌词</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>没有标题、艺术家、专辑一致的其他库内歌曲。</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>选择标题、艺术家、专辑相同的文件。标签和封面各自保留；重制版或不同演出请保持独立。</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>确认歌曲分组</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>文件不会被删除或改写。收藏合并；歌单原位置默认保留并跟随歌曲选版。选择默认歌词；不同的旧歌词保留为版本覆盖及恢复资料。当前播放不中断。</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>默认共享歌词</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>使用当前歌曲的歌词</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>使用关联歌曲的歌词</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>折叠歌单中的重复位置（默认保留）</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>确认</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>歌曲资料已变化或版本不匹配，请刷新后重新检查。</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>操作后已有新修改，不能一键撤销覆盖；请保留当前资料并按版本拆分。</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>没有可撤销的分组操作。</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>已保存。</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>此版本或歌曲范围内的所有版本当前不可播放。</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>文件身份已变化，已保留待写任务，请重新检查目标文件。</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>此版本的标签已被其他操作修改，请保留草稿并重新检查。</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>请先保存各版本的草稿，再关联、拆分或撤销。</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} 个版本；{1} 组已收藏；{2} 个歌单位置，其中 {3} 个重复位置可选折叠。</value></data>
 </root>

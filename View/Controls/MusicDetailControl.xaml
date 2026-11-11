@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:WinUIMusicPlayer.View.Controls"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns:animations="using:WinUIMusicPlayer.Helper.Animations"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions">
@@ -12,7 +13,7 @@
             <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
         </Style>
         <Thickness x:Key="PivotHeaderItemMargin">0,0,24,0</Thickness>
-        <DataTemplate x:Key="WrappedActionText"><TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" /></DataTemplate>
+        <DataTemplate x:Key="WrappedActionText" x:DataType="x:String"><TextBlock Text="{x:Bind}" TextWrapping="Wrap" TextAlignment="Center" /></DataTemplate>
     </UserControl.Resources>
     <Grid x:Name="DetailRoot" RowDefinitions="Auto,*,Auto" Padding="32,16,32,20" Background="Transparent">
         <Grid x:Name="HeaderBar" Margin="0,0,0,20" ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -54,7 +55,7 @@
                         <TextBlock x:Name="RecommendationText" Text="{x:Bind ViewModel.Reason, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                         <StackPanel x:Name="Actions" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="6" Margin="0,8,0,0">
-                            <Button x:Name="PlayButton" x:Uid="HomePlaySong" Style="{StaticResource HomeSongActionButtonStyle}"
+                            <Button x:Name="PlayButton" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('SongVersionsPlay')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('SongVersionsPlay')}" Style="{StaticResource HomeSongActionButtonStyle}"
                                 Command="{x:Bind ViewModel.PlayCommand, Mode=OneWay}" CommandParameter="{x:Bind ViewModel.PlayParameter, Mode=OneWay}">
                                 <FontIcon Glyph="&#xE768;" FontSize="16" />
                             </Button>
@@ -82,6 +83,43 @@
             </ScrollViewer>
             <Grid x:Name="WorkspaceViewport" Grid.Column="2" MinWidth="0" MinHeight="0" SizeChanged="PivotViewport_SizeChanged">
             <Pivot x:Name="WorkspaceTabs" Padding="0" SelectedIndex="0" SelectionChanged="WorkspaceTabs_SelectionChanged">
+                <PivotItem x:Name="VersionsTab" Margin="0">
+                    <PivotItem.Header><TextBlock Text="{x:Bind tools:ToolUtils.GetString('SongVersions')}" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
+                    <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsTabStop="False">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="12" Padding="0,12,0,16">
+                        <TextBlock Text="{x:Bind ViewModel.VersionSummary, Mode=OneWay}" TextWrapping="Wrap" />
+                        <Grid Grid.Row="1" ColumnDefinitions="*,*,Auto" ColumnSpacing="8">
+                            <Button HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsLink')}" Command="{x:Bind ViewModel.LinkVersionCommand, Mode=OneWay}" />
+                            <Button Grid.Column="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsUseAuto')}" Command="{x:Bind ViewModel.UseAutomaticCommand, Mode=OneWay}" />
+                            <ProgressRing Grid.Column="2" Width="20" Height="20" IsActive="{x:Bind ViewModel.IsVersionBusy, Mode=OneWay}" />
+                        </Grid>
+                        <ListView Grid.Row="2" MaxHeight="360" ItemsSource="{x:Bind ViewModel.Versions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedVersion, Mode=TwoWay}" SelectionMode="Single">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:MusicVersionItem">
+                                    <StackPanel Spacing="4" Padding="0,8">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind StateText, Mode=OneWay}" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Grid>
+                                        <TextBlock Text="{x:Bind TechnicalInfo}" FontSize="12" />
+                                        <TextBlock Text="{x:Bind Path}" FontSize="12" TextWrapping="Wrap" IsTextSelectionEnabled="True" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <Grid Grid.Row="3" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                            <Button HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsSetPreferred')}" Command="{x:Bind ViewModel.SetPreferredCommand, Mode=OneWay}" />
+                            <Button Grid.Column="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsSplit')}" Command="{x:Bind ViewModel.SplitVersionCommand, Mode=OneWay}" />
+                            <Button Grid.Row="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsUndo')}" Command="{x:Bind ViewModel.UndoVersionCommand, Mode=OneWay}" />
+                            <Button Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource WrappedActionText}" Content="{x:Bind tools:ToolUtils.GetString('SongVersionsUseSharedLyrics')}" Command="{x:Bind ViewModel.UseSharedLyricsCommand, Mode=OneWay}" />
+                        </Grid>
+                        <StackPanel Grid.Row="4" Spacing="4">
+                            <TextBlock Text="{x:Bind ViewModel.VersionDraftHint, Mode=OneWay}" TextWrapping="Wrap" FontSize="12" />
+                            <TextBlock Text="{x:Bind ViewModel.VersionMessage, Mode=OneWay}" TextWrapping="Wrap" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                    </ScrollViewer>
+                </PivotItem>
                 <PivotItem Margin="0">
                     <PivotItem.Header><TextBlock x:Uid="HomeSongTags" FontSize="14" FontWeight="SemiBold" /></PivotItem.Header>
                     <ScrollViewer x:Name="DetailScroll" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollMode="Enabled" VerticalScrollBarVisibility="Auto" IsTabStop="False">

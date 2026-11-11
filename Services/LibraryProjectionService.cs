@@ -93,11 +93,26 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                     int count = 0;
                     try
                     {
+                        HashSet<int> includedSongs = [];
                         // 在 UI 线程复制字段；后台比较器绝不读取可变 Music 属性或 UI 集合。
                         foreach (var music in SongsSource)
                         {
-                            if (!LibraryQueries.MatchesSource(music, key.Source) || (request.Filter is not null && !request.Filter(music))) continue;
-                            rows[count++] = new SongRow(music);
+                            if (!LibraryQueries.MatchesSource(music, key.Source)) continue;
+                            if (request.Kind == SongViewType.Folder || music.SongId <= 0)
+                            {
+                                if (request.Filter is not null && !request.Filter(music)) continue;
+                                rows[count++] = new SongRow(music);
+                                continue;
+                            }
+                            if (!includedSongs.Add(music.SongId)) continue;
+                            var display = queries.FindDisplayVersion(music.SongId, key.Source) ?? music;
+                            if (request.Filter is not null && !request.Filter(display)) continue;
+                            bool matchedOtherVersion = false;
+                            if (!string.IsNullOrWhiteSpace(key.Search))
+                                foreach (var version in queries.GetVersions(music.SongId))
+                                    if (LibraryQueries.MatchesSource(version, key.Source) && MusicMatchesSearch(version, key.Search))
+                                    { matchedOtherVersion = true; break; }
+                            rows[count++] = new SongRow(display) { MatchedOtherVersion = matchedOtherVersion };
                         }
                         int written = await Task.Run(() =>
                         {
@@ -140,10 +155,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private readonly record struct SongRow(Music Music, string? Title, string? Author, string? Album, string? Folder, string? Path,
         int Disk, int Track, int Order, int Year, DateTime Created, DateTime Updated, int Id, AdditionalMusicMetadata Additional)
     {
+        public bool MatchedOtherVersion { get; init; }
         public SongRow(Music music) : this(music, music.Title, music.Author, music.Album, music.LastLevelFolderPath, music.Path,
             music.DiskNumber, music.TrackNumber, music.Order, music.Year, music.CreateTime, music.UpdateTime, music.Id, AdditionalMusicMetadata.From(music))
         { }
-        public bool Matches(string search, bool folder) => string.IsNullOrWhiteSpace(search) ||
+        public bool Matches(string search, bool folder) => MatchedOtherVersion || string.IsNullOrWhiteSpace(search) ||
             (Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
@@ -190,8 +206,9 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             var distinctMap = new Dictionary<string, Music>(srcSpan.Length / 4 + 1);
             for (int i = 0; i < srcSpan.Length; i++)
             {
-                ref readonly var m = ref srcSpan[i];
-                if (!LibraryQueries.MatchesSource(m, state.Browse.SourceFilterId)) continue;
+                var original = srcSpan[i];
+                if (!LibraryQueries.MatchesSource(original, state.Browse.SourceFilterId)) continue;
+                var m = original.SongId > 0 ? queries.FindDisplayVersion(original.SongId, state.Browse.SourceFilterId) ?? original : original;
                 if (hasSearch && !MatchesSearchShape(m, search))
                     continue;
 
@@ -230,8 +247,10 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             var distinctMap = new Dictionary<string, Music>(srcSpan.Length / 4 + 1);
             for (int i = 0; i < srcSpan.Length; i++)
             {
-                ref readonly var m = ref srcSpan[i];
-                if (!LibraryQueries.MatchesSource(m, state.Browse.SourceFilterId) || string.IsNullOrWhiteSpace(m.Author)) continue;
+                var original = srcSpan[i];
+                if (!LibraryQueries.MatchesSource(original, state.Browse.SourceFilterId)) continue;
+                var m = original.SongId > 0 ? queries.FindDisplayVersion(original.SongId, state.Browse.SourceFilterId) ?? original : original;
+                if (string.IsNullOrWhiteSpace(m.Author)) continue;
                 if (hasSearch && !MatchesSearchShape(m, search))
                     continue;
 
@@ -337,9 +356,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             {
                 ref readonly var plm = ref plmSpan[i];
                 if (plm.PlayListId != curListId) continue;
-                if (!queries.TryFindById(plm.MusicId, out var m) || m is null) continue;
+                Music? m = plm.RequestedMusicId is int fixedId ? queries.FindById(fixedId)
+                    : plm.SongId > 0 ? queries.FindDisplayVersion(plm.SongId, state.Browse.SourceFilterId) : queries.FindById(plm.MusicId);
+                if (m is null) continue;
                 if (hasSearch && !MusicMatchesSearch(m, search)) continue;
-                buf[written++] = new PlayListMusicItem { Music = m, PlayListOrder = plm.Order };
+                buf[written++] = new PlayListMusicItem { EntryId = plm.Id, RequestedMusicId = plm.RequestedMusicId, Music = m, PlayListOrder = plm.Order };
             }
 
             var slice = buf.AsSpan(0, written);

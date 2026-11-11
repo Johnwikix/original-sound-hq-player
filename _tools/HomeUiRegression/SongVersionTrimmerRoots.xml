@@ -1,0 +1,12 @@
+<linker>
+  <assembly fullname="HomeUiRegression">
+    <type fullname="WinUIMusicPlayer.Model.Music" preserve="all" />
+    <type fullname="WinUIMusicPlayer.Model.PlayListMusic" preserve="all" />
+    <type fullname="WinUIMusicPlayer.Model.PendingMetadataWrite" preserve="all" />
+    <type fullname="WinUIMusicPlayer.Model.MusicLyrics" preserve="all" />
+    <type fullname="RegressionApplication" preserve="all" />
+    <type fullname="HomeUiRegression.HomeUiRegression_XamlTypeInfo.XamlMetaDataProvider" preserve="all" />
+  </assembly>
+  <assembly fullname="SQLite-net" preserve="all" />
+  <assembly fullname="SQLitePCLRaw.core" preserve="all" />
+</linker>

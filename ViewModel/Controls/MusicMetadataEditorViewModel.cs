@@ -11,6 +11,10 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
 
     /// <summary>获取仅供窗口编辑的曲目标签草稿。</summary>
     public Music Draft { get; }
+    /// <summary>获取当前版本是否有未保存的标签输入。</summary>
+    public bool HasChanges => Draft.Title != _source.Title || Draft.Author != _source.Author || Draft.Album != _source.Album ||
+        Draft.Year != _source.Year || Draft.TrackNumber != _source.TrackNumber || Draft.DiskNumber != _source.DiskNumber ||
+        AdditionalMusicMetadata.From(Draft) != AdditionalMusicMetadata.From(_source);
 
     /// <summary>初始化曲目属性草稿。</summary>
     public MusicMetadataEditorViewModel(Music source)
@@ -43,6 +47,23 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
         return snapshot;
     }
 
+    /// <summary>仅在没有输入草稿时接受扫描后的标签和修订，避免覆盖用户输入。</summary>
+    public void ApplyReloaded(Music latest)
+    {
+        if (HasChanges || latest.MetadataRevision == _source.MetadataRevision) return;
+        Draft.Title = latest.Title;
+        Draft.Author = latest.Author;
+        Draft.Album = latest.Album;
+        Draft.Year = latest.Year;
+        Draft.TrackNumber = latest.TrackNumber;
+        Draft.DiskNumber = latest.DiskNumber;
+        Draft.CoverOverridePath = latest.CoverOverridePath;
+        Draft.ImageHash = latest.ImageHash;
+        if (latest.AdditionalMetadataRead) AdditionalMusicMetadata.From(latest).ApplyTo(Draft);
+        AcceptSaved(latest);
+        _initialAdditional = AdditionalMusicMetadata.From(latest);
+    }
+
     /// <summary>提交成功后发布快照，并返回当前草稿是否仍与保存内容一致。</summary>
     public bool AcceptSaved(Music snapshot)
     {
@@ -60,6 +81,12 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
         _source.TrackNumber = snapshot.TrackNumber;
         _source.DiskNumber = snapshot.DiskNumber;
         _source.UpdateTime = snapshot.UpdateTime;
+        _source.CoverOverridePath = snapshot.CoverOverridePath;
+        _source.ImageHash = snapshot.ImageHash;
+        _source.MetadataRevision = snapshot.MetadataRevision;
+        Draft.CoverOverridePath = snapshot.CoverOverridePath;
+        Draft.ImageHash = snapshot.ImageHash;
+        Draft.MetadataRevision = snapshot.MetadataRevision;
         Draft.UpdateTime = snapshot.UpdateTime;
         if (snapshot.AdditionalMetadataRead)
         {
@@ -73,7 +100,9 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
     {
         var copy = new Music
         {
-            Id = source.Id, SourceId = source.SourceId, Path = source.Path, UpdateTime = source.UpdateTime,
+            Id = source.Id, SongId = source.SongId, MetadataRevision = source.MetadataRevision,
+            SourceId = source.SourceId, Path = source.Path, UpdateTime = source.UpdateTime,
+            CoverOverridePath = source.CoverOverridePath, ImageHash = source.ImageHash,
             Title = source.Title,
             Author = source.Author,
             Album = source.Album,

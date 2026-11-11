@@ -31,8 +31,8 @@
             Background="Transparent"
             BorderBrush="Transparent"
             BorderThickness="0"
-            Command="{x:Bind Music.PlayCommand, Mode=OneWay}"
-            CommandParameter="{x:Bind Music, Mode=OneWay}"
+            Command="{x:Bind PlayFor(RowPlayCommand, Music), Mode=OneWay}"
+            CommandParameter="{x:Bind ParameterFor(RowPlayParameter, Music), Mode=OneWay}"
             CornerRadius="5"
             Style="{StaticResource PlayHoverButtonStyle}">
             <Grid x:Name="CoverArtwork" Width="40" Height="40">

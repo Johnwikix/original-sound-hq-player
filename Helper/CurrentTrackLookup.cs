@@ -14,6 +14,8 @@ public static class CurrentTrackLookup
             if (ReferenceEquals(source[i], current)) return source[i];
         for (int i = 0; i < source.Count; i++)
             if (Matches(source[i], current)) return source[i];
+        if (current.SongId > 0)
+            for (int i = 0; i < source.Count; i++) if (source[i].SongId == current.SongId) return source[i];
         return null;
     }
 
@@ -24,6 +26,8 @@ public static class CurrentTrackLookup
             if (ReferenceEquals(source[i].Music, current)) return source[i];
         for (int i = 0; i < source.Count; i++)
             if (Matches(source[i].Music, current)) return source[i];
+        if (current.SongId > 0)
+            for (int i = 0; i < source.Count; i++) if (source[i].Music.SongId == current.SongId) return source[i];
         return null;
     }
 

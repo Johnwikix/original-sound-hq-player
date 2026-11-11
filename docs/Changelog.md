@@ -1,3 +1,11 @@
+## 2026-11-11 添加重复音频的歌曲版本管理
+
+- `View/Controls/MusicDetailControl.xaml`、详情 ViewModel／宿主：新增置首的“版本”Pivot，支持选版、关联预览、首选、拆分及条件撤销；信息跟随版本，切换保留草稿。
+- `Model/SongRecord.cs`、`Services/SongVersionStore.cs`、数据库／歌词服务：保留 Music.Id，备份复制旧库后独立建组；共享收藏和默认歌词，保留版本偏移、覆盖与恢复资料，不自动合并或改写音频文件。
+- 播放协调器／队列、歌单／曲库投影：普通播放选首选可用版本，精确播放不换文件；保留重复出现项与实际播放历史，缺失文件只改变版本可用性。文件标签待写任务校验版本与文件状态。
+- `Strings/*/Resources.resw`、`_tools`：补齐七种语言资源；新增真实 SQLite 与 WinUI 剪裁回归，并覆盖远程恢复、共享收藏、扫描和歌词所有者竞态。验证结果及未测项见 `docs/SongVersionManagementPlan.md` 第 16 节。
+- 兼容性：旧文件一对一升级、旧库保留；默认自动选版，手动首选仅影响后续普通播放。未打开或迁移用户实际曲库。
+
 ## 2026-11-10 加固批量集合的输入、通知与派发边界
 - `Model/BulkObservableCollection.cs`：派发失败显式结束任务；批量输入先验证/物化，修复自身别名、重叠 Span、异常枚举、null 删除与重复计数；采用标准区间插入和几何扩容，排序失败不改变原集合。
 - `Model/BulkObservableCollection.cs`：单项与批量入口共用线程/重入守卫；保留现有 WinUI 底层批量修改后补发逐项通知的策略，事件读取已提交项，不再依赖可被回调修改的输入 List。

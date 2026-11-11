@@ -8,7 +8,7 @@ namespace WinUIMusicPlayer.Services.WebDav;
 
 public sealed record RemoteMetadata(string Title, string Artist, string Album, int Track, int Disc, int Year,
     int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs,
-    WinUIMusicPlayer.Model.AdditionalMusicMetadata? AdditionalMetadata = null);
+    WinUIMusicPlayer.Model.AdditionalMusicMetadata? AdditionalMetadata = null, string CodecId = "", int EncodingKind = 0);
 
 /// <summary>FFmpeg 仅通过调用方的有界只读流取数据；原生回调不允许异常跨越 ABI。</summary>
 public static unsafe class RemoteMetadataProbe
@@ -102,7 +102,8 @@ public static unsafe class RemoteMetadataProbe
                 Number(Field("date")), sampleRate, parameters->ch_layout.nb_channels, bits,
                 (int)Math.Clamp((format->bit_rate > 0 ? format->bit_rate : parameters->bit_rate) / 1000, 0, int.MaxValue), duration,
                 // 使用 libavformat 已提供的统一键，不按容器猜测别名或补读扩展标签。
-                new(Field("album_artist"), Field("genre"), Field("composer"), Field("lyricist"), Field("conductor"), Field("catalognumber")));
+                new(Field("album_artist"), Field("genre"), Field("composer"), Field("lyricist"), Field("conductor"), Field("catalognumber")),
+                parameters->codec_id.ToString(), EncodingKind(parameters->codec_id));
         }
         finally
         {
@@ -127,7 +128,15 @@ public static unsafe class RemoteMetadataProbe
         if (file.SampleRate <= 0 || !double.IsFinite(file.DurationMs)) throw new WebDavException("MetadataUnsupported");
         return new(file.Title ?? "", file.Artist ?? "", file.Album ?? "", file.TrackNumber ?? 0, file.DiscNumber ?? 0,
             file.Year ?? 0, (int)file.SampleRate, file.ChannelsArrangement.NbChannels,
-            file.BitDepth, file.Bitrate, Math.Max(0, file.DurationMs), Utils.AudioMetadataTags.Read(file));
+            file.BitDepth, file.Bitrate, Math.Max(0, file.DurationMs), Utils.AudioMetadataTags.Read(file), "flac", 1);
+    }
+
+    private static int EncodingKind(AVCodecID codec)
+    {
+        if (IsDsdCodec(codec) || codec is AVCodecID.AV_CODEC_ID_FLAC or AVCodecID.AV_CODEC_ID_ALAC) return 1;
+        string name = codec.ToString();
+        if (name.StartsWith("AV_CODEC_ID_PCM_", StringComparison.Ordinal)) return 1;
+        return codec is AVCodecID.AV_CODEC_ID_MP3 or AVCodecID.AV_CODEC_ID_AAC or AVCodecID.AV_CODEC_ID_OPUS or AVCodecID.AV_CODEC_ID_VORBIS ? 2 : 0;
     }
 
     private static bool IsDsdCodec(AVCodecID codec)

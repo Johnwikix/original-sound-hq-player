@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using WinUIMusicPlayer.Model;
@@ -15,7 +16,7 @@ public partial class MusicDatabaseService
     private readonly SemaphoreSlim _metadataGate = new(1, 1);
 
     /// <summary>Commit editor fields and lyrics together without overwriting playback-owned columns.</summary>
-    public Task SaveDetailsAsync(Music music, LyricsDocument document, long expectedRevision, CancellationToken token, bool lyricsChanged = true)
+    public async Task SaveDetailsAsync(Music music, LyricsDocument document, long expectedRevision, CancellationToken token, bool lyricsChanged = true, int expectedOwnerId = 0, byte[]? cover = null)
     {
         int id = music.Id;
         string title = music.Title, author = music.Author, album = music.Album;
@@ -24,22 +25,35 @@ public partial class MusicDatabaseService
         var year = music.Year;
         var updated = music.UpdateTime;
         var additional = music.AdditionalMetadataRead ? AdditionalMusicMetadata.From(music) : (AdditionalMusicMetadata?)null;
-        return _dbConnection.RunInTransactionAsync(db =>
+        long metadataRevision = music.MetadataRevision;
+        string? coverPath = cover is null ? null : await SaveVersionCoverAsync(music.Id, cover, token);
+        await _dbConnection.RunInTransactionAsync(db =>
         {
             token.ThrowIfCancellationRequested();
-            LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User", lyricsChanged);
-            db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=? WHERE Id=?",
-                title, author, album, track, disk, year, updated, id);
+            LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User", lyricsChanged, expectedOwnerId);
+            if (db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
+                title, author, album, track, disk, year, updated, id, metadataRevision) != 1) throw new InvalidOperationException("MusicMetadataConflict");
             if (additional is { } tags) MusicMetadataStorage.Save(db, id, tags);
+            if (coverPath is not null) db.Execute("UPDATE Music SET CoverOverridePath=?,ImageHash=? WHERE Id=?", coverPath, Path.GetFileNameWithoutExtension(coverPath), id);
+            UpdateSingleSongIdentity(db, id, title, author, album);
         });
+        music.MetadataRevision = metadataRevision + 1;
+        if (coverPath is not null) { music.CoverOverridePath = coverPath; music.ImageHash = Path.GetFileNameWithoutExtension(coverPath); }
     }
 
     /// <summary>持久化编辑快照，供后台在文件释放后写入；重复编辑替换旧任务。</summary>
-    public async Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long expectedRevision, CancellationToken token = default, bool lyricsChanged = true)
+    public async Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long expectedRevision, CancellationToken token = default, bool lyricsChanged = true, int expectedOwnerId = 0)
     {
         if (music.IsRemote) throw new InvalidOperationException(ToolUtils.GetString("WebDavReadOnly"));
+        var identity = await Task.Run(() =>
+        {
+            var file = new FileInfo(music.Path);
+            if (!file.Exists) throw new FileNotFoundException(ToolUtils.GetString("SongVersionsFileChanged"), music.Path);
+            return (file.Length, file.LastWriteTimeUtc.Ticks);
+        }, token);
         var request = new PendingMetadataWrite
         {
+            MusicId = music.Id, FileLength = identity.Length, FileLastWriteTicks = identity.Ticks,
             Path = Path.GetFullPath(music.Path), Title = music.Title, Album = music.Album,
             Author = music.Author, TrackNumber = music.TrackNumber, DiskNumber = music.DiskNumber,
             AlbumArtist = music.AlbumArtist, Genre = music.Genre, Composer = music.Composer, Lyricist = music.Lyricist, Conductor = music.Conductor, CatalogNumber = music.CatalogNumber,
@@ -49,6 +63,8 @@ public partial class MusicDatabaseService
             PronunciationLrc = document.PronunciationLrc, LyricsSchemaVersion = 2
         };
         int musicId = music.Id;
+        long metadataRevision = music.MetadataRevision;
+        string? coverPath = cover is null ? null : await SaveVersionCoverAsync(music.Id, cover, token);
         var updated = music.UpdateTime;
         if (!lyricsChanged && !string.IsNullOrWhiteSpace(document.Original.Content))
             request.PreserveFileLyrics = await Task.Run(() => !new LyricsParser().HasLyrics(document, token), token);
@@ -58,9 +74,13 @@ public partial class MusicDatabaseService
             await _dbConnection.RunInTransactionAsync(db =>
             {
                 token.ThrowIfCancellationRequested();
-                LyricsRepository.SaveInTransaction(db, musicId, document, expectedRevision, "User", lyricsChanged);
+                LyricsRepository.SaveInTransaction(db, musicId, document, expectedRevision, "User", lyricsChanged, expectedOwnerId);
+                var previous = db.Find<PendingMetadataWrite>(request.Path);
+                if (request.Cover is null && previous is not null && previous.MusicId == request.MusicId &&
+                    previous.FileLength == request.FileLength && previous.FileLastWriteTicks == request.FileLastWriteTicks)
+                    request.Cover = previous.Cover;
                 // 未补读的窗口不能用空快照替换已经排队的新标签。
-                if (request.MetadataVersion == 0 && db.Find<PendingMetadataWrite>(request.Path) is { MetadataVersion: 1 } previous)
+                if (request.MetadataVersion == 0 && previous is { MetadataVersion: 1 })
                 {
                     request.MetadataVersion = 1;
                     request.AlbumArtist = previous.AlbumArtist;
@@ -71,13 +91,47 @@ public partial class MusicDatabaseService
                     request.CatalogNumber = previous.CatalogNumber;
                 }
                 db.InsertOrReplace(request);
-                db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=? WHERE Id=?",
-                    request.Title, request.Author, request.Album, request.TrackNumber, request.DiskNumber, request.Year, updated, musicId);
+                if (db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
+                    request.Title, request.Author, request.Album, request.TrackNumber, request.DiskNumber, request.Year, updated, musicId, metadataRevision) != 1)
+                    throw new InvalidOperationException("MusicMetadataConflict");
                 if (request.MetadataVersion == 1)
                     MusicMetadataStorage.Save(db, musicId, new(request.AlbumArtist, request.Genre, request.Composer, request.Lyricist, request.Conductor, request.CatalogNumber));
+                if (coverPath is not null) db.Execute("UPDATE Music SET CoverOverridePath=?,ImageHash=? WHERE Id=?", coverPath, Path.GetFileNameWithoutExtension(coverPath), musicId);
+                UpdateSingleSongIdentity(db, musicId, request.Title, request.Author, request.Album);
             });
+            music.MetadataRevision = metadataRevision + 1;
+            if (coverPath is not null) { music.CoverOverridePath = coverPath; music.ImageHash = Path.GetFileNameWithoutExtension(coverPath); }
         }
         finally { _metadataGate.Release(); }
+    }
+
+    private async Task<string> SaveVersionCoverAsync(int musicId, byte[] bytes, CancellationToken token)
+    {
+        string root = Path.Combine(Path.GetDirectoryName(_dbConnection.DatabasePath)!, "VersionCovers");
+        return await Task.Run(async () =>
+        {
+            Directory.CreateDirectory(root);
+            string path = Path.Combine(root, musicId + "-" + Convert.ToHexString(SHA256.HashData(bytes)) + ".bin");
+            if (File.Exists(path)) return path;
+            string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                await File.WriteAllBytesAsync(temporary, bytes, token);
+                token.ThrowIfCancellationRequested();
+                try { File.Move(temporary, path, false); }
+                catch (IOException) when (File.Exists(path)) { }
+                return path;
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        }, token);
+    }
+
+    private static void UpdateSingleSongIdentity(SQLite.SQLiteConnection db, int musicId, string title, string author, string album)
+    {
+        if (!MusicMetadataStorage.HasSongs(db)) return;
+        db.Execute("UPDATE Song SET Title=?,Artist=?,Album=?,Revision=Revision+1 WHERE Id=(SELECT SongId FROM Music WHERE Id=?) " +
+            "AND (SELECT COUNT(*) FROM Music WHERE SongId=Song.Id AND IsDetached=0)=1 AND (Title<>? OR Artist<>? OR Album<>?)",
+            title, author, album, musicId, title, author, album);
     }
 
     /// <summary>串行尝试持久化任务，仅在标签保存成功后删除任务。</summary>
@@ -114,6 +168,12 @@ public partial class MusicDatabaseService
                             throw new FormatException("Queued lyrics cannot be converted to timed LRC; the original queue snapshot is retained.");
                     }
                     using var write = AudioFileWriteGate.BeginWrite(request.Path);
+                    var version = await _dbConnection.FindAsync<Music>(request.MusicId);
+                    var file = new FileInfo(request.Path);
+                    if (request.MusicId <= 0 || version is null || version.IsDetached ||
+                        !string.Equals(Path.GetFullPath(version.Path), request.Path, StringComparison.OrdinalIgnoreCase) ||
+                        !file.Exists || file.Length != request.FileLength || file.LastWriteTimeUtc.Ticks != request.FileLastWriteTicks)
+                        throw new InvalidOperationException(ToolUtils.GetString("SongVersionsFileChanged"));
                     // 先检查共享锁；暂停播放通常仍持有句柄，必须等真正释放。
                     using (new FileStream(request.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
                     ToolUtils.SaveMetaData(new Music

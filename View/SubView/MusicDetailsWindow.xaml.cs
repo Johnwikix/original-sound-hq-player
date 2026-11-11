@@ -60,7 +60,8 @@ namespace WinUIMusicPlayer.View.SubView
                 var editor = factory.Create(music);
                 ViewModel = new MusicDetailsViewModel(editor, app, App.Services.GetRequiredService<MusicDatabaseService>(),
                     App.Services.GetRequiredService<EditorSessions>(), App.GetLogger<MusicDetailsViewModel>(),
-                    MusicCommands.DetailsPlayCommand, new MusicDetailsRequest(music, AppData.CurrentPage), factory.CreateSpectrogram(music));
+                    MusicCommands.DetailsPlayCommand, new MusicDetailsRequest(music, AppData.CurrentPage), factory.CreateSpectrogram(music),
+                    factory: factory, dialogs: new MusicVersionDialogs(() => DetailView.XamlRoot));
                 ViewModel.CloseRequested += CloseRequested;
                 ViewModel.Start();
                 DetailView.ViewModel = ViewModel;

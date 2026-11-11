@@ -44,7 +44,8 @@ public sealed class MusicDetailsPresenter : IDisposable
     }
     public bool Show(MusicDetailsRequest request, FrameworkElement? sourceCover = null, FrameworkElement? sourceTitle = null)
     {
-        if (!_closing && CurrentDetails is { } current && ReferenceEquals(current.Music, request.Music))
+        if (!_closing && CurrentDetails is { } current && current.Music is { } shown &&
+            (ReferenceEquals(shown, request.Music) || shown.SongId > 0 && shown.SongId == request.Music.SongId))
         {
             current.UpdatePlaybackContext(request);
             return true;

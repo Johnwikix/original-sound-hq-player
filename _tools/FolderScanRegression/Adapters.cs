@@ -8,6 +8,7 @@ namespace Microsoft.UI.Xaml
 }
 namespace Microsoft.UI { public readonly record struct WindowId(ulong Value); }
 namespace WinUIMusicPlayer.Model { public static class AppData { public static IntPtr HWnd => new(1); } }
+namespace WinUIMusicPlayer.Model { public sealed class FolderBrowserNode { public bool IsExpanded { get; set; } } }
 namespace WinRT.Interop
 {
     public static class InitializeWithWindow
@@ -88,6 +89,11 @@ namespace WinUIMusicPlayer.Helper
 }
 namespace WinUIMusicPlayer.ViewModel
 {
+    public sealed class FolderViewModel
+    {
+        public void CollapseFolder(FolderBrowserNode node) => node.IsExpanded = false;
+        public void ExpandFolder(FolderBrowserNode node) => node.IsExpanded = true;
+    }
     public class AppViewModel : System.ComponentModel.INotifyPropertyChanged
     {
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged { add { } remove { } }

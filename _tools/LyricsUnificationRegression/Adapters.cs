@@ -74,7 +74,7 @@ namespace WinUIMusicPlayer.Services
     {
         // Substitute the application storage path, but exercise actual JSON persistence and CAS.
         private static readonly LyricsCacheStore Store = new(
-            Path.Combine(Path.GetTempPath(), "lyrics-cache-tests-" + Guid.NewGuid().ToString("N")), new());
+            Path.Combine(Environment.CurrentDirectory, "artifacts", "lyrics-cache-tests-" + Guid.NewGuid().ToString("N")), new());
         public static LyricsCacheEntry? Load(string path) => Store.Load(path);
         public static void Save(string path, LyricsDocument document) => Store.Save(path, document);
         public static bool SaveEdited(string path, LyricsDocument document, long revision) => Store.Save(path, document, revision, sourceKind: "User");

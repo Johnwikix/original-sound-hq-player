@@ -22,13 +22,25 @@ namespace WinUIMusicPlayer
         public static ILogger<T> GetLogger<T>() => NullLogger<T>.Instance;
     }
 }
-namespace WinUIMusicPlayer.State { public sealed class AppState { public PlaybackQueueState Queue { get; } = new(); public BrowseState Browse { get; } = new(); public ShellState Shell { get; } = new(); } }
+namespace WinUIMusicPlayer.State
+{
+    public sealed record PlaybackSelection(Music Music, long EntryId);
+    public sealed class FixturePlaybackState { public PlaybackSelection? PendingSelection { get; set; } }
+    public sealed class AppState
+    {
+        public PlaybackQueueState Queue { get; } = new();
+        public FixturePlaybackState Playback { get; } = new();
+        public BrowseState Browse { get; } = new();
+        public ShellState Shell { get; } = new();
+    }
+}
 namespace AnimatedWin2dControls.Messages { }
 namespace WinUIMusicPlayer.Reader { public static class Placeholder { } }
 namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
+        public int SongId { get; set; }
         private int _id;
         internal static long IdentityReads;
         public int Id { get { Interlocked.Increment(ref IdentityReads); return _id; } set => _id = value; }
@@ -43,7 +55,12 @@ namespace WinUIMusicPlayer.Model
         public bool IsFavorite { get; set; }
         public int Order { get; set; }
     }
-    public sealed class PlayListMusicItem { public Music Music { get; set; } = null!; }
+    public sealed class PlayListMusicItem
+    {
+        public int EntryId { get; set; }
+        public int? RequestedMusicId { get; set; }
+        public Music Music { get; set; } = null!;
+    }
     public sealed class PlayList { public int Id { get; set; } public string Name { get; set; } = ""; }
     public sealed class SortOption { public string Tag { get; set; } = "DefaultOrder"; public string DisplayText { get; set; } = ""; public string UidKey { get; set; } = ""; }
     public sealed class UsbSendTarget { public object? Device { get; set; } public string Format { get; set; } = ""; public int BitrateKbps { get; set; } }
@@ -74,7 +91,7 @@ namespace WinUIMusicPlayer.Services
         public event Action<Music, CancellationToken>? TrackStarted;
         public Music? LastMusic;
         public long LastEntryId;
-        public Task PlayAsync(Music music, long entryId = 0)
+        public Task PlayAsync(Music music, long entryId = 0, bool exactVersion = false)
         {
             LastMusic = music;
             LastEntryId = entryId;
@@ -127,6 +144,10 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = [];
         public List<Music> SongsSource { get; } = [];
+        public IReadOnlyList<Music> FindVersions(int songId) => SongsSource.Where(music => music.SongId == songId).ToArray();
+        public void NotifyIdIndexChanged() { }
+        public void NotifySharedFavoriteChanged() { }
+        public void RefreshAllViews() { }
         public ObservableCollection<PlayList> AllPlayList { get; } = [];
         public ObservableCollection<SortOption> SortOptions { get; } = [];
         public SortOption SelectedSortOption { get; } = new();

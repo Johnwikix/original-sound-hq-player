@@ -17,8 +17,10 @@ internal static class PlaylistSummaryProjection
         for (int i = 0; i < mappings.Count; i++)
         {
             var mapping = mappings[i];
-            if (!summaries.TryGetValue(mapping.PlayListId, out var summary)
-                || !queries.TryFindById(mapping.MusicId, out var music) || music is null) continue;
+            if (!summaries.TryGetValue(mapping.PlayListId, out var summary)) continue;
+            var music = mapping.RequestedMusicId is int fixedId ? queries.FindById(fixedId)
+                : mapping.SongId > 0 ? queries.FindDisplayVersion(mapping.SongId) : queries.FindById(mapping.MusicId);
+            if (music is null) continue;
             summary.Count++;
             if (summary.Cover is null || mapping.Order > summary.Order)
             {

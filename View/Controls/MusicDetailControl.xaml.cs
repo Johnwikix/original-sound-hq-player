@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Globalization;
+using System.ComponentModel;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View.Controls;
@@ -39,7 +40,12 @@ public sealed partial class MusicDetailControl : UserControl
     private static void ViewModelChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (MusicDetailControl)sender;
-        if (args.OldValue is MusicDetailsViewModel old) old.Spectrogram.SetActive(false);
+        if (args.OldValue is MusicDetailsViewModel old)
+        {
+            old.Spectrogram.SetActive(false);
+            old.PropertyChanged -= control.ModelPropertyChanged;
+        }
+        if (args.NewValue is MusicDetailsViewModel current) current.PropertyChanged += control.ModelPropertyChanged;
         // 清空/替换中间节点之前移除全部嵌套监听，避免生成绑定继续保留旧的 Spectrogram 等子 VM。
         control.Bindings?.StopTracking();
         // x:Bind 遇到空的中间 ViewModel 时会跳过目标赋值，退出详情必须显式清空子视图上下文。
@@ -56,15 +62,28 @@ public sealed partial class MusicDetailControl : UserControl
         if (control.ViewModel is null) control.ActivityIndicator.IsActive = false;
     }
     private void Confirm_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
+    private void ModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (!IsLoaded || args.PropertyName is not (nameof(MusicDetailsViewModel.Music) or nameof(MusicDetailsViewModel.Spectrogram))) return;
+        Artwork.Music = Music;
+        SpectrumView.ViewModel = ViewModel?.Spectrogram;
+        UpdateSpectrumActive();
+    }
     private void Cancel_Click(object sender, RoutedEventArgs args) => ConfirmFlyout.Hide();
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
         Bindings.Update();
+        if (ViewModel is { } current)
+        {
+            current.PropertyChanged -= ModelPropertyChanged;
+            current.PropertyChanged += ModelPropertyChanged;
+        }
         UpdateSpectrumActive();
     }
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
         ViewModel?.Spectrogram.SetActive(false);
+        if (ViewModel is { } current) current.PropertyChanged -= ModelPropertyChanged;
         Bindings.StopTracking();
         DismissMenus();
     }

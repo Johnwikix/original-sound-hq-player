@@ -11,6 +11,7 @@ namespace WinUIMusicPlayer.Services.Lyrics;
 /// <summary>One authoritative row per library track. Legacy data is read-only recovery data.</summary>
 public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParser parser)
 {
+    private bool _hasSongs;
     private sealed class TableColumnInfo { public string Name { get; set; } = ""; }
     public async Task InitializeAsync(string databasePath)
     {
@@ -37,9 +38,39 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
         if (!columns.Any(column => string.Equals(column.Name, nameof(MusicLyricsRecord.PronunciationLyrics), StringComparison.OrdinalIgnoreCase)))
             await database.ExecuteAsync("ALTER TABLE MusicLyricsV2 ADD COLUMN PronunciationLyrics TEXT NULL");
         await database.CreateTableAsync<LyricsSearchStateRecord>();
+        _hasSongs = await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0;
     }
 
     public async Task<LyricsSnapshot> GetAsync(int musicId, CancellationToken token = default)
+    {
+        if (_hasSongs && await database.FindAsync<VersionLyricsOverrideRecord>(musicId) is { } own) return own.Snapshot();
+        return await GetSharedAsync(musicId, token);
+    }
+
+    /// <summary>获取组内默认文档，不使用该版本的独立覆盖。</summary>
+    public async Task<LyricsSnapshot> GetSharedAsync(int musicId, CancellationToken token = default)
+    {
+        if (!_hasSongs) return await GetVersionAsync(musicId, token);
+        while (true)
+        {
+            token.ThrowIfCancellationRequested();
+            var song = await database.FindWithQueryAsync<SongRecord>("SELECT s.* FROM Song s JOIN Music m ON m.SongId=s.Id WHERE m.Id=?", musicId);
+            if (song is null) return await GetVersionAsync(musicId, token);
+            if (await database.FindAsync<SongLyricsRecord>(song.Id) is { } current) return current.Snapshot();
+            var legacy = await GetVersionAsync(song.LyricsSourceMusicId > 0 ? song.LyricsSourceMusicId : musicId, token);
+            bool inserted = false;
+            await database.RunInTransactionAsync(db =>
+            {
+                token.ThrowIfCancellationRequested();
+                if (db.ExecuteScalar<int>("SELECT SongId FROM Music WHERE Id=?", musicId) != song.Id) return;
+                if (db.Find<SongLyricsRecord>(song.Id) is null) db.Insert(SongLyricsRecord.From(song.Id, legacy));
+                inserted = true;
+            });
+            if (inserted) return (await database.FindAsync<SongLyricsRecord>(song.Id)).Snapshot();
+        }
+    }
+
+    private async Task<LyricsSnapshot> GetVersionAsync(int musicId, CancellationToken token = default)
     {
         if (musicId <= 0) throw new ArgumentOutOfRangeException(nameof(musicId));
         while (true)
@@ -74,9 +105,20 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
     }
 
     public async Task<bool> SaveAsync(int musicId, LyricsDocument document, long expectedRevision,
-        string sourceKind, string sourceKey = "", CancellationToken token = default)
+        string sourceKind, string sourceKey = "", CancellationToken token = default, int expectedOwnerId = 0)
     {
         token.ThrowIfCancellationRequested();
+        if (_hasSongs)
+        {
+            bool saved = false;
+            await database.RunInTransactionAsync(db =>
+            {
+                token.ThrowIfCancellationRequested();
+                try { SaveInTransaction(db, musicId, document, expectedRevision, sourceKind, true, expectedOwnerId, sourceKey); saved = true; }
+                catch (InvalidOperationException ex) when (ex.Message == "LyricsEditConflict") { }
+            });
+            return saved;
+        }
         return await database.ExecuteAsync(
             "UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, PronunciationLyrics=?, SourceKind=?, SourceKey=?, Revision=Revision+1, Diagnostic='' " +
             "WHERE SchemaVersion=2 AND MusicId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=?)",
@@ -85,14 +127,28 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
     }
 
     /// <summary>Runs in the metadata transaction so queueing and editor revision checks commit together.</summary>
-    public static void SaveInTransaction(SQLiteConnection db, int musicId, LyricsDocument document, long expectedRevision, string kind, bool lyricsChanged = true)
+    public static void SaveInTransaction(SQLiteConnection db, int musicId, LyricsDocument document, long expectedRevision, string kind, bool lyricsChanged = true,
+        int expectedOwnerId = 0, string sourceKey = "")
     {
-        // Metadata edits still advance the editor revision, but retain lyric provenance and diagnostics.
-        int changed = lyricsChanged ? db.Execute("UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, PronunciationLyrics=?, SourceKind=?, SourceKey='', " +
+        if (!lyricsChanged) return; // 文件标签编辑不抢占共享歌词修订。
+        if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0)
+        {
+            int songId = db.ExecuteScalar<int>("SELECT SongId FROM Music WHERE Id=?", musicId);
+            bool own = db.Find<VersionLyricsOverrideRecord>(musicId) is not null;
+            int owner = own ? -musicId : songId;
+            if (expectedOwnerId != 0 && expectedOwnerId != owner) throw new InvalidOperationException("LyricsEditConflict");
+            int updated = own
+                ? db.Execute("UPDATE VersionLyricsOverride SET Lyrics=?,LyricsFormat=?,TranslatedLyrics=?,PronunciationLyrics=?,Revision=Revision+1 WHERE MusicId=? AND Revision=?",
+                    document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, musicId, expectedRevision)
+                : db.Execute("UPDATE SongLyrics SET Lyrics=?,LyricsFormat=?,TranslatedLyrics=?,PronunciationLyrics=?,SourceKind=?,SourceKey=?,Revision=Revision+1,Diagnostic='' " +
+                    "WHERE SongId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=? AND SongId=?)",
+                    document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, kind, sourceKey, songId, expectedRevision, musicId, songId);
+            if (updated != 1) throw new InvalidOperationException("LyricsEditConflict");
+            return;
+        }
+        int changed = db.Execute("UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, PronunciationLyrics=?, SourceKind=?, SourceKey='', " +
             "Revision=Revision+1, Diagnostic='' WHERE SchemaVersion=2 AND MusicId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=?)",
-            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, kind, musicId, expectedRevision, musicId)
-            : db.Execute("UPDATE MusicLyricsV2 SET Revision=Revision+1 WHERE SchemaVersion=2 AND MusicId=? AND Revision=? " +
-                "AND EXISTS(SELECT 1 FROM Music WHERE Id=?)", musicId, expectedRevision, musicId);
+            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, kind, musicId, expectedRevision, musicId);
         if (changed != 1) throw new InvalidOperationException("LyricsEditConflict");
     }
 
@@ -108,7 +164,12 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
             foreach (int id in ids)
             {
                 token.ThrowIfCancellationRequested();
-                try { await GetAsync(id, token); }
+                try
+                {
+                    // 各旧文件文档先单独归档为 V2，避免共享文档已存在时每次启动都重复迁移。
+                    await GetVersionAsync(id, token);
+                    if (_hasSongs) await GetSharedAsync(id, token);
+                }
                 catch (InvalidOperationException) { /* A concurrently removed track has no migration work. */ }
                 after = id;
             }

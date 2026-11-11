@@ -14,6 +14,8 @@ namespace WinUIMusicPlayer.Model.Stats
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public int MusicId { get; set; }
+        /// <summary>播放当时的歌曲归属；MusicId 始终保留实际音频版本。</summary>
+        public int SongIdAtPlay { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
         public string Album { get; set; } = string.Empty;

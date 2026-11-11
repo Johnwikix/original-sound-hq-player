@@ -290,6 +290,25 @@ static async Task RunAsync()
     await pendingProjection;
     Check(list.FillCount == fillsBeforeStop, "Stopping must suppress delayed list publication.");
     Console.WriteLine("PASS: library cache, version invalidation, shared refresh barrier, latest search and stop suppression.");
+    var groupedState = new WinUIMusicPlayer.State.AppState();
+    groupedState.Library.Replace([
+        new(701, "a.flac") { SongId = 71, EncodingKind = 1, Album = "Versions", Genre = "Jazz" },
+        new(702, "b.mp3") { SongId = 71, EncodingKind = 2, SourceId = 9, Album = "Versions", Genre = "Rock" },
+        new(703, "c.flac") { SongId = 72, EncodingKind = 1, Album = "Versions" }
+    ]);
+    var groupedQueries = new LibraryQueries(groupedState.Library);
+    var groupedProjection = new LibraryProjectionService(groupedState, groupedQueries, Microsoft.Extensions.Logging.Abstractions.NullLogger<LibraryProjectionService>.Instance);
+    var groupedList = new BulkObservableCollection<Music>();
+    await groupedProjection.UpdateSongCollectionsAsync(groupedList, SongViewType.All);
+    Check(groupedList.Count == 2 && groupedQueries.GetAlbumSongCount("Versions") == 2, "Grouped songs count once in library and albums.");
+    groupedState.Browse.SearchText = "Rock";
+    await groupedProjection.UpdateSongCollectionsAsync(groupedList, SongViewType.All);
+    Check(groupedList.Count == 1 && groupedList[0].Id == 701, "Search matches alternate version tags while preserving the stable representative.");
+    groupedState.Browse.SearchText = "";
+    await groupedProjection.UpdateSongCollectionsAsync(groupedList, SongViewType.Folder);
+    Check(groupedList.Count == 3, "Folder view preserves the concrete files.");
+    await groupedProjection.StopAsync();
+    Console.WriteLine("PASS: grouped library counts, alternate-info search and concrete folder versions.");
 
     // 年份排序：缺年份（0）始终排在末尾，同年内按专辑 → 光盘 → 音轨给出确定顺序。
     var yearState = new AppState();

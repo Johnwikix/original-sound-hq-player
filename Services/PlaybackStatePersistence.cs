@@ -107,6 +107,10 @@ public sealed class PlaybackStatePersistence(MusicDatabaseService db, AppViewMod
 
             var playState = new SavePlayState
             {
+                SchemaVersion = 1,
+                QueueRequestedVersionIds = appvm.State.Queue.CaptureRequestedVersions(),
+                QueueSourceScopes = appvm.State.Queue.CaptureSourceScopes(),
+                QueuePlaylistEntryIds = appvm.State.Queue.CapturePlaylistEntries(),
                 PlayMode = appvm.CurrentPlayMode,
                 QueueEntryIds = appvm.State.Queue.CaptureEntryIds(),
                 QueueOrderIds = appvm.State.Queue.CaptureOrderIds(),

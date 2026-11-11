@@ -2691,4 +2691,39 @@ SHA-256: {5}
   <data name="FolderBrowserResizePanes" xml:space="preserve">
     <value>フォルダーと曲の領域の幅を調整</value>
   </data>
+  <data name="SongVersions" xml:space="preserve"><value>バージョン</value></data>
+  <data name="SongVersionsAuto" xml:space="preserve"><value>自動：可逆形式を優先し、同等ならローカルまたは完全なキャッシュを使用します。</value></data>
+  <data name="SongVersionsManual" xml:space="preserve"><value>優先バージョンを固定中。通常再生では利用不可の場合に代替を使用します。</value></data>
+  <data name="SongVersionsPreferred" xml:space="preserve"><value>優先</value></data>
+  <data name="SongVersionsPlaying" xml:space="preserve"><value>再生中</value></data>
+  <data name="SongVersionsOwnLyrics" xml:space="preserve"><value>個別の歌詞</value></data>
+  <data name="SongVersionsMissing" xml:space="preserve"><value>ファイルなし</value></data>
+  <data name="SongVersionsOffline" xml:space="preserve"><value>オフライン</value></data>
+  <data name="SongVersionsAvailable" xml:space="preserve"><value>利用可能</value></data>
+  <data name="SongVersionsPlay" xml:space="preserve"><value>このバージョンを再生</value></data>
+  <data name="SongVersionsSetPreferred" xml:space="preserve"><value>優先に設定</value></data>
+  <data name="SongVersionsUseAuto" xml:space="preserve"><value>自動選択</value></data>
+  <data name="SongVersionsLink" xml:space="preserve"><value>既存のバージョンを関連付け</value></data>
+  <data name="SongVersionsSplit" xml:space="preserve"><value>独立した曲に分離</value></data>
+  <data name="SongVersionsUndo" xml:space="preserve"><value>前のグループ操作を元に戻す</value></data>
+  <data name="SongVersionsUseSharedLyrics" xml:space="preserve"><value>共有の歌詞を使用</value></data>
+  <data name="SongVersionsNoCandidates" xml:space="preserve"><value>タイトル・アーティスト・アルバムが一致する他の曲はありません。</value></data>
+  <data name="SongVersionsLinkDescription" xml:space="preserve"><value>一致するファイルを選択。タグと画像は個別に保持します。リマスターや別演奏は分けてください。</value></data>
+  <data name="SongVersionsMergeTitle" xml:space="preserve"><value>曲のグループ化を確認</value></data>
+  <data name="SongVersionsMergeDescription" xml:space="preserve"><value>ファイルは変更しません。お気に入りを統合し、プレイリスト位置を保持します。共有歌詞を選択し、異なる歌詞は個別・復元用に保持します。再生は継続します。</value></data>
+  <data name="SongVersionsSharedLyricsChoice" xml:space="preserve"><value>既定の共有歌詞</value></data>
+  <data name="SongVersionsLyricsTarget" xml:space="preserve"><value>現在の曲の歌詞を使用</value></data>
+  <data name="SongVersionsLyricsOther" xml:space="preserve"><value>関連付ける曲の歌詞を使用</value></data>
+  <data name="SongVersionsCollapseDuplicates" xml:space="preserve"><value>プレイリストの重複位置をまとめる（既定では保持）</value></data>
+  <data name="SongVersionsConfirm" xml:space="preserve"><value>確認</value></data>
+  <data name="SongVersionsCancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="SongVersionsConflict" xml:space="preserve"><value>曲情報が変更されたか、バージョンが一致しません。更新して再確認してください。</value></data>
+  <data name="SongVersionsRecoveryConflict" xml:space="preserve"><value>後の変更を保護するため一括で元に戻せません。現在の情報を保持し、必要に応じて分離してください。</value></data>
+  <data name="SongVersionsNoOperation" xml:space="preserve"><value>元に戻せるグループ操作はありません。</value></data>
+  <data name="SongVersionsSaved" xml:space="preserve"><value>保存しました。</value></data>
+  <data name="SongVersionsUnavailable" xml:space="preserve"><value>このバージョン、または範囲内の全バージョンを再生できません。</value></data>
+  <data name="SongVersionsFileChanged" xml:space="preserve"><value>ファイルが変更されました。書き込みを保留しています。対象を確認してください。</value></data>
+  <data name="MusicMetadataConflict" xml:space="preserve"><value>別の操作でタグが変更されました。下書きを保持して確認してください。</value></data>
+  <data name="SongVersionsDraftHint" xml:space="preserve"><value>関連付け・分離・元に戻す操作の前に各版の下書きを保存してください。</value></data>
+  <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} 版、{1} グループがお気に入り、プレイリスト内 {2} 項目（重複 {3} 項目は任意で統合）。</value></data>
 </root>

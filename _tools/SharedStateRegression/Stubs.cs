@@ -4,6 +4,15 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed record Music(int Id, string Path)
     {
+        public int SongId { get; init; }
+        public int? SongPreferredMusicId { get; init; }
+        public bool IsDetached { get; init; }
+        public bool IsRemoteCached { get; init; }
+        public string CodecId { get; init; } = "";
+        public int EncodingKind { get; init; }
+        public int SampleRate { get; init; }
+        public int BitRate { get; init; }
+        public int Channel { get; init; }
         public int SourceId { get; init; }
         public bool IsRemote => SourceId != 0;
         public string Author { get; init; } = "artist";

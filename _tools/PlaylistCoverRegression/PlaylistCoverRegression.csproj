@@ -24,6 +24,7 @@
     <Compile Include="../../Model/PlayListMusic.cs" Link="PlayListMusic.cs" />
     <Compile Include="../../Services/PlaylistSummaryProjection.cs" Link="PlaylistSummaryProjection.cs" />
     <Compile Include="../../Services/LibraryQueries.cs" Link="LibraryQueries.cs" />
+    <Compile Include="../../Services/SongVersionPolicy.cs" />
     <Compile Include="../../State/LibraryState.cs" Link="LibraryState.cs" />
     <Compile Include="../../Behaviors/AlbumCoverBehavior.cs" Link="AlbumCoverBehavior.cs" />
     <Page Include="$(PlaylistPageXaml)" Link="View/PlayListPage.xaml" />

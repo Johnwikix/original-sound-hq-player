@@ -46,6 +46,12 @@ public sealed class LastFmFavoriteStore(Func<SQLiteAsyncConnection> connection, 
         await db.RunInTransactionAsync(tx =>
         {
             int changed = tx.Execute("UPDATE Music SET IsFavorite = ?, [Order] = ? WHERE Id = ?", change.Loved, change.Order, change.MusicId);
+            if (changed != 0 && tx.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0)
+            {
+                int songId = tx.ExecuteScalar<int>("SELECT SongId FROM Music WHERE Id=?", change.MusicId);
+                tx.Execute("UPDATE Song SET IsFavorite=?,FavoriteOrder=?,Revision=Revision+1 WHERE Id=?", change.Loved, change.Order, songId);
+                tx.Execute("UPDATE Music SET IsFavorite=?,[Order]=? WHERE SongId=?", change.Loved, change.Order, songId);
+            }
             if (changed != 0 && !string.IsNullOrEmpty(account) && !string.IsNullOrEmpty(apiKey) && Eligible(change.Track))
                 Put(tx, apiKey, account, change.Track, change.Loved, out _);
         }).ConfigureAwait(false);
@@ -57,8 +63,17 @@ public sealed class LastFmFavoriteStore(Func<SQLiteAsyncConnection> connection, 
         await InitializeAsync().ConfigureAwait(false);
         await connection().RunInTransactionAsync(tx =>
         {
+            bool grouped = tx.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") != 0;
             foreach (var item in orders)
+            {
                 tx.Execute("UPDATE Music SET [Order] = ? WHERE Id = ? AND IsFavorite = 1", item.Order, item.MusicId);
+                if (grouped)
+                {
+                    int songId = tx.ExecuteScalar<int>("SELECT SongId FROM Music WHERE Id=?", item.MusicId);
+                    tx.Execute("UPDATE Song SET FavoriteOrder=?,Revision=Revision+1 WHERE Id=? AND IsFavorite=1", item.Order, songId);
+                    tx.Execute("UPDATE Music SET [Order]=? WHERE SongId=? AND IsFavorite=1", item.Order, songId);
+                }
+            }
         }).ConfigureAwait(false);
     }
 

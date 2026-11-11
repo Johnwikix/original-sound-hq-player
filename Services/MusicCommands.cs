@@ -17,22 +17,31 @@ namespace WinUIMusicPlayer.Services
         public static IRelayCommand<Music> UpdateFavouriteCommand { get; } = new RelayCommand<Music>(UpdateFavourite);
         public static IRelayCommand<Music> AddToPlayListCommand { get; } = new RelayCommand<Music>(AddToCurrentPlayList);
         public static IRelayCommand<Music> AddToFavouriteCommand { get; } = new RelayCommand<Music>(AddToFavourite);
+        /// <summary>按歌单关系身份播放，区分同曲多个位置。</summary>
+        public static IAsyncRelayCommand<PlayListMusicItem> PlayPlaylistEntryCommand { get; } = new AsyncRelayCommand<PlayListMusicItem>(
+            item => item is null ? Task.CompletedTask : PlayPlaylistEntryAsync(item), AsyncRelayCommandOptions.AllowConcurrentExecutions);
         // 本地曲目的资源管理器定位入口；远程曲目由行按钮 IsEnabled=CanEditFile 与右键菜单置灰拦截。
         public static IRelayCommand<Music> OpenSourceCommand { get; } = new RelayCommand<Music>(OpenSource);
 
         public static IAsyncRelayCommand<MusicDetailsRequest> DetailsPlayCommand { get; } = new AsyncRelayCommand<MusicDetailsRequest>(
-            request => request is null ? Task.CompletedTask : PlayFromPageAsync(request.Music, request.PlaybackPage, request.QueueEntryId),
+            request => request is null ? Task.CompletedTask : PlayFromPageAsync(request.Music, request.PlaybackPage, request.QueueEntryId, request.ExactVersion, request.PlaylistEntryId),
             _ => App.Services.GetRequiredService<AppViewModel>().CanStartPlayback,
             AsyncRelayCommandOptions.AllowConcurrentExecutions);
 
         private static Task PlayAsync(Music? music)
             => music is null ? Task.CompletedTask : PlayFromPageAsync(music, AppData.CurrentPage);
 
-        private static async Task PlayFromPageAsync(Music music, System.Type? page, long entryId = 0)
+        private static async Task PlayFromPageAsync(Music music, System.Type? page, long entryId = 0, bool exactVersion = false, int playlistEntryId = 0)
         {
             // 手动播放由 PlaybackCoordinator 重新探活，不能被缓存的离线状态拦截。
             if (music is null) return;
             var app = App.Services.GetRequiredService<AppViewModel>();
+            var previousQueue = app.SequentialPlayingList;
+            if (page == typeof(PlayListPage) && playlistEntryId > 0)
+            {
+                foreach (var item in app.PlayListSongs)
+                    if (item.EntryId == playlistEntryId) { await PlayPlaylistEntryAsync(item, music, exactVersion); return; }
+            }
             if (page == typeof(FavouritePlayListPage))
                 app.SequentialPlayingList = new(app.FavoriteSongs);
             else if (page == typeof(PlayListPage))
@@ -52,7 +61,37 @@ namespace WinUIMusicPlayer.Services
             else if (page == typeof(FolderBrowsePage))
                 app.SequentialPlayingList = new(app.FolderSongs);
 
-            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: music, IsChangeList: true, entryId: entryId);
+            int scope = page == typeof(FolderBrowsePage) ? music.SourceId : app.State.Browse.SourceFilterId;
+            if (!ReferenceEquals(previousQueue, app.SequentialPlayingList))
+                app.State.Queue.ConfigureSource(scope, exactFiles: page == typeof(FolderBrowsePage));
+            await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(music, entryId,
+                exactVersion: exactVersion || page == typeof(FolderBrowsePage));
+        }
+
+        /// <summary>从当前歌单建立队列并选择对应出现项。</summary>
+        public static async Task PlayPlaylistEntryAsync(PlayListMusicItem selected, Music? exactMusic = null, bool exact = false,
+            System.Collections.Generic.IReadOnlyList<PlayListMusicItem>? playlistItems = null)
+        {
+            var app = App.Services.GetRequiredService<AppViewModel>();
+            if (!app.CanStartPlayback) return;
+            var items = playlistItems ?? app.PlayListSongs;
+            var musics = new Music[items.Count];
+            var entries = new int[items.Count];
+            var fixedVersions = new int[items.Count];
+            int targetIndex = -1;
+            for (int i = 0; i < items.Count; i++)
+            {
+                musics[i] = items[i].Music;
+                entries[i] = items[i].EntryId;
+                fixedVersions[i] = items[i].RequestedMusicId ?? 0;
+                if (ReferenceEquals(items[i], selected) || selected.EntryId > 0 && selected.EntryId == items[i].EntryId) targetIndex = i;
+            }
+            if (targetIndex < 0) return;
+            app.SequentialPlayingList = new(musics);
+            app.State.Queue.ConfigurePlaylist(entries, fixedVersions, app.State.Browse.SourceFilterId);
+            long entryId = app.State.Queue.EntryIdAt(targetIndex);
+            await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(exactMusic ?? selected.Music, entryId,
+                exactVersion: exact || selected.RequestedMusicId is not null);
         }
 
         private static void UpdateFavourite(Music? music)
@@ -63,13 +102,12 @@ namespace WinUIMusicPlayer.Services
             if (music.IsFavorite)
             {
                 music.Order = ComputeNextFavoriteOrder(app);
-                app.AddToFavoriteSongs(music);
             }
             else
             {
-                app.RemoveFromFavoriteSongs(music);
                 music.Order = 0;
             }
+            PublishFavoriteProjection(app, music);
             PersistFavorite(music);
         }
 
@@ -79,14 +117,34 @@ namespace WinUIMusicPlayer.Services
             music.IsFavorite = true;
             var app = App.Services.GetRequiredService<AppViewModel>();
             music.Order = ComputeNextFavoriteOrder(app);
-            app.AddToFavoriteSongs(music);
+            PublishFavoriteProjection(app, music);
             PersistFavorite(music);
         }
 
         private static void PersistFavorite(Music music)
         {
             var database = App.Services.GetRequiredService<MusicDatabaseService>();
-            _ = App.Services.GetRequiredService<ApplicationTasks>().RunCommittedAsync(() => database.AddToFavourite(music));
+            _ = App.Services.GetRequiredService<ApplicationTasks>().RunCommittedAsync(async () =>
+            {
+                await database.AddToFavourite(music);
+            });
+        }
+
+        private static void PublishFavoriteProjection(AppViewModel app, Music music)
+        {
+            if (music.SongId > 0)
+            {
+                foreach (var version in app.FindVersions(music.SongId))
+                {
+                    version.IsFavorite = music.IsFavorite;
+                    version.Order = music.Order;
+                }
+                if (app.CurrentPlayingMusic is { } current && current.SongId == music.SongId)
+                { current.IsFavorite = music.IsFavorite; current.Order = music.Order; }
+            }
+            app.NotifyIdIndexChanged();
+            app.NotifySharedFavoriteChanged();
+            app.RefreshAllViews();
         }
 
         private static void AddToCurrentPlayList(Music? music)
@@ -142,9 +200,7 @@ namespace WinUIMusicPlayer.Services
         {
             await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(music.Id);
             var app = App.Services.GetRequiredService<AppViewModel>();
-            app.RemoveFromSongsSource(music);
-            app.RemoveFromFavoriteSongs(music);
-            app.RemoveFromPlayListSongs(music);
+            app.RefreshAllViews();
         }
     }
 }

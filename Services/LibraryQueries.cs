@@ -14,6 +14,9 @@ public sealed class LibraryQueries(LibraryState library)
     private readonly Dictionary<string, Music> _firstAlbumIndex = new(capacity: 4096, StringComparer.Ordinal);
     private readonly Dictionary<string, Music> _firstArtistIndex = new(capacity: 4096, StringComparer.Ordinal);
     private readonly Dictionary<string, int> _albumSongCounts = new(capacity: 4096, StringComparer.Ordinal);
+    private readonly Dictionary<int, List<Music>> _songVersions = [];
+    private readonly Dictionary<int, Music> _firstVersionBySong = [];
+    private readonly Dictionary<(int Song, int Source), Music> _displayVersions = [];
     private long _indexedVersion = -1;
     private int _sourceFilter = -1;
     public void SetSourceFilter(int sourceId) { _sourceFilter = sourceId; _indexedVersion = -1; }
@@ -52,19 +55,63 @@ public sealed class LibraryQueries(LibraryState library)
 
     public void Invalidate() => library.NotifyChanged();
 
+    /// <summary>获取同组版本索引；仅在库版本变化时重建。</summary>
+    public IReadOnlyList<Music> GetVersions(int songId)
+    {
+        if (_indexedVersion != library.Version) RebuildIdIndex();
+        return _songVersions.TryGetValue(songId, out var versions) ? versions
+            : _firstVersionBySong.TryGetValue(songId, out var single) ? new[] { single } : Array.Empty<Music>();
+    }
+
+    /// <summary>获取范围内稳定代表版本，不探网、不跟随一次播放回退。</summary>
+    public Music? FindDisplayVersion(int songId, int sourceId = -1)
+    {
+        if (_indexedVersion != library.Version) RebuildIdIndex();
+        if (_displayVersions.TryGetValue((songId, sourceId), out var cached)) return cached;
+        if (!_songVersions.TryGetValue(songId, out var versions))
+            return _firstVersionBySong.TryGetValue(songId, out var only) && MatchesSource(only, sourceId) ? only : null;
+        List<Music> available = [];
+        foreach (var version in versions) if (MatchesSource(version, sourceId)) available.Add(version);
+        if (available.Count == 0) return null;
+        var selected = SongVersionPolicy.Order(available, available[0].SongPreferredMusicId)[0];
+        _displayVersions[(songId, sourceId)] = selected;
+        return selected;
+    }
+
     private void RebuildIdIndex()
     {
         _idIndex.Clear();
         _firstAlbumIndex.Clear();
         _firstArtistIndex.Clear();
         _albumSongCounts.Clear();
+        _songVersions.Clear();
+        _firstVersionBySong.Clear();
+        _displayVersions.Clear();
         var src = library.Songs;
         for (int i = 0; i < src.Count; i++)
         {
             var m = src[i];
             if (m is null) continue;
             _idIndex[m.Id] = m;
-            if (!MatchesSource(m, _sourceFilter)) continue;
+            if (m.SongId > 0)
+            {
+                if (!_firstVersionBySong.TryAdd(m.SongId, m))
+                {
+                    if (!_songVersions.TryGetValue(m.SongId, out var versions))
+                        _songVersions.Add(m.SongId, versions = [_firstVersionBySong[m.SongId]]);
+                    versions.Add(m);
+                }
+            }
+        }
+        // 先完成版本索引，再按代表版本建立专辑/艺术家与计数，避免重复音频被计为多首。
+        _indexedVersion = library.Version;
+        var included = new HashSet<int>();
+        for (int i = 0; i < src.Count; i++)
+        {
+            var original = src[i];
+            if (original is null || !MatchesSource(original, _sourceFilter)) continue;
+            if (original.SongId > 0 && !included.Add(original.SongId)) continue;
+            var m = original.SongId > 0 ? FindDisplayVersion(original.SongId, _sourceFilter) ?? original : original;
             if (!string.IsNullOrEmpty(m.Album))
             {
                 if (!_firstAlbumIndex.TryGetValue(m.Album, out var firstAlbum) || (firstAlbum.IsRemote && !m.IsRemote))

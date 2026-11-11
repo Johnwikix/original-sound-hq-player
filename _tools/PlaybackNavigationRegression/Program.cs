@@ -59,6 +59,7 @@ internal static class Regression
 
     public static async Task RunAsync()
     {
+        await SongVersionsAsync();
         await ConfirmedStartsAsync();
         await CacheSizeRegression.RunAsync();
         await SingleEntryLoopAsync();
@@ -636,6 +637,57 @@ internal static class Regression
             Check(remote.Player.Ends == 1 && remote.Remote.Played.Count == 2,
                 $"{mode}: unavailable remote song ends after one bounded probe");
         }
+    }
+
+    private static async Task SongVersionsAsync()
+    {
+        using var test = new Scenario();
+        var preferred = new Music(501, 10) { SongId = 70, EncodingKind = 1 };
+        var fallback = new Music(502, 11) { SongId = 70, EncodingKind = 2 };
+        preferred.SongPreferredMusicId = preferred.Id;
+        fallback.SongPreferredMusicId = preferred.Id;
+        test.State.LibrarySongs = [preferred, fallback];
+        test.State.CurrentPlayingList = [fallback, fallback];
+        var first = test.State.State.Queue.EntryIdAt(0);
+        var second = test.State.State.Queue.EntryIdAt(1);
+        test.Library.Probe = (source, _) => Task.FromResult(source.Id != 10);
+        await test.Coordinator.PlayAsync(fallback, second);
+        Check(test.Remote.Played.SequenceEqual([fallback]) && test.State.State.Queue.CurrentEntryId == second,
+            "unavailable preferred version falls back within the same song and duplicate queue occurrence");
+        Check(test.State.State.Queue.RequestedVersion(second) == 0, "automatic fallback does not pin queue occurrence");
+        await test.Coordinator.PlayAsync(preferred, first, exactVersion: true);
+        Check(test.Remote.Played.Count == 1 && test.State.State.Shell.InfoBarIsOpen, "explicit version failure never substitutes another file");
+        Check(test.State.State.Queue.RequestedVersion(first) == preferred.Id && test.State.State.Queue.RequestedVersion(second) == 0,
+            "explicit pin affects exactly one duplicate occurrence");
+        test.State.State.Queue.ConfigureSource(11);
+        await test.Coordinator.PlayAsync(fallback, second);
+        Check(test.Library.Probes.Last() == 11, "source-scoped queue never probes a version from another source");
+        test.State.State.Queue.ConfigurePlaylist([31, 32], [preferred.Id, 0], -1);
+        Check(test.State.State.Queue.PlaylistEntry(second) == 32, "playlist occurrence identity survives duplicate versions");
+        var ids = test.State.State.Queue.CaptureEntryIds();
+        var order = test.State.State.Queue.CaptureOrderIds();
+        var musicIds = test.State.State.Queue.CaptureMusicIds();
+        var pins = test.State.State.Queue.CaptureRequestedVersions();
+        var scopes = test.State.State.Queue.CaptureSourceScopes();
+        var relations = test.State.State.Queue.CapturePlaylistEntries();
+        test.State.State.Queue.RestoreEntries(ids, order, musicIds, second, pins, scopes, playlistEntries: relations);
+        Check(test.State.State.Queue.CurrentEntryId == second && test.State.State.Queue.PlaylistEntry(second) == 32,
+            "queue persistence restores duplicate identities and source relation");
+        test.State.CurrentPlayingList.RemoveAt(0);
+        Check(test.State.State.Queue.RequestedVersion(first) == 0 && test.State.State.Queue.PlaylistEntry(first) == 0,
+            "removed occurrence releases its pin and playlist metadata");
+
+        using var opening = new Scenario();
+        opening.State.LibrarySongs = [preferred, fallback];
+        opening.State.CurrentPlayingList = [fallback];
+        await opening.Coordinator.PlayAsync(fallback);
+        opening.Remote.Fail(preferred);
+        await WaitAsync(() => opening.Remote.Played.Count == 2);
+        Check(opening.Remote.Played.SequenceEqual([preferred, fallback]), "decoder failure before confirmation tries the next version");
+        opening.Remote.Confirm(fallback);
+        opening.Remote.Fail(fallback);
+        await Task.Delay(50);
+        Check(opening.Remote.Played.Count == 2, "failure after confirmed playback does not switch versions mid-song");
     }
 
     static void Check(bool value, string message) { if (!value) throw new Exception(message); Console.WriteLine("PASS: " + message); }
