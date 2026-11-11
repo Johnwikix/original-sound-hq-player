@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,26 +13,8 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
 {
     private bool _hasSongs;
     private sealed class TableColumnInfo { public string Name { get; set; } = ""; }
-    public async Task InitializeAsync(string databasePath)
+    public async Task InitializeAsync()
     {
-        bool exists = await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='MusicLyricsV2'") != 0;
-        bool legacyQueue = !exists && await database.ExecuteScalarAsync<int>(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='PendingMetadataWrite'") > 0 &&
-            await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM PendingMetadataWrite") > 0;
-        if (!exists && (legacyQueue || await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM MusicLyrics") > 0))
-        {
-            string backup = databasePath + ".lyrics-v1.bak";
-            if (!File.Exists(backup))
-            {
-                string temporary = backup + "." + Guid.NewGuid().ToString("N") + ".tmp";
-                try
-                {
-                    await database.BackupAsync(temporary);
-                    File.Move(temporary, backup, false);
-                }
-                finally { if (File.Exists(temporary)) File.Delete(temporary); }
-            }
-        }
         await database.CreateTableAsync<MusicLyricsRecord>();
         var columns = await database.QueryAsync<TableColumnInfo>("PRAGMA table_info(MusicLyricsV2)");
         if (!columns.Any(column => string.Equals(column.Name, nameof(MusicLyricsRecord.PronunciationLyrics), StringComparison.OrdinalIgnoreCase)))

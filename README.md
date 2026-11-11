@@ -288,6 +288,18 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 - 用户数据：`%userprofile%\documents\OriginalSoundPlayer`
 - 响度分析缓存：`%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache`（Store 打包安装时经 MSIX 虚拟化重定向至 `%LOCALAPPDATA%\Packages\<包家族名>\LocalCache\Local\` 下的同名目录）
 
+### 曲库迁移备份与恢复
+
+旧曲库第一次用新版打开，以及今后需要大规模改表或重写数据时，播放器会在曲库目录的 `Backups` 子目录创建完整的 SQLite 快照。默认位置是系统“文档”下的 `OriginalSoundPlayer\DataBase\Backups`。使用应用本地目录的曲库在对应目录保存备份，启动日志会记录完整路径。文件名中的 `v0-to-v1` 表示从引入统一版本号之前的曲库升级至第 1 代。文件名末尾是快照的 SHA-256，可用 PowerShell 的 `Get-FileHash -Algorithm SHA256` 核对文件内容。
+
+快照包含当时已提交的曲目、收藏、歌单、歌词、播放历史等主库数据。音频文件、外部封面、独立缓存和设置文件需单独保存。备份按迁移保留，确认新版曲库正常后可自行归档或清理；迁移中断时请保留对应快照供下次启动校验和续迁。首次从旧文件导入时，磁盘需要同时容纳一份完整快照和一份新版工作库。
+
+**恢复到迁移前**
+
+1. 完全退出播放器。从日志或备份目录找到对应的 `MusicDatabase.v…-to-v….….db`。
+2. 将当前活动库 `MusicDatabase.song-v1.db` 连同同名的 `-wal`、`-shm`、`-journal` 文件（如有）一起移至另一个空目录，保留升级后新增的资料。
+3. 复制选定的备份到曲库目录，副本命名为 `MusicDatabase.song-v1.db`。启动当前版会从恢复点重新执行适用的迁移。若要退回歌曲版本功能之前的播放器，它读取的是 `MusicDatabase.db`，请使用保留的旧库或对应年代的快照，同样先移走被替换库及其日志文件。
+
 ---
 
 <div align="center">

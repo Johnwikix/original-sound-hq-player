@@ -128,7 +128,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await database.CreateTableAsync<Music>();
             await database.CreateTableAsync<MusicLyrics>();
             await database.CreateTableAsync<PendingMetadataWrite>();
-            await data.Lyrics.InitializeAsync(path);
+            await data.Lyrics.InitializeAsync();
             var editorFactory = new FixtureEditorFactory(data, app);
             var analysis = new FixtureEnrichment();
             home = new(app, data, statistics, new HomeRecommendationService(), playback, folders, remote, NullLogger<HomeViewModel>.Instance, editorFactory, editorFactory.Sessions, analysis, new FixtureEnrichment());

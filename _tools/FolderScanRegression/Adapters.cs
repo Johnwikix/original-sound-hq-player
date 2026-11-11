@@ -153,7 +153,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.CreateTableAsync<Folder>();
             await _dbConnection.CreateTableAsync<SubFolder>();
             await _dbConnection.CreateTableAsync<MusicLyrics>();
-            await Lyrics.InitializeAsync(_dbConnection.DatabasePath);
+            await Lyrics.InitializeAsync();
             await _dbConnection.ExecuteAsync("CREATE INDEX IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
         }
         public Task<List<Folder>> GetFolders() => _dbConnection.Table<Folder>().ToListAsync();

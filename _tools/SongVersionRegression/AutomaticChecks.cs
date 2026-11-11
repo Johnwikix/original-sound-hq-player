@@ -25,9 +25,9 @@ internal static class AutomaticChecks
             await db.InsertOrReplaceAsync(new PlayListMusic { Id = 91, PlayListId = 1, MusicId = a.Id, Order = 9 });
             await db.InsertOrReplaceAsync(new PlayListMusic { Id = 92, PlayListId = 1, MusicId = b.Id, Order = 5, RequestedMusicId = b.Id });
             var store = new SongVersionStore(db);
-            await store.InitializeAsync(db.DatabasePath);
+            await store.InitializeAsync();
             var lyrics = new LyricsRepository(db, new LyricsParser());
-            await lyrics.InitializeAsync(db.DatabasePath);
+            await lyrics.InitializeAsync();
             var original = await lyrics.GetAsync(a.Id);
             await lyrics.SaveAsync(a.Id, new(new("[00:01.00]A", LyricsFormat.Lrc), null), original.Revision, "User");
             original = await lyrics.GetAsync(b.Id);
@@ -36,8 +36,7 @@ internal static class AutomaticChecks
             // 模拟用户已经用过 v1 版本功能的旧库；启动升级仍必须执行自动关联。
             await db.ExecuteAsync("UPDATE SongVersionSchema SET Version=1");
             await db.ExecuteAsync("DELETE FROM SongAutoLinkDirty");
-            await store.InitializeAsync(db.DatabasePath);
-            check(File.Exists(db.DatabasePath + ".autolink-v2.bak"), "already-upgraded libraries are backed up before automatic linking");
+            await store.InitializeAsync();
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 1, "v1 libraries automatically link normalized title/artist/album duplicates");
             var group = await store.GetVersionsAsync(a.Id);
             check(group.Count == 2 && group.All(m => m.IsFavorite && m.Order == 12), "automatic linking combines favorites and ignores optional info differences");
@@ -51,7 +50,7 @@ internal static class AutomaticChecks
                 "automatic lyric conflicts retain the original timeline as an override");
             var auto = (await store.GetLastOperationAsync(group[0].SongId))!;
             check(auto.Kind == "AutoMerge", "one recoverable journal is stored for the entire duplicate bucket");
-            await store.InitializeAsync(db.DatabasePath);
+            await store.InitializeAsync();
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 0, "restarting is idempotent and does not reprocess the library");
             await store.UndoAsync(auto.Id);
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetVersionsAsync(a.Id)).Count == 1, "undoing automatic linking excludes restored groups from the next automatic pass");
@@ -61,7 +60,7 @@ internal static class AutomaticChecks
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetVersionsAsync(b.Id)).Count == 1, "manual splits remain separate across automatic passes");
             await db.ExecuteAsync("UPDATE SongVersionSchema SET Version=1");
             await db.ExecuteAsync("DELETE FROM SongAutoLink");
-            await store.InitializeAsync(db.DatabasePath);
+            await store.InitializeAsync();
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetVersionsAsync(b.Id)).Count == 1, "v1 split journals seed automatic exclusions during upgrade");
 
             var empty = new Music { Title = "New", Author = "Artist", Album = "Album", Path = "empty.flac" };
@@ -104,7 +103,7 @@ internal static class AutomaticChecks
                 await db.Table<SongVersionOperationRecord>().CountAsync() == operations, "failed automatic transaction rolls back membership and recovery journal together");
             await db.ExecuteAsync("DROP TRIGGER AutoLinkFailure");
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 1, "failed automatic linking retains its pending key for retry");
-            check(SongVersionPolicy.GetMatchKey("a:1", "b", "c") != SongVersionPolicy.GetMatchKey("a", "1:b", "c"), "length-prefixed automatic keys cannot collide through tag separators");
+            check(SongVersionPolicy.GetBucketKey("a:1", "b") != SongVersionPolicy.GetBucketKey("a", ":1b"), "length-prefixed automatic keys cannot collide through tag separators");
             var blank = new Music { Title = "Empty default", Author = "Artist", Album = "Album", Path = "blank.flac" };
             var nonempty = new Music { Title = blank.Title, Author = "Artist", Album = "Album", Path = "nonempty.mp3" };
             await AddAsync(blank);
@@ -142,13 +141,36 @@ internal static class AutomaticChecks
             await AddAsync(filename);
             await AddAsync(legacyName);
             await AddAsync(tagged);
-            check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetCandidatesAsync(tagged)).Count == 0 && !SongVersionPolicy.Matches(filename, tagged),
-                "file-name and ambiguous legacy fallback titles cannot link files");
-            await db.ExecuteAsync("UPDATE Music SET TitleFromFileName=0 WHERE Id=?", legacyName.Id);
-            check(await store.ApplyAutomaticLinksAsync(lyrics) == 1, "a real tag identical to the filename becomes eligible after rereading");
+            await db.ExecuteAsync("DELETE FROM SongAutoLinkDirty");
+            await db.ExecuteAsync("UPDATE SongVersionSchema SET Version=3");
+            await store.InitializeAsync();
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 2 && SongVersionPolicy.Matches(filename, tagged) &&
+                (await store.GetVersionsAsync(legacyName.Id)).Count == 3,
+                "v3 upgrade rematches filename, tag and unknown title sources with no file rescan");
+            await store.InitializeAsync();
+            check(await db.Table<SongAutoLinkDirtyRecord>().CountAsync() == 0, "v4 restart skips the full index rebuild");
+
+            Music Credit(string artist) => new() { Title = "Awaken", Album = "Awaken", Author = artist, Path = "Awaken.flac" };
+            var solo = Credit("塞壬唱片-MSR");
+            var fullCredit = Credit("塞壬唱片-MSR/Adam Gubman/Holly Sedillos");
+            await AddAsync(solo);
+            await AddAsync(fullCredit);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 1 && (await store.GetSongAsync(solo.Id))!.Artist == fullCredit.Author,
+                "complete credited artist membership links the short credit and retains the fuller lineup");
+            var alternate = Credit("塞壬唱片-MSR/Another artist");
+            var ambiguous = Credit("塞壬唱片-MSR");
+            await AddAsync(alternate);
+            await AddAsync(ambiguous);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetCandidatesAsync(ambiguous)).Count == 2,
+                "ambiguous short credit cannot bridge two different lineups; manual candidates remain available");
+            check(!SongVersionPolicy.Matches(Credit("Adam"), fullCredit) &&
+                SongVersionPolicy.Matches(Credit("Holly Sedillos/Adam Gubman"), fullCredit),
+                "membership requires entire artist names and ignores credit order");
+            await db.ExecuteAsync("UPDATE Music SET Album='Other album' WHERE Id=?", alternate.Id);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 1, "removing the competing lineup resolves the old bucket");
             await db.ExecuteAsync("UPDATE SongVersionSchema SET Version=2");
-            await store.InitializeAsync(db.DatabasePath);
-            check(File.Exists(db.DatabasePath + ".song-v3.bak") && await store.ApplyAutomaticLinksAsync(lyrics) == 0, "v2 migration is backed up and rebuilds indexes without changing exclusions");
+            await store.InitializeAsync();
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 0, "v2 migration rebuilds indexes without changing exclusions");
             check(await db.ExecuteScalarAsync<string>("PRAGMA quick_check") == "ok", "automatic operations retain SQLite integrity");
 
             async Task AddAsync(Music music) => await db.RunInTransactionAsync(connection =>
@@ -179,9 +201,9 @@ internal static class AutomaticChecks
             long allocated = GC.GetTotalAllocatedBytes();
             var watch = Stopwatch.StartNew();
             var store = new SongVersionStore(db);
-            await store.InitializeAsync(db.DatabasePath);
+            await store.InitializeAsync();
             var lyrics = new LyricsRepository(db, new LyricsParser());
-            await lyrics.InitializeAsync(db.DatabasePath);
+            await lyrics.InitializeAsync();
             int count = await store.ApplyAutomaticLinksAsync(lyrics);
             watch.Stop();
             check(count == 1000 && await db.ExecuteScalarAsync<int>("SELECT COUNT(DISTINCT SongId) FROM Music") == 99_000, "100000-file library links 1000 duplicate pairs without quadratic whole-library comparisons");

@@ -20,7 +20,7 @@ internal static class SourcePriorityChecks
             await db.ExecuteAsync("INSERT INTO Music(Id) VALUES(1)");
             await db.CreateTableAsync<MusicLyrics>();
             var database = new MusicDatabaseService(db, parser);
-            await database.Lyrics.InitializeAsync(db.DatabasePath);
+            await database.Lyrics.InitializeAsync();
             var online = new LyricsOnlineSearch { Handler = (_, _, _) => Task.FromResult<LyricsDocument?>(parser.Import("[00:01.000]online")) };
             var remote = new WebDavLibraryService { Result = parser.Import("[00:01.000]remote") };
             var resolver = new LyricsRefreshService(database, parser, online, remote, NullLogger<LyricsRefreshService>.Instance);

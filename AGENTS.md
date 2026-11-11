@@ -11,6 +11,11 @@
 - 控件移除 `x:Uid`、改用代码或 `x:Bind` 取词时，同步新增或改用独立资源键，不要直接复制原属性资源名。
 - 提交修改前静态检查新增的 `GetString` 调用与全部语言资源是否匹配。构建成功不能证明运行时资源解析正确。
 
+## 曲库迁移与备份
+
+- 曲库建表、增列、批量重写和关系迁移统一从 `LibraryDatabaseMigration.OpenAsync` 进入。新增大规模数据库结构变更或数据改写时（包括仅改变行数据的迁移），必须递增 `LibraryDatabaseMigration.CurrentVersion`，同时保留各业务迁移自己的幂等条件。
+- `PRAGMA main.user_version` 由统一入口在全部迁移和完整性检查成功后提交。新增迁移应在隔离旧库上验证备份可独立恢复、失败后重启可继续，以及同代重启不会重复备份。
+
 ## 发布剪裁与 XAML 绑定
 
 - 新增或修改 XAML 绑定统一使用编译期可追踪的 `x:Bind`；禁止新增 `{Binding ...}`、`ElementName`/`DataContext` 运行时路径等基于反射的绑定，修改到旧写法时同步替换。

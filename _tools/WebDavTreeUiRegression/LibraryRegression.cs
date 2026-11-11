@@ -26,8 +26,8 @@ public sealed partial class TestApp
             await sqlite.CreateTableAsync<LyricsSearchStateRecord>();
             await sqlite.CreateTableAsync<PlayListMusic>();
             var db = new MusicDatabaseService(sqlite) { Versions = new SongVersionStore(sqlite) };
-            await db.Versions.InitializeAsync(path);
-            await db.Lyrics.InitializeAsync(path);
+            await db.Versions.InitializeAsync();
+            await db.Lyrics.InitializeAsync();
             var first = new WebDavSource { Name = "First", BaseUri = "http://localhost/dav/", Roots = "/dav/" };
             var second = new WebDavSource { Name = "Second", BaseUri = "http://localhost/dav/", Roots = "/dav/" };
             await db.SaveWebDavSourceAsync(first);

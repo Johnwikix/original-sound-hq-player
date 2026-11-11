@@ -74,6 +74,7 @@ Directory.CreateDirectory(root);
 var database = new SQLiteAsyncConnection(Path.Combine(root, "library.db"));
 try
 {
+    await MigrationBackupChecks.RunAsync(root, Check);
     await AutomaticChecks.RunAsync(root, Check);
     await database.CreateTableAsync<Music>();
     await database.CreateTableAsync<PlayListMusic>();
@@ -90,18 +91,18 @@ try
         await legacy.CreateTableAsync<MusicLyrics>();
         await legacy.InsertAsync(new MusicLyrics { MusicId = 41, Lyrics = "[00:01.00]Old lyrics" });
         var oldStore = new SongVersionStore(legacy);
-        await oldStore.InitializeAsync(legacy.DatabasePath);
+        await oldStore.InitializeAsync();
         var oldFile = await legacy.FindAsync<Music>(41);
         Check(oldFile.SongId > 0 && oldFile.CodecId == "" && oldFile.MetadataRevision == 0 && !oldFile.IsMissing,
             "real old schema upgrades nullable added columns safely");
         Check((await legacy.FindAsync<PlayListMusic>(91)).MusicId == 41 && (await legacy.FindAsync<PlayListMusic>(91)).Order == 17,
             "old playlist keeps its original version, entry id and position");
         var oldLyrics = new LyricsRepository(legacy, new());
-        await oldLyrics.InitializeAsync(legacy.DatabasePath);
+        await oldLyrics.InitializeAsync();
         Check((await oldLyrics.GetAsync(41)).Document.Original.Content.Contains("Old lyrics"), "old lyrics migrate into the new song without losing content");
         Check((await oldStore.GetSongAsync(41))!.IsFavorite, "old favorites migrate to song ownership");
         await legacy.InsertOrReplaceAsync(new SongVersionSchemaRecord { Version = 99 });
-        await Conflict(() => oldStore.InitializeAsync(legacy.DatabasePath), "future schema refuses to initialize");
+        await Conflict(() => oldStore.InitializeAsync(), "future schema refuses to initialize");
     }
     finally { await legacy.CloseAsync(); }
     var flac = new Music { Title = "Song", Author = "Artist", Album = "Album", Path = "a.flac", Extension = "FLAC", CodecId = "flac", EncodingKind = 1, SourceId = 4, Genre = "Pop", Year = 2010 };
@@ -113,12 +114,11 @@ try
     await database.InsertAsync(new PlayListMusic { PlayListId = 1, MusicId = flac.Id, Order = 9 });
     await database.InsertAsync(new PlayListMusic { PlayListId = 1, MusicId = mp3.Id, Order = 3 });
     var store = new SongVersionStore(database);
-    await store.InitializeAsync(database.DatabasePath);
+    await store.InitializeAsync();
     var lyrics = new LyricsRepository(database, new LyricsParser());
-    await lyrics.InitializeAsync(database.DatabasePath);
-    Check(File.Exists(database.DatabasePath + ".song-v1.bak"), "consistent backup before grouping");
+    await lyrics.InitializeAsync();
     Check(await database.Table<SongRecord>().CountAsync() == 2, "schema phase preserves version identities before the automatic pass");
-    await store.InitializeAsync(database.DatabasePath);
+    await store.InitializeAsync();
     Check(await database.Table<SongRecord>().CountAsync() == 2, "migration is idempotent");
     Check((await database.FindAsync<Music>(flac.Id)).SongId > 0, "original version identity retained");
     Check((await database.FindAsync<PlayListMusic>(1)).SongId > 0, "playlist entry migrated");

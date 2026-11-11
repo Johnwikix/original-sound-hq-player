@@ -8,34 +8,36 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>定义重复文件候选和稳定自动选版；不读取文件、不访问网络。</summary>
 public static class SongVersionPolicy
 {
-    /// <summary>为完整三项标签生成无分隔符碰撞的索引键，保留 Live、Remaster 等限定词。</summary>
-    public static string? GetMatchKey(string title, string artist, string album)
+    /// <summary>按标题和专辑缩小候选范围，艺术家在同一候选范围内按完整署名比较。</summary>
+    internal static string? GetBucketKey(string title, string album)
     {
-        string t = Normalize(title ?? ""), a = Normalize(artist ?? ""), b = Normalize(album ?? "");
-        if (t.Length == 0 || a.Length == 0 || b.Length == 0 || UnknownLabels.Contains(t) || UnknownLabels.Contains(a) || UnknownLabels.Contains(b)) return null;
-        t = t.ToUpperInvariant();
-        a = a.ToUpperInvariant();
-        b = b.ToUpperInvariant();
-        return string.Concat(t.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", t,
-            a.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", a,
-            b.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", b);
-    }
-    internal static string? FileMatchKey(string title, string artist, string album, string path, bool? fromFileName)
-    {
-        if (fromFileName == true) return null;
-        if (fromFileName is null && !string.IsNullOrEmpty(path))
-        {
-            // 老库没有记录标题来源。遇到同名文件时等待下一次读标签。
-            if (path.StartsWith("webdav://", StringComparison.OrdinalIgnoreCase)) path = Uri.UnescapeDataString(path);
-            if (string.Equals(System.IO.Path.GetFileNameWithoutExtension(path), title, StringComparison.OrdinalIgnoreCase)) return null;
-        }
-        return GetMatchKey(title, artist, album);
+        string t = Normalize(title ?? "").ToUpperInvariant();
+        string b = Normalize(album ?? "").ToUpperInvariant();
+        if (t.Length == 0 || b.Length == 0 || UnknownLabels.Contains(t) || UnknownLabels.Contains(b)) return null;
+        return string.Concat(t.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), ":", t, b);
     }
 
-    /// <summary>预览和提交均重新检查文件的当前标签与解绑状态。</summary>
-    public static bool Matches(Music left, Music right) => !left.IsDetached && !right.IsDetached &&
-        FileMatchKey(left.Title, left.Author, left.Album, left.Path, left.TitleFromFileName) is { } key &&
-        key == FileMatchKey(right.Title, right.Author, right.Album, right.Path, right.TitleFromFileName);
+    internal static HashSet<string> ArtistCredits(string artist)
+    {
+        // 使用固定的标签分隔符，避免用户调整艺术家页显示设置时改变持久归组。
+        HashSet<string> names = new(StringComparer.Ordinal);
+        foreach (var part in Normalize(artist ?? "").Split(['/', ';', '、'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (UnknownLabels.Contains(part)) return [];
+            names.Add(part.ToUpperInvariant());
+        }
+        return names;
+    }
+
+    /// <summary>标题与专辑相同，且一方所有署名均出现于另一方。</summary>
+    public static bool Matches(Music left, Music right)
+    {
+        if (left.IsDetached || right.IsDetached || GetBucketKey(left.Title, left.Album) is not { } key ||
+            key != GetBucketKey(right.Title, right.Album)) return false;
+        var a = ArtistCredits(left.Author);
+        var b = ArtistCredits(right.Author);
+        return a.Count > 0 && b.Count > 0 && (a.IsSubsetOf(b) || b.IsSubsetOf(a));
+    }
 
     private static readonly HashSet<string> UnknownLabels = new(StringComparer.OrdinalIgnoreCase)
     {

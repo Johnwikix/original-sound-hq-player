@@ -16,7 +16,7 @@ internal static class UnifiedSearchChecks
         await db.ExecuteAsync("INSERT INTO Music(Id) VALUES(1),(2)");
         await db.CreateTableAsync<MusicLyrics>();
         var database = new MusicDatabaseService(db, new());
-        await database.Lyrics.InitializeAsync(db.DatabasePath);
+        await database.Lyrics.InitializeAsync();
         using var search = new LyricsOnlineSearch(database, provider, new(), NullLogger<LyricsOnlineSearch>.Instance);
         var empty = new EmptyHandler();
         BaseApi.HttpClient.Dispose(); BaseApi.HttpClient = new(empty);

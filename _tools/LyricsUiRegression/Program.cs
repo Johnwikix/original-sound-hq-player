@@ -46,7 +46,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             var music = new Music { Id = 1, Path = Path.Combine(Path.GetTempPath(), "lyrics-ui.flac") };
             await db.InsertAsync(music);
             var parser = new LyricsParser(); var database = new MusicDatabaseService(db, parser);
-            await database.Lyrics.InitializeAsync(db.DatabasePath);
+            await database.Lyrics.InitializeAsync();
             var old = await database.Lyrics.GetAsync(1);
             await database.Lyrics.SaveAsync(1, parser.Import("[00:01.000]Original", "[00:01.000]翻译"), old.Revision, "User");
             var online = new LyricsOnlineSearch();

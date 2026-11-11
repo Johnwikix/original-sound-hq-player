@@ -159,8 +159,8 @@ namespace WinUIMusicPlayer.Services
         public async Task InitializeVersionsAsync()
         {
             Versions = new(_dbConnection);
-            await Versions.InitializeAsync(_dbConnection.DatabasePath);
-            await Lyrics.InitializeAsync(_dbConnection.DatabasePath);
+            await Versions.InitializeAsync();
+            await Lyrics.InitializeAsync();
         }
         public Task GetPlayListMusic() => Task.CompletedTask;
         private readonly SQLiteAsyncConnection _dbConnection;

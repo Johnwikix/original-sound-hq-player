@@ -1,3 +1,16 @@
+## 2026-11-11 曲库升级后按标题、专辑和艺术家署名重新关联
+
+- `SongVersionPolicy`、`SongVersionStore` 按库内标题和专辑匹配，接受完整艺术家署名集合的包含关系；短署名对应多种合作阵容时保留独立歌曲。
+- `LibraryDatabaseMigration` 曲库版本升至 2，`SongVersionSchemaRecord` 升至 4。已有曲库先备份，再一次性重建候选索引，保留手动拆分和撤销例外。
+- 验证：Release/x64 剪裁产物在旧曲库副本上将 Arsonist、Awaken、Beautiful & Lovely 分别归为一首两版，校验备份保留旧归属，再次启动未新增备份或合并记录。
+
+## 2026-11-11 在首次改表前备份整个曲库
+
+- `LibraryDatabaseMigration`、`MusicDatabaseService` 在旧库导入及大版本迁移前创建并校验独立 SQLite 快照，包含已提交的 WAL 数据。迁移中断后复用原快照，正常重启跳过备份。
+- `SongVersionStore`、`LyricsRepository` 共用迁移入口。已有歌曲版本 v1～v3 的曲库首次使用本版时也会备份一次。
+- 中英文 README 记录备份位置及恢复步骤；`AGENTS.md` 约定后续大范围结构调整或数据改写需要递增曲库迁移版本。
+- 验证：Release/x64 剪裁产物在隔离旧库上完成异常退出续迁、热日志回滚和单文件恢复，未打开本机实际曲库。
+
 ## 2026-11-11 自动避开缺失版本，支持从歌曲详情移除缺失记录
 
 - `SongVersionPolicy`、`PlaybackQueueState` 在曲库确认文件缺失后为自动歌曲和队列出现项选择同组版本，保留来源范围与固定版本约束。

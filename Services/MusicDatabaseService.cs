@@ -32,7 +32,6 @@ namespace WinUIMusicPlayer.Services
         public WinUIMusicPlayer.Services.Lyrics.LyricsRepository Lyrics { get; private set; } = null!;
         /// <summary>获取歌曲版本存储；在数据库就绪后可用。</summary>
         public SongVersionStore Versions { get; private set; } = null!;
-        private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private string? _settingsPath;
         private string SettingsPath => _settingsPath ??= GetSettingsFilePath();
         private string PlayStatePath => GetPlayStateFilePath();
@@ -78,97 +77,73 @@ namespace WinUIMusicPlayer.Services
         // 入库前须等待此信号；初始化失败转发异常，等待方按回退处理。
         private readonly TaskCompletionSource _initializedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        /// <summary>数据库初始化完成（表结构与 DbPath 就绪）；失败时以异常完成。</summary>
+        /// <summary>数据库初始化完成（表结构与连接就绪）；失败时以异常完成。</summary>
         public Task WhenInitialized => _initializedTcs.Task;
 
-        public async Task Initialize()
+        private int _initializationStarted;
+
+        public Task Initialize()
+        {
+            if (Interlocked.Exchange(ref _initializationStarted, 1) == 0) _ = InitializeCoreAsync();
+            return WhenInitialized;
+        }
+
+        private async Task InitializeCoreAsync()
         {
             try
             {
-                InitalizeDbPath();
-                if (_dbConnection is null)
-                {
-                    await SelectSongVersionDatabasePathAsync();
-                    _dbConnection = new SQLiteAsyncConnection(DbPath);
-                    await _dbConnection.CreateTableAsync<Music>();
-                    await _dbConnection.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
-                    await _dbConnection.CreateTableAsync<WebDavSource>();
-                    await _dbConnection.CreateTableAsync<RemoteTrack>();
-                    await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
-                    Analysis = new WinUIMusicPlayer.Services.AudioAnalysis.AnalysisRepository(_dbConnection, () => AppSettings.MusicCoverCache);
-                    await Analysis.InitializeAsync();
-                    await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
-                    await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
-                    await EnsurePendingMetadataLyricsColumnsAsync();
-                    await MusicMetadataStorage.EnsureSchemaAsync(_dbConnection);
-                    await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
-                    await _dbConnection.CreateTableAsync<MusicLyrics>();
-                    await _dbConnection.CreateTableAsync<Folder>();
-                    await _dbConnection.CreateTableAsync<SaveEqualizer>();
-                    await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
-                    await _dbConnection.CreateTableAsync<PlayList>();
-                    await EnsurePlayListSortOrderAsync();
-                    await _dbConnection.CreateTableAsync<PlayListMusic>();
-                    Versions = new SongVersionStore(_dbConnection);
-                    await Versions.InitializeAsync(DbPath, MigrateWebDavScopes);
-                    Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
-                    await Lyrics.InitializeAsync(DbPath);
-                    await Versions.ApplyAutomaticLinksAsync(Lyrics);
-                    await _dbConnection.CreateTableAsync<LastPlayListState>();
-                    await _dbConnection.CreateTableAsync<SubFolder>();
-                    await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
-                    try
-                    {
-                        await _dbConnection.CreateTableAsync<PlaybackHistory>();
-                        await _dbConnection.ExecuteAsync("UPDATE PlaybackHistory SET SongIdAtPlay=COALESCE((SELECT SongId FROM Music WHERE Id=PlaybackHistory.MusicId),0) WHERE SongIdAtPlay IS NULL OR SongIdAtPlay=0");
-                        await _dbConnection.ExecuteAsync(
-                            "CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "初始化播放统计表失败，统计功能降级不可用: {Message}", ex.Message);
-                    }
-                }
+                string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string? preferred = string.IsNullOrEmpty(documents) ? null : Path.Combine(documents, "OriginalSoundPlayer", "DataBase");
+                _dbConnection = await LibraryDatabaseMigration.OpenAsync(preferred, ApplicationData.Current.LocalFolder.Path,
+                    InitializeSchemaAsync, path => _logger.LogInformation("已验证曲库迁移前备份：{BackupPath}", path));
                 AppViewModel = App.Services.GetRequiredService<AppViewModel>();
+                _initializedTcs.TrySetResult();
             }
             catch (Exception ex)
             {
                 _initializedTcs.TrySetException(ex);
-                throw;
             }
-            _initializedTcs.TrySetResult();
         }
 
-        private void InitalizeDbPath()
+        private async Task InitializeSchemaAsync(SQLiteAsyncConnection db, bool upgrading)
         {
+            await db.CreateTableAsync<Music>();
+            await db.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
+            await db.CreateTableAsync<WebDavSource>();
+            await db.CreateTableAsync<RemoteTrack>();
+            await db.CreateTableAsync<WebDavCacheSettings>();
+            Analysis = new WinUIMusicPlayer.Services.AudioAnalysis.AnalysisRepository(db, () => AppSettings.MusicCoverCache);
+            await Analysis.InitializeAsync();
+            await db.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
+            await db.CreateTableAsync<PendingMetadataWrite>();
+            await EnsurePendingMetadataLyricsColumnsAsync(db);
+            await MusicMetadataStorage.EnsureSchemaAsync(db);
+            await db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
+            await db.CreateTableAsync<MusicLyrics>();
+            await db.CreateTableAsync<Folder>();
+            await db.CreateTableAsync<SaveEqualizer>();
+            await db.CreateTableAsync<SaveEqualizerPreset>();
+            await db.CreateTableAsync<PlayList>();
+            await EnsurePlayListSortOrderAsync(db);
+            await db.CreateTableAsync<PlayListMusic>();
+            Versions = new SongVersionStore(db);
+            await Versions.InitializeAsync(MigrateWebDavScopes);
+            Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(db, _lyricsParser);
+            await Lyrics.InitializeAsync();
+            await Versions.ApplyAutomaticLinksAsync(Lyrics);
+            await db.CreateTableAsync<LastPlayListState>();
+            await db.CreateTableAsync<SubFolder>();
+            await db.CreateTableAsync<UsbDeviceMusic>();
             try
             {
-                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                if (userProfilePath is not null)
-                {
-                    string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "DataBase");
-                    string dbFilePath = Path.Combine(appFolderPath, "MusicDatabase.db");
-                    string sourceDbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-                    if (!Directory.Exists(appFolderPath))
-                    {
-                        Directory.CreateDirectory(appFolderPath);
-                        CopyFile(sourceDbPath, dbFilePath);
-                        DbPath = dbFilePath;
-                    }
-                    else
-                    {
-                        if (!File.Exists(dbFilePath))
-                        {
-                            CopyFile(sourceDbPath, dbFilePath);
-                        }
-                        DbPath = dbFilePath;
-                    }
-                }
+                await db.CreateTableAsync<PlaybackHistory>();
+                await db.ExecuteAsync("UPDATE PlaybackHistory SET SongIdAtPlay=COALESCE((SELECT SongId FROM Music WHERE Id=PlaybackHistory.MusicId),0) WHERE SongIdAtPlay IS NULL OR SongIdAtPlay=0");
+                await db.ExecuteAsync(
+                    "CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!upgrading)
             {
-                _logger.LogError(ex, $"InitalizeDbPath 初始化数据库路径失败: {ex.Message}");
-                DbPath = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
+                _logger.LogError(ex, "初始化播放统计表失败，统计功能降级不可用: {Message}", ex.Message);
             }
         }
 
@@ -284,16 +259,6 @@ namespace WinUIMusicPlayer.Services
             catch
             {
                 return Path.Combine(ApplicationData.Current.LocalFolder.Path, "VersionRecord.json");
-            }
-        }
-
-        private void CopyFile(string sourceFilePath, string targetFilePath)
-        {
-            if (File.Exists(sourceFilePath))
-            {
-                using FileStream sourceStream = File.Open(sourceFilePath, FileMode.Open);
-                using FileStream destinationStream = File.Create(targetFilePath);
-                sourceStream.CopyTo(destinationStream);
             }
         }
 
@@ -418,19 +383,19 @@ namespace WinUIMusicPlayer.Services
         /// 为已有数据库补齐歌单排序列。sqlite-net 的 CreateTable 不会为已存在的表追加新列，
         /// 因此这里必须执行幂等迁移，并为旧记录按创建 ID 建立稳定的初始顺序。
         /// </summary>
-        private async Task EnsurePlayListSortOrderAsync()
+        private static async Task EnsurePlayListSortOrderAsync(SQLiteAsyncConnection db)
         {
-            var columns = await _dbConnection.QueryAsync<TableColumnInfo>("PRAGMA table_info(PlayList)");
+            var columns = await db.QueryAsync<TableColumnInfo>("PRAGMA table_info(PlayList)");
             bool hasSortOrder = columns.Any(column => string.Equals(column.Name, nameof(PlayList.SortOrder), StringComparison.OrdinalIgnoreCase));
             if (!hasSortOrder)
             {
-                await _dbConnection.ExecuteAsync("ALTER TABLE PlayList ADD COLUMN [SortOrder] INTEGER NOT NULL DEFAULT 0");
+                await db.ExecuteAsync("ALTER TABLE PlayList ADD COLUMN [SortOrder] INTEGER NOT NULL DEFAULT 0");
             }
 
-            var playlists = await _dbConnection.Table<PlayList>().OrderBy(item => item.Id).ToListAsync();
+            var playlists = await db.Table<PlayList>().OrderBy(item => item.Id).ToListAsync();
             if (playlists.Count == 0 || (hasSortOrder && playlists.Any(item => item.SortOrder != 0))) return;
 
-            await _dbConnection.RunInTransactionAsync(connection =>
+            await db.RunInTransactionAsync(connection =>
             {
                 for (int i = 0; i < playlists.Count; i++)
                 {
@@ -442,11 +407,11 @@ namespace WinUIMusicPlayer.Services
             });
         }
 
-        private async Task EnsurePendingMetadataLyricsColumnsAsync()
+        private static async Task EnsurePendingMetadataLyricsColumnsAsync(SQLiteAsyncConnection db)
         {
-            var columns = await _dbConnection.QueryAsync<TableColumnInfo>("PRAGMA table_info(PendingMetadataWrite)");
+            var columns = await db.QueryAsync<TableColumnInfo>("PRAGMA table_info(PendingMetadataWrite)");
             if (!columns.Any(column => string.Equals(column.Name, nameof(PendingMetadataWrite.PronunciationLrc), StringComparison.OrdinalIgnoreCase)))
-                await _dbConnection.ExecuteAsync("ALTER TABLE PendingMetadataWrite ADD COLUMN PronunciationLrc TEXT NULL");
+                await db.ExecuteAsync("ALTER TABLE PendingMetadataWrite ADD COLUMN PronunciationLrc TEXT NULL");
         }
 
         /// <summary>只提交封面标识；迟到图片读取不能整行写回旧归属。</summary>

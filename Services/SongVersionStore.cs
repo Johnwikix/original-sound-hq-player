@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -15,7 +14,7 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>持久化歌曲归属、首选及可恢复操作；不拥有连接或 UI 状态。</summary>
 public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
 {
-    /// <summary>备份旧库并幂等补齐一对一歌曲，初始化完成前不公开新结构。</summary>
+    /// <summary>幂等补齐一对一歌曲，初始化完成前不公开新结构。</summary>
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(SongRecord))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(SongLyricsRecord))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(VersionLyricsOverrideRecord))]
@@ -24,36 +23,15 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(SongAutoLinkRecord))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(SongAutoLinkDirtyRecord))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(SongAutoLinkPendingRecord))]
-    public async Task InitializeAsync(string path, Action<SQLiteConnection>? migrateSourceScopes = null)
+    public async Task InitializeAsync(Action<SQLiteConnection>? migrateSourceScopes = null)
     {
-        bool exists = await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Song'") > 0;
-        int previous = exists && await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='SongVersionSchema'") > 0
-            ? await database.ExecuteScalarAsync<int>("SELECT Version FROM SongVersionSchema WHERE Id=1") : 0;
-        string? backup = previous switch
-        {
-            1 => path + ".autolink-v2.bak",
-            2 => path + ".song-v3.bak",
-            _ => null
-        };
-        if (!exists && !path.EndsWith(".song-v1.db", StringComparison.OrdinalIgnoreCase) && await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Music") > 0)
-            backup = path + ".song-v1.bak";
-        if (backup is not null && !File.Exists(backup))
-        {
-            string temporary = backup + "." + Guid.NewGuid().ToString("N") + ".tmp";
-            try
-            {
-                await database.BackupAsync(temporary);
-                File.Move(temporary, backup, false);
-            }
-            finally { if (File.Exists(temporary)) File.Delete(temporary); }
-        }
         await database.CreateTableAsync<SongRecord>();
         await database.CreateTableAsync<SongLyricsRecord>();
         await database.CreateTableAsync<VersionLyricsOverrideRecord>();
         await database.CreateTableAsync<SongVersionOperationRecord>();
         await database.CreateTableAsync<SongVersionSchemaRecord>();
         var schema = await database.FindAsync<SongVersionSchemaRecord>(1);
-        if (schema is { Version: > 3 }) throw new InvalidOperationException("Unsupported song version schema.");
+        if (schema is { Version: > SongVersionSchemaRecord.CurrentVersion }) throw new InvalidOperationException("Unsupported song version schema.");
         await database.CreateTableAsync<SongAutoLinkRecord>();
         await database.CreateTableAsync<SongAutoLinkDirtyRecord>();
         await database.CreateTableAsync<SongAutoLinkPendingRecord>();
@@ -78,10 +56,11 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
                 "BEGIN INSERT OR IGNORE INTO SongAutoLinkDirty(SongId) VALUES(NEW.Id); END");
             db.Execute("CREATE TABLE IF NOT EXISTS VersionMatch(MusicId INTEGER PRIMARY KEY, MatchKey TEXT NOT NULL)");
             db.Execute("CREATE INDEX IF NOT EXISTS IX_VersionMatch_Key ON VersionMatch(MatchKey)");
+            if (schema is { Version: < 4 }) db.Execute("DROP TRIGGER IF EXISTS SongAutoLink_Member");
             db.Execute("""
-                CREATE TRIGGER IF NOT EXISTS SongAutoLink_Member AFTER UPDATE OF Title,Author,Album,TitleFromFileName,SongId,IsDetached ON Music
+                CREATE TRIGGER IF NOT EXISTS SongAutoLink_Member AFTER UPDATE OF Title,Author,Album,SongId,IsDetached ON Music
                 WHEN OLD.Title IS NOT NEW.Title OR OLD.Author IS NOT NEW.Author OR OLD.Album IS NOT NEW.Album
-                    OR OLD.TitleFromFileName IS NOT NEW.TitleFromFileName OR OLD.SongId IS NOT NEW.SongId OR OLD.IsDetached IS NOT NEW.IsDetached
+                    OR OLD.SongId IS NOT NEW.SongId OR OLD.IsDetached IS NOT NEW.IsDetached
                 BEGIN
                     INSERT OR IGNORE INTO SongAutoLinkDirty SELECT OLD.SongId WHERE OLD.SongId>0;
                     INSERT OR IGNORE INTO SongAutoLinkDirty SELECT NEW.SongId WHERE NEW.SongId>0;
@@ -92,8 +71,14 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
                 migrateSourceScopes?.Invoke(db);
                 if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='WebDavSource'") != 0)
                     db.Execute("UPDATE Music SET IsDetached=1,IsMissing=1 WHERE SourceId>0 AND NOT EXISTS(SELECT 1 FROM WebDavSource s WHERE s.Id=Music.SourceId)");
-                db.Execute("INSERT OR IGNORE INTO SongAutoLinkDirty(SongId) SELECT Id FROM Song WHERE MergedIntoSongId IS NULL");
                 if (schema is null || schema.Version < 2) RestoreAutomaticExclusions(db);
+            }
+            if (schema is null || schema.Version < SongVersionSchemaRecord.CurrentVersion)
+            {
+                // 索引键格式及署名规则已改变。在同一事务中替换旧待办并记录重建任务。
+                db.Execute("DELETE FROM SongAutoLinkPending");
+                db.Execute("UPDATE SongAutoLink SET MatchKey=NULL WHERE MatchKey IS NOT NULL");
+                db.Execute("INSERT OR IGNORE INTO SongAutoLinkDirty(SongId) SELECT Id FROM Song WHERE MergedIntoSongId IS NULL");
                 db.InsertOrReplace(new SongVersionSchemaRecord());
             }
         });
@@ -173,14 +158,21 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
     }
 
     /// <summary>仅生成三项一致的其他歌曲候选。</summary>
-    public Task<List<Music>> GetCandidatesAsync(Music music) => database.QueryAsync<Music>(CandidateQuery, music.Id, music.Id);
+    public async Task<List<Music>> GetCandidatesAsync(Music music)
+    {
+        var current = await database.FindAsync<Music>(music.Id);
+        if (current is null) return [];
+        var rows = await database.QueryAsync<Music>(CandidateQuery, music.Id, music.Id);
+        HashSet<int> seen = [];
+        rows.RemoveAll(row => !SongVersionPolicy.Matches(current, row) || !seen.Add(row.SongId));
+        return rows;
+    }
 
     internal const string CandidateQuery = """
         SELECT * FROM Music WHERE Id IN (
-            SELECT MIN(m.Id) FROM VersionMatch v INDEXED BY IX_VersionMatch_Key JOIN Music m ON m.Id=v.MusicId
+            SELECT m.Id FROM VersionMatch v INDEXED BY IX_VersionMatch_Key JOIN Music m ON m.Id=v.MusicId
             WHERE v.MatchKey=(SELECT MatchKey FROM VersionMatch WHERE MusicId=?)
               AND m.IsDetached=0 AND m.SongId<>(SELECT SongId FROM Music WHERE Id=?)
-            GROUP BY m.SongId
         ) ORDER BY Id
         """;
 
@@ -258,7 +250,7 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
                 target.Id, target.IsFavorite, target.FavoriteOrder, target.Id, other.Id);
             db.Execute("UPDATE PlayListMusic SET SongId=? WHERE SongId=?", target.Id, other.Id);
             db.Delete<SongAutoLinkRecord>(other.Id);
-            db.InsertOrReplace(new SongAutoLinkRecord { SongId = target.Id, MatchKey = SongVersionPolicy.GetMatchKey(target.Title, target.Artist, target.Album) });
+            db.InsertOrReplace(new SongAutoLinkRecord { SongId = target.Id, MatchKey = SongVersionPolicy.GetBucketKey(target.Title, target.Album) });
             if (collapseDuplicates)
             {
                 var entries = db.Query<PlayListMusic>("SELECT * FROM PlayListMusic WHERE SongId=? ORDER BY PlayListId,[Order] DESC,Id", target.Id);

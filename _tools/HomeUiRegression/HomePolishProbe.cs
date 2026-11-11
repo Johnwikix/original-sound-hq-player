@@ -36,7 +36,7 @@ internal sealed partial class RegressionApplication
         await database.ExecuteAsync("CREATE TABLE PlaybackHistory (MusicId INTEGER, StartedAt INTEGER, TotalDurationMs REAL, DurationPlayedMs REAL)");
         var app = new AppViewModel();
         var data = new MusicDatabaseService(database);
-        await data.Lyrics.InitializeAsync(path);
+        await data.Lyrics.InitializeAsync();
         var stats = new PlaybackStatsService();
         var editors = new FixtureEditorFactory(data, app);
         var home = new HomeViewModel(app, data, stats, new HomeRecommendationService(), new PlaybackCoordinator(app, stats),

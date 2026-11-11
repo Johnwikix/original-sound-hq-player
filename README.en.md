@@ -292,6 +292,14 @@ Application data is stored at:
 - User data: `%userprofile%\documents\OriginalSoundPlayer`
 - Loudness analysis cache: `%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache` (redirected by MSIX filesystem virtualization to the same folder under `%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalCache\Local\` when installed from the Store)
 
+### Library migration backups
+
+Before a major schema change or bulk data migration, the player saves a standalone SQLite snapshot under `Backups` beside the active database. The default location is `OriginalSoundPlayer\DataBase\Backups` in your Documents folder. The startup log records the exact path. The filename includes the source and target library generations and the SHA-256 digest. An initial import needs space for both the snapshot and the new working database.
+
+The snapshot includes tracks, favorites, playlists, lyrics, and history stored in the main library. Audio files, external artwork, separate caches, and settings have their own storage. Keep the snapshot while a migration is in progress. Once you have verified the upgraded library, you can archive or remove older snapshots.
+
+To restore, exit the player completely. Move `MusicDatabase.song-v1.db` and any accompanying `-wal`, `-shm`, and `-journal` files together into a separate empty folder. Copy the desired snapshot to the database directory as `MusicDatabase.song-v1.db`, then launch the player to replay the applicable migrations. Releases predating song-version management use `MusicDatabase.db` and need a library from that era.
+
 ---
 
 <div align="center">

@@ -21,8 +21,8 @@ public sealed partial class TestApp
             var local = new Music { Title = "Song", Author = "Artist", Album = "Album", Path = "fixture.flac", IsFavorite = true };
             await sqlite.InsertAsync(local);
             var db = new MusicDatabaseService(sqlite) { Versions = new SongVersionStore(sqlite) };
-            await db.Versions.InitializeAsync(path);
-            await db.Lyrics.InitializeAsync(path);
+            await db.Versions.InitializeAsync();
+            await db.Lyrics.InitializeAsync();
             await db.Versions.ApplyAutomaticLinksAsync(db.Lyrics);
             var source = new WebDavSource { Name = "Fixture", BaseUri = "http://localhost/dav/", Roots = "/dav/" };
             await sqlite.InsertAsync(source);

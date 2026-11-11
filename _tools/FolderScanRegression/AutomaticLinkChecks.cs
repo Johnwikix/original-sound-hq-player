@@ -11,8 +11,8 @@ internal static class AutomaticLinkChecks
         {
             await database.Connection.CreateTableAsync<PlayListMusic>();
             database.Versions = new(database.Connection);
-            await database.Versions.InitializeAsync(database.Connection.DatabasePath);
-            await database.Lyrics.InitializeAsync(database.Connection.DatabasePath);
+            await database.Versions.InitializeAsync();
+            await database.Lyrics.InitializeAsync();
             var first = new Music { Path = Path.Combine(root, "auto-first.flac"), Title = "Song", Author = "Artist", Album = "Album", Genre = "Jazz", AdditionalMetadataRead = true };
             var second = new Music { Path = Path.Combine(root, "auto-second.mp3"), Title = "SONG", Author = "Artist", Album = "Album", Genre = "Rock", AdditionalMetadataRead = true, IsFavorite = true };
             await database.AddExternalFileAsync(first, "[00:01.00]First");
