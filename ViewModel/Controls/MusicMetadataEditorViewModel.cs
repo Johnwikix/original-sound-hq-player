@@ -74,6 +74,8 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
             Draft.TrackNumber == snapshot.TrackNumber &&
             Draft.DiskNumber == snapshot.DiskNumber &&
             AdditionalMusicMetadata.From(Draft) == AdditionalMusicMetadata.From(snapshot);
+        _source.TitleFromFileName = snapshot.TitleFromFileName;
+        Draft.TitleFromFileName = snapshot.TitleFromFileName;
         _source.Title = snapshot.Title;
         _source.Author = snapshot.Author;
         _source.Album = snapshot.Album;
@@ -103,6 +105,7 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
             Id = source.Id, SongId = source.SongId, MetadataRevision = source.MetadataRevision,
             SourceId = source.SourceId, Path = source.Path, UpdateTime = source.UpdateTime,
             CoverOverridePath = source.CoverOverridePath, ImageHash = source.ImageHash,
+            TitleFromFileName = source.TitleFromFileName,
             Title = source.Title,
             Author = source.Author,
             Album = source.Album,

@@ -239,9 +239,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         List<Music> versions = [];
         if (music.SongId > 0)
             foreach (var version in state.FindVersions(music.SongId))
-                if (version.SongId == music.SongId && !version.IsDetached &&
-                    (sourceScope == -1 || sourceScope == -2 && version.IsRemote || sourceScope == version.SourceId)) versions.Add(version);
-        if (versions.Count == 0 && !music.IsDetached && (sourceScope == -1 || sourceScope == -2 && music.IsRemote || sourceScope == music.SourceId)) versions.Add(music);
+                if (version.SongId == music.SongId && SongVersionPolicy.InScope(version, sourceScope)) versions.Add(version);
+        if (versions.Count == 0 && SongVersionPolicy.InScope(music, sourceScope)) versions.Add(music);
         return SongVersionPolicy.Order(versions, music.SongPreferredMusicId, forPlayback: true);
     }
 
@@ -253,13 +252,13 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         if (_intentExact && pinned > 0 && pinned != requested.Id)
         {
             versions.Clear();
-            foreach (var version in state.SongsSource) if (version.Id == pinned) { versions.Add(version); break; }
+            if (state.FindById(pinned) is { IsDetached: false } version) versions.Add(version);
         }
         foreach (var version in versions)
         {
             token.ThrowIfCancellationRequested();
             if (Environment.TickCount64 >= _versionDeadline) return null;
-            if (!_attemptedVersions.Add(version.Id)) continue;
+            if (!SongVersionPolicy.InScope(version, _intentScope) || !_attemptedVersions.Add(version.Id)) continue;
             using var probe = CancellationTokenSource.CreateLinkedTokenSource(token);
             probe.CancelAfter(TimeSpan.FromMilliseconds(Math.Max(1, _versionDeadline - Environment.TickCount64)));
             bool retryImmediately = !_intentMayAdvance && _probedVersionSources.Add(version.SourceId);

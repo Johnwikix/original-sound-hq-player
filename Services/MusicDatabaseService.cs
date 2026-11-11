@@ -110,7 +110,7 @@ namespace WinUIMusicPlayer.Services
                     await EnsurePlayListSortOrderAsync();
                     await _dbConnection.CreateTableAsync<PlayListMusic>();
                     Versions = new SongVersionStore(_dbConnection);
-                    await Versions.InitializeAsync(DbPath);
+                    await Versions.InitializeAsync(DbPath, MigrateWebDavScopes);
                     Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
                     await Lyrics.InitializeAsync(DbPath);
                     await Versions.ApplyAutomaticLinksAsync(Lyrics);
@@ -471,7 +471,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 int musicId = await _dbConnection.ExecuteScalarAsync<int>(
-                    "SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path);
+                    "SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE AND IsDetached=0 LIMIT 1", path);
                 if (musicId <= 0) return null;
                 return await _dbConnection.FindAsync<Music>(musicId);
             }
@@ -482,40 +482,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
-        {
-            var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
-            int plmCount = plmSpan.Length;
-            bool hasSearch = !string.IsNullOrEmpty(search);
-
-            var pool = System.Buffers.ArrayPool<PlayListMusicItem>.Shared;
-            var buf = pool.Rent(plmCount);
-            int written = 0;
-            try
-            {
-                for (int i = 0; i < plmCount; i++)
-                {
-                    ref readonly var plm = ref plmSpan[i];
-                    if (plm.PlayListId != playListId) continue;
-                    var m = plm.RequestedMusicId is int fixedId ? AppViewModel.FindById(fixedId)
-                        : plm.SongId > 0 ? AppViewModel.FindDisplayVersion(plm.SongId) : AppViewModel.FindById(plm.MusicId);
-                    if (m is null) continue;
-                    if (hasSearch && !LibraryProjectionService.MusicMatchesSearch(m, search)) continue;
-                    buf[written++] = new PlayListMusicItem { EntryId = plm.Id, RequestedMusicId = plm.RequestedMusicId, Music = m, PlayListOrder = plm.Order };
-                }
-
-                var slice = buf.AsSpan(0, written);
-                slice.Sort(_plmOrderDesc);
-                return slice.ToArray();
-            }
-            finally
-            {
-                pool.Return(buf, clearArray: false);
-            }
-        }
-
-        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _plmOrderDesc =
-            System.Collections.Generic.Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
+        public IReadOnlyList<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string? search = null, int sourceScope = -1) =>
+            AppViewModel.GetPlaylistItems(playListId, search, sourceScope);
 
         public async Task UpdatePlayListMusicOrderBatch(int playListId, IEnumerable<PlayListMusicItem> musicList)
         {
@@ -895,15 +863,39 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.DeleteAsync<SaveEqualizerPreset>(presetId);
         }
 
+        private readonly System.Threading.SemaphoreSlim _libraryPublishGate = new(1, 1);
+
         public async Task GetPlayListMusic()
         {
-            var mappings = await _dbConnection.Table<PlayListMusic>().ToListAsync();
-            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            await _libraryPublishGate.WaitAsync();
+            try
             {
-                AppData.AllPlayListMusics = mappings;
-                AppViewModel.RefreshPlayListSummaries();
-                PublishRecommendationPreferencesChanged();
-            });
+                var mappings = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    AppData.AllPlayListMusics = mappings;
+                    AppViewModel.RefreshPlayListSummaries();
+                    PublishRecommendationPreferencesChanged();
+                });
+            }
+            finally { _libraryPublishGate.Release(); }
+        }
+
+        internal async Task PublishLibrarySnapshotAsync(CancellationToken token)
+        {
+            await _libraryPublishGate.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                var (songs, entries) = await Versions.ReadLibraryAsync(includePlaylists: true).ConfigureAwait(false);
+                LocalizeUnknownTags(songs);
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    AppData.AllPlayListMusics = entries;
+                    AppViewModel.ApplyLibrarySnapshot(songs);
+                }).ConfigureAwait(false);
+            }
+            finally { _libraryPublishGate.Release(); }
         }
 
         public async Task LoadMusicList()
@@ -927,13 +919,15 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
         {
+            var (songs, _) = await Versions.ReadLibraryAsync(includePlaylists: false);
+            LocalizeUnknownTags(songs);
+            return songs;
+        }
+
+        private static void LocalizeUnknownTags(List<Music> musicList)
+        {
             string localizedUnknownAlbum = ToolUtils.GetString("UnknownAlbum");
             string localizedUnknownArtist = ToolUtils.GetString("UnknownArtist");
-            var musicList = await GetVisibleMusicAsync();
-            await Versions.DecorateAsync(musicList);
-
-            // 优化7: AppData.UnknownAlbums / UnknownArtists 建议在 AppData 中改为 HashSet<string>
-            // 以将 Contains 从 O(n) 降为 O(1)，此处调用方式不变，修改点在 AppData 定义处
             foreach (var music in musicList)
             {
                 if (AppData.UnknownAlbums.Contains(music.Album) && music.Album != localizedUnknownAlbum)
@@ -947,7 +941,6 @@ namespace WinUIMusicPlayer.Services
                 }
             }
 
-            return musicList;
         }
 
         public ObservableCollection<Music> GetFavoriteMusicFromMem(string search = null)

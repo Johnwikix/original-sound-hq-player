@@ -80,7 +80,7 @@ internal static class AutomaticChecks
             var d = new Music { Title = "Different", Author = "Artist", Album = "Album", Path = "d.mp3" };
             await AddAsync(d);
             await store.ApplyAutomaticLinksAsync(lyrics);
-            await db.ExecuteAsync("UPDATE Song SET Title='New' WHERE Id=?", d.SongId);
+            await db.ExecuteAsync("UPDATE Music SET Title='New' WHERE Id=?", d.Id);
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 1 && (await store.GetVersionsAsync(d.Id)).Count == 4, "changed canonical metadata queues only its affected automatic key");
             var late = new Music { Title = "Cancel", Author = "Artist", Album = "Album", Path = "late.mp3" };
             var late2 = new Music { Title = "Cancel", Author = "Artist", Album = "Album", Path = "late2.mp3" };
@@ -92,8 +92,8 @@ internal static class AutomaticChecks
             catch (OperationCanceledException) { }
             await Task.WhenAll(store.ApplyAutomaticLinksAsync(lyrics), store.ApplyAutomaticLinksAsync(lyrics));
             check((await store.GetVersionsAsync(late.Id)).Count == 2, "cancellation retains pending work and concurrent callers serialize safely");
-            var rollback = new Music { Title = "Rollback", Author = "Artist", Album = "Album", Path = "rollback.flac" };
-            var rollback2 = new Music { Title = "Rollback", Author = "Artist", Album = "Album", Path = "rollback.mp3" };
+            var rollback = new Music { Title = "Rollback", Author = "Artist", Album = "Album", Path = "rollback.flac", TitleFromFileName = false };
+            var rollback2 = new Music { Title = "Rollback", Author = "Artist", Album = "Album", Path = "rollback.mp3", TitleFromFileName = false };
             await AddAsync(rollback);
             await AddAsync(rollback2);
             int operations = await db.Table<SongVersionOperationRecord>().CountAsync();
@@ -122,6 +122,33 @@ internal static class AutomaticChecks
             var preservedClear = await lyrics.GetAsync(explicitClear.Id);
             check(preservedClear.OwnerId == -explicitClear.Id && preservedClear.SourceKind == "User" && preservedClear.Document.Original.Content.Length == 0 &&
                 (await lyrics.GetSharedAsync(blank.Id)).Document.Original.Content.Contains("Recovered"), "a later explicit clear is preserved as an empty version override alongside the established shared document");
+            var old = new Music { Title = "Original", Author = "Artist", Album = "Album", Path = "original-a.flac" };
+            var twin = new Music { Title = old.Title, Author = old.Author, Album = old.Album, Path = "original-b.flac" };
+            await AddAsync(old);
+            await AddAsync(twin);
+            await store.ApplyAutomaticLinksAsync(lyrics);
+            await db.ExecuteAsync("UPDATE Music SET Title='Changed' WHERE Id=?", twin.Id);
+            var newcomer = new Music { Title = old.Title, Author = old.Author, Album = old.Album, Path = "newcomer.flac" };
+            await AddAsync(newcomer);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetCandidatesAsync(old)).Single().Id == newcomer.Id,
+                "divergent group rejects automatic members while genuine individual matches remain discoverable");
+            await db.ExecuteAsync("UPDATE Music SET Title='Changed' WHERE Id=?", old.Id);
+            await store.ApplyAutomaticLinksAsync(lyrics);
+            check((await store.GetSongAsync(old.Id))!.Title == "Changed" && (await store.GetCandidatesAsync(old)).Count == 0,
+                "retagging the whole group updates its canonical title and drops the old match");
+            var filename = new Music { Title = "Track 01", Author = "Artist", Album = "Album", Path = "Track 01.mp3", TitleFromFileName = true };
+            var legacyName = new Music { Title = filename.Title, Author = filename.Author, Album = filename.Album, Path = "Track 01.flac" };
+            var tagged = new Music { Title = filename.Title, Author = filename.Author, Album = filename.Album, Path = "file.wav" };
+            await AddAsync(filename);
+            await AddAsync(legacyName);
+            await AddAsync(tagged);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetCandidatesAsync(tagged)).Count == 0 && !SongVersionPolicy.Matches(filename, tagged),
+                "file-name and ambiguous legacy fallback titles cannot link files");
+            await db.ExecuteAsync("UPDATE Music SET TitleFromFileName=0 WHERE Id=?", legacyName.Id);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 1, "a real tag identical to the filename becomes eligible after rereading");
+            await db.ExecuteAsync("UPDATE SongVersionSchema SET Version=2");
+            await store.InitializeAsync(db.DatabasePath);
+            check(File.Exists(db.DatabasePath + ".song-v3.bak") && await store.ApplyAutomaticLinksAsync(lyrics) == 0, "v2 migration is backed up and rebuilds indexes without changing exclusions");
             check(await db.ExecuteScalarAsync<string>("PRAGMA quick_check") == "ok", "automatic operations retain SQLite integrity");
 
             async Task AddAsync(Music music) => await db.RunInTransactionAsync(connection =>
@@ -133,6 +160,8 @@ internal static class AutomaticChecks
         finally { await db.CloseAsync(); }
         await ScaleAsync(root, check);
     }
+
+    private sealed class QueryPlanRow { public string Detail { get; set; } = ""; }
 
     private static async Task ScaleAsync(string root, Action<bool, string> check)
     {
@@ -162,6 +191,20 @@ internal static class AutomaticChecks
             watch.Stop();
             check(await db.Table<SongAutoLinkDirtyRecord>().CountAsync() == 0 && await db.Table<SongAutoLinkPendingRecord>().CountAsync() == 0, "large-library dirty and pending queues drain completely");
             Console.WriteLine($"SCALE unchanged automatic pass: {watch.ElapsedMilliseconds} ms");
+            var first = await db.GetAsync<Music>(1);
+            await store.SplitAsync(2, lyrics);
+            await store.ApplyAutomaticLinksAsync(lyrics);
+            var plan = await db.QueryAsync<QueryPlanRow>("EXPLAIN QUERY PLAN " + SongVersionStore.CandidateQuery, first.Id, first.Id);
+            check(plan.Any(step => step.Detail.Contains("SEARCH v USING COVERING INDEX IX_VersionMatch_Key")) &&
+                !plan.Any(step => step.Detail.StartsWith("SCAN m") || step.Detail.StartsWith("SCAN v")),
+                "manual lookup searches the match-key index and fetches matching file IDs by primary key");
+            await store.GetCandidatesAsync(first);
+            allocated = GC.GetTotalAllocatedBytes();
+            watch.Restart();
+            for (int i = 0; i < 100; i++)
+                if ((await store.GetCandidatesAsync(first)).Single().Id != 2) throw new Exception("missing split candidate");
+            watch.Stop();
+            Console.WriteLine($"SCALE 100 indexed candidate lookups: {watch.Elapsed.TotalMilliseconds:F1} ms, process allocation {GC.GetTotalAllocatedBytes() - allocated:N0} bytes");
         }
         finally { await db.CloseAsync(); }
     }

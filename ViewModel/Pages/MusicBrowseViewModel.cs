@@ -255,7 +255,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (!AppViewModel.CanStartPlayback) return;
             if (string.IsNullOrEmpty(music.FolderPath))
             {
-                _ = PlayMusic(music, IsChangeList: true);
+                _ = _coordinator.PlayAsync(music, exactVersion: true);
                 return;
             }
 
@@ -273,14 +273,13 @@ namespace WinUIMusicPlayer.ViewModel
             }
             if (folderSongs.Count == 0)
             {
-                _ = PlayMusic(music, IsChangeList: true);
+                _ = _coordinator.PlayAsync(music, exactVersion: true);
                 return;
             }
 
             // SequentialPlayingList 是唯一状态源：赋值后 CurrentPlayingList 自动跟随（随机模式自动洗牌）。
-            AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(folderSongs);
-            AppViewModel.State.Queue.ConfigureSource(music.SourceId, exactFiles: true);
-            _ = PlayMusic(music, IsChangeList: true);
+            AppViewModel.SetBrowseQueue(new(folderSongs), exactFiles: true, sourceScope: music.SourceId);
+            _ = _coordinator.PlayAsync(music, exactVersion: true);
         }
 
         [RelayCommand]

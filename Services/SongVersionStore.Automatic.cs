@@ -33,16 +33,7 @@ public sealed partial class SongVersionStore
                     List<int> ids = new(dirty.Count);
                     foreach (var row in dirty) ids.Add(row.SongId);
                     string numbers = string.Join(',', ids);
-                    var songs = db.Query<SongRecord>($"SELECT * FROM Song WHERE Id IN ({numbers}) AND MergedIntoSongId IS NULL " +
-                        "AND EXISTS(SELECT 1 FROM Music WHERE SongId=Song.Id AND IsDetached=0)");
-                    foreach (var song in songs)
-                    {
-                        token.ThrowIfCancellationRequested();
-                        string? key = SongVersionPolicy.GetMatchKey(song.Title, song.Artist, song.Album);
-                        // UPSERT 保留用户拆分例外；主键记录也是持久化的退出恢复游标。
-                        db.Execute("INSERT INTO SongAutoLink(SongId,MatchKey,IsExcluded) VALUES(?,?,0) " +
-                            "ON CONFLICT(SongId) DO UPDATE SET MatchKey=excluded.MatchKey", song.Id, key);
-                    }
+                    IndexMemberTags(db, numbers, token);
                     db.Execute($"DELETE FROM SongAutoLink WHERE SongId IN ({numbers}) AND NOT EXISTS(SELECT 1 FROM Song " +
                         "WHERE Id=SongAutoLink.SongId AND MergedIntoSongId IS NULL AND EXISTS(SELECT 1 FROM Music WHERE SongId=Song.Id AND IsDetached=0))");
                     db.Execute($"INSERT OR IGNORE INTO SongAutoLinkPending(MatchKey) SELECT DISTINCT a.MatchKey FROM SongAutoLink a " +
@@ -80,7 +71,7 @@ public sealed partial class SongVersionStore
                         }
                         // 读取歌词期间可能有新文件或标签提交；保留待办，下一轮补齐文档并重新检查。
                         foreach (var song in songs)
-                            if (SongVersionPolicy.GetMatchKey(song.Title, song.Artist, song.Album) != item.MatchKey ||
+                            if (db.Find<SongAutoLinkDirtyRecord>(song.Id) is not null ||
                                 db.Find<SongLyricsRecord>(song.Id) is null) return;
                         MergeAutomaticBucket(db, songs, token);
                         merged += songs.Count - 1;
@@ -90,6 +81,64 @@ public sealed partial class SongVersionStore
             }
         }
         finally { _automaticGate.Release(); }
+    }
+
+    // 一次只读取待处理组的标签。按成员建索引使混合组和拆分例外仍可手动关联。
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(MemberTags))]
+    private static void IndexMemberTags(SQLiteConnection db, string ids, CancellationToken token)
+    {
+        var members = db.Query<MemberTags>($"SELECT m.Id,m.SongId,m.Title,m.Author,m.Album,m.Path,m.TitleFromFileName,m.IsDetached,s.Title AS SongTitle,s.Artist AS SongArtist,s.Album AS SongAlbum FROM Music m JOIN Song s ON s.Id=m.SongId WHERE m.SongId IN ({ids}) ORDER BY m.SongId,m.Id");
+        int start = 0;
+        while (start < members.Count)
+        {
+            var first = members[start];
+            MemberTags? representative = null;
+            string? common = null;
+            bool consistent = true;
+            do
+            {
+                token.ThrowIfCancellationRequested();
+                var member = members[start++];
+                string? key = member.MatchKey();
+                if (key is null)
+                    db.Execute("DELETE FROM VersionMatch WHERE MusicId=?", member.Id);
+                else
+                    db.Execute("INSERT INTO VersionMatch VALUES(?,?) ON CONFLICT(MusicId) DO UPDATE SET MatchKey=excluded.MatchKey WHERE MatchKey<>excluded.MatchKey", member.Id, key);
+                if (member.IsDetached) continue;
+                if (representative is null)
+                {
+                    representative = member;
+                    common = key;
+                }
+                else if (key != common) consistent = false;
+            } while (start < members.Count && members[start].SongId == first.SongId);
+
+            if (representative is null) continue;
+            string? groupKey = consistent ? common : null;
+            if (groupKey is not null && (representative.Title != first.SongTitle || representative.Author != first.SongArtist || representative.Album != first.SongAlbum) &&
+                groupKey != SongVersionPolicy.GetMatchKey(first.SongTitle, first.SongArtist, first.SongAlbum))
+                db.Execute("UPDATE Song SET Title=?,Artist=?,Album=?,Revision=Revision+1 WHERE Id=? AND (Title IS NOT ? OR Artist IS NOT ? OR Album IS NOT ?)",
+                    representative.Title, representative.Author, representative.Album, first.SongId, representative.Title, representative.Author, representative.Album);
+            db.Execute("INSERT INTO SongAutoLink(SongId,MatchKey,IsExcluded) VALUES(?,?,0) ON CONFLICT(SongId) DO UPDATE SET MatchKey=excluded.MatchKey",
+                first.SongId, groupKey);
+        }
+    }
+
+    private sealed class MemberTags
+    {
+        public int Id { get; set; }
+        public int SongId { get; set; }
+        public string Title { get; set; } = "";
+        public string Author { get; set; } = "";
+        public string Album { get; set; } = "";
+        public string SongTitle { get; set; } = "";
+        public string SongArtist { get; set; } = "";
+        public string SongAlbum { get; set; } = "";
+        public string Path { get; set; } = "";
+        public bool? TitleFromFileName { get; set; }
+        public bool IsDetached { get; set; }
+
+        public string? MatchKey() => IsDetached ? null : SongVersionPolicy.FileMatchKey(Title, Author, Album, Path, TitleFromFileName);
     }
 
     private static void MergeAutomaticBucket(SQLiteConnection db, List<SongRecord> songs, CancellationToken token)

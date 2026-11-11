@@ -88,6 +88,12 @@ namespace WinUIMusicPlayer.ViewModel
             get => State.Queue.Sequential;
             set { if (CanPublishState) State.Queue.Replace(value); }
         }
+        /// <summary>以列表当前的来源范围建立队列；文件浏览入口同时固定每个出现项。</summary>
+        public void SetBrowseQueue(BulkObservableCollection<Music> songs, bool exactFiles = false, int? sourceScope = null)
+        {
+            if (CanStartPlayback) State.Queue.Replace(songs, sourceScope ?? State.Browse.SourceFilterId, exactFiles);
+        }
+
         public BulkObservableCollection<Music> CurrentPlayingList => State.Queue.Playing;
         public SortOption SelectedSortOption { get => State.Browse.SelectedSortOption; set => State.Browse.SelectedSortOption = value; }
 
@@ -341,12 +347,16 @@ namespace WinUIMusicPlayer.ViewModel
         public Music? FindById(int id) => _libraryQueries.FindById(id);
         public bool TryFindById(int id, out Music? music) => _libraryQueries.TryFindById(id, out music);
         /// <summary>获取同歌曲的文件版本索引，供播放时解析。</summary>
+        internal IReadOnlyList<Music>? FindMultipleVersions(int songId) => _libraryQueries.GetMultipleVersions(songId);
         public IReadOnlyList<Music> FindVersions(int songId) => _libraryQueries.GetVersions(songId);
         /// <summary>返回列表使用的稳定代表文件。</summary>
         public Music? FindDisplayVersion(int songId, int sourceId = -1) => _libraryQueries.FindDisplayVersion(songId, sourceId);
         public Music? FindFirstByAlbum(string? album) => _libraryQueries.FindFirstByAlbum(album);
         public Music? FindFirstByArtist(string? artist) => _libraryQueries.FindFirstByArtist(artist);
         public int GetAlbumSongCount(string? album) => _libraryQueries.GetAlbumSongCount(album);
+        internal IReadOnlyList<PlayListMusicItem> GetPlaylistItems(int playlistId, string? search, int scope) =>
+            _projections.GetPlaylistItems(playlistId, search, scope);
+
         public void NotifyIdIndexChanged() => _libraryQueries.Invalidate();
 
         public event Action? SongsSourceChanged;
@@ -355,11 +365,14 @@ namespace WinUIMusicPlayer.ViewModel
         /// <summary>通知已打开详情同步共享收藏。</summary>
         public void NotifySharedFavoriteChanged() => SharedFavoriteChanged?.Invoke();
 
-        public void NotifySongsSourceChanged()
+        public void NotifySongsSourceChanged() => PublishSongsSourceChanged(reconcilePlayback: false);
+
+        private void PublishSongsSourceChanged(bool reconcilePlayback)
         {
             _appendedSongIds = null;
-            SongsSourceChanged?.Invoke();
             _libraryQueries.Invalidate();
+            if (reconcilePlayback) ReconcilePlaybackLibrary();
+            SongsSourceChanged?.Invoke();
             RefreshPlayListSummaries();
             LibraryEmptyVisibility = State.Library.Songs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             if (IsInitialized)
@@ -395,14 +408,14 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpdateArtistGroupedByFirstLetter(CollectionViewSource source)
             => _projections.UpdateArtistGroupedByFirstLetter(source);
 
-        public void AddMusicToCurrentPlayList(Music music)
+        public void AddMusicToCurrentPlayList(Music music, bool exactFiles = false)
         {
-            if (music is not null) State.Queue.InsertNext(CurrentPlayingMusic, [music]);
+            if (music is not null) State.Queue.InsertNext(CurrentPlayingMusic, [music], State.Browse.SourceFilterId, exactFiles);
         }
 
-        public void AddMusicRangeToCurrentPlayList(IEnumerable<Music> musics)
+        public void AddMusicRangeToCurrentPlayList(IEnumerable<Music> musics, bool exactFiles = false)
         {
-            if (musics is not null) State.Queue.InsertNext(CurrentPlayingMusic, musics);
+            if (musics is not null) State.Queue.InsertNext(CurrentPlayingMusic, musics, State.Browse.SourceFilterId, exactFiles);
         }
 
         public int GetCurrentIndex() => State.Queue.IndexOf(CurrentPlayingMusic);
@@ -430,46 +443,34 @@ namespace WinUIMusicPlayer.ViewModel
             FavoriteSongs.Remove(music);
         }
 
-        public async Task RefreshSongsSourceAsync(CancellationToken cancellationToken = default)
-        {
-            var musicList = await _musicDatabaseService.GetMusicListAsync().ConfigureAwait(false);
+        public Task RefreshSongsSourceAsync(CancellationToken cancellationToken = default)
+            => _musicDatabaseService.PublishLibrarySnapshotAsync(cancellationToken);
 
-            var dq = App.MainWindow.DispatcherQueue;
-            if (dq.HasThreadAccess)
-            {
-                if (cancellationToken.IsCancellationRequested) return;
-                SongsSource.Clear();
-                SongsSource.AddRange(musicList);
-                ReconcilePlaybackLibrary();
-                _libraryQueries.Invalidate();
-                NotifySongsSourceChanged();
-            }
-            else
-            {
-                await dq.EnqueueAsync(() =>
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
-                    SongsSource.Clear();
-                    SongsSource.AddRange(musicList);
-                    ReconcilePlaybackLibrary();
-                    _libraryQueries.Invalidate();
-                    NotifySongsSourceChanged();
-                });
-            }
+        internal void ApplyLibrarySnapshot(IReadOnlyList<Music> songs)
+        {
+            SongsSource.Clear();
+            SongsSource.AddRange(songs);
+            PublishSongsSourceChanged(reconcilePlayback: true);
         }
 
         private void ReconcilePlaybackLibrary()
         {
-            var songs = new Dictionary<int, Music>(SongsSource.Count);
-            foreach (var song in SongsSource) songs.TryAdd(song.Id, song);
+            if (CurrentPlayingMusic is null && State.Queue.Sequential.Count == 0) return;
+            var songs = _libraryQueries.GetIdIndex();
             if (CurrentPlayingMusic is { } playing && songs.TryGetValue(playing.Id, out var refreshed))
             {
                 // 保留音频会话与文件快照，仅同步已经提交的歌曲归属和共享状态。
+                playing.IsDetached = refreshed.IsDetached;
+                playing.IsMissing = refreshed.IsMissing;
                 playing.SongId = refreshed.SongId;
                 playing.SongPreferredMusicId = refreshed.SongPreferredMusicId;
                 playing.IsFavorite = refreshed.IsFavorite;
                 playing.Order = refreshed.Order;
                 playing.HasVersionLyrics = refreshed.HasVersionLyrics;
+            }
+            else if (CurrentPlayingMusic is { Id: > 0 } detached)
+            {
+                detached.IsDetached = true;
             }
             State.Queue.ReconcileLibrary(songs, CurrentPlayingMusic);
         }

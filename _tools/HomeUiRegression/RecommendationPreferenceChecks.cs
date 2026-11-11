@@ -64,6 +64,16 @@ internal sealed partial class RegressionApplication
             && ((StackPanel)page.FindName("UnavailablePanel")).Visibility == Visibility.Collapsed,
             "compiled bindings show familiar-only results without an empty primary shelf or unavailable overlay");
         Check(home.PlaySongCommand.CanExecute(home.Familiar[0]), "familiar-only cards retain the shared playback command");
+        var representative = app.FindById(1)!;
+        representative.SongId = 7001;
+        representative.SongPreferredMusicId = representative.Id;
+        representative.IsMissing = true;
+        var sibling = new WinUIMusicPlayer.Model.Music { Id = 7002, SongId = representative.SongId, SongPreferredMusicId = representative.Id,
+            SourceId = 2, Title = representative.Title, Author = representative.Author, Album = representative.Album, PlayCount = 1 };
+        app.Replace([representative, sibling]);
+        await Wait(() => analysis.LastTracks.Count == 1 && analysis.LastTracks[0].IsAvailable && analysis.LastTracks[0].PlayCount == representative.PlayCount + 1 && !Field<bool>(home, "_running"));
+        Check(home.Familiar.Count == 1 && home.Familiar[0].Music.Id == representative.Id && home.PlaySongCommand.CanExecute(home.Familiar[0]),
+            "the missing display version stays on the shelf with its playable sibling and combined history");
         await home.StopAsync();
         var stopped = analysis.LastTracks;
         data.NotifyRecommendationPreferencesChanged();

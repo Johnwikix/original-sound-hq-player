@@ -246,7 +246,6 @@ public sealed class MusicDetailsViewModel : ObservableObject
             await action();
             if (_closing) return;
             await _app.RefreshSongsSourceAsync();
-            await _database.GetPlayListMusic();
             await ReloadVersionsAsync();
             await Editor.Lyrics.ReloadIfUnchangedAsync();
             if (!_closing) VersionMessage = ToolUtils.GetString("SongVersionsSaved");

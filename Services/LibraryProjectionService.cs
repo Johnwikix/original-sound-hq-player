@@ -338,46 +338,33 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         }
     }
 
-    public async Task RefreshPlayListSongMapping(BulkObservableCollection<PlayListMusicItem> PlayListSongs)
+    internal List<PlayListMusicItem> GetPlaylistItems(int playlistId, string? search, int scope)
     {
-        var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
-        int plmCount = plmSpan.Length;
-        int curListId = CurrentPlayListId;
-        var search = SearchText;
+        List<PlayListMusicItem> items = [];
         bool hasSearch = !string.IsNullOrWhiteSpace(search);
-
-        int upper = plmCount;
-        var pool = System.Buffers.ArrayPool<PlayListMusicItem>.Shared;
-        var buf = pool.Rent(upper);
-        int written = 0;
-        try
+        foreach (var relation in AppData.AllPlayListMusics)
         {
-            for (int i = 0; i < plmCount; i++)
-            {
-                ref readonly var plm = ref plmSpan[i];
-                if (plm.PlayListId != curListId) continue;
-                Music? m = plm.RequestedMusicId is int fixedId ? queries.FindById(fixedId)
-                    : plm.SongId > 0 ? queries.FindDisplayVersion(plm.SongId, state.Browse.SourceFilterId) : queries.FindById(plm.MusicId);
-                if (m is null) continue;
-                if (hasSearch && !MusicMatchesSearch(m, search)) continue;
-                buf[written++] = new PlayListMusicItem { EntryId = plm.Id, RequestedMusicId = plm.RequestedMusicId, Music = m, PlayListOrder = plm.Order };
-            }
-
-            var slice = buf.AsSpan(0, written);
-            slice.Sort(_byPlayListOrderDesc);
-
-            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
-            {
-                if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || CurrentPlayListId != curListId || SearchText != search) return;
-                PlayListSongs.FillFrom(buf.AsSpan(0, written));
-            });
+            if (relation.PlayListId != playlistId) continue;
+            var music = relation.RequestedMusicId is int requested ? queries.FindById(requested)
+                : relation.SongId > 0 ? queries.FindDisplayVersion(relation.SongId, scope) : queries.FindById(relation.MusicId);
+            if (music is null || !LibraryQueries.MatchesSource(music, scope) || hasSearch && !MusicMatchesSearch(music, search!)) continue;
+            items.Add(new PlayListMusicItem { EntryId = relation.Id, RequestedMusicId = relation.RequestedMusicId, Music = music, PlayListOrder = relation.Order });
         }
-        finally
-        {
-            pool.Return(buf, clearArray: true);
-        }
+        items.Sort(_byPlayListOrderDesc);
+        return items;
     }
 
+    public Task RefreshPlayListSongMapping(BulkObservableCollection<PlayListMusicItem> PlayListSongs)
+    {
+        int playlist = CurrentPlayListId;
+        var key = Key();
+        var items = GetPlaylistItems(playlist, key.Search, key.Source);
+        return App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+        {
+            if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || CurrentPlayListId != playlist || Key() != key) return;
+            PlayListSongs.FillFrom(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(items));
+        });
+    }
 
     internal static bool MusicMatchesSearch(Music m, string search)
     {

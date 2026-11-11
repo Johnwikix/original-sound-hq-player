@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.Services
         private readonly AddFolderService addFolderService = new();
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         public Task<Music?> FindMusicByPathAsync(string path) => _dbConnection.FindWithQueryAsync<Music>(
-            "SELECT * FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path)!;
+            "SELECT * FROM Music WHERE IsDetached=0 AND Path = ? COLLATE NOCASE LIMIT 1", path)!;
         public Lyrics.LyricsRepository Lyrics { get; }
         public SongVersionStore Versions { get; set; } = null!;
         private ViewModel.AppViewModel? AppViewModel => null;
@@ -157,7 +157,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.ExecuteAsync("CREATE INDEX IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
         }
         public Task<List<Folder>> GetFolders() => _dbConnection.Table<Folder>().ToListAsync();
-        public Task<List<Music>> GetMusicListAsync() => _dbConnection.Table<Music>().ToListAsync();
+        public Task<List<Music>> GetMusicListAsync() => _dbConnection.Table<Music>().Where(m => !m.IsDetached).ToListAsync();
         public Task InsertSubFolders(List<SubFolder> folders) => _dbConnection.InsertAllAsync(folders);
     }
 }

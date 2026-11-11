@@ -138,7 +138,7 @@ public sealed partial class PlaybackCoordinator
         }
         else
         {
-            int index = PlaybackCommands.FindCandidateIndex(state.CurrentPlayingList, state.GetCurrentIndex(), 1,
+            int index = PlaybackCommands.FindCandidateIndex(state, state.GetCurrentIndex(), 1,
                 allowSingleEntryReplay: true);
             if (index >= 0)
             {
@@ -151,12 +151,13 @@ public sealed partial class PlaybackCoordinator
             int exact = queue.RequestedVersion(_candidateEntry);
             if (exact > 0)
             {
-                foreach (var version in state.SongsSource) if (version.Id == exact) { _candidateNext = version; break; }
+                if (_candidateNext.Id != exact) _candidateNext = state.FindById(exact);
+                if (_candidateNext is not null && !SongVersionPolicy.InScope(_candidateNext, queue.SourceScope(_candidateEntry))) _candidateNext = null;
             }
             else if (_candidateNext.SongId > 0)
             {
                 var versions = OrderedVersions(_candidateNext, queue.SourceScope(_candidateEntry));
-                if (versions.Count > 0) _candidateNext = versions[0];
+                _candidateNext = versions.Find(static version => version.IsRemote || version.IsPlayable);
             }
         }
         current.PropertyChanged += CandidateMusicChanged;

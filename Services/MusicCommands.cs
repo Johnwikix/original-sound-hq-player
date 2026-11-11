@@ -36,34 +36,27 @@ namespace WinUIMusicPlayer.Services
             // 手动播放由 PlaybackCoordinator 重新探活，不能被缓存的离线状态拦截。
             if (music is null) return;
             var app = App.Services.GetRequiredService<AppViewModel>();
-            var previousQueue = app.SequentialPlayingList;
-            if (page == typeof(PlayListPage) && playlistEntryId > 0)
+            if (page == typeof(PlayListPage))
             {
                 foreach (var item in app.PlayListSongs)
-                    if (item.EntryId == playlistEntryId) { await PlayPlaylistEntryAsync(item, music, exactVersion); return; }
+                    if (playlistEntryId > 0 ? item.EntryId == playlistEntryId : item.Music.Id == music.Id)
+                    {
+                        await PlayPlaylistEntryAsync(item, music, exactVersion);
+                        return;
+                    }
+                return;
             }
             if (page == typeof(FavouritePlayListPage))
-                app.SequentialPlayingList = new(app.FavoriteSongs);
-            else if (page == typeof(PlayListPage))
-            {
-                var src = app.PlayListSongs;
-                var span = src.AsSpan();
-                var arr = new Music[span.Length];
-                for (int i = 0; i < span.Length; i++) arr[i] = span[i].Music;
-                app.SequentialPlayingList = new(arr);
-            }
+                app.SetBrowseQueue(new(app.FavoriteSongs));
             else if (page == typeof(SongListPage))
-                app.SequentialPlayingList = new(app.ListSongs);
+                app.SetBrowseQueue(new(app.ListSongs));
             else if (page == typeof(AlbumPage))
-                app.SequentialPlayingList = new(app.AlbumSongs);
+                app.SetBrowseQueue(new(app.AlbumSongs));
             else if (page == typeof(ArtistPage))
-                app.SequentialPlayingList = new(app.ArtistSongs);
+                app.SetBrowseQueue(new(app.ArtistSongs));
             else if (page == typeof(FolderBrowsePage))
-                app.SequentialPlayingList = new(app.FolderSongs);
+                app.SetBrowseQueue(new(app.FolderSongs), exactFiles: true, sourceScope: music.SourceId);
 
-            int scope = page == typeof(FolderBrowsePage) ? music.SourceId : app.State.Browse.SourceFilterId;
-            if (!ReferenceEquals(previousQueue, app.SequentialPlayingList))
-                app.State.Queue.ConfigureSource(scope, exactFiles: page == typeof(FolderBrowsePage));
             await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(music, entryId,
                 exactVersion: exactVersion || page == typeof(FolderBrowsePage));
         }
@@ -75,23 +68,30 @@ namespace WinUIMusicPlayer.Services
             var app = App.Services.GetRequiredService<AppViewModel>();
             if (!app.CanStartPlayback) return;
             var items = playlistItems ?? app.PlayListSongs;
-            var musics = new Music[items.Count];
-            var entries = new int[items.Count];
-            var fixedVersions = new int[items.Count];
             int targetIndex = -1;
             for (int i = 0; i < items.Count; i++)
-            {
-                musics[i] = items[i].Music;
-                entries[i] = items[i].EntryId;
-                fixedVersions[i] = items[i].RequestedMusicId ?? 0;
-                if (ReferenceEquals(items[i], selected) || selected.EntryId > 0 && selected.EntryId == items[i].EntryId) targetIndex = i;
-            }
+                if (ReferenceEquals(items[i], selected) || selected.EntryId > 0 && selected.EntryId == items[i].EntryId) { targetIndex = i; break; }
             if (targetIndex < 0) return;
-            app.SequentialPlayingList = new(musics);
-            app.State.Queue.ConfigurePlaylist(entries, fixedVersions, app.State.Browse.SourceFilterId);
-            long entryId = app.State.Queue.EntryIdAt(targetIndex);
+            AddPlaylistItems(app, items, replace: true);
+            long entryId = app.State.Queue.SequentialEntryIdAt(targetIndex);
             await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(exactMusic ?? selected.Music, entryId,
                 exactVersion: exact || selected.RequestedMusicId is not null);
+        }
+
+        internal static void AddPlaylistItems(AppViewModel app, System.Collections.Generic.IReadOnlyList<PlayListMusicItem> items, bool replace = false)
+        {
+            var music = new Music[items.Count];
+            var entries = new int[items.Count];
+            var requested = new int[items.Count];
+            for (int i = 0; i < items.Count; i++)
+            {
+                music[i] = items[i].Music;
+                entries[i] = items[i].EntryId;
+                requested[i] = items[i].RequestedMusicId ?? 0;
+            }
+            int scope = app.State.Browse.SourceFilterId;
+            if (replace) app.State.Queue.Replace(new(music), scope, playlistEntries: entries, requestedVersions: requested);
+            else app.State.Queue.InsertNext(app.CurrentPlayingMusic, music, scope, playlistEntries: entries, requestedVersions: requested);
         }
 
         private static void UpdateFavourite(Music? music)
@@ -150,7 +150,7 @@ namespace WinUIMusicPlayer.Services
         private static void AddToCurrentPlayList(Music? music)
         {
             if (music is null) return;
-            App.Services.GetRequiredService<AppViewModel>().AddMusicToCurrentPlayList(music);
+            App.Services.GetRequiredService<AppViewModel>().AddMusicToCurrentPlayList(music, AppData.CurrentPage == typeof(FolderBrowsePage));
         }
 
         private static void OpenSource(Music? music)

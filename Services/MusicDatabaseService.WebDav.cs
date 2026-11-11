@@ -16,12 +16,25 @@ public partial class MusicDatabaseService
         await WhenInitialized;
         return await _dbConnection.Table<WebDavSource>().ToListAsync();
     }
-    public Task SaveWebDavSourceAsync(WebDavSource source)
+    public Task SaveWebDavSourceAsync(WebDavSource source) => _dbConnection.RunInTransactionAsync(db =>
+    {
+        if (source.Id == 0) db.Insert(source);
+        else db.Update(source);
+        ApplyWebDavScope(db, source);
+    });
+
+    private static void MigrateWebDavScopes(SQLite.SQLiteConnection db)
+    {
+        foreach (var source in db.Table<WebDavSource>())
+            ApplyWebDavScope(db, source);
+    }
+
+    private static void ApplyWebDavScope(SQLite.SQLiteConnection db, WebDavSource source)
     {
         var connection = new WebDavConnection(WebDavTransport.NormalizeRoot(source.BaseUri), "", "");
         var roots = source.Roots.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         if (roots.Length == 0) roots = [connection.Root.AbsolutePath];
-        var sql = new StringBuilder("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND NOT (");
+        var sql = new StringBuilder("SourceId = ? AND NOT (");
         var parameters = new List<object>(1 + roots.Length * 2) { source.Id };
         for (int i = 0; i < roots.Length; i++)
         {
@@ -33,16 +46,9 @@ public partial class MusicDatabaseService
             parameters.Add(root);
         }
         sql.Append(')');
-        return _dbConnection.RunInTransactionAsync(db =>
-        {
-            if (source.Id == 0) db.Insert(source);
-            else db.Update(source);
-            parameters[0] = source.Id;
-            // 保留收藏、歌单映射和元数据；重新纳入范围后扫描可复用原曲目 ID。
-            db.Execute(sql.ToString(), parameters.ToArray());
-            if (MusicMetadataStorage.HasSongs(db))
-                db.Execute("UPDATE Music SET IsMissing=1 WHERE Id IN (SELECT MusicId FROM RemoteTrack WHERE SourceId=? AND Missing=1)", source.Id);
-        });
+        var args = parameters.ToArray();
+        db.Execute("UPDATE RemoteTrack SET Missing=1 WHERE Missing=0 AND " + sql, args);
+        db.Execute("UPDATE Music SET IsDetached=1,IsMissing=1 WHERE IsDetached=0 AND Id IN (SELECT MusicId FROM RemoteTrack WHERE " + sql + ")", args);
     }
     /// <summary>保留缺失版本的资料和歌曲共享状态，显式解绑的墓碑不进入曲库。</summary>
     public Task<List<Music>> GetVisibleMusicAsync() => _dbConnection.QueryAsync<Music>(
@@ -56,6 +62,9 @@ public partial class MusicDatabaseService
         await WhenInitialized;
         return await _dbConnection.FindAsync<WebDavCacheSettings>(1) ?? new();
     }
+    public Task UpdateWebDavScanTimeAsync(int sourceId, DateTime scanned) =>
+        _dbConnection.ExecuteAsync("UPDATE WebDavSource SET LastScanUtc=? WHERE Id=?", scanned, sourceId);
+
     public Task SaveWebDavCacheSettingsAsync(WebDavCacheSettings settings) => _dbConnection.InsertOrReplaceAsync(settings);
 
     private sealed class SourceTrackCount
@@ -91,7 +100,8 @@ public partial class MusicDatabaseService
         await _dbConnection.RunInTransactionAsync(db =>
         {
             // 删除来源与迟到扫描提交通过数据库事务串行，迟到结果不能重建已移除来源。
-            if (db.Find<WebDavSource>(source.Id) is null) return;
+            var currentSource = db.Find<WebDavSource>(source.Id);
+            if (currentSource is null || currentSource.Roots != source.Roots || currentSource.BaseUri != source.BaseUri) return;
             foreach (var entry in entries)
             {
                 var remote = db.FindWithQuery<RemoteTrack>("SELECT * FROM RemoteTrack WHERE SourceId = ? AND Href = ? COLLATE BINARY", source.Id, entry.Href);
@@ -101,7 +111,7 @@ public partial class MusicDatabaseService
                     music = new Music
                     {
                         SourceId = source.Id, Path = $"webdav://{source.Id}{entry.Href}",
-                        Title = Path.GetFileNameWithoutExtension(entry.Name), Extension = Path.GetExtension(entry.Name).TrimStart('.').ToLowerInvariant(),
+                        TitleFromFileName = true, Title = Path.GetFileNameWithoutExtension(entry.Name), Extension = Path.GetExtension(entry.Name).TrimStart('.').ToLowerInvariant(),
                         FolderPath = $"webdav://{source.Id}{parent}", LastLevelFolderPath = source.Name + " / " + Uri.UnescapeDataString(parent),
                         CreateTime = DateTime.Now, UpdateTime = DateTime.Now
                     };
@@ -125,8 +135,12 @@ public partial class MusicDatabaseService
                 remote.Modified = modified;
                 remote.SeenRun = run;
                 remote.Missing = false;
-                music.IsMissing = false;
-                db.Execute("UPDATE Music SET IsMissing=0 WHERE Id=?", music.Id);
+                if (music.IsMissing || music.IsDetached)
+                {
+                    music.IsMissing = false;
+                    music.IsDetached = false;
+                    db.Execute("UPDATE Music SET IsMissing=0,IsDetached=0 WHERE Id=?", music.Id);
+                }
                 db.InsertOrReplace(remote);
                 changed.Add(music);
             }
@@ -177,7 +191,10 @@ public partial class MusicDatabaseService
             if (music is null) return;
             if (metadata is not null)
             {
-                if (metadata.Title.Length != 0) music.Title = metadata.Title;
+                music.TitleFromFileName = string.IsNullOrWhiteSpace(metadata.Title);
+                music.Title = music.TitleFromFileName == true
+                    ? Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(remote.Href))
+                    : metadata.Title;
                 music.Author = metadata.Artist;
                 music.Album = metadata.Album;
                 music.TrackNumber = metadata.Track;
@@ -193,11 +210,11 @@ public partial class MusicDatabaseService
                 if (metadata.AdditionalMetadata is { } tags) tags.ApplyTo(music);
                 music.UpdateTime = DateTime.Now;
                 // 仅更新元数据，不覆盖在 UI 上并发发生的收藏、统计和歌词偏移。
-                db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,SampleRate=?,Channel=?,BitDepth=?,BitRate=?,Duration=?,UpdateTime=?,CodecId=?,EncodingKind=?,MetadataRevision=MetadataRevision+1 WHERE Id=?",
-                    music.Title, music.Author, music.Album, music.TrackNumber, music.DiskNumber, music.Year, music.SampleRate, music.Channel,
+                db.Execute("UPDATE Music SET Title=?,TitleFromFileName=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,SampleRate=?,Channel=?,BitDepth=?,BitRate=?,Duration=?,UpdateTime=?,CodecId=?,EncodingKind=?,MetadataRevision=MetadataRevision+1 WHERE Id=?",
+                    music.Title, music.TitleFromFileName, music.Author, music.Album, music.TrackNumber, music.DiskNumber, music.Year, music.SampleRate, music.Channel,
                     music.BitDepth, music.BitRate, music.Duration, music.UpdateTime, music.CodecId, music.EncodingKind, music.Id);
                 if (metadata.AdditionalMetadata is { } additional) MusicMetadataStorage.Save(db, music.Id, additional);
-                MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, music.Album);
+                music.MetadataRevision++;
                 result = music;
             }
             remote.MetadataState = status;
@@ -209,10 +226,7 @@ public partial class MusicDatabaseService
 
     public Task RemoveWebDavSourceAsync(int sourceId) => _dbConnection.RunInTransactionAsync(db =>
     {
-        foreach (int id in db.QueryScalars<int>("SELECT MusicId FROM RemoteTrack WHERE SourceId = ?", sourceId))
-        {
-                    db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", id);
-        }
+        db.Execute("UPDATE Music SET IsDetached=1,IsMissing=1 WHERE SourceId=?", sourceId);
         db.Execute("DELETE FROM RemoteTrack WHERE SourceId = ?", sourceId);
         db.Delete<WebDavSource>(sourceId);
     });

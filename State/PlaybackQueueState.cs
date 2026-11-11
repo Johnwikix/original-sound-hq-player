@@ -35,6 +35,8 @@ public sealed class PlaybackQueueState : ObservableObject
         Playing = Sequential;
         Sequential.CollectionChanged += SequentialChanged;
     }
+    /// <summary>从原始歌单顺序取得出现项，随机遍历顺序不影响定位。</summary>
+    public long SequentialEntryIdAt(int index) => index >= 0 && index < _entries.Count ? _entries[index].Id : 0;
     public long EntryIdAt(int index) => index >= 0 && index < _order.Count ? _order[index].Id : 0;
     public void SelectEntry(long id, Music music)
     {
@@ -134,7 +136,9 @@ public sealed class PlaybackQueueState : ObservableObject
             _entries[written++] = entry;
             updated.Add(entry.Id, entry);
         }
+        bool removed = written != _entries.Count;
         _entries.RemoveRange(written, _entries.Count - written);
+        if (removed) PruneEntryOptions();
         written = 0;
         for (int i = 0; i < _order.Count; i++)
             if (updated.TryGetValue(_order[i].Id, out var entry)) _order[written++] = entry;
@@ -167,6 +171,7 @@ public sealed class PlaybackQueueState : ObservableObject
         foreach (var music in Sequential)
             updated.Add(available.TryGetValue(music, out var bucket) && bucket.Count > 0 ? bucket.Dequeue() : new(++_nextId, music));
         _entries = updated;
+        PruneEntryOptions();
         if (Mode == PlayMode.RandomLoop)
         {
             var remaining = new HashSet<long>(_entries.Select(entry => entry.Id));
@@ -178,13 +183,11 @@ public sealed class PlaybackQueueState : ObservableObject
         else
         {
             _order = new(_entries);
-            PruneEntryOptions();
             CommitOrderChange();
         }
     }
     private void PublishOrder()
     {
-        PruneEntryOptions();
         Playing = Mode == PlayMode.RandomLoop ? new(_order.Select(entry => entry.Music)) : Sequential;
         OnPropertyChanged(nameof(Playing));
         CommitOrderChange();
@@ -211,7 +214,8 @@ public sealed class PlaybackQueueState : ObservableObject
         }
     }
 
-    public void Replace(BulkObservableCollection<Music>? songs)
+    public void Replace(BulkObservableCollection<Music>? songs, int sourceScope = -1, bool exactFiles = false,
+        int[]? playlistEntries = null, int[]? requestedVersions = null)
     {
         if (ReferenceEquals(Sequential, songs)) return;
         Sequential.CollectionChanged -= SequentialChanged;
@@ -221,7 +225,16 @@ public sealed class PlaybackQueueState : ObservableObject
         _requestedVersions.Clear();
         _sourceScopes.Clear();
         _playlistEntries.Clear();
-        foreach (var music in Sequential) _entries.Add(new(++_nextId, music));
+        for (int i = 0; i < Sequential.Count; i++)
+        {
+            var music = Sequential[i];
+            long entryId = ++_nextId;
+            _entries.Add(new(entryId, music));
+            if (sourceScope != -1) _sourceScopes[entryId] = sourceScope;
+            if (playlistEntries is not null) _playlistEntries[entryId] = playlistEntries[i];
+            int requested = exactFiles ? music.Id : requestedVersions?[i] ?? 0;
+            if (requested > 0) _requestedVersions[entryId] = requested;
+        }
         _currentEntryId = 0;
         OnPropertyChanged(nameof(Sequential));
         RebuildOrder();
@@ -258,7 +271,8 @@ public sealed class PlaybackQueueState : ObservableObject
     private static bool SameSong(Music left, Music right) => ReferenceEquals(left, right) || left.Id > 0 && left.Id == right.Id ||
         left.SongId > 0 && left.SongId == right.SongId;
 
-    public void InsertNext(Music? current, IEnumerable<Music> songs)
+    public void InsertNext(Music? current, IEnumerable<Music> songs, int sourceScope = -1, bool exactFiles = false,
+        int[]? playlistEntries = null, int[]? requestedVersions = null)
     {
         List<Music> batch = [];
         foreach (var song in songs) if (song is not null) batch.Add(song);
@@ -266,7 +280,16 @@ public sealed class PlaybackQueueState : ObservableObject
         int index = IndexOf(current);
         int insertion = index < 0 ? Playing.Count : index + 1;
         var entries = new List<Entry>(batch.Count);
-        foreach (var music in batch) entries.Add(new(++_nextId, music));
+        for (int i = 0; i < batch.Count; i++)
+        {
+            var music = batch[i];
+            long id = ++_nextId;
+            entries.Add(new(id, music));
+            if (sourceScope != -1) _sourceScopes[id] = sourceScope;
+            if (playlistEntries is not null) _playlistEntries[id] = playlistEntries[i];
+            int requested = exactFiles ? music.Id : requestedVersions?[i] ?? 0;
+            if (requested > 0) _requestedVersions[id] = requested;
+        }
         _mutating = true;
         try
         {

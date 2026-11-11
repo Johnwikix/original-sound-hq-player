@@ -120,7 +120,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void AddToFavoriteSongs(Music song) => FavoriteSongs.Add(song);
         public void RemoveFromFavoriteSongs(Music song) => FavoriteSongs.Remove(song);
         public void RemoveFromPlayListSongs(Music song) { }
-        public void AddMusicToCurrentPlayList(Music song) => CurrentPlayingList.Add(song);
+        public void AddMusicToCurrentPlayList(Music song, bool exactFiles = false) => CurrentPlayingList.Add(song);
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public WinUIMusicPlayer.State.PlaybackQueueState Queue => State.Queue;
         public long PendingEntryId { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(SelectedPlaybackMusic)); } }
@@ -144,6 +144,10 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = [];
         public List<Music> SongsSource { get; } = [];
+        public void SetBrowseQueue(BulkObservableCollection<Music> songs, bool exactFiles = false, int? sourceScope = null)
+        {
+            Queue.Replace(songs, sourceScope ?? State.Browse.SourceFilterId, exactFiles);
+        }
         public IReadOnlyList<Music> FindVersions(int songId) => SongsSource.Where(music => music.SongId == songId).ToArray();
         public void NotifyIdIndexChanged() { }
         public void NotifySharedFavoriteChanged() { }
@@ -175,7 +179,7 @@ namespace WinUIMusicPlayer.ViewModel
         public Music? FindFirstByAlbum(string name) => SongsSource.FirstOrDefault(m => m.Album == name);
         public Music? FindFirstByArtist(string name) => SongsSource.FirstOrDefault(m => m.Author == name);
         public void RemoveFromSongsSource(Music song) => throw new NotSupportedException("No disk writes in fixture");
-        public void AddMusicRangeToCurrentPlayList(IEnumerable<Music> songs) { }
+        public void AddMusicRangeToCurrentPlayList(IEnumerable<Music> songs, bool exactFiles = false) { }
         public Task ReGetLyrics(IEnumerable<Music> songs, Music selected) => Task.CompletedTask;
         public Task TransmitFileToUsb(IEnumerable<Music> songs, object device, string format, int bitrate) => Task.CompletedTask;
     }

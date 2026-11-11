@@ -580,6 +580,7 @@ namespace WinUIMusicPlayer.Utils
             var info = new AudioFileInfo
             {
                 AdditionalMetadata = track is null ? null : AudioMetadataTags.Read(track),
+                TitleFromFileName = string.IsNullOrWhiteSpace(track?.Title),
                 Title = string.IsNullOrWhiteSpace(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title,
                 Artist = string.IsNullOrWhiteSpace(track?.Artist) ? "未知艺术家" : track.Artist,
                 Album = string.IsNullOrWhiteSpace(track?.Album) ? "未知专辑" : track.Album,
@@ -1060,6 +1061,7 @@ namespace WinUIMusicPlayer.Utils
                 var music = new Music
                 {
                     Path = file.Path,
+                    TitleFromFileName = string.IsNullOrWhiteSpace(track.Title),
                     Title = title,
                     Author = artist,
                     Album = album,
@@ -1097,6 +1099,7 @@ namespace WinUIMusicPlayer.Utils
                     var music = new Music
                     {
                         Path = file.Path,
+                        TitleFromFileName = wavFileInfo.TitleFromFileName,
                         Title = wavFileInfo.Title,
                         Author = wavFileInfo.Artist,
                         Duration = wavFileInfo.Duration,

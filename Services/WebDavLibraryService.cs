@@ -238,7 +238,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             }
             source.LastScanUtc = DateTime.UtcNow;
             visibleChanges += await database.MarkRemoteSourceScannedAsync(source.Id, run).ConfigureAwait(false);
-            await database.SaveWebDavSourceAsync(source).ConfigureAwait(false);
+            await database.UpdateWebDavScanTimeAsync(source.Id, source.LastScanUtc).ConfigureAwait(false);
             // 仅有可见增删（新增、复现或转入缺失）时才整库重载收敛排序与移除行；
             // 服务端无变化时不重建列表，避免启动扫描结束时闪一次。
             if (visibleChanges != 0 && _library is not null) await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false);
@@ -311,6 +311,11 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             current.BitDepth = item.BitDepth; current.BitRate = item.BitRate; current.SampleRate = item.SampleRate;
             current.Channel = item.Channel; current.Duration = item.Duration; current.ImageHash = item.ImageHash;
             current.Extension = item.Extension;
+            current.EncodingKind = item.EncodingKind;
+            current.CodecId = item.CodecId;
+            current.MetadataRevision = item.MetadataRevision;
+            current.TitleFromFileName = item.TitleFromFileName;
+            current.IsMissing = item.IsMissing;
             if (item.AdditionalMetadataRead) AdditionalMusicMetadata.From(item).ApplyTo(current);
         }
         // 与本地扫描批次同口径：新增增量进当前列表，就地更新元数据即可；

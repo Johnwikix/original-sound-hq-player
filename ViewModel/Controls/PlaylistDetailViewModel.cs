@@ -140,7 +140,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (AppViewModel.CurrentPlayList is { } pl)
             {
-                var musics = _db.GetMusicByPlayListIdFromMem(pl.Id, AppViewModel.SearchText);
+                var musics = _db.GetMusicByPlayListIdFromMem(pl.Id, AppViewModel.SearchText, AppViewModel.State.Browse.SourceFilterId);
                 _ = AppViewModel.PlayListSongs.ReplaceAllAsync(musics);
                 Music? cover = null;
                 foreach (var item in musics)
@@ -302,7 +302,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             }
             else if (SelectedMusics.Count > 1)
             {
-                await MusicCommands.PlayPlaylistEntryAsync(SelectedMusics[0], playlistItems: SelectedMusics.ToArray());
+                await MusicCommands.PlayPlaylistEntryAsync(SelectedMusics[0], playlistItems: SelectedMusics);
             }
             else if (SelectedMusic?.Music is { } target)
             {
@@ -314,11 +314,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (SelectedMusics.Count > 0)
             {
-                AppViewModel.AddMusicRangeToCurrentPlayList(SelectedMusics.Select(i => i.Music));
+                MusicCommands.AddPlaylistItems(AppViewModel, SelectedMusics);
             }
             else if (SelectedMusic is not null)
             {
-                AppViewModel.AddMusicToCurrentPlayList(SelectedMusic.Music);
+                MusicCommands.AddPlaylistItems(AppViewModel, [SelectedMusic]);
             }
         }
 

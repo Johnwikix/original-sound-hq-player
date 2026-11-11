@@ -18,6 +18,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Graphics.Imaging;
@@ -63,6 +64,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         for (int i = 0; i < 200; i++) { if (ready()) return; await Task.Delay(20); }
         throw new TimeoutException("UI did not settle");
     }
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor,
+        "FolderBrowserUiRegression.FolderBrowserUiRegression_XamlTypeInfo.XamlMetaDataProvider", "FolderBrowserUiRegression")]
     public RegressionApp()
     {
         UnhandledException += (_, args) => File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "unhandled.txt"), args.Exception.ToString());
@@ -245,7 +248,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var presenter = button.FindDescendant<ContentPresenter>() ?? throw new Exception("Chevron content presenter is missing");
         try
         {
-            foreach (string state in new[] { "PointerOver", "Pressed", "CheckedPointerOver", "CheckedPressed" })
+            foreach (string state in new[] { "Normal", "PointerOver", "Pressed", "Checked", "CheckedPointerOver", "CheckedPressed" })
             {
                 if (!VisualStateManager.GoToState(button, state, false)) return false;
                 button.UpdateLayout();
@@ -255,17 +258,17 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
         finally
         {
-            VisualStateManager.GoToState(button, button.IsChecked == true ? "CheckedNormal" : "Normal", false);
+            VisualStateManager.GoToState(button, button.IsChecked == true ? "Checked" : "Normal", false);
         }
     }
 
     private async Task CheckTreeMotionAsync(FolderBrowsePage page, ListView tree, FolderViewModel vm,
         FolderBrowserNode root, FolderBrowserNode artist, FolderBrowserNode album)
     {
-        Check(tree.ItemContainerTransitions.Count == 2
-            && tree.ItemContainerTransitions[0] is AddDeleteThemeTransition
-            && tree.ItemContainerTransitions[1] is RepositionThemeTransition { IsStaggeringEnabled: true },
-            "Flat folder rows keep native add/delete and staggered reposition transitions");
+        Check(tree.ItemContainerTransitions.Count == 1
+            && tree.ItemContainerTransitions[0] is RepositionThemeTransition { IsStaggeringEnabled: true },
+            "Folder rows keep the original native staggered reposition transition");
+        await Task.Delay(350);
         FolderBrowserNode[] expanded = vm.VisibleNodes.ToArray();
         int rootIndex = vm.VisibleNodes.IndexOf(root);
         Check(expanded.Length == 4 && rootIndex >= 0 && rootIndex + 2 < expanded.Length
@@ -281,11 +284,46 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             "The chevron opts out of implicit pointer-over and pressed composition animations");
         Check(ChevronStateBackgroundsAreTransparent(expander),
             "Collapsed and expanded chevrons keep transparent PointerOver and Pressed backgrounds");
+        var departingRow = (ListViewItem)tree.ContainerFromItem(artist)!;
+        var departingOrigin = departingRow.TransformToVisual(page).TransformPoint(new Point());
+        double departingHeight = departingRow.ActualHeight;
+        double beforeDelete = RowBrightness(WindowCapture.ReadFrame(_window), departingRow, page);
         ((IToggleProvider)new ToggleButtonAutomationPeer(expander)).Toggle();
         Check(!root.IsExpanded && expander.IsChecked == false && vm.VisibleNodes.Count == 2
             && !vm.VisibleNodes.Contains(artist) && !vm.VisibleNodes.Contains(album),
             "UIA collapse updates the model and removes exactly the visible descendants");
+        var overlay = (Canvas)page.FindName("FolderMotionOverlay");
+        Check(!overlay.IsHitTestVisible && overlay.Children.Count == 2
+            && ((ListViewItem)overlay.Children[0]).Tag is ScalarKeyFrameAnimation
+                { Duration.TotalMilliseconds: 90, DelayTime.TotalMilliseconds: 0 }
+            && ((ListViewItem)overlay.Children[1]).Tag is ScalarKeyFrameAnimation
+                { Duration.TotalMilliseconds: 90, DelayTime.TotalMilliseconds: 16 },
+            "Only removed visible rows retain noninteractive templates with staggered 90ms fades");
+        foreach (ListViewItem ghost in overlay.Children)
+        {
+            ghost.ApplyTemplate();
+            ghost.UpdateLayout();
+            var ghostExpander = ghost.FindDescendant<ToggleButton>();
+            Check(ghostExpander is not null && ChevronStateBackgroundsAreTransparent(ghostExpander)
+                && FluentAnimation.GetPointerOver(ghostExpander) is null && FluentAnimation.GetPressed(ghostExpander) is null,
+                "Removal templates keep transparent chevrons in checked, pointer-over and pressed states");
+        }
         await Wait(() => tree.ContainerFromItem(artist) is null && tree.ContainerFromItem(album) is null);
+        List<double> deleteBrightness = [];
+        long deleteDeadline = Environment.TickCount64 + 240;
+        while (Environment.TickCount64 < deleteDeadline)
+        {
+            deleteBrightness.Add(RowBrightnessAt(WindowCapture.ReadFrame(_window), departingOrigin.Y,
+                page, departingOrigin.X, departingHeight));
+            await Task.Delay(4);
+        }
+        File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "delete-trace.txt"),
+            $"before={beforeDelete:0.0} frames={string.Join(",", deleteBrightness.Select(v => v.ToString("0.0")))}");
+        Check(deleteBrightness.Any(v => v > BackgroundBrightness + 1 && v < beforeDelete - 1)
+            && deleteBrightness[^1] <= BackgroundBrightness + 1,
+            "Removed folder rows fade out before their retained visuals disappear");
+        Check(deleteBrightness.All(v => v <= beforeDelete + 1),
+            "Batch removal retains original row positions without overlapping bright templates");
 
         ((IToggleProvider)new ToggleButtonAutomationPeer(expander)).Toggle();
         Check(root.IsExpanded && expander.IsChecked == true && vm.VisibleNodes.SequenceEqual(expanded),
@@ -358,7 +396,20 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         double settledBrightness = RowBrightness(settledFrame, artistItem, page);
         await WindowCapture.SaveAsync(settledFrame, Path.Combine(AppContext.BaseDirectory, "tree-motion-settled.png"));
         Check(settledBrightness > BlankThreshold,
-            $"Rows remain painted after rapid native transitions: settled={settledBrightness:0.0}");
+            $"Rows remain painted after rapid composition transitions: settled={settledBrightness:0.0}");
+        Check(ElementCompositionPreview.GetElementVisual(artistItem).ImplicitAnimations is null,
+            "Add/delete fades do not install custom implicit layout animations");
+        Check(overlay.Children.Count == 0, "Completed motion releases every retained removal template");
+
+        var earlierRoot = vm.VisibleNodes[0];
+        var movingVisual = ElementCompositionPreview.GetElementVisual((ListViewItem)tree.ContainerFromItem(root)!);
+        vm.ExpandFolder(earlierRoot);
+        Check(movingVisual.ImplicitAnimations is null,
+            "Surviving rows use native reposition without a parallel composition Offset animation");
+        await Task.Delay(350);
+        Check(movingVisual.ImplicitAnimations is null,
+            "Native reposition remains free of custom Offset animation tracking");
+        vm.CollapseFolder(earlierRoot);
     }
 
     /// <summary>
@@ -614,7 +665,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         var tree = (ListView)page.FindName("FolderTree");
         var root = vm.Roots.Single(n => n.Path == @"D:\music");
 
-        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证范围新增仍使用原生批量过渡。
+        // 用真实 25 同级场景逐帧采样第 1 行与第 11 行，验证短时错峰动画及最终绘制。
         await Task.Delay(300);
         var fadeTrace = await MeasureRowRevealAsync(vm, tree, root,
             root.Children[0], root.Children[Math.Min(10, root.Children.Count - 1)], page);
@@ -827,6 +878,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         await Wait(() => !node.HasChildren || node.Children.All(vm.VisibleNodes.Contains));
     }
 
+    [DynamicDependency(DynamicallyAccessedMemberTypes.NonPublicMethods, typeof(GridSplitter))]
     private async Task DragSplitterAsync(GridSplitter splitter, double delta)
     {
         // 非交互执行桌面不能可靠命中鼠标目标；直接驱动实际 Toolkit 控件的拖动处理，

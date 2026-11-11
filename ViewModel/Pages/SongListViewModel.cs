@@ -112,20 +112,20 @@ namespace WinUIMusicPlayer.ViewModel
             if (!AppViewModel.CanStartPlayback) return;
             if (uniqueSelectedMusics is ICollection<Music> col && col.Count > 1)
             {
-                AppViewModel.SequentialPlayingList = new(col);
+                AppViewModel.SetBrowseQueue(new(col));
                 var first = col.AsValueEnumerable().First();
                 _ = MusicBrowseViewModel.PlayMusic(music: first, IsChangeList: true);
             }
             else if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
             {
-                AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
+                AppViewModel.SetBrowseQueue(new(uniqueSelectedMusics));
                 _ = MusicBrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else
             {
                 var target = SelectedMusic;
                 if (target is null) return;
-                AppViewModel.SequentialPlayingList = new(AppViewModel.ListSongs);
+                AppViewModel.SetBrowseQueue(new(AppViewModel.ListSongs));
                 _ = MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
@@ -193,7 +193,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
+                    AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(AppViewModel.ListSongs));
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -201,7 +201,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(SelectedMusics);
+                    AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(SelectedMusics));
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -242,7 +242,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (!AppViewModel.CanStartPlayback) return;
             if (music is not null && MusicBrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
+                AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(AppViewModel.ListSongs));
                 await MusicBrowseViewModel.PlayMusic(music: music, IsChangeList: true);
             }
         }

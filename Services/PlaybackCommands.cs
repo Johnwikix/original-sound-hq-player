@@ -104,32 +104,54 @@ public sealed class PlaybackCommands : IDisposable, INotifyPropertyChanged
     private async Task PreviousAsync()
     {
         if (!CanSwitch) return;
-        var list = _state.CurrentPlayingList;
         var coordinator = _services.GetRequiredService<PlaybackCoordinator>();
         int index = coordinator.GetNavigationIndex();
         if (index < 0) return;
-        int previous = FindCandidateIndex(list, index, -1);
+        int previous = FindCandidateIndex(_state, index, -1);
         if (previous >= 0) await coordinator.PlayAtAsync(previous, direction: -1);
     }
     private bool HasCandidateEntry()
     {
-        foreach (var music in _state.CurrentPlayingList) if (music.IsRemote || music.IsPlayable) return true;
+        for (int i = 0; i < _state.CurrentPlayingList.Count; i++)
+            if (CanAttemptEntry(_state, i)) return true;
         return false;
     }
-    internal static int FindCandidateIndex(IReadOnlyList<Music> list, int current, int direction,
+    internal static int FindCandidateIndex(AppViewModel state, int current, int direction,
         bool allowSingleEntryReplay = false)
     {
+        var list = state.CurrentPlayingList;
         if (list.Count == 0) return -1;
         int index = current;
         for (int i = 0; i < list.Count; i++)
         {
             index = (index + direction + list.Count) % list.Count;
             // 来源状态只是上次探活的结果；实际可用性由协调器重新确认。
-            if ((list[index].IsRemote || list[index].IsPlayable) &&
+            if (CanAttemptEntry(state, index) &&
                 (index != current || (allowSingleEntryReplay && list.Count == 1))) return index;
         }
         return -1;
     }
+    internal static bool CanAttemptEntry(AppViewModel state, int index)
+    {
+        var row = state.CurrentPlayingList[index];
+        var queue = state.State.Queue;
+        long entry = queue.EntryIdAt(index);
+        int pinned = queue.RequestedVersion(entry);
+        int scope = queue.SourceScope(entry);
+        if (pinned > 0 && pinned != row.Id)
+        {
+            var exact = state.FindById(pinned);
+            return exact is not null && Eligible(exact, scope);
+        }
+        if (Eligible(row, scope)) return true;
+        if (pinned > 0 || row.SongId <= 0) return false;
+        foreach (var version in state.FindVersions(row.SongId))
+            if (Eligible(version, scope)) return true;
+        return false;
+
+        static bool Eligible(Music music, int scope) => SongVersionPolicy.InScope(music, scope) && (music.IsRemote || music.IsPlayable);
+    }
+
     private void Seek(long milliseconds) { if (CanSeek) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
     private void StateChanged(object? sender, PropertyChangedEventArgs e)
     {

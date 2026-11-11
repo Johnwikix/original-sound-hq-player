@@ -34,6 +34,7 @@ public sealed partial class WebDavLibraryService
         foreach (var existing in await database.GetWebDavSourcesAsync().ConfigureAwait(false))
             if (existing.Id != source.Id && existing.Name.Equals(source.Name, StringComparison.OrdinalIgnoreCase)) throw new WebDavException("NameExists");
         if (source.UserName.Length != 0) new PasswordVault().Add(new PasswordCredential("OriginalSoundPlayer.WebDav", source.CredentialKey, password));
+        if (!isNew) await CancelScanAsync(source.Id).ConfigureAwait(false);
         await database.SaveWebDavSourceAsync(source).ConfigureAwait(false);
         // 新来源尚无曲目，由扫描批次增量发布；编辑来源仍需立即收敛已排除目录的可见性。
         if (!isNew && _library is not null && !_stop.IsCancellationRequested)

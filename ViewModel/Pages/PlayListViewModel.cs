@@ -253,16 +253,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (!AppViewModel.CanStartPlayback) return;
             if (playList is null) return;
-            var items = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id, AppViewModel.SearchText);
-            if (items is null) return;
-            var arr = new BulkObservableCollection<Music>();
-            foreach (var item in items)
-            {
-                if (item.Music is not null) arr.Add(item.Music);
-            }
-            if (arr.Count == 0) return;
-            AppViewModel.SequentialPlayingList = arr;
-            await MusicBrowseViewModel.PlayMusic(music: arr[0], IsChangeList: true);
+            var items = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id, AppViewModel.SearchText, AppViewModel.State.Browse.SourceFilterId);
+            if (items.Count > 0) await MusicCommands.PlayPlaylistEntryAsync(items[0], playlistItems: items);
         }
     }
 }

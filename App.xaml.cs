@@ -203,6 +203,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
+            WinUIMusicPlayer.Utils.AudioMetadataTags.ConfigureTitleReading();
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
             // 崩溃诊断要先于任何可能失败的初始化：配置 createdump 本地转储兜底，供崩溃时由运行时拉起。
             CrashReportingService.Initialize(LogDirectory);

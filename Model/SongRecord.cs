@@ -116,7 +116,7 @@ public sealed class SongVersionSchemaRecord
     /// <summary>获取或设置唯一记录键。</summary>
     [PrimaryKey] public int Id { get; set; } = 1;
     /// <summary>获取或设置已完成结构版本。</summary>
-    public int Version { get; set; } = 2;
+    public int Version { get; set; } = 3;
 }
 
 /// <summary>保存歌曲的规范化自动关联键及用户拆分例外；不改变文件标签。</summary>

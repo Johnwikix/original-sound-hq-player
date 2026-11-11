@@ -31,11 +31,10 @@ public partial class MusicDatabaseService
         {
             token.ThrowIfCancellationRequested();
             LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User", lyricsChanged, expectedOwnerId);
-            if (db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
-                title, author, album, track, disk, year, updated, id, metadataRevision) != 1) throw new InvalidOperationException("MusicMetadataConflict");
+            if (db.Execute("UPDATE Music SET TitleFromFileName=CASE WHEN Title IS ? THEN TitleFromFileName ELSE 0 END,Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
+                title, title, author, album, track, disk, year, updated, id, metadataRevision) != 1) throw new InvalidOperationException("MusicMetadataConflict");
             if (additional is { } tags) MusicMetadataStorage.Save(db, id, tags);
             if (coverPath is not null) db.Execute("UPDATE Music SET CoverOverridePath=?,ImageHash=? WHERE Id=?", coverPath, Path.GetFileNameWithoutExtension(coverPath), id);
-            MusicMetadataStorage.UpdateSongIdentity(db, id, title, author, album);
         });
         music.MetadataRevision = metadataRevision + 1;
         if (coverPath is not null) { music.CoverOverridePath = coverPath; music.ImageHash = Path.GetFileNameWithoutExtension(coverPath); }
@@ -93,13 +92,12 @@ public partial class MusicDatabaseService
                     request.CatalogNumber = previous.CatalogNumber;
                 }
                 db.InsertOrReplace(request);
-                if (db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
-                    request.Title, request.Author, request.Album, request.TrackNumber, request.DiskNumber, request.Year, updated, musicId, metadataRevision) != 1)
+                if (db.Execute("UPDATE Music SET TitleFromFileName=CASE WHEN Title IS ? THEN TitleFromFileName ELSE 0 END,Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
+                    request.Title, request.Title, request.Author, request.Album, request.TrackNumber, request.DiskNumber, request.Year, updated, musicId, metadataRevision) != 1)
                     throw new InvalidOperationException("MusicMetadataConflict");
                 if (request.MetadataVersion == 1)
                     MusicMetadataStorage.Save(db, musicId, new(request.AlbumArtist, request.Genre, request.Composer, request.Lyricist, request.Conductor, request.CatalogNumber));
                 if (coverPath is not null) db.Execute("UPDATE Music SET CoverOverridePath=?,ImageHash=? WHERE Id=?", coverPath, Path.GetFileNameWithoutExtension(coverPath), musicId);
-                MusicMetadataStorage.UpdateSongIdentity(db, musicId, request.Title, request.Author, request.Album);
             });
             music.MetadataRevision = metadataRevision + 1;
             if (coverPath is not null) { music.CoverOverridePath = coverPath; music.ImageHash = Path.GetFileNameWithoutExtension(coverPath); }
@@ -174,7 +172,8 @@ public partial class MusicDatabaseService
                     using (new FileStream(request.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
                     ToolUtils.SaveMetaData(new Music
                     {
-                        Title = request.Title, Album = request.Album, Author = request.Author,
+                        Title = version.TitleFromFileName == true && version.Title == request.Title ? "" : request.Title,
+                        Album = request.Album, Author = request.Author,
                         AlbumArtist = request.AlbumArtist, Genre = request.Genre, Composer = request.Composer, Lyricist = request.Lyricist, Conductor = request.Conductor, CatalogNumber = request.CatalogNumber,
                         AdditionalMetadataRead = request.MetadataVersion == 1,
                         TrackNumber = request.TrackNumber, DiskNumber = request.DiskNumber, Year = request.Year

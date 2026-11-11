@@ -84,7 +84,7 @@ internal static class Regression
         recovered.State.CurrentPlayingMusic = current;
         recovered.Library.Offline.Add(10);
         recovered.Library.Probe = async (_, token) => { await Task.Delay(10, token); return true; };
-        int candidate = PlaybackCommands.FindCandidateIndex(recovered.State.CurrentPlayingList, 0, 1);
+        int candidate = PlaybackCommands.FindCandidateIndex(recovered.State, 0, 1);
         Check(candidate == 1, "next candidate includes a WebDAV row still marked offline");
         await recovered.Coordinator.PlayAtAsync(candidate);
         Check(recovered.State.CurrentPlayingMusic == offline && recovered.Remote.Played.SequenceEqual([offline]),
@@ -128,7 +128,7 @@ internal static class Regression
         cancelled.Library.Probe = async (_, token) => { probing.SetResult(); await Task.Delay(Timeout.Infinite, token); return false; };
         Task oldSelection = cancelled.Coordinator.PlayAsync(offline);
         await probing.Task;
-        int secondNext = PlaybackCommands.FindCandidateIndex(cancelled.State.CurrentPlayingList, cancelled.Coordinator.GetNavigationIndex(), 1);
+        int secondNext = PlaybackCommands.FindCandidateIndex(cancelled.State, cancelled.Coordinator.GetNavigationIndex(), 1);
         Check(secondNext == 2, "another Next click advances past the song being probed");
         var chosen = nextLocal;
         await cancelled.Coordinator.PlayAtAsync(secondNext);
@@ -479,7 +479,7 @@ internal static class Regression
         Check(batch.Ipc.Queued.Last().Path == third.Path, "candidate path mutation invalidates its immutable plan");
         batch.State.CurrentPlayMode = WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RandomLoop;
         await WaitAsync(() => batch.Ipc.Queued.Last().Path.Length > 0);
-        int nextIndex = PlaybackCommands.FindCandidateIndex(batch.State.CurrentPlayingList, batch.State.GetCurrentIndex(), 1);
+        int nextIndex = PlaybackCommands.FindCandidateIndex(batch.State, batch.State.GetCurrentIndex(), 1);
         Check(batch.Ipc.Queued.Last().Path == batch.State.CurrentPlayingList[nextIndex].Path,
             "random mode resolves after rebuilding the real queue order");
 
@@ -596,10 +596,10 @@ internal static class Regression
             test.State.IsPlaying = true;
             Check(test.Ipc.Queued.Last().Path == only.Path,
                 $"{mode}: gapless preloads the only song");
-            Check(PlaybackCommands.FindCandidateIndex(test.State.CurrentPlayingList,
+            Check(PlaybackCommands.FindCandidateIndex(test.State,
                 test.State.GetCurrentIndex(), 1) == -1,
                 $"{mode}: manual navigation still excludes the current entry");
-            int next = PlaybackCommands.FindCandidateIndex(test.State.CurrentPlayingList,
+            int next = PlaybackCommands.FindCandidateIndex(test.State,
                 test.State.GetCurrentIndex(), 1, allowSingleEntryReplay: true);
             Check(next == 0, $"{mode}: natural end selects the only queue entry");
             await test.Coordinator.PlayAtAsync(next, stopWhenUnavailable: true);
@@ -627,7 +627,7 @@ internal static class Regression
             remote.State.CurrentPlayingList = [remoteOnly];
             remote.State.CurrentPlayMode = mode;
             await remote.Coordinator.PlayAtAsync(0);
-            int remoteNext = PlaybackCommands.FindCandidateIndex(remote.State.CurrentPlayingList,
+            int remoteNext = PlaybackCommands.FindCandidateIndex(remote.State,
                 remote.State.GetCurrentIndex(), 1, allowSingleEntryReplay: true);
             await remote.Coordinator.PlayAtAsync(remoteNext, stopWhenUnavailable: true);
             Check(remote.Remote.Played.SequenceEqual([remoteOnly, remoteOnly]),
@@ -676,6 +676,22 @@ internal static class Regression
         test.State.CurrentPlayingList.RemoveAt(0);
         Check(test.State.State.Queue.RequestedVersion(first) == 0 && test.State.State.Queue.PlaylistEntry(first) == 0,
             "removed occurrence releases its pin and playlist metadata");
+
+        var queue = test.State.State.Queue;
+        var missing = new Music(503) { SongId = 70, IsMissing = true };
+        test.State.LibrarySongs = [missing, fallback];
+        queue.Replace(new([missing]), 11);
+        Check(PlaybackCommands.CanAttemptEntry(test.State, 0), "navigation can try a sibling when the display file is missing");
+        queue.Replace(new([missing]), 0);
+        Check(!PlaybackCommands.CanAttemptEntry(test.State, 0), "navigation does not leak out of the source filter");
+        queue.Replace(new([missing]), -1, exactFiles: true);
+        Check(!PlaybackCommands.CanAttemptEntry(test.State, 0), "an exact folder entry cannot borrow its playable sibling");
+        queue.Mode = WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RandomLoop;
+        queue.Replace(new([fallback, fallback]));
+        var shuffledIds = queue.CaptureEntryIds();
+        queue.RestoreEntries(shuffledIds, [shuffledIds[1], shuffledIds[0]], queue.CaptureMusicIds(), 0, playlistEntries: [41, 42]);
+        Check(queue.EntryIdAt(0) != queue.SequentialEntryIdAt(0) && queue.PlaylistEntry(queue.SequentialEntryIdAt(0)) == 41,
+            "clicking the first playlist relation resolves the original occurrence in a reversed shuffle");
 
         using var opening = new Scenario();
         opening.State.LibrarySongs = [preferred, fallback];

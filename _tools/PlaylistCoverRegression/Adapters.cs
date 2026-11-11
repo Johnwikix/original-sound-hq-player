@@ -21,6 +21,9 @@ namespace WinUIMusicPlayer.Model
         public string Title { get; set; } = "";
         public string CodecId { get; set; } = "";
         public string Extension { get; set; } = "";
+        public int BitDepth { get; set; }
+        public string Path { get; set; } = "";
+        public bool? TitleFromFileName { get; set; }
         public int EncodingKind { get; set; }
         public int SampleRate { get; set; }
         public int Channel { get; set; }
@@ -48,12 +51,19 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public AppViewModel AppViewModel { get; } = new();
         public bool IsInDetailMode => false;
+        public bool HasPlayLists => AppViewModel.AllPlayList.Count != 0;
+        public bool CanReorderPlayLists => false;
+        public bool IsEditMode => false;
+        public bool CanDeleteSelectedPlayLists => false;
+        public string EditModeText => "";
     }
 }
 namespace WinUIMusicPlayer.Utils
 {
     public static class BindUtils
     {
+        public static Visibility BoolToVisibilityConverter(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility BoolToVisibilityReConverter(bool value) => BoolToVisibilityConverter(!value);
         public static bool BoolToBoolReConverter(bool value) => !value;
         public static double BoolToOpacityReConverter(bool value) => value ? 0 : 1;
         public static double BoolToOpacityConverter(bool value) => value ? 1 : 0;
@@ -85,6 +95,10 @@ namespace WinUIMusicPlayer.View
         public ViewModel.PlayListViewModel ViewModel { get; } = new();
         public GridView TestGrid => PlayListGridView;
         public PlayListPage() => InitializeComponent();
+        private void EditModeButton_Click(object sender, RoutedEventArgs e) { }
+        private void SelectAllPlayListsButton_Click(object sender, RoutedEventArgs e) { }
+        private void DeleteSelectedPlayListsButton_Click(object sender, RoutedEventArgs e) { }
+        private void PlayListGridView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) { }
         private void AddPlayList_Click(object sender, RoutedEventArgs e) { }
         private void PlayListGridView_ItemClick(object sender, ItemClickEventArgs e) { }
         private void PlayListGridView_RightTapped(object sender, RightTappedRoutedEventArgs e) { }

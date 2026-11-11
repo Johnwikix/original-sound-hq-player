@@ -24,6 +24,7 @@ public partial class MusicDatabaseService
         {
             if (!byId.TryGetValue(music.Id, out var row)) continue;
             music.SongId = row.SongId;
+            music.TitleFromFileName = row.TitleFromFileName;
             music.IsFavorite = row.IsFavorite;
             music.Order = row.Order;
             music.SongPreferredMusicId = row.SongPreferredMusicId;

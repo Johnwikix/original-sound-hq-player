@@ -24,6 +24,7 @@ internal static class AutomaticLinkChecks
             var third = new Music { Path = Path.Combine(root, "auto-third.wav"), Title = "Other", Author = "Artist", Album = "Album" };
             await database.AddExternalFileAsync(third, "[00:03.00]Third");
             var document = await database.Lyrics.GetAsync(third.Id);
+            await database.Connection.InsertAsync(new PlayListMusic { Id = 80, PlayListId = 1, MusicId = third.Id, SongId = third.SongId, RequestedMusicId = third.Id });
             third.Title = "Song";
             await database.SaveDetailsAsync(third, document.Document, document.Revision, default, lyricsChanged: false, expectedOwnerId: document.OwnerId);
             Check(third.SongId == first.SongId && (await database.Versions.GetVersionsAsync(first.Id)).Count == 3,
@@ -42,6 +43,37 @@ internal static class AutomaticLinkChecks
             var method = typeof(MusicDatabaseService).GetMethod("CommitScanBatchAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
             await (Task)method.Invoke(database, [new List<(Music Music, string Lyrics)> { (a, ""), (b, "") }, callback])!;
             Check(published, "scan callback completes after automatic linking");
+            var snapshot = await database.Versions.ReadLibraryAsync(includePlaylists: true);
+            Check(snapshot.Entries.Single().SongId == snapshot.Music.Single(m => m.Id == third.Id).SongId &&
+                snapshot.Entries.Single().RequestedMusicId == third.Id, "one library snapshot resolves the playlist through the new song identity");
+            var stale = await database.Connection.GetAsync<Music>(third.Id);
+            long revision = 0;
+            await database.Connection.RunInTransactionAsync(db =>
+                revision = MusicMetadataStorage.UpdateAlbumFields(db, third.Id, "Bulk album", null, null, null));
+            Check(revision == stale.MetadataRevision + 1, "album batch advances the exact file revision");
+            try
+            {
+                await database.SaveDetailsAsync(stale, document.Document, document.Revision, default, lyricsChanged: false);
+                throw new Exception("stale editor overwrote album batch");
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "MusicMetadataConflict") { }
+            Check((await database.Connection.GetAsync<Music>(third.Id)).Album == "Bulk album", "stale single-file editor cannot overwrite album edit");
+            File.WriteAllText(third.Path, "present");
+            var external = (await database.GetFolders()).Single(f => f.IsExternalImport);
+            await database.RemoveFolder(external.Id);
+            await database.ReconcileExternalImportsAsync();
+            Check((await database.Versions.ReadLibraryAsync(false)).Music.Count == 0 && await database.FindMusicByPathAsync(third.Path) is null,
+                "external removal stays hidden even while the file still exists");
+            var restored = await database.AddExternalFileAsync(new Music { Path = third.Path, Title = third.Title, Album = third.Album, Author = third.Author }, "");
+            Check(restored?.Id == third.Id && restored.SongId == first.SongId && (await database.Versions.ReadLibraryAsync(true)).Entries.Single().RequestedMusicId == restored.Id,
+                "explicit reimport restores the same file, shared song and pinned relation");
+            var folder = new Folder { Name = "Local root", Path = root, Type = Folder.TypeLocal };
+            await database.Connection.InsertAsync(folder);
+            await database.Connection.ExecuteAsync("UPDATE Music SET FolderPath=? WHERE Id=?", root, third.Id);
+            await database.RemoveFolder(folder.Id);
+            await database.ReconcileExternalImportsAsync();
+            Check((await database.Connection.GetAsync<Music>(third.Id)).IsDetached && (await database.GetFoldersWithSongCountsAsync()).All(f => f.SongCount == 0),
+                "removing a local root cannot feed its files back into the external library or folder counts");
         }
         finally { await database.Connection.CloseAsync(); }
     }

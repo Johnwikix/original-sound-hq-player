@@ -307,6 +307,15 @@ static async Task RunAsync()
     groupedState.Browse.SearchText = "";
     await groupedProjection.UpdateSongCollectionsAsync(groupedList, SongViewType.Folder);
     Check(groupedList.Count == 3, "Folder view preserves the concrete files.");
+    Check(groupedQueries.GetMultipleVersions(71)?.Count == 2 && groupedQueries.GetMultipleVersions(72) is null,
+        "home aggregation can reuse duplicate members and bypass singleton lists");
+    AppData.AllPlayListMusics.AddRange([
+        new(701, 25, 3) { Id = 81, SongId = 71 }, new(701, 25, 2) { Id = 82, SongId = 71, RequestedMusicId = 701 },
+        new(702, 25, 1) { Id = 83, SongId = 71, RequestedMusicId = 702 }
+    ]);
+    var scopedItems = groupedProjection.GetPlaylistItems(25, null, 9);
+    Check(scopedItems.Select(item => item.EntryId).SequenceEqual([81, 83]) && scopedItems.All(item => item.Music.Id == 702),
+        "a filtered playlist resolves ordinary occurrences in scope and hides out-of-scope fixed files");
     await groupedProjection.StopAsync();
     Console.WriteLine("PASS: grouped library counts, alternate-info search and concrete folder versions.");
 

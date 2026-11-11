@@ -112,8 +112,9 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
             var music = await _database.GetRemoteMusicAsync(_source.Id, item.Href);
             if (_disposed) return;
             if (music is null) { Status = ToolUtils.GetString("WebDavIndexFirst"); return; }
-            if (!await _library.EnsureAvailableAsync(_source, _stop.Token)) return;
-            await _playback.PlayAsync(music);
+            if (!_app.CanStartPlayback) return;
+            _app.SetBrowseQueue(new([music]), exactFiles: true, sourceScope: _source.Id);
+            await _playback.PlayAsync(music, exactVersion: true);
         }
         catch (Exception ex)
         {
@@ -129,7 +130,6 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
         try
         {
             var selection = _selectedTracks.ToArray();
-            if (!await _library.EnsureAvailableAsync(_source, _stop.Token)) return;
             var songs = new List<Music>(selection.Length);
             foreach (var item in selection)
             {
@@ -143,7 +143,7 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
             if (songs.Count == 0) { Status = ToolUtils.GetString("WebDavIndexFirst"); return; }
             // 用户显式指定的顺序构成独立队列，后续“下一首”沿这条队列播放。
             _app.CurrentPlayMode = ToolUtils.PlayMode.ListLoop;
-            _app.SequentialPlayingList = new(songs);
+            _app.SetBrowseQueue(new(songs), exactFiles: true, sourceScope: _source.Id);
             await _playback.PlayAtAsync(0);
             if (!_disposed && songs.Count != selection.Length) Status = ToolUtils.GetString("WebDavIndexFirst");
         }

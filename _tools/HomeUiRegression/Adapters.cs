@@ -238,6 +238,11 @@ namespace WinUIMusicPlayer.ViewModel
         public void NotifySongsSourceChanged() => SongsSourceChanged?.Invoke();
         public event Action? SongsSourceChanged;
         public event Action? SharedFavoriteChanged;
+        public IReadOnlyList<Music>? FindMultipleVersions(int songId)
+        {
+            var versions = FindVersions(songId);
+            return versions.Count > 1 ? versions : null;
+        }
         public IReadOnlyList<Music> FindVersions(int songId) => SongsSource.Where(m => m.SongId == songId).ToArray();
         public Music? FindDisplayVersion(int songId, int source = -1) => Services.SongVersionPolicy.Order(FindVersions(songId), FindVersions(songId).FirstOrDefault()?.SongPreferredMusicId).FirstOrDefault();
         public Task RefreshSongsSourceAsync(CancellationToken token = default) => RefreshVersionsCoreAsync(token);

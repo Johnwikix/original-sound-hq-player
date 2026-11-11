@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Helper/Animations/*.cs" />
+    <Compile Include="../../View/Controls/FolderTreeMotion.cs" />
     <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />
     <Page Include="../../Style/BtnStyle.xaml" Link="Style/BtnStyle.xaml" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
@@ -29,4 +30,12 @@
     <Content Include="../../Strings/en/Resources.resw" Link="browser-resources.resw" CopyToOutputDirectory="PreserveNewest" />
     <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />
   </ItemGroup>
+  <!-- 非打包回归的 Publish 不自动收集 XAML 编译产物；保留本次构建的 PRI/XBF，供剪裁后的程序运行。 -->
+  <Target Name="PublishFolderBrowserXamlResources" AfterTargets="Publish">
+    <ItemGroup>
+      <_FolderBrowserXamlResources Include="$(OutputPath)$(TargetName).pri;$(OutputPath)**\*.xbf" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_FolderBrowserXamlResources)"
+          DestinationFiles="@(_FolderBrowserXamlResources->'$(PublishDir)\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

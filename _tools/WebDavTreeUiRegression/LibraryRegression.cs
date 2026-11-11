@@ -25,7 +25,9 @@ public sealed partial class TestApp
             await sqlite.CreateTableAsync<MusicLyricsRecord>();
             await sqlite.CreateTableAsync<LyricsSearchStateRecord>();
             await sqlite.CreateTableAsync<PlayListMusic>();
-            var db = new MusicDatabaseService(sqlite);
+            var db = new MusicDatabaseService(sqlite) { Versions = new SongVersionStore(sqlite) };
+            await db.Versions.InitializeAsync(path);
+            await db.Lyrics.InitializeAsync(path);
             var first = new WebDavSource { Name = "First", BaseUri = "http://localhost/dav/", Roots = "/dav/" };
             var second = new WebDavSource { Name = "Second", BaseUri = "http://localhost/dav/", Roots = "/dav/" };
             await db.SaveWebDavSourceAsync(first);
@@ -41,7 +43,11 @@ public sealed partial class TestApp
             var unrelated = (await db.CommitRemoteEntriesAsync(second, "/dav/", "initial",
                 [new("/dav/other.flac", "other.flac", false, 10, "v1", null)])).Batch[0];
             outside.IsFavorite = true;
-            await sqlite.UpdateAsync(outside);
+            await sqlite.RunInTransactionAsync(db =>
+            {
+                db.Update(outside);
+                db.Execute("UPDATE Song SET IsFavorite=1 WHERE Id=?", outside.SongId);
+            });
             await sqlite.InsertAsync(new PlayListMusic { PlayListId = 1, MusicId = outside.Id });
             Check((await db.GetVisibleMusicAsync()).Count == 5, "initial whole-root library");
             first.Roots = "/dav/music/";
@@ -62,7 +68,7 @@ public sealed partial class TestApp
                 "expanded scan restores same track identity");
             await db.MarkRemoteSourceScannedAsync(first.Id, "second");
             visible = await db.GetVisibleMusicAsync();
-            Check(visible.Count == 3 && !visible.Exists(m => m.Id == inside.Id), "completed scan removes unobserved tracks from visible query");
+            Check(visible.Count == 4 && visible.Single(m => m.Id == inside.Id).IsMissing, "unobserved track stays visible as missing, while out-of-scope files stay hidden");
 
             var app = new AppViewModel();
             var queries = new LibraryQueries();
@@ -86,9 +92,9 @@ public sealed partial class TestApp
                 await sqlite.InsertAsync(new LyricsSearchStateRecord { Key = outside.Id + ":qq-word", MusicId = outside.Id });
                 await sqlite.InsertAsync(new MusicLyrics { MusicId = outside.Id, Lyrics = "legacy" });
                 await library.RemoveSourceAsync(first);
-                Check(await sqlite.FindAsync<MusicLyricsRecord>(outside.Id) is null &&
-                    await sqlite.FindAsync<MusicLyrics>(outside.Id) is null && await sqlite.Table<LyricsSearchStateRecord>().CountAsync() == 0,
-                    "source removal cleans unified lyrics, legacy recovery and search state in one transaction");
+                Check(await sqlite.FindAsync<MusicLyricsRecord>(outside.Id) is not null &&
+                    await sqlite.FindAsync<MusicLyrics>(outside.Id) is not null && await sqlite.Table<LyricsSearchStateRecord>().CountAsync() == 1,
+                    "source removal preserves version-specific lyrics and recovery data with the detached file");
                 await UntilAsync(() => sources.SelectedSource?.Id == -1 && app.State.Browse.SourceFilterId == -1
                     && queries.Filter == -1 && combo.SelectedItem is MusicSourceChoice { Id: -1 },
                     "removing selected source resets real ComboBox and both filters to all sources");

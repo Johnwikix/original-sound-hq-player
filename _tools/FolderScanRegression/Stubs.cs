@@ -53,6 +53,8 @@ namespace WinUIMusicPlayer.Model
         public long MetadataRevision { get; set; }
         public string CodecId { get; set; } = "test";
         public int EncodingKind { get; set; }
+        /// <summary>标题取自文件名时为 true，旧库没有记录来源时为空。</summary>
+        public bool? TitleFromFileName { get; set; }
         public bool IsMissing { get; set; }
         public bool IsDetached { get; set; }
         public string CoverOverridePath { get; set; } = "";

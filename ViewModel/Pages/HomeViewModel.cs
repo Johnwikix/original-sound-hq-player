@@ -349,7 +349,7 @@ public sealed class HomeViewModel : ObservableObject
     private void ValidateDetails()
     {
         if (DetailSong is { Music: var music } &&
-            (!ReferenceEquals(_app.FindById(music.Id), music) || !music.IsPlayable)) ClearDetails();
+            (!ReferenceEquals(_app.FindById(music.Id), music) || !CanPlaySong(music))) ClearDetails();
     }
     private void FavoritesChanged(object? sender, NotifyCollectionChangedEventArgs e) => InvalidateForNextVisit();
     private void InvalidateForNextVisit()
@@ -459,19 +459,21 @@ public sealed class HomeViewModel : ObservableObject
                         HashSet<int> includedSongs = [];
                         for (int i = 0; i < _app.SongsSource.Count; i++)
                         {
+                            if (i % 512 == 511) await Task.Yield();
                             token.ThrowIfCancellationRequested();
                             if (revision != _revision || version != _app.State.Library.Version) break;
                             var m = _app.SongsSource[i];
-                            if (m.SongId > 0 && !includedSongs.Add(m.SongId)) continue;
                             bool playable = m.IsPlayable, inPlaylist = playlistIds.Contains(m.Id);
                             int plays = m.PlayCount;
-                            if (m.SongId > 0)
+                            if (m.SongId > 0 && _app.FindMultipleVersions(m.SongId) is { } versions)
                             {
+                                if (!includedSongs.Add(m.SongId)) continue;
                                 m = _app.FindDisplayVersion(m.SongId) ?? m;
                                 plays = 0;
                                 playable = false;
-                                foreach (var versionFile in _app.FindVersions(m.SongId))
+                                for (int j = 0; j < versions.Count; j++)
                                 {
+                                    var versionFile = versions[j];
                                     plays += versionFile.PlayCount;
                                     playable |= versionFile.IsPlayable;
                                     inPlaylist |= playlistIds.Contains(versionFile.Id);
@@ -479,7 +481,6 @@ public sealed class HomeViewModel : ObservableObject
                             }
                             tracks.Add(new(m.Id, ArtistHelper.GetArtistNames(m.Author), m.Album, m.AlbumArtist,
                                 m.Genre, m.Year, m.IsFavorite, playable, plays, m.Title, inPlaylist));
-                            if (i % 512 == 511) await Task.Yield();
                         }
                         if (revision != _revision || version != _app.State.Library.Version) { _dirty = true; continue; }
                         snapshot = tracks.ToArray();
@@ -665,15 +666,24 @@ public sealed class HomeViewModel : ObservableObject
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(HasFeatured));
     }
+    private bool CanPlaySong(Music music)
+    {
+        if (music.IsPlayable) return true;
+        if (music.SongId > 0 && _app.FindMultipleVersions(music.SongId) is { } versions)
+            foreach (var version in versions)
+                if (version.IsPlayable) return true;
+        return false;
+    }
+
     private List<HomeSong> Resolve(IReadOnlyList<RecommendedSong> songs, List<HomeSong> current)
     {
         var queue = new List<Music>(songs.Count);
-        foreach (var song in songs) if (_app.FindById(song.MusicId) is { IsPlayable: true } music) queue.Add(music);
+        foreach (var song in songs) if (_app.FindById(song.MusicId) is { } music && CanPlaySong(music)) queue.Add(music);
         var result = new List<HomeSong>(queue.Count);
         foreach (var song in songs)
         {
             var music = _app.FindById(song.MusicId);
-            if (music is not { IsPlayable: true }) continue;
+            if (music is null || !CanPlaySong(music)) continue;
             string key = song.Reason switch
             {
                 RecommendationReason.Audio => "HomeReasonAudio",

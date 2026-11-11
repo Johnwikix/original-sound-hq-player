@@ -40,4 +40,10 @@
   </ItemGroup>
   <ItemGroup><Compile Include="../../Model/SongRecord.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../../Services/SongVersionStore*.cs;../../Services/SongVersionPolicy.cs;../../Services/MusicDatabaseService.Automatic.cs" /></ItemGroup>
+  <Target Name="PublishFixtureXaml" AfterTargets="Publish">
+    <ItemGroup>
+      <FixtureXaml Include="$(OutputPath)**/*.xbf;$(OutputPath)WebDavTreeUiRegression.pri" />
+    </ItemGroup>
+    <Copy SourceFiles="@(FixtureXaml)" DestinationFiles="@(FixtureXaml->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

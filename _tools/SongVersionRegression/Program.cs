@@ -14,6 +14,9 @@ if (args.Length == 2 && args[0] == "--verify-publish")
     {
         ["WinUIMusicPlayer.ViewModel.MusicDetailsViewModel"] = ["get_Editor", "get_Versions", "get_SelectedVersion", "set_SelectedVersion", "get_SetPreferredCommand", "get_LinkVersionCommand", "get_SplitVersionCommand", "get_UndoVersionCommand", "get_VersionDraftHint"],
         ["WinUIMusicPlayer.ViewModel.MusicVersionItem"] = ["get_TechnicalInfo", "get_Path", "get_StateText"],
+        ["WinUIMusicPlayer.Model.Music"] = ["get_TitleFromFileName", "set_TitleFromFileName", "get_MetadataRevision"],
+        ["WinUIMusicPlayer.Services.SongVersionStore"] = ["ReadLibraryAsync", "GetCandidatesAsync", "IndexMemberTags"],
+        ["WinUIMusicPlayer.State.PlaybackQueueState"] = ["SequentialEntryIdAt", "Replace", "InsertNext"],
         ["WinUIMusicPlayer.Model.SongRecord"] = ["get_Id", "set_Id", "get_PreferredMusicId", "set_PreferredMusicId", "get_IsFavorite"],
         ["WinUIMusicPlayer.Model.SongLyricsRecord"] = ["get_SongId", "set_SongId", "get_Revision", "set_Revision"],
         ["WinUIMusicPlayer.Model.VersionLyricsOverrideRecord"] = ["get_MusicId", "set_MusicId"],
@@ -122,9 +125,18 @@ try
     Check(SongVersionPolicy.Matches(flac, mp3), "optional metadata differences are candidates");
     Check(!SongVersionPolicy.Matches(flac, new Music { Title = "Song", Author = "Artist", Album = "Other" }), "different albums remain separate");
     Check(!SongVersionPolicy.Matches(flac, new Music { Title = "Song (Remastered)", Author = "Artist", Album = "Album" }), "remaster suffix is preserved");
-    Check(SongVersionPolicy.Order([mp3, flac])[0].Id == flac.Id, "remote lossless precedes local lossy");
+    Check(SongVersionPolicy.Order([mp3, flac])[0].Id == mp3.Id, "local audio precedes uncached remote lossless");
     Check(SongVersionPolicy.Order([mp3Low, mp3])[0].Id == mp3.Id, "same codec bitrate ordering");
-    Check(SongVersionPolicy.Order([mp3, flac], mp3.Id)[0].Id == mp3.Id, "manual preference respected");
+    Check(SongVersionPolicy.Order([mp3, flac], flac.Id)[0].Id == flac.Id, "explicit remote preference precedes local automatic choice");
+    var cd = new Music { Id = 10, EncodingKind = 1, Channel = 2, BitDepth = 16, SampleRate = 44100, CodecId = "flac" };
+    var studio = new Music { Id = 11, EncodingKind = 1, Channel = 2, BitDepth = 24, SampleRate = 96000, CodecId = "pcm" };
+    var sameDepth = new Music { Id = 12, EncodingKind = 1, Channel = 2, BitDepth = 24, SampleRate = 48000, CodecId = "flac" };
+    Check(SongVersionPolicy.Order([cd, studio, sameDepth]).SequenceEqual([studio, sameDepth, cd]) &&
+        SongVersionPolicy.Order([sameDepth, studio, cd]).SequenceEqual([studio, sameDepth, cd]), "PCM depth and rate are stable across containers and input order");
+    var cached = new Music { Id = 17, SourceId = 5, EncodingKind = 2, IsRemoteCached = true };
+    Check(SongVersionPolicy.Order([flac, cached, mp3], forPlayback: true).SequenceEqual([mp3, cached, flac]), "playback orders local, complete cache, then online");
+    var dsd = new Music { Id = 9, EncodingKind = 1, Channel = 2, BitDepth = 1, SampleRate = 2822400, CodecId = "DSD" };
+    Check(SongVersionPolicy.Order([studio, dsd, cd]).SequenceEqual([dsd, studio, cd]), "DSD and PCM keep independent comparison groups");
     Check(SongVersionPolicy.Matches(flac, new Music { Title = " Ｓｏｎｇ ", Author = "artist", Album = "Album" }), "candidate normalization preserves Unicode compatibility and ignores outer whitespace");
     Check(!SongVersionPolicy.Matches(flac, new Music { Title = "Song (Live)", Author = "Artist", Album = "Album" }), "live qualifier never disappears from matching");
     Check(SongVersionPolicy.Matches(new Music { Title = "Unknown Pleasures", Author = "Unknown Mortal Orchestra", Album = "Album" },

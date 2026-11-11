@@ -22,7 +22,7 @@ public partial class MusicDatabaseService
             await EnsureExternalFolderAsync();
             var committed = await CommitScanBatchAsync([(music, lyrics)], null);
             // Insert 已回填自增 Id；被跳过说明并发方先落库（或文件正在被转换写入），按路径取权威行。
-            if (committed.Added.Count > 0) return music;
+            if (committed.Added.Count > 0) return committed.Added[0];
             return await FindMusicByPathAsync(music.Path);
         }
         catch (Exception ex)

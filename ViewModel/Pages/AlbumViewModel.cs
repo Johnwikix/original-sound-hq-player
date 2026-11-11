@@ -147,7 +147,7 @@ namespace WinUIMusicPlayer.ViewModel
                 var slice = buf.AsSpan(0, count);
                 slice.Sort((a, b) => a.TrackNumber.CompareTo(b.TrackNumber));
 
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(slice.ToArray());
+                AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(slice.ToArray()));
                 await MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true);
             }
             finally

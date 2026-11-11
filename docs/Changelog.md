@@ -1,3 +1,23 @@
+## 2026-11-11 恢复目录原生让位过渡并修复收起样式闪现
+
+- `View/FolderBrowsePage.xaml`、`View/Controls/FolderTreeMotion.cs`：恢复 `RepositionThemeTransition IsStaggeringEnabled="True"`，删除自定义 Offset/让位动画，仅为增删保留短时淡入淡出。
+- `View/FolderBrowsePage.xaml`：透明 ToggleButton 资源移至目录列表与离场副本的共同父级，修复收起时副本回退到默认选中/悬停/按下样式的闪现。
+- `_tools/FolderBrowserUiRegression`：先复现离场副本样式失败，再检查其普通、选中、悬停和按下背景；新增原生错峰过渡保留、无并行 Composition Offset 的断言。
+- 验证：全新目录 Release/x64 剪裁发布成功；剪裁后的真实 WinUI 回归 108 项通过，已复现并修正离场样式失败；主程序集不再包含自定义 Offset 动画。未做完整主程序人工目测。
+
+## 2026-11-11 修正歌曲版本选择、归组与大曲库查询
+
+- `SongVersionPolicy`、播放队列与入口保留文件、来源及歌单出现项；自动播放优先本地和完整缓存，同声道无损 PCM 优先高位深、高采样率。首页与切歌可使用同组可播文件。
+- `SongVersionStore` 按真实文件标签维护索引；组内标签分歧暂停自动吸收，旧库文件名来源有歧义时等待读标签。v2 曲库升级前备份，手动候选按索引检索。
+- `MusicDatabaseService` 在同一快照刷新曲库和歌单，专辑编辑推进标签修订；显式移除来源隐藏文件，重新导入本地文件复用原身份。
+
+## 2026-11-11 加快目录列表增删动画并保留错峰
+
+- `View/FolderBrowsePage.xaml`、`View/Controls/FolderTreeMotion.cs`：原生 AddDelete/Reposition 过渡改为 Composition；新增 120ms、删除 90ms、让位 140ms，保留 16ms 逐项错峰，累计延迟上限 96ms，参数集中可调。
+- `View/FolderBrowsePage.xaml.cs`、动画辅助类：删除仅为可见行短暂保留模板，按批量通知前的位置淡出；反向展开、滚动、尺寸变化和卸载时清理动画与副本，遵循系统关闭动画设置。
+- `_tools/FolderBrowserUiRegression`：补充真实容器错峰、删除逐帧淡出/叠亮及过渡后资源清理检查；保留选择、键盘、快速反向操作和滚动复用回归。
+- 验证：全新目录 Release/x64 剪裁发布成功，剪裁后的真实 WinUI 回归 106 项通过；核对主程序剪裁程序集保留新增动画链。未做完整主程序人工目测。
+
 ## 2026-11-11 歌曲版本默认自动关联
 
 - `SongVersionStore.Automatic.cs`、数据库初始化／扫描／导入／标签保存：标题、艺术家、专辑完整且规范化一致时自动归组，覆盖已有 v1 曲库；持久化索引和增量待办，避免扫描批次遍历全库。

@@ -344,7 +344,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     _ => null
                 };
                 if (list is null) return;
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(list);
+                AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(list), exactFiles: _kind == GroupKind.Folder);
                 await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
@@ -361,7 +361,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 _ => null
             };
             if (list is null || list.Count == 0) return;
-            AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(list);
+            AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(list), exactFiles: _kind == GroupKind.Folder);
             await MusicBrowseViewModel.PlayMusic(music: list[0], IsChangeList: true);
         }
 
@@ -387,12 +387,12 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     GroupKind.Folder => AppViewModel.FolderSongs,
                     _ => (System.Collections.Generic.IEnumerable<Music>)(SelectedMusic is null ? [] : [SelectedMusic])
                 };
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(groupList);
+                AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(groupList), exactFiles: _kind == GroupKind.Folder);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
             }
             else if (SelectedMusics.Count > 1)
             {
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(SelectedMusics);
+                AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(SelectedMusics), exactFiles: _kind == GroupKind.Folder);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
             }
             else if (SelectedMusic is { } target)
@@ -404,7 +404,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     GroupKind.Folder => AppViewModel.FolderSongs,
                     _ => (System.Collections.Generic.IEnumerable<Music>)([SelectedMusic])
                 };
-                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(groupList);
+                AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(groupList), exactFiles: _kind == GroupKind.Folder);
                 await MusicBrowseViewModel.PlayMusic(music: target, IsChangeList: true);
             }
         }
@@ -413,11 +413,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (SelectedMusics.Count > 0)
             {
-                AppViewModel.AddMusicRangeToCurrentPlayList(SelectedMusics);
+                AppViewModel.AddMusicRangeToCurrentPlayList(SelectedMusics, _kind == GroupKind.Folder);
             }
             else if (SelectedMusic is not null)
             {
-                MusicCommands.AddToPlayListCommand.Execute(SelectedMusic);
+                AppViewModel.AddMusicToCurrentPlayList(SelectedMusic, _kind == GroupKind.Folder);
             }
         }
 

@@ -27,18 +27,19 @@ public partial class MusicDatabaseService
             {
                 var (tags, updated) = await Task.Run(() => WriteAlbumTagsCore(path, edit, token), token);
                 token.ThrowIfCancellationRequested();
+                long committedRevision = 0;
                 await _dbConnection.RunInTransactionAsync(db =>
                 {
                     token.ThrowIfCancellationRequested();
-                    db.Execute("UPDATE Music SET Album=?,Year=?,UpdateTime=? WHERE Id=?",
-                        edit.Album ?? music.Album, edit.Year ?? music.Year, updated, music.Id);
+                    committedRevision = db.ExecuteScalar<long>("UPDATE Music SET Album=COALESCE(?,Album),Year=COALESCE(?,Year),UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? RETURNING MetadataRevision",
+                        edit.Album, edit.Year, updated, music.Id);
                     // 文件全量六项可选标签已在上面读出，此处连同修改一并入库并置已读标记。
                     MusicMetadataStorage.Save(db, music.Id, tags);
-                    MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, edit.Album ?? music.Album);
                 });
                 // 提交成功后发布事实到内存对象；失败曲目保持原值，用户可重试。
                 if (edit.Album is { } album) music.Album = album;
                 if (edit.Year is { } year) music.Year = year;
+                music.MetadataRevision = committedRevision;
                 music.UpdateTime = updated;
                 tags.ApplyTo(music);
             }
@@ -90,27 +91,21 @@ public partial class MusicDatabaseService
     public async Task SaveAlbumTagsAsync(IReadOnlyList<Music> tracks, AlbumTagEdit edit, CancellationToken token)
     {
         await WhenInitialized.WaitAsync(token);
+        var revisions = new long[tracks.Count];
         await _dbConnection.RunInTransactionAsync(db =>
         {
             token.ThrowIfCancellationRequested();
-            foreach (var music in tracks)
+            for (int i = 0; i < tracks.Count; i++)
             {
-                if (edit.Album is not null || edit.Year is not null)
-                {
-                    db.Execute("UPDATE Music SET Album=?,Year=? WHERE Id=?",
-                        edit.Album ?? music.Album, edit.Year ?? music.Year, music.Id);
-                    MusicMetadataStorage.UpdateSongIdentity(db, music.Id, music.Title, music.Author, edit.Album ?? music.Album);
-                }
-                if (edit.AlbumArtist is not null || edit.Genre is not null)
-                    // 只动已读取可选标签的行；AdditionalMetadataRead=0 的旧库行维持空值+懒读语义。
-                    db.Execute("UPDATE Music SET AlbumArtist=?,Genre=? WHERE Id=? AND AdditionalMetadataRead=1",
-                        edit.AlbumArtist ?? music.AlbumArtist, edit.Genre ?? music.Genre, music.Id);
+                var music = tracks[i];
+                revisions[i] = MusicMetadataStorage.UpdateAlbumFields(db, music.Id, edit.Album, edit.Year, edit.AlbumArtist, edit.Genre);
             }
         });
-        token.ThrowIfCancellationRequested();
-        // 与数据库行保持同一条件地发布到内存对象，避免刷新前界面出现库内不存在的值。
-        foreach (var music in tracks)
+        for (int i = 0; i < tracks.Count; i++)
         {
+            if (revisions[i] == 0) continue;
+            var music = tracks[i];
+            music.MetadataRevision = revisions[i];
             if (edit.Album is { } album) music.Album = album;
             if (edit.Year is { } year) music.Year = year;
             if ((edit.AlbumArtist is not null || edit.Genre is not null) && music.AdditionalMetadataRead)

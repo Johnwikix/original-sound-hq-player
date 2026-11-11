@@ -67,6 +67,8 @@ namespace WinUIMusicPlayer.Model
         public string Album { get; set; } = "Album";
         public string CodecId { get; set; } = "";
         public string Extension { get; set; } = "";
+        public int BitDepth { get; set; }
+        public bool? TitleFromFileName { get; set; }
         public int EncodingKind { get; set; }
         public int SampleRate { get; set; }
         public int BitRate { get; set; }
@@ -166,6 +168,7 @@ namespace WinUIMusicPlayer.ViewModel
         public AppState State { get; } = new();
         public List<Music>? LibrarySongs { get; set; }
         public IEnumerable<Music> SongsSource => LibrarySongs is not null ? LibrarySongs : CurrentPlayingList;
+        public Music? FindById(int id) => SongsSource.FirstOrDefault(m => m.Id == id);
         public IReadOnlyList<Music> FindVersions(int songId) => SongsSource.Where(m => m.SongId == songId).ToArray();
         public string MusicCoverCache => WinUIMusicPlayer.Model.AppSettings.MusicCoverCache;
         public void RefreshDataSource() { }

@@ -9,6 +9,8 @@ namespace WinUIMusicPlayer.Model
         public bool IsDetached { get; init; }
         public bool IsRemoteCached { get; init; }
         public string CodecId { get; init; } = "";
+        public int BitDepth { get; set; }
+        public bool? TitleFromFileName { get; set; }
         public int EncodingKind { get; init; }
         public int SampleRate { get; init; }
         public int BitRate { get; init; }

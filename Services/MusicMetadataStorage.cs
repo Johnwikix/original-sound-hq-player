@@ -20,14 +20,6 @@ public static class MusicMetadataStorage
         db.Execute("UPDATE Music SET SongId=? WHERE Id=?", music.SongId, music.Id);
     }
 
-    /// <summary>单版本歌曲跟随标签变更更新关联身份；多版本组的文件编辑不隐式拆组。</summary>
-    public static void UpdateSongIdentity(SQLiteConnection db, int musicId, string title, string author, string album)
-    {
-        if (!HasSongs(db)) return;
-        db.Execute("UPDATE Song SET Title=?,Artist=?,Album=?,Revision=Revision+1 WHERE Id=(SELECT SongId FROM Music WHERE Id=?) " +
-            "AND (SELECT COUNT(*) FROM Music WHERE SongId=Song.Id AND IsDetached=0)=1 AND (Title<>? OR Artist<>? OR Album<>?)",
-            title, author, album, musicId, title, author, album);
-    }
     private static readonly string[] Fields = ["AlbumArtist", "Genre", "Composer", "Lyricist", "Conductor", "CatalogNumber"];
     private const string UpdateSql = "UPDATE Music SET AlbumArtist=?,Genre=?,Composer=?,Lyricist=?,Conductor=?,CatalogNumber=?,AdditionalMetadataRead=1 WHERE Id=?";
 
@@ -47,6 +39,17 @@ public static class MusicMetadataStorage
         if (!columns.Exists(column => column.Name.Equals(marker, StringComparison.OrdinalIgnoreCase)))
             await db.ExecuteAsync("ALTER TABLE [" + table + "] ADD COLUMN [" + marker + "] INTEGER NOT NULL DEFAULT 0");
     }
+
+    /// <summary>批量专辑编辑只更新指定列，同时返回新的修订供单文件编辑检测冲突。</summary>
+    public static long UpdateAlbumFields(SQLiteConnection db, int musicId, string? album, int? year, string? albumArtist, string? genre) =>
+        db.ExecuteScalar<long>("""
+            UPDATE Music SET Album=COALESCE(?,Album),Year=COALESCE(?,Year),
+                AlbumArtist=CASE WHEN AdditionalMetadataRead=1 THEN COALESCE(?,AlbumArtist) ELSE AlbumArtist END,
+                Genre=CASE WHEN AdditionalMetadataRead=1 THEN COALESCE(?,Genre) ELSE Genre END,
+                MetadataRevision=MetadataRevision+1
+            WHERE Id=? AND (? IS NOT NULL OR ? IS NOT NULL OR (AdditionalMetadataRead=1 AND (? IS NOT NULL OR ? IS NOT NULL)))
+            RETURNING MetadataRevision
+            """, album, year, albumArtist, genre, musicId, album, year, albumArtist, genre);
 
     /// <summary>在现有编辑或扫描事务内更新已读取的标签。</summary>
     public static int Save(SQLiteConnection db, int id, AdditionalMusicMetadata metadata) =>

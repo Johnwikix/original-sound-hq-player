@@ -21,6 +21,12 @@ public sealed class LibraryQueries(LibraryState library)
     private int _sourceFilter = -1;
     public void SetSourceFilter(int sourceId) { _sourceFilter = sourceId; _indexedVersion = -1; }
     public static bool MatchesSource(Music music, int sourceId) => sourceId == -1 || (sourceId == -2 ? music.IsRemote : music.SourceId == sourceId);
+    internal IReadOnlyDictionary<int, Music> GetIdIndex()
+    {
+        if (_indexedVersion != library.Version) RebuildIdIndex();
+        return _idIndex;
+    }
+
     public Music? FindById(int id)
     {
         if (_indexedVersion != library.Version) RebuildIdIndex();
@@ -54,6 +60,13 @@ public sealed class LibraryQueries(LibraryState library)
     }
 
     public void Invalidate() => library.NotifyChanged();
+
+    /// <summary>只有多版本歌曲返回成员列表；遍历整库时无需为单文件歌曲分配数组。</summary>
+    public IReadOnlyList<Music>? GetMultipleVersions(int songId)
+    {
+        if (_indexedVersion != library.Version) RebuildIdIndex();
+        return _songVersions.GetValueOrDefault(songId);
+    }
 
     /// <summary>获取同组版本索引；仅在库版本变化时重建。</summary>
     public IReadOnlyList<Music> GetVersions(int songId)

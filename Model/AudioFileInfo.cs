@@ -4,6 +4,7 @@ namespace WinUIMusicPlayer.Model
 {
     public class AudioFileInfo
     {
+        public bool TitleFromFileName { get; set; }
         public string Title { get; set; } = "未知标题";
         public string Album { get; set; } = "未知专辑";
         public string Artist { get; set; } = "未知艺术家";

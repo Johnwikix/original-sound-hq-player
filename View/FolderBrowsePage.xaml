@@ -31,6 +31,16 @@
                         Padding="0,0,8,0"
                         RowDefinitions="Auto,Auto,*"
                         RowSpacing="12">
+                        <Grid.Resources>
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="Transparent" />
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="Transparent" />
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="Transparent" />
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="Transparent" />
+                            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="Transparent" />
+                            <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="TextFillColorSecondaryBrush" />
+                            <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="TextFillColorSecondaryBrush" />
+                            <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="TextFillColorSecondaryBrush" />
+                        </Grid.Resources>
                         <TextBlock
                             Margin="8,0,0,0"
                             FontSize="22"
@@ -68,19 +78,8 @@
                                     CommandParameter="{x:Bind ViewModel.SelectedNode, Mode=OneWay}" />
                                 <behaviors:ScrollSelectedItemIntoViewBehavior />
                             </interactivity:Interaction.Behaviors>
-                            <ListView.Resources>
-                                <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="Transparent" />
-                                <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="Transparent" />
-                                <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="Transparent" />
-                                <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="Transparent" />
-                                <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="Transparent" />
-                                <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="TextFillColorSecondaryBrush" />
-                                <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="TextFillColorSecondaryBrush" />
-                                <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="TextFillColorSecondaryBrush" />
-                            </ListView.Resources>
                             <ListView.ItemContainerTransitions>
                                 <TransitionCollection>
-                                    <AddDeleteThemeTransition />
                                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                                 </TransitionCollection>
                             </ListView.ItemContainerTransitions>
@@ -134,6 +133,10 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
+                        <Canvas
+                            x:Name="FolderMotionOverlay"
+                            Grid.Row="2"
+                            IsHitTestVisible="False" />
                     </Grid>
                     <toolkit:GridSplitter
                         x:Name="PaneSplitter"

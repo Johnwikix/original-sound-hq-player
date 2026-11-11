@@ -20,6 +20,8 @@ namespace WinUIMusicPlayer.Model
         public string CodecId { get; set; } = "";
         /// <summary>获取或设置编码类别：0 未知、1 无损、2 有损。</summary>
         public int EncodingKind { get; set; }
+        /// <summary>标题取自文件名时为 true，旧库没有记录来源时为空。</summary>
+        public bool? TitleFromFileName { get; set; }
         /// <summary>获取或设置确认缺失状态；保留用户资料。</summary>
         public bool IsMissing { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsPlayable)); } }
         /// <summary>获取或设置已从库解绑但为恢复保留的状态。</summary>

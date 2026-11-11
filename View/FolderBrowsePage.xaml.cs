@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using WinUIMusicPlayer.View.Controls;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View;
@@ -10,11 +11,14 @@ namespace WinUIMusicPlayer.View;
 public sealed partial class FolderBrowsePage : Page
 {
     private bool _ownsActivation;
+    private FolderTreeMotion? _treeMotion;
     public FolderViewModel ViewModel { get; }
     public FolderBrowsePage()
     {
         ViewModel = App.Services.GetRequiredService<FolderViewModel>();
+        _treeMotion = new FolderTreeMotion(ViewModel.VisibleNodes);
         InitializeComponent();
+        _treeMotion.Attach(FolderTree, FolderMotionOverlay);
         NavigationCacheMode = NavigationCacheMode.Disabled;
         Loaded += Page_Loaded;
         Unloaded += Page_Unloaded;
@@ -23,6 +27,11 @@ public sealed partial class FolderBrowsePage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs args)
     {
         if (_ownsActivation) return;
+        if (_treeMotion is null)
+        {
+            _treeMotion = new FolderTreeMotion(ViewModel.VisibleNodes);
+            _treeMotion.Attach(FolderTree, FolderMotionOverlay);
+        }
         Bindings.Initialize();
         Bindings.Update();
         _ownsActivation = true;
@@ -31,6 +40,8 @@ public sealed partial class FolderBrowsePage : Page
     private void Page_Unloaded(object sender, RoutedEventArgs args)
     {
         DeactivateView();
+        _treeMotion?.Dispose();
+        _treeMotion = null;
         Bindings.StopTracking();
     }
     private void DeactivateView()

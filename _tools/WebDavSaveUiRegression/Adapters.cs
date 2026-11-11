@@ -34,6 +34,7 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed partial class WebDavLibraryService(MusicDatabaseService database)
     {
+        public Task CancelScanAsync(int sourceId) => Task.CompletedTask;
         private readonly CancellationTokenSource _stop = new();
         private readonly object _gate = new();
         private readonly LibraryAdapter _library = new();
