@@ -7,28 +7,11 @@ namespace Microsoft.UI.Dispatching
     {
         private readonly SynchronizationContext _context = SynchronizationContext.Current!;
         public bool HasThreadAccess => ReferenceEquals(SynchronizationContext.Current, _context);
-        public DispatcherQueueTimer Timer { get; } = new();
-        public DispatcherQueueTimer CreateTimer() => Timer;
         public bool TryEnqueue(Action work) => TryEnqueue(DispatcherQueuePriority.Normal, work);
         public bool TryEnqueue(DispatcherQueuePriority priority, Action work)
         {
             _context.Post(_ => work(), null);
             return true;
-        }
-    }
-    public sealed class DispatcherQueueTimer
-    {
-        public TimeSpan Interval { get; set; }
-        public bool IsRepeating { get; set; }
-        public bool Running { get; private set; }
-        public event Action<DispatcherQueueTimer, object>? Tick;
-        public void Start() => Running = true;
-        public void Stop() => Running = false;
-        public void Fire()
-        {
-            if (!Running) return;
-            Running = IsRepeating;
-            Tick?.Invoke(this, new());
         }
     }
 }

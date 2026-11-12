@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using System;
@@ -8,10 +7,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.ViewModel.Pages;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -34,7 +31,6 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly AppViewModel _appViewModel;
         private readonly PlaybackStatsService _statsService;
         private readonly ILogger<StatsViewModel> _logger;
-        private DispatcherQueueTimer? _debounceTimer;
         private bool _active;
         private long _requestedVersion;
         private Task _loadTask = Task.CompletedTask;
@@ -61,16 +57,16 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref field, value))
                 {
                     IsCustomRangeSelected = value == (int)StatsRange.Custom;
-                    DebouncedLoad();
+                    RequestLoad();
                 }
             }
         } = (int)StatsRange.PastWeek;
 
         public bool IsCustomRangeSelected { get => field; set => SetProperty(ref field, value); }
-        public DateTimeOffset? CustomStartDate { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) DebouncedLoad(); } }
-        public DateTimeOffset? CustomEndDate { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) DebouncedLoad(); } }
-        public TimeSpan CustomStartTime { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) DebouncedLoad(); } }
-        public TimeSpan CustomEndTime { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) DebouncedLoad(); } }
+        public DateTimeOffset? CustomStartDate { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) RequestLoad(); } }
+        public DateTimeOffset? CustomEndDate { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) RequestLoad(); } }
+        public TimeSpan CustomStartTime { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) RequestLoad(); } }
+        public TimeSpan CustomEndTime { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) RequestLoad(); } }
 
         // ───────────────────────── 汇总数据 ─────────────────────────
 
@@ -110,8 +106,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (_active) return;
             _active = true;
             _statsService.StatsUpdated += OnStatsUpdated;
-            EnsureTimers();
-            DebouncedLoad();
+            RequestLoad();
         }
 
         public void OnPageInactive()
@@ -121,7 +116,6 @@ namespace WinUIMusicPlayer.ViewModel
             _requestedVersion++;
             _loadCancellation?.Cancel();
             _statsService.StatsUpdated -= OnStatsUpdated;
-            _debounceTimer?.Stop();
         }
 
         public async Task StopAsync()
@@ -130,42 +124,19 @@ namespace WinUIMusicPlayer.ViewModel
             await _loadTask;
         }
 
-        private void StartLoad()
-        {
-            if (_active && _loadTask.IsCompleted) _loadTask = LoadDataCoreAsync();
-        }
-
-        private void EnsureTimers()
-        {
-            if (_debounceTimer is not null) return;
-            var dq = App.MainWindow?.DispatcherQueue;
-            if (dq is null) return;
-
-            _debounceTimer = dq.CreateTimer();
-            _debounceTimer.Interval = TimeSpan.FromMilliseconds(500);
-            _debounceTimer.IsRepeating = false;
-            _debounceTimer.Tick += (s, e) => StartLoad();
-        }
-
         private void OnStatsUpdated()
         {
             var dq = App.MainWindow?.DispatcherQueue;
             if (dq is null) return;
-            _ = dq.TryEnqueue(DispatcherQueuePriority.Normal, DebouncedLoad);
+            _ = dq.TryEnqueue(DispatcherQueuePriority.Normal, RequestLoad);
         }
 
-        private void DebouncedLoad()
+        private void RequestLoad()
         {
             _requestedVersion++;
             _loadCancellation?.Cancel();
-            if (!_active) return;
-            if (_debounceTimer is null)
-            {
-                StartLoad();
-                return;
-            }
-            _debounceTimer.Stop();
-            _debounceTimer.Start();
+            // 立即刷新；已有查询时，由加载循环在其结束后读取最新请求，避免并行查库。
+            if (_active && _loadTask.IsCompleted) _loadTask = LoadDataCoreAsync();
         }
 
         private (DateTime startUtc, DateTime endUtc) CalculateRange()
@@ -214,7 +185,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 while (_active)
                 {
-                    _debounceTimer?.Stop();
                     long version = _requestedVersion;
                     int range = SelectedTimeRangeIndex;
                     var (startUtc, endUtc) = CalculateRange();
