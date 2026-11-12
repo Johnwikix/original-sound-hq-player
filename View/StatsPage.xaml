@@ -42,7 +42,7 @@
         <!--  时间范围选择  -->
         <controls:SettingsExpander
             Grid.Row="1"
-            Margin="16,16,16,4"
+            Margin="16,16,16,0"
             IsExpanded="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}">
             <controls:SettingsExpander.HeaderIcon>
                 <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE9D9;" />
