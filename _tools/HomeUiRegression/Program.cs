@@ -138,6 +138,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             App.MainWindow = window;
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 820));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
+            if (Environment.GetCommandLineArgs().Contains("--details-save"))
+            {
+                await CheckDetailsSaveAsync(window, data, app, editorFactory);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--song-versions"))
             {
                 await CheckSongVersionsAsync(window, data, app, editorFactory);
@@ -942,26 +948,30 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Task.Delay(450);
             await Capture(page, "home-song-editor-lyrics.png");
             data.FailEditorSave = true;
+            int failedSaves = editorFactory.DatabaseSaveFailures.Count;
             await editSession.SaveDatabaseCommand.ExecuteAsync(null);
-            Check(home.IsInDetailMode && editMusic.Title == canonicalTitle && editSession.Lyrics.Error.Length > 0
+            await Wait(() => !home.HasDetails);
+            Check(!home.IsInDetailMode && editMusic.Title == canonicalTitle && editorFactory.DatabaseSaveFailures.Count == failedSaves + 1
                 && await database.ExecuteScalarAsync<string>("SELECT Title FROM Music WHERE Id=?", editMusic.Id) == canonicalTitle,
-                "save failure preserves the draft and canonical database values and keeps the property editor open");
+                "background save failure notifies after closing and preserves canonical database values");
+            await editSession.StopAsync();
             data.FailEditorSave = false;
+            editSession = await OpenEditorAsync();
+            ((TextBox)details.FindName("TitleInput")).Text = "Newer draft while saving";
+            ((TextBox)details.FindName("ComposerInput")).Text = "Edited composer";
+            ((TextBox)details.FindName("OriginalLyricsInput")).Text = "[00:01.000]Newer original while saving";
+            ((TextBox)details.FindName("TranslationLyricsInput")).Text = "[00:01.000]Translation from property control";
+            ((TextBox)details.FindName("PronunciationLyricsInput")).Text = "[00:01.000]Pronunciation from property control";
             var editingGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             data.EditorSaveGate = editingGate.Task;
             int editingSaves = data.EditorSavesStarted;
             var editingSave = editSession.SaveDatabaseCommand.ExecuteAsync(null);
             await Wait(() => data.EditorSavesStarted > editingSaves);
-            titleInput.Text = "Newer draft while saving";
-            originalInput.Text = "[00:01.000]Newer original while saving";
+            await Wait(() => !home.HasDetails);
+            Check(!editingSave.IsCompleted, "home details close while the accepted database write is still pending");
             editingGate.SetResult();
             await editingSave;
             data.EditorSaveGate = Task.CompletedTask;
-            Check(home.IsInDetailMode && editMusic.Title == "Edited properties title" && editSession.Metadata.Draft.Title == "Newer draft while saving"
-                && editSession.Lyrics.OriginalText.Contains("Newer original"),
-                "a committed snapshot publishes correctly while newer metadata and lyric edits keep the editor open");
-            ((IInvokeProvider)new ButtonAutomationPeer((Button)details.FindName("SaveDatabaseButton")).GetPattern(PatternInterface.Invoke)).Invoke();
-            await Wait(() => !home.HasDetails);
             var storedLyrics = await data.Lyrics.GetAsync(editMusic.Id);
             Check(editMusic.Title == "Newer draft while saving" && editMusic.Composer == "Edited composer"
                 && storedLyrics.Document.Original.Content.Contains("Newer original")
@@ -1028,20 +1038,20 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var abandonedGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             data.EditorSaveGate = abandonedGate.Task;
             int abandonedSaves = data.EditorSavesStarted;
-            ((TextBox)details.FindName("TitleInput")).Text = "Cancelled before commit";
+            ((TextBox)details.FindName("TitleInput")).Text = "Accepted before close";
             var abandonedSave = abandonedEditor.SaveDatabaseCommand.ExecuteAsync(null);
             await Wait(() => data.EditorSavesStarted > abandonedSaves);
             await abandonedEditor.SaveDatabaseCommand.ExecuteAsync(null); // A rejected duplicate must not replace the accepted task used by stop.
             page.CollapseDetail();
             await Wait(() => !home.HasDetails);
             var abandonedStop = abandonedEditor.StopAsync();
-            Check(!abandonedStop.IsCompleted, "editor stop waits for a real in-flight save boundary after navigation cancels it");
+            Check(!abandonedStop.IsCompleted, "editor stop waits for the background write after the details close");
             abandonedGate.SetResult();
             await Task.WhenAll(abandonedStop, abandonedSave);
             data.EditorSaveGate = Task.CompletedTask;
-            Check(editMusic.Title != "Cancelled before commit" &&
-                await database.ExecuteScalarAsync<string>("SELECT Title FROM Music WHERE Id=?", editMusic.Id) != "Cancelled before commit",
-                "cancellation before commit cannot publish an abandoned draft");
+            Check(editMusic.Title == "Accepted before close" &&
+                await database.ExecuteScalarAsync<string>("SELECT Title FROM Music WHERE Id=?", editMusic.Id) == "Accepted before close",
+                "closing the details preserves the accepted save through commit");
             int originalSourceId = editMusic.SourceId;
             editMusic.SourceId = 1;
             editSession = await OpenEditorAsync();

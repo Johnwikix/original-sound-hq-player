@@ -2732,4 +2732,5 @@ SHA-256：{5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>此版本的标签已被其他操作修改，请保留草稿并重新检查。</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>请先保存各版本的草稿，再关联、拆分或撤销。</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} 个版本；{1} 组已收藏；{2} 个歌单位置，其中 {3} 个重复位置可选折叠。</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>歌曲修改保存失败。请重新打开歌曲详情后重试。</value></data>
 </root>

@@ -2730,4 +2730,5 @@ SHA-256: {5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>Теги изменены другой операцией. Сохраните черновик и проверьте.</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Сохраните черновики версий перед объединением, отделением или отменой.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>Версий: {0}; избранных групп: {1}; записей в плейлистах: {2}, из них {3} повторов можно свернуть.</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Не удалось сохранить изменения песни. Снова откройте сведения о песне и повторите попытку.</value></data>
 </root>

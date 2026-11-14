@@ -78,5 +78,21 @@ public sealed class MusicDetailsEditorFactory(IServiceProvider services) : IMusi
         }
         public void NotifyWriteQueued(Music music) => services.GetRequiredService<NotificationService>()
             .SendNotification(music.Title, ToolUtils.GetString("MetadataWriteQueued"));
+        public void DatabaseSaved(Music music)
+        {
+            MetadataChanged();
+            var app = services.GetRequiredService<AppViewModel>();
+            if (app.CurrentPlayingMusic is { } current &&
+                (current.Id == music.Id || music.SongId > 0 && current.SongId == music.SongId))
+                app.LoadLyricsToUI(current);
+        }
+        public void NotifyDatabaseSaveFailed(Music music, Exception exception)
+        {
+            string reason = exception.Message is "LyricsEditConflict" or "MusicMetadataConflict"
+                ? ToolUtils.GetString("SongVersionsConflict") : exception.Message;
+            services.GetRequiredService<NotificationService>().SendNotification(music.Title,
+                ToolUtils.GetString("MusicDetailsDatabaseSaveFailed") + Environment.NewLine + reason,
+                key: "MusicDetailsSaveFailed:" + Guid.NewGuid().ToString("N"));
+        }
     }
 }

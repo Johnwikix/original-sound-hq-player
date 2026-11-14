@@ -2730,4 +2730,5 @@ SHA-256: {5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>別の操作でタグが変更されました。下書きを保持して確認してください。</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>関連付け・分離・元に戻す操作の前に各版の下書きを保存してください。</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} 版、{1} グループがお気に入り、プレイリスト内 {2} 項目（重複 {3} 項目は任意で統合）。</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>曲の変更を保存できませんでした。曲の詳細を開き直して、もう一度お試しください。</value></data>
 </root>

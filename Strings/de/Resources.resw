@@ -2730,4 +2730,5 @@ SHA-256: {5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>Tags wurden anderweitig geändert. Entwurf behalten und prüfen.</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Versionsentwürfe vor dem Verknüpfen, Trennen oder Rückgängigmachen speichern.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} Versionen; {1} favorisierte Gruppen; {2} Wiedergabelisteneinträge, davon {3} optionale Duplikate.</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Die Änderungen am Titel konnten nicht gespeichert werden. Öffne die Titeldetails erneut und versuche es noch einmal.</value></data>
 </root>

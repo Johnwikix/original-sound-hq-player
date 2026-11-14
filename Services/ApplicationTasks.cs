@@ -15,14 +15,23 @@ public sealed class ApplicationTasks(AppLifecycle lifecycle)
 
     /// <summary>Accepted local edits start immediately and drain before their database owner stops.</summary>
     public Task RunCommittedAsync(Func<Task> operation)
+        => TryRunCommittedAsync(operation, out var task) ? task : Task.CompletedTask;
+
+    /// <summary>在退出屏障关闭前接收操作；返回 false 表示操作未被接收。</summary>
+    public bool TryRunCommittedAsync(Func<Task> operation, out Task completion)
     {
         lock (_gate)
         {
-            if (_closed || _committedClosed || lifecycle.StoppingToken.IsCancellationRequested) return Task.CompletedTask;
+            if (_closed || _committedClosed || lifecycle.StoppingToken.IsCancellationRequested)
+            {
+                completion = Task.CompletedTask;
+                return false;
+            }
             var task = operation();
             _tasks.Add(task);
             _committed.Add(task);
-            return ObserveCompletionAsync(task);
+            completion = ObserveCompletionAsync(task);
+            return true;
         }
     }
 

@@ -13,6 +13,7 @@ internal sealed class FixtureEditorFactory(MusicDatabaseService database, AppVie
     internal LyricsOnlineSearch Online { get; } = new();
     internal Task CoverGate { get; set; } = Task.CompletedTask;
     internal int CoverReads;
+    internal List<(Music Music, Exception Error)> DatabaseSaveFailures { get; } = [];
     internal ISpectrogramService? SpectrumSource { get; set; }
     public MusicDetailsEditorViewModel Create(Music music)
         => new(music, database, new LyricsEditorViewModel(music, database, new(), Online, Tasks), Sessions, this,
@@ -32,6 +33,8 @@ internal sealed class FixtureEditorFactory(MusicDatabaseService database, AppVie
     public Task ExportCoverAsync(byte[] cover, CancellationToken token) => File.WriteAllBytesAsync(Path.Combine(AppContext.BaseDirectory, "exported-cover.bmp"), cover, token);
     public void OpenLocation(Music music) { }
     public void MetadataChanged() => app.NotifySongsSourceChanged();
+    public void DatabaseSaved(Music music) => MetadataChanged();
+    public void NotifyDatabaseSaveFailed(Music music, Exception exception) => DatabaseSaveFailures.Add((music, exception));
     public void NotifyWriteQueued(Music music) { }
 }
 namespace WinUIMusicPlayer.Services
@@ -168,7 +171,7 @@ namespace WinUIMusicPlayer.Services
     public sealed class NotificationService
     {
         /// <summary>隔离系统通知。</summary>
-        public void SendNotification(string title, string message) { }
+        public void SendNotification(string title, string message, string? key = null) { }
     }
 }
 namespace WinUIMusicPlayer.WebService

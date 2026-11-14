@@ -193,6 +193,65 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         SetDocument(_parser.Import(result.Original, token: token, pronunciation: result.Pronunciation));
     });
 
+    private sealed record DatabaseSaveSnapshot(Music Metadata, bool MetadataChanged, byte[]? Cover,
+        LyricsDocument SavedDocument, long Revision, int OwnerId, string Original, string Translation, string Pronunciation);
+
+    /// <summary>把点击时的完整快照交给应用退出屏障；关闭编辑器只取消读取，不取消此写入。</summary>
+    internal bool TrySaveDatabaseInBackground(Music metadata, bool metadataChanged, byte[]? cover,
+        Action saved, Action<Exception> failed, out Task operation)
+    {
+        operation = Task.CompletedTask;
+        if (!CanSave) return false;
+        if (metadata.Id != _music.Id || metadata.SourceId != _music.SourceId ||
+            !string.Equals(metadata.Path, _music.Path, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Metadata draft belongs to a different track.");
+        var snapshot = new DatabaseSaveSnapshot(metadata, metadataChanged, cover, _savedDocument, _revision, _ownerId,
+            OriginalText, TranslationText, PronunciationText);
+        var database = _database;
+        var parser = _parser;
+        return _tasks.TryRunCommittedAsync(() => SaveDatabaseSnapshotAsync(database, parser, snapshot, saved, failed), out operation);
+    }
+
+    private static async Task SaveDatabaseSnapshotAsync(MusicDatabaseService database, LyricsParser parser,
+        DatabaseSaveSnapshot snapshot, Action saved, Action<Exception> failed)
+    {
+        // 先把任务登记完并发出关闭请求；解析、文件缓存与数据库工作均不延迟点击响应。
+        await Task.Yield();
+        try
+        {
+            bool lyricsChanged = snapshot.Original != snapshot.SavedDocument.Original.Content ||
+                snapshot.Translation != (snapshot.SavedDocument.TranslationLrc ?? "") ||
+                snapshot.Pronunciation != (snapshot.SavedDocument.PronunciationLrc ?? "");
+            var document = lyricsChanged ? await Task.Run(() =>
+            {
+                var imported = parser.Import(snapshot.Original, snapshot.Translation, pronunciation: snapshot.Pronunciation);
+                if (!string.IsNullOrWhiteSpace(snapshot.Original) && !parser.HasLyrics(imported))
+                    throw new FormatException("Invalid original lyrics.");
+                if (string.IsNullOrWhiteSpace(snapshot.Original) && !string.IsNullOrWhiteSpace(snapshot.Translation))
+                    throw new FormatException("Translation requires original lyrics.");
+                return imported;
+            }) : snapshot.SavedDocument;
+            if (snapshot.Metadata.Id <= 0)
+            {
+                if (!await Task.Run(() => OneShotLyricsCache.SaveEdited(snapshot.Metadata.Path, document, snapshot.Revision)))
+                    throw new InvalidOperationException("LyricsEditConflict");
+            }
+            else if (snapshot.MetadataChanged)
+                await database.SaveDetailsAsync(snapshot.Metadata, document, snapshot.Revision, CancellationToken.None,
+                    lyricsChanged: lyricsChanged, expectedOwnerId: snapshot.OwnerId, cover: snapshot.Cover);
+            else if (lyricsChanged && !await database.Lyrics.SaveAsync(snapshot.Metadata.Id, document, snapshot.Revision,
+                "User", expectedOwnerId: snapshot.OwnerId))
+                throw new InvalidOperationException("LyricsEditConflict");
+        }
+        catch (Exception exception)
+        {
+            failed(exception);
+            return;
+        }
+        // 保留 UI 同步上下文；规范曲目、全库通知与失败提示由宿主在 UI 线程发布。
+        saved();
+    }
+
     public async Task<bool> SaveAsync(byte[]? cover = null, bool queueMetadata = false, Music? metadataDraft = null)
     {
         bool saved = false;

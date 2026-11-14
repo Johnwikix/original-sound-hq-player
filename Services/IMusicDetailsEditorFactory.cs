@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -33,6 +34,10 @@ public interface IMusicDetailsEditorHost
     void OpenLocation(Music music);
     /// <summary>发布已提交的规范标签，刷新已有曲库投影。</summary>
     void MetadataChanged();
+    /// <summary>数据库后台写入完成，刷新曲库投影和当前播放歌词。</summary>
+    void DatabaseSaved(Music music);
+    /// <summary>详情已关闭时，通过应用通知报告后台保存失败。</summary>
+    void NotifyDatabaseSaveFailed(Music music, Exception exception);
     /// <summary>通知文件标签写入已经排队。</summary>
     void NotifyWriteQueued(Music music);
 }

@@ -1,3 +1,15 @@
+## 2026-11-14 歌曲详情立即关闭并在后台保存数据库
+
+- `MusicDetailsEditorViewModel`、`LyricsEditorViewModel`、`ApplicationTasks`：点击“保存到数据库”后固定标签、歌词与封面快照，立即请求关闭；后台写入不随面板关闭取消，应用退出仍等待已接受的写入完成。
+- `MusicDetailsViewModel`、`HomePage.xaml.cs`：首页、曲库各子页面与独立属性窗口共用关闭请求；后台完成不再触发第二次关闭。
+- `MusicDetailsEditorFactory`、`Strings/*/Resources.resw`：后台失败以系统通知显示歌曲名和原因，补齐七种语言提示；写入成功后刷新曲库及正在播放的歌词。
+- 验证：按用户要求不执行构建或运行验证。
+
+## 2026-11-14 修复曲库歌曲详情保存后未关闭
+
+- `ViewModel/Controls/MusicDetailsViewModel.cs`：当前版本保存成功后向宿主发出关闭请求，使曲库各子页面和独立属性窗口沿用已有关闭流程；保存失败保留草稿，其他版本的迟到保存不关闭当前详情。
+- `_tools/HomeUiRegression`：新增 `--details-save`，通过生产控件的编译绑定与隔离 SQLite 验证保存、失败重试、版本切换、返回原页和在途保存清理。
+
 ## 2026-11-12 统计页立即加载数据
 
 - `ViewModel/StatsViewModel.cs`：移除 500 ms 防抖定时器，进入页面、切换统计范围和收到统计更新后立即请求加载；保留在途查询串行、取消、过期结果过滤与离页清理。

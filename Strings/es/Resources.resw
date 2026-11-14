@@ -2730,4 +2730,5 @@ SHA-256: {5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>Otra operación cambió las etiquetas. Conserve el borrador y revise.</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Guarda los borradores antes de vincular, separar o deshacer.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} versiones; {1} grupos favoritos; {2} entradas de listas, con {3} duplicados opcionales.</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>No se pudieron guardar los cambios de la canción. Vuelve a abrir los detalles de la canción e inténtalo de nuevo.</value></data>
 </root>

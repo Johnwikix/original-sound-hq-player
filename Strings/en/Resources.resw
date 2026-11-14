@@ -2730,4 +2730,5 @@ SHA-256: {5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>Another operation changed this version&apos;s tags. Keep the draft and review.</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Save version drafts before linking, splitting, or undoing.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} versions; {1} favorited groups; {2} playlist entries, including {3} optional duplicate entries.</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Song changes could not be saved. Reopen the song details and try again.</value></data>
 </root>

@@ -2730,4 +2730,5 @@ SHA-256: {5}
   <data name="MusicMetadataConflict" xml:space="preserve"><value>Bu sürümün etiketleri başka işlemle değişti. Taslağı koruyup inceleyin.</value></data>
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>İlişkilendirme, ayırma veya geri alma öncesinde sürüm taslaklarını kaydedin.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} sürüm; {1} favori grup; {2} çalma listesi girdisi, {3} isteğe bağlı yinelenen girdi.</value></data>
+  <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Şarkı değişiklikleri kaydedilemedi. Şarkı ayrıntılarını yeniden açıp tekrar deneyin.</value></data>
 </root>

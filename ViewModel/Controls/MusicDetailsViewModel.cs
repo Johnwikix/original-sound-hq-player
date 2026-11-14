@@ -94,7 +94,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
     public IRelayCommand PreparePlaylistMenuCommand { get; }
     /// <summary>获取歌单命令错误。</summary>
     public string ErrorMessage { get; private set => SetProperty(ref field, value); } = "";
-    /// <summary>在歌曲已不存在时请求宿主结束详情。</summary>
+    /// <summary>在当前版本已接受后台保存、文件保存成功或歌曲已不存在时请求宿主结束详情。</summary>
     public event EventHandler? CloseRequested;
 
     /// <summary>初始化详情，Start 后才读取文件及注册退出屏障。</summary>
@@ -152,6 +152,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
     }
     private void ObserveEditor(MusicDetailsEditorViewModel editor)
     {
+        editor.CloseRequested += EditorCloseRequested;
         editor.PropertyChanged += DraftChanged;
         editor.Metadata.Draft.PropertyChanged += DraftChanged;
         editor.Lyrics.PropertyChanged += DraftChanged;
@@ -341,6 +342,11 @@ public sealed class MusicDetailsViewModel : ObservableObject
         if (_closing) return;
         VersionMessage = ToolUtils.GetString("SongVersionsSaved");
         if (_app.CurrentPlayingMusic is { } current && current.SongId == Music.SongId) _app.LoadLyricsToUI(current);
+        EditorCloseRequested(sender, args);
+    }
+    private void EditorCloseRequested(object? sender, EventArgs args)
+    {
+        if (!_closing && ReferenceEquals(sender, Editor)) CloseRequested?.Invoke(this, EventArgs.Empty);
     }
     private void LibraryChanged()
     {
@@ -418,6 +424,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
         foreach (var session in _versionSessions.Values)
         {
             session.Editor.Saved -= EditorSaved;
+            session.Editor.CloseRequested -= EditorCloseRequested;
             session.Editor.PropertyChanged -= DraftChanged;
             session.Editor.Metadata.Draft.PropertyChanged -= DraftChanged;
             session.Editor.Lyrics.PropertyChanged -= DraftChanged;

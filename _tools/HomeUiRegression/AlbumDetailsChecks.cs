@@ -145,6 +145,8 @@ internal static class AlbumDetailsChecks
         public Task ExportCoverAsync(byte[] cover, CancellationToken token) => Task.CompletedTask;
         public void OpenLocation(Music music) { }
         public void MetadataChanged() { }
+        public void DatabaseSaved(Music music) { }
+        public void NotifyDatabaseSaveFailed(Music music, Exception exception) { }
         public void NotifyWriteQueued(Music music) { }
     }
 }

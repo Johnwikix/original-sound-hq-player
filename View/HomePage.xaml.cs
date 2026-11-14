@@ -40,7 +40,7 @@ public sealed partial class HomePage : Page
     private bool _detailKeyboardEntry;
     private bool _resumeShuffle;
     private bool _shuffleSuspended;
-    private MusicDetailsEditorViewModel? _observedEditor;
+    private MusicDetailsViewModel? _observedDetails;
     /// <summary>获取稳定的首页 ViewModel。</summary>
     public HomeViewModel ViewModel { get; }
     /// <summary>初始化页面，不阻塞主窗口启动。</summary>
@@ -88,7 +88,7 @@ public sealed partial class HomePage : Page
         Bindings.Update();
         ViewModel.Activate(DispatcherQueue);
         ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-        ObserveEditor();
+        ObserveDetails();
     }
     private void Page_Unloaded(object sender, RoutedEventArgs args)
     {
@@ -96,8 +96,8 @@ public sealed partial class HomePage : Page
         _openPreviewTimer.Tick -= OpenPreview_Tick;
         _closePreviewTimer.Tick -= ClosePreview_Tick;
         ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
-        if (_observedEditor is not null) _observedEditor.Saved -= Editor_Saved;
-        _observedEditor = null;
+        if (_observedDetails is not null) _observedDetails.CloseRequested -= DetailsCloseRequested;
+        _observedDetails = null;
         CancelDetailTransition();
         DetailView.DismissMenus();
         _detailSource = null;
@@ -109,7 +109,7 @@ public sealed partial class HomePage : Page
     }
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(HomeViewModel.DetailEditor)) ObserveEditor();
+        if (args.PropertyName == nameof(HomeViewModel.DetailPresentation)) ObserveDetails();
         if (args.PropertyName == nameof(HomeViewModel.PreviewSong) && ViewModel.PreviewSong is null) ResetPreview();
         if (args.PropertyName == nameof(HomeViewModel.DetailSong) && ViewModel.DetailSong is null)
         {
@@ -119,15 +119,15 @@ public sealed partial class HomePage : Page
             RestoreShuffle();
         }
     }
-    private void ObserveEditor()
+    private void ObserveDetails()
     {
-        if (_observedEditor is not null) _observedEditor.Saved -= Editor_Saved;
-        _observedEditor = ViewModel.DetailEditor;
-        if (_observedEditor is not null) _observedEditor.Saved += Editor_Saved;
+        if (_observedDetails is not null) _observedDetails.CloseRequested -= DetailsCloseRequested;
+        _observedDetails = ViewModel.DetailPresentation;
+        if (_observedDetails is not null) _observedDetails.CloseRequested += DetailsCloseRequested;
     }
-    private void Editor_Saved(object? sender, EventArgs args)
+    private void DetailsCloseRequested(object? sender, EventArgs args)
     {
-        if (IsLoaded && ReferenceEquals(sender, ViewModel.DetailEditor)) CollapseDetail();
+        if (IsLoaded && ReferenceEquals(sender, ViewModel.DetailPresentation)) CollapseDetail();
     }
     private void Song_Invoked(object? sender, EventArgs args)
     {

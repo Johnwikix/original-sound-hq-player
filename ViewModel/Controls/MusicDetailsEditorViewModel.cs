@@ -70,7 +70,9 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
     public IAsyncRelayCommand ReadEmbeddedCommand { get; }
     /// <summary>获取打开文件位置的命令。</summary>
     public IRelayCommand OpenLocationCommand { get; }
-    /// <summary>在保存完整当前草稿后请求宿主通过导航返回。</summary>
+    /// <summary>数据库保存已被应用级后台队列接收，宿主现在可以关闭详情。</summary>
+    public event EventHandler? CloseRequested;
+    /// <summary>文件标签写入已成功排队并保存完整当前草稿。</summary>
     public event EventHandler? Saved;
 
     /// <summary>初始化独立草稿和命令；显式 Start 后才读取数据。</summary>
@@ -85,8 +87,8 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
         _host = host;
         _logger = logger;
         LoadCommand = new AsyncRelayCommand(LoadAsync, () => CanOperate);
-        SaveDatabaseCommand = new AsyncRelayCommand(() => SaveAsync(false), () => CanSave);
-        SaveFileCommand = new AsyncRelayCommand(() => SaveAsync(true), () => CanSave && Music.CanEditFile);
+        SaveDatabaseCommand = new AsyncRelayCommand(SaveDatabaseAsync, () => CanSave);
+        SaveFileCommand = new AsyncRelayCommand(SaveFileAsync, () => CanSave && Music.CanEditFile);
         FindCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(true), () => CanOperate);
         ChooseCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(false), () => CanOperate && Music.CanEditFile);
         ExportCoverCommand = new AsyncRelayCommand(ExportCoverAsync, () => CanOperate && _cover is not null);
@@ -191,9 +193,48 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
         catch (Exception ex) { ReportError(ex); }
         finally { IsCoverBusy = false; }
     }
-    private Task SaveAsync(bool file)
-        => CanSave && (!file || Music.CanEditFile) ? _operationTask = SaveCoreAsync(file) : Task.CompletedTask;
-    private async Task SaveCoreAsync(bool file)
+    private Task SaveDatabaseAsync()
+    {
+        if (!CanSave) return Task.CompletedTask;
+        var snapshot = Metadata.Capture();
+        bool metadataChanged = Metadata.HasChanges || _coverDirty;
+        IsSaving = true;
+        Error = "";
+        LoadFailed = false;
+        if (!Lyrics.TrySaveDatabaseInBackground(snapshot, metadataChanged, _coverDirty ? _cover : null,
+            () => DatabaseSaveCompleted(snapshot, metadataChanged),
+            exception => DatabaseSaveFailed(snapshot, exception), out var operation))
+        {
+            IsSaving = false;
+            return Task.CompletedTask;
+        }
+        // 必须先登记任务，再同步通知宿主；关窗回调可能立刻调用 StopAsync。
+        _operationTask = operation;
+        BeginClose();
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+        return operation;
+    }
+    private void DatabaseSaveCompleted(Music snapshot, bool metadataChanged)
+    {
+        try
+        {
+            if (metadataChanged) Metadata.AcceptSaved(snapshot);
+            _coverDirty = false;
+            _host.DatabaseSaved(snapshot);
+        }
+        catch (Exception exception) { _logger.LogError(exception, "歌曲属性已保存，但刷新界面状态失败"); }
+        finally { IsSaving = false; }
+    }
+    private void DatabaseSaveFailed(Music snapshot, Exception exception)
+    {
+        _logger.LogError(exception, "后台保存歌曲属性失败: {MusicId}", snapshot.Id);
+        try { _host.NotifyDatabaseSaveFailed(snapshot, exception); }
+        catch (Exception notificationError) { _logger.LogWarning(notificationError, "歌曲属性保存失败提示未能送达"); }
+        finally { IsSaving = false; }
+    }
+    private Task SaveFileAsync()
+        => CanSave && Music.CanEditFile ? _operationTask = SaveFileCoreAsync() : Task.CompletedTask;
+    private async Task SaveFileCoreAsync()
     {
         IsSaving = true;
         Error = "";
@@ -201,11 +242,10 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
         try
         {
             var snapshot = Metadata.Capture();
-            if (file) snapshot.UpdateTime = DateTime.Now;
-            bool metadataChanged = Metadata.HasChanges || _coverDirty || file;
-            bool saved = await Lyrics.SaveAsync(_coverDirty ? _cover : null, queueMetadata: file, metadataDraft: metadataChanged ? snapshot : null);
-            bool committed = metadataChanged ? ReferenceEquals(Lyrics.LastCommittedMetadata, snapshot) : saved;
-            bool unchanged = committed && (!metadataChanged || Metadata.AcceptSaved(snapshot));
+            snapshot.UpdateTime = DateTime.Now;
+            bool saved = await Lyrics.SaveAsync(_coverDirty ? _cover : null, queueMetadata: true, metadataDraft: snapshot);
+            bool committed = ReferenceEquals(Lyrics.LastCommittedMetadata, snapshot);
+            bool unchanged = committed && Metadata.AcceptSaved(snapshot);
             if (committed)
             {
                 _coverDirty = false;
@@ -215,7 +255,7 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
             if (committed) _host.MetadataChanged();
             if (!_stopped && saved && unchanged)
             {
-                if (file) _host.NotifyWriteQueued(snapshot);
+                _host.NotifyWriteQueued(snapshot);
                 Saved?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -250,14 +290,14 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
     private async Task StopCoreAsync()
     {
         BeginClose();
-        _session?.Dispose();
-        _session = null;
         try
         {
             await Task.WhenAll(_operationTask, Lyrics.WhenIdleAsync());
         }
         finally
         {
+            _session?.Dispose();
+            _session = null;
             _cover = null;
             CoverPreview = null;
             _closed.Dispose();
