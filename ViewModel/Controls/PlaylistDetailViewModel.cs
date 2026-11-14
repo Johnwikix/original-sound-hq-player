@@ -38,7 +38,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private readonly HashSet<string> _seenAuthors = new(StringComparer.Ordinal);
 
         public Music? CoverSource { get; set => SetProperty(ref field, value); }
-        public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
+        /// <summary>保留详情正在展示的歌单，直到关闭动画结束；名称由编译绑定直接跟踪。</summary>
+        public PlayList? DisplayedPlayList { get; private set => SetProperty(ref field, value); }
         public string SecondTitle { get; set => SetProperty(ref field, value); } = string.Empty;
         public string ThirdTitle { get; set => SetProperty(ref field, value); } = string.Empty;
         public string CoverGlyph { get; set => SetProperty(ref field, value); } = "\uE93C";
@@ -138,7 +139,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void RefreshFromAppState()
         {
-            if (AppViewModel.CurrentPlayList is { } pl)
+            DisplayedPlayList = AppViewModel.CurrentPlayList;
+            if (DisplayedPlayList is { } pl)
             {
                 var musics = _db.GetMusicByPlayListIdFromMem(pl.Id, AppViewModel.SearchText, AppViewModel.State.Browse.SourceFilterId);
                 _ = AppViewModel.PlayListSongs.ReplaceAllAsync(musics);
@@ -149,14 +151,12 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     break;
                 }
                 CoverSource = cover;
-                Title = pl.Name ?? string.Empty;
                 ThirdTitle = ToolUtils.GetString("Playlist");
                 RefreshTitlesOnly();
             }
             else
             {
                 CoverSource = null;
-                Title = string.Empty;
                 SecondTitle = string.Empty;
                 ThirdTitle = string.Empty;
             }

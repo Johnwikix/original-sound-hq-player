@@ -83,7 +83,7 @@
                         FontSize="30"
                         FontWeight="Bold"
                         IsTextSelectionEnabled="True"
-                        Text="{x:Bind ViewModel.Title, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.DisplayedPlayList.Name, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis" />
                 </localControls:AutoScrollView>
                 <localControls:AutoScrollView

@@ -137,7 +137,14 @@ namespace WinUIMusicPlayer.Services
     {
         public static MusicDetailsRequest? LastDetailsPlay;
         public static IAsyncRelayCommand<MusicDetailsRequest> DetailsPlayCommand { get; } = new AsyncRelayCommand<MusicDetailsRequest>(request => { LastDetailsPlay = request; return Task.CompletedTask; });
-        public static ICommand PlayCommand { get; } = new RelayCommand(() => { });
+        public static Music? LastRowMusic;
+        public static PlayListMusicItem? LastPlaylistEntry;
+        public static ICommand PlayCommand { get; } = new RelayCommand<Music>(music => LastRowMusic = music);
+        public static IAsyncRelayCommand<PlayListMusicItem> PlayPlaylistEntryCommand { get; } = new AsyncRelayCommand<PlayListMusicItem>(entry =>
+        {
+            LastPlaylistEntry = entry;
+            return Task.CompletedTask;
+        }, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         public static ICommand UpdateFavouriteCommand { get; } = new RelayCommand<Music>(m =>
         {
             if (m is null) return;

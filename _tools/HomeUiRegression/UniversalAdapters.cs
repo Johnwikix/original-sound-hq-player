@@ -44,5 +44,3 @@ namespace WinUIMusicPlayer.View
         }
     }
 }
-
-namespace WinUIMusicPlayer.Model { public sealed class PlayListMusicItem { public Music Music { get; set; } = null!; } }

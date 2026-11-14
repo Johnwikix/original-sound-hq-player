@@ -138,6 +138,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             App.MainWindow = window;
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 820));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
+            if (Environment.GetCommandLineArgs().Contains("--playlist-row"))
+            {
+                await CheckPlaylistRowAsync(window);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--details-save"))
             {
                 await CheckDetailsSaveAsync(window, data, app, editorFactory);

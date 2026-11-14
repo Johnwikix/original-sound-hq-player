@@ -18,18 +18,14 @@ public sealed partial class MusicListRowControl : UserControl
         nameof(ShowTrackNumbers), typeof(bool), typeof(MusicListRowControl), new PropertyMetadata(false));
     /// <summary>提供歌单出现项命令，普通行沿用 Music 命令。</summary>
     public static readonly DependencyProperty RowPlayCommandProperty = DependencyProperty.Register(
-        nameof(RowPlayCommand), typeof(ICommand), typeof(MusicListRowControl), new PropertyMetadata(null));
+        nameof(RowPlayCommand), typeof(ICommand), typeof(MusicListRowControl), new PropertyMetadata(null, OnPlayInputChanged));
     /// <summary>提供歌单出现项参数。</summary>
     public static readonly DependencyProperty RowPlayParameterProperty = DependencyProperty.Register(
-        nameof(RowPlayParameter), typeof(object), typeof(MusicListRowControl), new PropertyMetadata(null));
+        nameof(RowPlayParameter), typeof(object), typeof(MusicListRowControl), new PropertyMetadata(null, OnPlayInputChanged));
     /// <summary>获取或设置出现项命令。</summary>
     public ICommand? RowPlayCommand { get => (ICommand?)GetValue(RowPlayCommandProperty); set => SetValue(RowPlayCommandProperty, value); }
     /// <summary>获取或设置出现项参数。</summary>
     public object? RowPlayParameter { get => GetValue(RowPlayParameterProperty); set => SetValue(RowPlayParameterProperty, value); }
-    /// <summary>解析编译期可追踪的播放入口。</summary>
-    public ICommand? PlayFor(ICommand? command, Music? music) => command ?? music?.PlayCommand;
-    /// <summary>解析编译期可追踪的参数。</summary>
-    public object? ParameterFor(object? parameter, Music? music) => parameter ?? music;
 
     public Music? Music
     {
@@ -50,13 +46,41 @@ public sealed partial class MusicListRowControl : UserControl
     public event EventHandler<Music>? ArtistInvoked;
     public event EventHandler<Music>? AlbumInvoked;
 
-    public MusicListRowControl() => InitializeComponent();
+    public MusicListRowControl()
+    {
+        InitializeComponent();
+        UpdatePlayAction();
+    }
 
     private GridLength TrackColumnWidth(bool visible) => visible
         ? new GridLength(0.5, GridUnitType.Star) : new GridLength(0);
 
     private static void OnMusicChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
-        => ((MusicListRowControl)sender).StopAutoScroll();
+    {
+        var row = (MusicListRowControl)sender;
+        row.StopAutoScroll();
+        row.UpdatePlayAction();
+    }
+
+    private static void OnPlayInputChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+        => ((MusicListRowControl)sender).UpdatePlayAction();
+
+    private void UpdatePlayAction()
+    {
+        if (CoverThumbnail is null) return;
+        var customCommand = RowPlayCommand;
+        var parameter = customCommand is null ? Music : RowPlayParameter;
+        var command = customCommand is null ? Music?.PlayCommand : parameter is null ? null : customCommand;
+        if (ReferenceEquals(CoverThumbnail.Command, command)
+            && ReferenceEquals(CoverThumbnail.CommandParameter, parameter)) return;
+
+        // WinUI queries CanExecute during either setter. Independent x:Bind updates can
+        // pair a playlist command with the previous Music parameter during template setup.
+        // Forward the existing view-model inputs only after detaching the previous command.
+        CoverThumbnail.Command = null;
+        CoverThumbnail.CommandParameter = parameter;
+        CoverThumbnail.Command = command;
+    }
 
     public void StopAutoScroll()
     {
