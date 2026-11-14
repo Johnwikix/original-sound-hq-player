@@ -210,6 +210,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             app.State.Lifecycle.TransitionTo(AppPhase.Ready);
             app.IsPlaybackEngineReady = true;
             await Wait(() => Descendants<MusicCoverControl>(page).Any(c => c.DecodePixelSize == 800 && c.ArtworkColor.A == 255));
+            if (Environment.GetCommandLineArgs().Contains("--hover-handoff"))
+            {
+                await CheckHoverHandoffAsync(page, home);
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             var initialSongs = home.Songs;
             var initialThemes = home.Themes;
             var carousel = (FeaturedCarousel)page.FindName("Featured");
@@ -402,8 +408,9 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await Task.Delay(300);
             Check(ReferenceEquals(home.PreviewSong, selected) && ReferenceEquals(preview.Song, selected)
                 && Descendants<TextBlock>(preview).Any(t => t.Text == selected.Music.Author)
-                && Descendants<TextBlock>(preview).Any(t => t.Text == selected.Music.Album),
-                "shared detail overlay binds the canonical song, artist and album after hover delay");
+                && Descendants<TextBlock>(preview).Any(t => t.Text == selected.Music.Album)
+                && ((TextBlock)preview.FindName("RecommendationReason")).Text == selected.Reason,
+                "shared detail overlay binds the canonical song, artist, album and recommendation reason after hover delay");
             var overlayParent = (Canvas)page.FindName("PreviewLayer");
             Check(ReferenceEquals(preview.Parent, overlayParent) && Canvas.GetLeft(preview) >= 0 && Canvas.GetTop(preview) >= 0
                 && Canvas.GetLeft(preview) + preview.ActualWidth <= overlayParent.ActualWidth

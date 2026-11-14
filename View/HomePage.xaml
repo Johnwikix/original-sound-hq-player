@@ -10,7 +10,7 @@
             <controls:HomeSongItem x:Uid="HomeSongOpen" Background="Transparent" Width="160" Margin="0,0,12,4" Tag="{x:Bind}" IsTabStop="True"
                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                 AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
-                PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
+                PointerEntered="Song_PointerOver" PointerMoved="Song_PointerOver" PointerExited="Song_PointerExited"
                 Invoked="Song_Invoked" LostFocus="Song_LostFocus">
                 <StackPanel Spacing="8">
                     <controls:MusicCoverControl Music="{x:Bind Music}" Width="160" Height="160" />
@@ -47,7 +47,7 @@
                                 <controls:HomeSongItem x:Uid="HomeSongOpen" Tag="{x:Bind}" IsTabStop="True"
                                     HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
-                                    PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
+                                    PointerEntered="Song_PointerOver" PointerMoved="Song_PointerOver" PointerExited="Song_PointerExited"
                                     Invoked="Song_Invoked" LostFocus="Song_LostFocus">
                                     <controls:HomeCarouselTile Song="{x:Bind}" IsPrimary="True" Tag="{x:Bind}" IsTabStop="False" />
                                 </controls:HomeSongItem>
@@ -58,7 +58,7 @@
                                 <controls:HomeSongItem x:Uid="HomeSongOpen" Tag="{x:Bind}" IsTabStop="True"
                                     HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
-                                    PointerEntered="Song_PointerEntered" PointerExited="Song_PointerExited"
+                                    PointerEntered="Song_PointerOver" PointerMoved="Song_PointerOver" PointerExited="Song_PointerExited"
                                     Invoked="Song_Invoked" LostFocus="Song_LostFocus">
                                     <controls:HomeCarouselTile Song="{x:Bind}" Tag="{x:Bind}" IsTabStop="False" />
                                 </controls:HomeSongItem>

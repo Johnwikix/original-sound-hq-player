@@ -285,15 +285,22 @@ public sealed partial class HomePage : Page
         CollapseDetail();
         args.Handled = true;
     }
-    private void Song_PointerEntered(object sender, PointerRoutedEventArgs args)
+    private void Song_PointerOver(object sender, PointerRoutedEventArgs args)
     {
         if (args.Pointer.PointerDeviceType != Microsoft.UI.Input.PointerDeviceType.Touch && sender is FrameworkElement source)
             SchedulePreview(source);
     }
     private void Song_PointerExited(object sender, PointerRoutedEventArgs args)
     {
-        if (ReferenceEquals(sender, _pendingPreviewSource)) _pendingPreviewSource = null;
-        if (ReferenceEquals(sender, _previewSource))
+        if (sender is FrameworkElement source) LeavePreviewSource(source, args.GetCurrentPoint(source).Position);
+    }
+    private void LeavePreviewSource(FrameworkElement source, Point position)
+    {
+        // 上一面板的合成动画可能短暂遮住目标卡片；这类命中变化不代表鼠标真正离开卡片。
+        if (ReferenceEquals(source, _pendingPreviewSource)
+            && new Rect(0, 0, source.ActualWidth, source.ActualHeight).Contains(position)) return;
+        if (ReferenceEquals(source, _pendingPreviewSource)) _pendingPreviewSource = null;
+        if (ReferenceEquals(source, _previewSource))
         {
             _sourcePointerInside = false;
             ScheduleClose();
@@ -322,11 +329,18 @@ public sealed partial class HomePage : Page
     {
         if (ViewModel.HasDetails || _detailTransitioning || SongPreview.IsPlaylistMenuOpen) return;
         _closePreviewTimer.Stop();
+        // PointerMoved 只补偿丢失的进入事件；不重启已经排队的延迟，也不重复复位展开动画。
+        if (ReferenceEquals(source, _pendingPreviewSource)) return;
+        if (ReferenceEquals(source, _previewSource) && _openPreviewTimer.IsRunning)
+        {
+            _sourcePointerInside = true;
+            return;
+        }
         if (ReferenceEquals(source, _previewSource) && ViewModel.PreviewSong is not null)
         {
             _pendingPreviewSource = null;
             _sourcePointerInside = true;
-            SongPreview.Restore();
+            if (_collapsingPreview) SongPreview.Restore();
             _collapsingPreview = false;
             return;
         }
@@ -357,7 +371,8 @@ public sealed partial class HomePage : Page
         if (origin.Y + sourceSize.Height < visibleTop || origin.Y > visibleBottom) return;
         ViewModel.ShowPreview(song);
         if (!ReferenceEquals(ViewModel.PreviewSong, song)) return;
-        SongPreview.Fit(new Size(ContentScroll.ViewportWidth, ContentScroll.ViewportHeight), sourceSize);
+        SongPreview.Fit(new Size(ContentScroll.ViewportWidth, ContentScroll.ViewportHeight), sourceSize,
+            source is HomeSongItem { Content: StackPanel });
         SongPreview.Visibility = Visibility.Visible;
         SongPreview.UpdateLayout();
         var destination = new Point(
@@ -392,6 +407,8 @@ public sealed partial class HomePage : Page
     }
     private void Preview_PointerEntered(object sender, PointerRoutedEventArgs args)
     {
+        // 旧面板收起时经过鼠标，不得取消新卡片的打开请求或把旧动画恢复到展开状态。
+        if (_collapsingPreview && _pendingPreviewSource is not null) return;
         _pendingPreviewSource = null;
         _previewPointerInside = true;
         _closePreviewTimer.Stop();
@@ -420,6 +437,8 @@ public sealed partial class HomePage : Page
         if (_previewHandoff) return;
         _closePreviewTimer.Stop();
         _openPreviewTimer.Stop();
+        // 切换曲目时让目标卡片接收鼠标；旧面板缩放后的命中区域不再截走输入。
+        if (_pendingPreviewSource is not null) SongPreview.IsHitTestVisible = false;
         if (_collapsingPreview) return;
         _collapsingPreview = true;
         SongPreview.CollapseToCover();

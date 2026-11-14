@@ -75,10 +75,10 @@ public sealed partial class HomeSongPreview : UserControl
     }
 
     /// <summary>在原封面基础上加宽详情；高度不足时收敛封面区域，不反向缩窄整张卡片。</summary>
-    public void Fit(Size available, Size sourceArtwork)
+    public void Fit(Size available, Size sourceArtwork, bool compact = false)
     {
         double aspectRatio = Math.Clamp(sourceArtwork.Width / sourceArtwork.Height, .25, 4);
-        Width = Math.Min(Math.Max(360, sourceArtwork.Width + 48), available.Width - 24);
+        Width = Math.Min(Math.Max(compact ? 280 : 360, sourceArtwork.Width + 48), available.Width - 24);
         Details.Measure(new Size(Width - 2, double.PositiveInfinity));
         double coverBudget = Math.Max(0, available.Height - 26 - Details.DesiredSize.Height);
         CoverHost.Height = Math.Min((Width - 2) / aspectRatio, coverBudget);
@@ -104,6 +104,7 @@ public sealed partial class HomeSongPreview : UserControl
     public void Reveal(Rect source, Point destination)
     {
         CancelClosing();
+        IsHitTestVisible = true;
         EnsureAnimation();
         if (_visual is null || _clip is null) return;
         _originScale = (float)(source.Width / ActualWidth);
@@ -179,6 +180,7 @@ public sealed partial class HomeSongPreview : UserControl
     public void Restore()
     {
         CancelClosing();
+        IsHitTestVisible = true;
         if (_visual is null || _clip is null) return;
         _visual.StopAnimation("Scale");
         _visual.StopAnimation("Translation");

@@ -270,8 +270,8 @@ internal sealed partial class HomePolishWindow : Window
         typeof(HomePage).GetMethod("SchedulePreview", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(_page, [item]);
         await Wait(() => _home.PreviewSong is not null);
         await Task.Delay(350);
-        Assert(!Descendants<TextBlock>((HomeSongPreview)_page.FindName("SongPreview")).Any(t => t.Text == _home.PreviewSong!.Reason),
-            "preview omits the fourth reason row");
+        Assert(Descendants<TextBlock>((HomeSongPreview)_page.FindName("SongPreview")).Any(t => t.Text == _home.PreviewSong!.Reason),
+            "preview includes the fourth recommendation reason row");
         await WindowCapture.CaptureAsync(this, "home-polish-preview.png");
     }
     private async Task OpenFromPreview()

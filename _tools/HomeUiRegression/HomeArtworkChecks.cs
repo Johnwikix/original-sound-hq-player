@@ -130,3 +130,80 @@ internal sealed partial class HomePolishWindow
         }
     }
 }
+
+
+internal sealed partial class RegressionApplication
+{
+    private async Task CheckHoverHandoffAsync(HomePage page, WinUIMusicPlayer.ViewModel.HomeViewModel home)
+    {
+        ((FeaturedCarousel)page.FindName("Featured")).AutoShuffle = false;
+        var scroll = (ScrollViewer)page.FindName("ContentScroll");
+        var shelf = (RecommendationShelf)page.FindName("SongsShelf");
+        page.UpdateLayout();
+        var sources = Descendants<HomeSongItem>(shelf).Take(2).ToArray();
+        double top = sources[0].TransformToVisual(scroll).TransformPoint(new Point()).Y + scroll.VerticalOffset;
+        scroll.ChangeView(null, Math.Max(0, top - 100), null, true);
+        await Task.Delay(100);
+        var preview = (HomeSongPreview)page.FindName("SongPreview");
+        var first = (WinUIMusicPlayer.ViewModel.HomeSong)sources[0].Tag;
+        var second = (WinUIMusicPlayer.ViewModel.HomeSong)sources[1].Tag;
+        void Call(string name, params object?[] arguments) => typeof(HomePage)
+            .GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, arguments);
+        void Schedule(HomeSongItem card) => Call("SchedulePreview", card);
+        async Task WaitOpen(WinUIMusicPlayer.ViewModel.HomeSong song)
+        {
+            await Wait(() => ReferenceEquals(home.PreviewSong, song) && preview.Visibility == Visibility.Visible);
+            await Task.Delay(260);
+        }
+
+        // 重复移动应继续第一次悬停的倒计时，而不是不断把 400ms 推迟。
+        Schedule(sources[0]);
+        await Task.Delay(300);
+        Schedule(sources[0]);
+        await Task.Delay(250);
+        Check(ReferenceEquals(home.PreviewSong, first), "moving within a card does not restart its hover delay");
+        await WaitOpen(first);
+        Check(preview.ActualWidth == 280 && ((TextBlock)preview.FindName("RecommendationReason")).Text == first.Reason,
+            "small shelf preview uses 280px and retains the fourth recommendation reason row");
+
+        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
+        {
+            Schedule(sources[1]);
+            await WaitOpen(second);
+            Check(preview.IsHitTestVisible, "disabled animations still switch to an interactive target preview; animation-only checks skipped");
+            home.DismissPreview();
+            return;
+        }
+
+        // 原面板真实收起动画期间，重放旧面板进入与新卡片被短暂遮住的离开事件。
+        Schedule(sources[1]);
+        Check(!preview.IsHitTestVisible, "outgoing preview stops intercepting the target card's pointer input");
+        Call("Preview_PointerEntered", preview, null);
+        Call("LeavePreviewSource", sources[1], new Point(10, 10));
+        Check(Field<bool>(page, "_collapsingPreview")
+            && ReferenceEquals(Field<FrameworkElement>(page, "_pendingPreviewSource"), sources[1]),
+            "animation-induced pointer transitions preserve the pending target instead of restoring the old preview");
+        await WaitOpen(second);
+        Check(preview.IsHitTestVisible && ReferenceEquals(preview.Song, second),
+            "native close completion opens the target and restores its action hit testing");
+
+        // 真正离开目标必须取消请求，不能在已离开后弹出过期面板。
+        Schedule(sources[0]);
+        Call("LeavePreviewSource", sources[0], new Point(-1, -1));
+        await Wait(() => home.PreviewSong is null);
+        await Task.Delay(450);
+        Check(preview.Visibility == Visibility.Collapsed,
+            "leaving the pending card cancels its delayed preview");
+
+        // 收起时返回原卡片应取消切换；旧 batch 的迟到完成不得清掉恢复后的面板。
+        Schedule(sources[0]);
+        await WaitOpen(first);
+        Schedule(sources[1]);
+        Schedule(sources[0]);
+        await Task.Delay(250);
+        Check(ReferenceEquals(home.PreviewSong, first) && preview.IsHitTestVisible
+            && !Field<bool>(page, "_collapsingPreview"),
+            "returning to the original card restores it and rejects stale close completion");
+        home.DismissPreview();
+    }
+}
