@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -40,9 +41,19 @@ namespace WinUIMusicPlayer.Helper
         /// </summary>
         public async Task<UsbExportResult> WriteToUsb(IList<Music> musicList, UsbStorageDevice device, string? format = null,
             int bitRateKbps = 320, IProgress<double>? progress = null, Func<double>? nextFileBase = null, CancellationToken cancellationToken = default,
-            Func<Music, string, UsbFileFingerprint, Task>? onFileCopied = null)
+            Func<Music, string, UsbFileFingerprint, Task>? onFileCopied = null,
+            IReadOnlyList<UsbDeviceMusic>? existingRecords = null)
         {
             var result = new UsbExportResult(musicList.Count);
+            var available = new bool[musicList.Count];
+            for (int i = 0; i < musicList.Count; i++)
+            {
+                if (cancellationToken.IsCancellationRequested) return result;
+                available[i] = File.Exists(musicList[i].Path);
+            }
+            string?[] conflicts;
+            try { conflicts = UsbExportConflicts.Find(musicList, format, existingRecords, available, cancellationToken); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return result; }
             double basePercent = 0;
             double currentFilePercent = 0;
             // 转换服务的进度事件（0-100）映射为当前文件的内部进度参与聚合
@@ -55,8 +66,9 @@ namespace WinUIMusicPlayer.Helper
             _converterService.updateProgress += OnConverterProgress;
             try
             {
-                foreach (var music in musicList)
+                for (int index = 0; index < musicList.Count; index++)
                 {
+                    var music = musicList[index];
                     // 原生转换没有取消协议：等待本文件真正结束后停止下一项，保留已成功的台账。
                     if (cancellationToken.IsCancellationRequested) break;
                     currentFilePercent = 0;
@@ -65,7 +77,9 @@ namespace WinUIMusicPlayer.Helper
                     bool audioCopied = false;
                     try
                     {
-                        if (!File.Exists(music.Path))
+                        if (conflicts[index] is { } conflict)
+                            throw new IOException(string.Format(ToolUtils.GetString("UsbExportPathConflict"), conflict));
+                        if (!available[index])
                         {
                             _logger.LogWarning($"源文件不存在，跳过: {music.Path}");
                             result.AddFailure(music, UsbExportFailureStage.Audio, new FileNotFoundException(null, music.Path).Message);
@@ -139,8 +153,16 @@ namespace WinUIMusicPlayer.Helper
                         if (portableWriter is not null)
                         {
                             if (lyricsError is null)
-                                foreach (string lyricsPath in Directory.EnumerateFiles(targetBasePath, "*.lrc"))
-                                    await portableWriter.CopyAsync(lyricsPath);
+                            {
+                                string lyricsBase = Path.GetFileNameWithoutExtension(sanitizedFileName);
+                                foreach (string suffix in new[] { ".lrc", "_Translated.lrc", "_Pronunciation.lrc" })
+                                {
+                                    string name = lyricsBase + suffix;
+                                    string lyricsPath = Path.Combine(targetBasePath, name);
+                                    if (File.Exists(lyricsPath)) await portableWriter.CopyAsync(lyricsPath);
+                                    else await portableWriter.DeleteFileIfExistsAsync(name);
+                                }
+                            }
                             progress?.Report(basePercent + 100.0 / musicList.Count);
                         }
                     }
@@ -214,7 +236,6 @@ namespace WinUIMusicPlayer.Helper
             {
                 var document = await _musicDatabaseService.GetLyricsDocumentAsync(music);
                 string lyricsText = new WinUIMusicPlayer.Services.Lyrics.LyricsParser().ExportLrc(document);
-                if (string.IsNullOrEmpty(lyricsText)) return null;
                 string lrcFilePath = Path.Combine(targetBasePath, Path.ChangeExtension(sanitizedFileName, ".lrc"));
                 await WinUIMusicPlayer.Services.Lyrics.LyricsExporter.SaveFilesAsync(lrcFilePath,
                     document with { Original = new(lyricsText, LyricsFormat.Lrc) }, CancellationToken.None);

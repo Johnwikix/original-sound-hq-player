@@ -23,7 +23,12 @@ namespace WinUIMusicPlayer.Utils
 {
     public static partial class ToolUtils
     {
-        public static string GetString(string key) => key == "FolderBrowserSummary" ? "{0} songs" : key;
+        public static string GetString(string key) => key switch
+        {
+            "FolderBrowserSummary" => "{0} songs",
+            "UsbExportPathConflict" => "USB target path conflicts: {0}",
+            _ => key
+        };
     }
 }
 namespace WinUIMusicPlayer.View

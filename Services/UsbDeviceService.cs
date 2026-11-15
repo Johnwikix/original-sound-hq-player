@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using ZLinq;
@@ -37,7 +38,7 @@ namespace WinUIMusicPlayer.Services
         private readonly Dictionary<string, int> _musicIndices = new(StringComparer.OrdinalIgnoreCase);
         private ScanSession? _session;
         private int _exportsInProgress;
-        private volatile bool _refreshAfterExport;
+        private bool _refreshAfterExport; // 与发送计数一起仅在 UI 队列访问。
 
         private sealed class ExportPause(UsbDeviceService owner) : IDisposable
         {
@@ -47,7 +48,7 @@ namespace WinUIMusicPlayer.Services
 
         private sealed class ScanSession(UsbStorageDevice device, CancellationToken stopToken) : IDisposable
         {
-            internal UsbStorageDevice Device { get; } = device;
+            internal UsbStorageDevice Device { get; } = device.CreateSnapshot();
             internal CancellationTokenSource Cancellation { get; } = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
             internal SemaphoreSlim Wake { get; } = new(0, 1);
             internal bool Pending { get; set; } = true;
@@ -74,16 +75,25 @@ namespace WinUIMusicPlayer.Services
             set
             {
                 if (_stopped || ReferenceEquals(field, value)) return;
+                bool sameStorage = field?.UniqueId == value?.UniqueId;
                 SetProperty(ref field, value);
-                var previous = _session;
-                _session = value is null ? null : new ScanSession(value, _watchCts.Token);
-                previous?.Cancellation.Cancel();
+                StartScanSession(value, preserveRecords: sameStorage);
+            }
+        }
+
+        private void StartScanSession(UsbStorageDevice? device, bool preserveRecords)
+        {
+            var previous = _session;
+            _session = device is null ? null : new ScanSession(device, _watchCts.Token);
+            previous?.Cancellation.Cancel();
+            if (!preserveRecords)
+            {
                 MusicOnDevice.Clear();
                 _musicIndices.Clear();
                 RaiseDeviceMusicChanged();
-                _selectionTasks.RemoveAll(static task => task.IsCompleted);
-                if (_session is { } session) _selectionTasks.Add(SelectCoreAsync(session));
             }
+            _selectionTasks.RemoveAll(static task => task.IsCompleted);
+            if (_session is { } session) _selectionTasks.Add(SelectCoreAsync(session));
         }
 
         /// <summary>选中设备的音乐发送台账（含历史扫描与本次会话的发送记录）。</summary>
@@ -169,54 +179,89 @@ namespace WinUIMusicPlayer.Services
         /// 无选中或选中设备被移除时自动选中第一项，免去插拔后的手动选择。</summary>
         public async Task RefreshDevicesAsync()
         {
-            int version = Interlocked.Increment(ref _refreshVersion);
-            bool entered = false;
             try
             {
                 if (_stopped) return;
-                if (Volatile.Read(ref _exportsInProgress) > 0)
+                var dispatcher = App.MainWindow.DispatcherQueue;
+                if (dispatcher.HasThreadAccess) await RefreshDevicesCoreAsync(force: false);
+                else await dispatcher.EnqueueAsync(new Func<Task>(async () => { await RefreshDevicesCoreAsync(force: false); }));
+            }
+            catch (Exception ex) when (_stopped) { _logger.LogDebug(ex, "退出期间忽略迟到的设备刷新"); }
+            catch (Exception ex) { _logger.LogError(ex, "调度 USB 设备刷新失败"); }
+        }
+
+        /// <summary>发送屏障内重新确认地址，排队发送不能沿用菜单捕获的旧盘符。</summary>
+        public async Task<UsbStorageDevice> GetExportDeviceAsync(UsbStorageDevice requested)
+        {
+            if (!await RefreshDevicesCoreAsync(force: true))
+                throw new IOException($"无法确认 USB 设备的当前地址: {requested.Name}");
+            foreach (var device in Devices)
+                if (device.UniqueId == requested.UniqueId) return device.CreateSnapshot();
+            throw new DirectoryNotFoundException($"USB 设备已不可用: {requested.Name}");
+        }
+
+        // 此方法及发送屏障的进入/释放都在 UI 队列，计数和待刷新标志不会交错丢失。
+        private async Task<bool> RefreshDevicesCoreAsync(bool force)
+        {
+            bool entered = false;
+            try
+            {
+                if (_stopped) return false;
+                if (_exportsInProgress > 0 && !force)
                 {
                     _refreshAfterExport = true;
-                    return;
+                    return false;
                 }
+                int version = ++_refreshVersion;
                 await _refreshGate.WaitAsync(_watchCts.Token);
                 entered = true;
-                if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
+                if (_stopped || version != _refreshVersion) return false;
                 var devices = await Task.Run(UsbStorageDeviceReader.GetUsbStorageDevicesAsync);
-                if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
-                var dq = App.MainWindow.DispatcherQueue;
-                await dq.EnqueueAsync(() =>
-                {
-                    if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
-                    // 保留相同 ID 的对象，避免刷新清空 ItemsSource 时 TwoWay 绑定撤销选择。
-                    for (int i = Devices.Count - 1; i >= 0; i--)
-                        if (!devices.Exists(d => d.UniqueId == Devices[i].UniqueId)) Devices.RemoveAt(i);
-                    foreach (var device in devices)
-                        if (Devices.AsValueEnumerable().All(d => d.UniqueId != device.UniqueId)) Devices.Add(device);
-                    DevicesVisibility = Devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                    if (Devices.Count == 0)
-                    {
-                        ClearSelection();
-                        DevicesChanged?.Invoke(this, EventArgs.Empty);
-                        return;
-                    }
-                    // 自动选中：当前无选中、或选中的设备已被拔出（按 UniqueId 判断）
-                    if (SelectedDevice is null || Devices.AsValueEnumerable().All(d => d.UniqueId != SelectedDevice.UniqueId))
-                        SelectedDevice = Devices[0];
-                    // 相同设备对象不再触发选择 setter；未完成的扫描需要独立唤醒。
-                    if (_session is { Pending: true } pending) pending.Signal();
-                    DevicesChanged?.Invoke(this, EventArgs.Empty);
-                });
+                if (_stopped || version != _refreshVersion) return false;
+                ApplyDevices(devices);
+                return true;
             }
-            catch (OperationCanceledException) when (_stopped) { }
+            catch (OperationCanceledException) when (_stopped) { return false; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"枚举 USB 设备失败: {ex.Message}");
+                _logger.LogError(ex, "枚举 USB 设备失败");
+                return false;
             }
             finally
             {
                 if (entered) _refreshGate.Release();
             }
+        }
+
+        private void ApplyDevices(List<UsbStorageDevice> devices)
+        {
+            // 保留相同 ID 的选择对象，但同步地址与展示属性，地址变化时替换扫描会话。
+            for (int i = Devices.Count - 1; i >= 0; i--)
+                if (!devices.Exists(d => d.UniqueId == Devices[i].UniqueId)) Devices.RemoveAt(i);
+            foreach (var device in devices)
+            {
+                var existing = Devices.AsValueEnumerable().FirstOrDefault(d => d.UniqueId == device.UniqueId);
+                if (existing is null) Devices.Add(device);
+                else
+                {
+                    bool addressChanged = !string.Equals(existing.Path, device.Path, StringComparison.OrdinalIgnoreCase)
+                        || existing.PortableDeviceId != device.PortableDeviceId || existing.PortableStorageId != device.PortableStorageId;
+                    existing.Path = device.Path;
+                    existing.Name = device.Name;
+                    existing.FreeSpaceInGB = device.FreeSpaceInGB;
+                    existing.TotalSpaceInGB = device.TotalSpaceInGB;
+                    existing.PortableDeviceId = device.PortableDeviceId;
+                    existing.PortableStorageId = device.PortableStorageId;
+                    if (addressChanged && ReferenceEquals(existing, SelectedDevice))
+                        StartScanSession(existing, preserveRecords: true);
+                }
+            }
+            DevicesVisibility = Devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (Devices.Count == 0) ClearSelection();
+            else if (SelectedDevice is null || Devices.AsValueEnumerable().All(d => d.UniqueId != SelectedDevice.UniqueId))
+                SelectedDevice = Devices[0];
+            if (_session is { Pending: true } pending) pending.Signal();
+            DevicesChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>先发布缓存，再以单工作循环核对目录；取消或失败不会冒充扫描完成。</summary>
@@ -334,7 +379,8 @@ namespace WinUIMusicPlayer.Services
             var changedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var record in records)
             {
-                if (_musicIndices.TryGetValue(record.Path, out int index))
+                string key = UsbExportPaths.GetStoragePathKey(record.Path);
+                if (_musicIndices.TryGetValue(key, out int index))
                 {
                     if (!overwrite) continue; // 缓存回读不能覆盖同时到达的新发送记录。
                     var previous = MusicOnDevice[index];
@@ -345,9 +391,11 @@ namespace WinUIMusicPlayer.Services
                     {
                         // 指纹和数据库身份不参与绑定，避免每次缓存核对产生整库 Replace 通知。
                         previous.Id = record.Id;
+                        previous.Path = record.Path;
                         previous.ScanFileSize = record.ScanFileSize;
                         previous.ScanModifiedTicks = record.ScanModifiedTicks;
                         previous.ScanMetadataRead = record.ScanMetadataRead;
+                        previous.ExportSourceIdentity = record.ExportSourceIdentity;
                         continue;
                     }
                     MusicOnDevice[index] = record;
@@ -356,7 +404,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 else
                 {
-                    _musicIndices[record.Path] = MusicOnDevice.Count;
+                    _musicIndices[key] = MusicOnDevice.Count;
                     MusicOnDevice.Add(record);
                 }
                 changedTitles.Add(record.Title);
@@ -371,14 +419,18 @@ namespace WinUIMusicPlayer.Services
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 if (!CanPublish(session, token)) return;
-                ApplyRecords(records, overwrite);
+                var unique = new Dictionary<string, UsbDeviceMusic>(StringComparer.OrdinalIgnoreCase);
+                foreach (var record in records)
+                {
+                    string key = UsbExportPaths.GetStoragePathKey(record.Path);
+                    if (!unique.TryGetValue(key, out var previous) || record.Id > previous.Id) unique[key] = record;
+                }
+                ApplyRecords(new List<UsbDeviceMusic>(unique.Values), overwrite);
                 if (overwrite)
                 {
-                    var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var record in records) present.Add(record.Path);
                     var removed = new List<string>();
                     foreach (var record in MusicOnDevice)
-                        if (!present.Contains(record.Path)) removed.Add(record.Path);
+                        if (!unique.ContainsKey(UsbExportPaths.GetStoragePathKey(record.Path))) removed.Add(record.Path);
                     RemoveRecords(removed);
                 }
             });
@@ -402,19 +454,20 @@ namespace WinUIMusicPlayer.Services
         private void RemoveRecords(IReadOnlyList<string> removed)
         {
             if (removed.Count == 0) return;
-            var paths = new HashSet<string>(removed, StringComparer.OrdinalIgnoreCase);
+            var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string path in removed) paths.Add(UsbExportPaths.GetStoragePathKey(path));
             var titles = new HashSet<string>(StringComparer.Ordinal);
             var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int i = MusicOnDevice.Count - 1; i >= 0; i--)
             {
                 var record = MusicOnDevice[i];
-                if (!paths.Contains(record.Path)) continue;
+                if (!paths.Contains(UsbExportPaths.GetStoragePathKey(record.Path))) continue;
                 titles.Add(record.Title);
                 files.Add(Path.GetFileNameWithoutExtension(record.Path));
                 MusicOnDevice.RemoveAt(i);
             }
             _musicIndices.Clear();
-            for (int i = 0; i < MusicOnDevice.Count; i++) _musicIndices[MusicOnDevice[i].Path] = i;
+            for (int i = 0; i < MusicOnDevice.Count; i++) _musicIndices[UsbExportPaths.GetStoragePathKey(MusicOnDevice[i].Path)] = i;
             if (titles.Count > 0) RaiseDeviceMusicChanged(titles, files);
         }
 

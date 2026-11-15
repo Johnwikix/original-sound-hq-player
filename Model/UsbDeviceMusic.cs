@@ -17,6 +17,8 @@ namespace WinUIMusicPlayer.Model
         public long? ScanFileSize { get; set; }
         public long? ScanModifiedTicks { get; set; }
         public bool? ScanMetadataRead { get; set; }
+        /// <summary>已确认的本机导出来源；null 表示旧记录或设备扫描，不能据此推断同源。</summary>
+        public string? ExportSourceIdentity { get; set; }
 
     }
 }

@@ -59,6 +59,18 @@ public sealed class UsbPortableStorageWriter : IDisposable
         return new(checked((long)basic.Size), modified);
     }
 
+    /// <summary>同步已明确清空的歌词侧车，缺失文件无需处理，其他驱动错误交给发送结果报告。</summary>
+    public async Task DeleteFileIfExistsAsync(string name)
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        try
+        {
+            var file = await _folder.GetFileAsync(name);
+            await file.DeleteAsync(StorageDeleteOption.PermanentDelete);
+        }
+        catch (FileNotFoundException) { return; }
+    }
+
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 0)

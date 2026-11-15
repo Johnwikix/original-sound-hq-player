@@ -1,3 +1,14 @@
+## 2026-11-15 修复 USB 审查发现的六项问题
+
+- `UsbExportConflicts`、`UsbWriterHelper`、`UsbExportCoordinator`、`Strings/*/Resources.resw`：写入前预检原格式、转码回退及歌词目标路径，冲突项明确报错而不覆盖；核对已有台账的来源及目录归属，保留正常同源重发与同曲多格式原文件并存。
+- `UsbDeviceMusic`、`LibraryDatabaseMigration`：数据库版本升至 4，通过统一备份迁移入口新增可空导出来源标记；已确认同源可改标签后重发，旧记录按完整元数据核对，空字段不再绕过冲突检查，外部改动后撤销过期来源证明。
+- `UsbDeviceService`、`UsbStorageDevice`、`MusicBrowsePage.xaml`：相同设备 ID 同步新盘符、名称和容量，地址变化重建扫描会话且保留缓存；扫描使用独立地址快照，排队导出在发送屏障内重新确认当前设备地址。
+- `UsbDeviceMusicPresence`：仅筛选受影响歌曲，匹配时保留其标题下的完整设备记录，避免同文件名事件把已有精确图标降级。
+- `UsbExportPaths`、`UsbMusicScan`、`MusicDatabaseService.UsbStorage`：以设备相对路径比较台账，按当前扫描结果回写新盘符；完整扫描后清理 Music 内的失效记录及旧盘符重复行，界面缓存同步去重。
+- `UsbDeviceService`：发现请求、延迟刷新标志与发送屏障统一在 UI 队列处理，消除发送结束与设备事件交错丢失刷新。
+- `UsbPortableStorageWriter`、`UsbWriterHelper`：MTP 同步删除已清空的原文、翻译和注音侧车，磁盘与手机采用一致的空歌词清理语义；删除错误计入歌词失败。
+- 验证：按用户要求不执行构建、测试或设备操作；仅完成源码调用链、七语资源键与 CRLF 格式检查。
+
 ## 2026-11-15 USB 缓存与增量扫描
 
 - `UsbDeviceService`：选择设备先显示本地台账；每个连接独立记录扫描是否完成，发送抢占后自动补扫，失败逐步退避重试，设备状态更新可唤醒；选择切换和退出等待实际扫描结束并屏蔽过期回调。

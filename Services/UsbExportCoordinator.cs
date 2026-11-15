@@ -46,9 +46,12 @@ public sealed class UsbExportCoordinator(AppState state, ApplicationTasks tasks,
             entered = true;
             using var scanPause = devices.PauseScanForExport();
             state.Operations.Begin(key, ToolUtils.GetString("ProgressTransmitting"));
+            device = await devices.GetExportDeviceAsync(device);
+            token.ThrowIfCancellationRequested();
             // 文件 I/O 只占 95%；发送记录提交成功前不显示 100%。
             var progress = new Progress<double>(p => state.Operations.Report(key, Math.Clamp(p, 0, 100) * 0.95));
             var writer = new UsbWriterHelper(converter, database);
+            var existingRecords = await database.GetUsbDeviceMusics(device.UniqueId);
             var dispatcher = App.MainWindow.DispatcherQueue;
             var records = new List<UsbDeviceMusic>(songs.Count);
             async Task OnFileCopied(Music music, string extension, UsbFileFingerprint fingerprint)
@@ -61,7 +64,7 @@ public sealed class UsbExportCoordinator(AppState state, ApplicationTasks tasks,
                 });
             }
             result = await Task.Run(() => writer.WriteToUsb(songs, device, format, bitRateKbps, progress,
-                cancellationToken: token, onFileCopied: OnFileCopied));
+                cancellationToken: token, onFileCopied: OnFileCopied, existingRecords: existingRecords));
             await database.SaveUsbExportRecordsAsync(records, device);
             if (!token.IsCancellationRequested)
             {

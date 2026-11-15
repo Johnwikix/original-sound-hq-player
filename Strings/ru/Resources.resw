@@ -2738,4 +2738,5 @@ SHA-256: {5}
 {0}
 Подробности доступны в журнале.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Скопированные файлы сохранены, но записи об их передаче обновлены не полностью.</value></data>
+  <data name="UsbExportPathConflict" xml:space="preserve"><value>Конфликт пути назначения или не удалось подтвердить принадлежность файла. Перезапись пропущена: {0}</value></data>
 </root>

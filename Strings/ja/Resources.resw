@@ -2738,4 +2738,5 @@ SHA-256: {5}
 {0}
 詳細はログを確認してください。</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>コピー済みのファイルは保持されますが、転送記録を完全に更新できませんでした。</value></data>
+  <data name="UsbExportPathConflict" xml:space="preserve"><value>転送先のパスが競合するか、ファイルの対応を確認できません。上書きを避けるためスキップしました：{0}</value></data>
 </root>

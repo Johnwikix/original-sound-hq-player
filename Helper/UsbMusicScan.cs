@@ -21,16 +21,24 @@ internal sealed class UsbMusicScan(
 
     internal bool TryReuse(string path, long size, long modifiedTicks)
     {
-        if (!cached.TryGetValue(path, out var previous) || previous.ScanMetadataRead != true
+        if (!cached.TryGetValue(UsbExportPaths.GetStoragePathKey(path), out var previous) || previous.ScanMetadataRead != true
             || previous.ScanFileSize != size || previous.ScanModifiedTicks != modifiedTicks) return false;
-        Records.Add(previous);
+        if (string.Equals(previous.Path, path, StringComparison.OrdinalIgnoreCase)) Records.Add(previous);
+        else
+        {
+            // 同一设备换了盘符：复用标签，按当前地址更新原台账，而不是新增第二条记录。
+            var rebased = CreateRecord(path, previous.UniqueDeviceId, size, modifiedTicks,
+                previous.Title, previous.Author, previous.Album, metadataRead: true);
+            Records.Add(rebased);
+            _batch.Add(rebased);
+        }
         return true;
     }
 
     internal UsbDeviceMusic CreateRecord(string path, string deviceId, long? size, long? modifiedTicks,
         string? title, string? author, string? album, bool metadataRead)
     {
-        cached.TryGetValue(path, out var previous);
+        cached.TryGetValue(UsbExportPaths.GetStoragePathKey(path), out var previous);
         bool sameFile = previous is not null
             && (!previous.ScanFileSize.HasValue || previous.ScanFileSize == size && previous.ScanModifiedTicks == modifiedTicks);
         // MTP 标签为空时沿用同一文件已确认的元数据；变更过的文件不能继承旧标签。
@@ -46,7 +54,10 @@ internal sealed class UsbMusicScan(
             Extension = Path.GetExtension(path).TrimStart('.').ToUpperInvariant(),
             ScanFileSize = size,
             ScanModifiedTicks = modifiedTicks,
-            ScanMetadataRead = metadataRead
+            ScanMetadataRead = metadataRead,
+            // 外部修改或指纹未知时撤销来源证明，后续覆盖不能继续信任旧的导出身份。
+            ExportSourceIdentity = sameFile && previous!.ScanFileSize.HasValue && previous.ScanModifiedTicks.HasValue
+                ? previous.ExportSourceIdentity : null
         };
     }
 
@@ -71,6 +82,6 @@ internal sealed class UsbMusicScan(
     }
 
     internal Task FlushIfDueAsync()
-        => _batch.Count > 0 && Stopwatch.GetElapsedTime(_lastPublished).TotalMilliseconds >= 500
+        => _batch.Count >= 32 || _batch.Count > 0 && Stopwatch.GetElapsedTime(_lastPublished).TotalMilliseconds >= 500
             ? FlushAsync() : Task.CompletedTask;
 }

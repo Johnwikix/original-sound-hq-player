@@ -2740,4 +2740,5 @@ SHA-256：{5}
 {0}
 完整详情请查看日志。</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>已复制的文件会保留，但发送记录未能完整更新。</value></data>
+  <data name="UsbExportPathConflict" xml:space="preserve"><value>目标路径冲突或无法确认文件归属，已跳过以避免覆盖：{0}</value></data>
 </root>

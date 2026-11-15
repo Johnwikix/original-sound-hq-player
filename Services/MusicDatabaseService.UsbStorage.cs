@@ -24,7 +24,12 @@ public partial class MusicDatabaseService
         try
         {
             var cached = new Dictionary<string, UsbDeviceMusic>(StringComparer.OrdinalIgnoreCase);
-            foreach (var record in await GetUsbDeviceMusics(device.UniqueId)) cached[record.Path] = record;
+            var original = await GetUsbDeviceMusics(device.UniqueId);
+            foreach (var record in original)
+            {
+                string key = UsbExportPaths.GetStoragePathKey(record.Path);
+                if (!cached.TryGetValue(key, out var previous) || record.Id > previous.Id) cached[key] = record;
+            }
             token.ThrowIfCancellationRequested();
             async Task CommitBatchAsync(IReadOnlyList<UsbDeviceMusic> records)
             {
@@ -35,14 +40,15 @@ public partial class MusicDatabaseService
                     token.ThrowIfCancellationRequested();
                     foreach (var record in records)
                     {
-                        if (cached.TryGetValue(record.Path, out var previous))
+                        string key = UsbExportPaths.GetStoragePathKey(record.Path);
+                        if (cached.TryGetValue(key, out var previous))
                         {
                             record.Id = previous.Id;
                             connection.Update(record);
                         }
                         else connection.Insert(record);
                         // 同一批次内的同路径也按覆盖处理；失败回滚后会丢弃本次扫描索引并重新加载。
-                        cached[record.Path] = record;
+                        cached[key] = record;
                     }
                     token.ThrowIfCancellationRequested();
                 });
@@ -53,15 +59,20 @@ public partial class MusicDatabaseService
                 : await UsbDiskMusicReader.ReadAsync(device, cached, CommitBatchAsync, token);
             token.ThrowIfCancellationRequested();
             var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var record in scan.Records) present.Add(record.Path);
+            foreach (var record in scan.Records) present.Add(UsbExportPaths.GetStoragePathKey(record.Path));
             var removed = new List<string>();
-            string musicPrefix = Path.Combine(device.IsPortable ? string.Empty : device.Path, "MUSIC") + Path.DirectorySeparatorChar;
-            foreach (var path in cached.Keys)
-                if (path.StartsWith(musicPrefix, StringComparison.OrdinalIgnoreCase) && !present.Contains(path)) removed.Add(path);
+            foreach (var key in cached.Keys)
+                if (UsbExportPaths.IsMusicPathKey(key) && !present.Contains(key)) removed.Add(key);
             await _dbConnection.RunInTransactionAsync(connection =>
             {
                 token.ThrowIfCancellationRequested();
-                foreach (string path in removed) connection.Delete<UsbDeviceMusic>(cached[path].Id);
+                // 完整扫描后才清理缺失路径及旧盘符留下的重复行，范围外历史记录保持不变。
+                foreach (var previous in original)
+                {
+                    string key = UsbExportPaths.GetStoragePathKey(previous.Path);
+                    if (UsbExportPaths.IsMusicPathKey(key) && (!present.Contains(key) || cached[key].Id != previous.Id))
+                        connection.Delete<UsbDeviceMusic>(previous.Id);
+                }
                 token.ThrowIfCancellationRequested();
             });
             if (removed.Count > 0 && onRemoved is not null) await onRemoved(removed);
@@ -95,6 +106,7 @@ public partial class MusicDatabaseService
             Extension = extension.ToUpperInvariant(),
             UniqueDeviceId = device.UniqueId,
             ScanMetadataRead = true,
+            ExportSourceIdentity = UsbExportPaths.GetSourceIdentity(music),
             ScanFileSize = fingerprint.Size,
             ScanModifiedTicks = fingerprint.ModifiedTicks
         };
@@ -113,10 +125,14 @@ public partial class MusicDatabaseService
             {
                 var existing = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 foreach (var previous in connection.Table<UsbDeviceMusic>().Where(m => m.UniqueDeviceId == device.UniqueId).ToList())
-                    existing[previous.Path] = previous.Id;
+                {
+                    string key = UsbExportPaths.GetStoragePathKey(previous.Path);
+                    if (!existing.TryGetValue(key, out int id) || previous.Id > id) existing[key] = previous.Id;
+                }
                 foreach (var record in records)
                 {
-                    if (existing.TryGetValue(record.Path, out int id))
+                    string key = UsbExportPaths.GetStoragePathKey(record.Path);
+                    if (existing.TryGetValue(key, out int id))
                     {
                         record.Id = id;
                         connection.Update(record);
@@ -124,7 +140,7 @@ public partial class MusicDatabaseService
                     else
                     {
                         connection.Insert(record);
-                        existing[record.Path] = record.Id;
+                        existing[key] = record.Id;
                     }
                 }
             });

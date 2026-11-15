@@ -2738,4 +2738,5 @@ SHA-256: {5}
 {0}
 See the log for full details.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Copied files are retained, but their transfer records could not be fully updated.</value></data>
+  <data name="UsbExportPathConflict" xml:space="preserve"><value>Target path conflict or unconfirmed ownership. Skipped to avoid overwriting: {0}</value></data>
 </root>

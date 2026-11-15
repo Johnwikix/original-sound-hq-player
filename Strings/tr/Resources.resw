@@ -2738,4 +2738,5 @@ SHA-256: {5}
 {0}
 Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopyalanan dosyalar korunur ancak aktarım kayıtları tam olarak güncellenemedi.</value></data>
+  <data name="UsbExportPathConflict" xml:space="preserve"><value>Hedef yol çakışıyor veya dosyanın kaynağı doğrulanamadı. Üzerine yazılmaması için atlandı: {0}</value></data>
 </root>

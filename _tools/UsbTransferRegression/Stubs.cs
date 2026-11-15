@@ -2,6 +2,7 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music(string path, string author, string album) : System.ComponentModel.INotifyPropertyChanged
     {
+        public int Id { get; set; }
         public string Path { get; set; } = path;
         public string Author { get; set; } = author;
         public string Album { get; set; } = album;
@@ -63,6 +64,8 @@ namespace WinUIMusicPlayer.Utils
     {
 #if USB_UI_REGRESSION
         public static string GetString(string key) => new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString(key);
+#else
+        public static string GetString(string key) => key == "UsbExportPathConflict" ? "USB target path conflicts: {0}" : key;
 #endif
         public static string SanitizeFileName(string value, char[] invalid)
         {

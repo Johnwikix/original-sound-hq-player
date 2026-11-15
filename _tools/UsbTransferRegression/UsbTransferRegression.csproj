@@ -16,9 +16,11 @@
     <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
     <Compile Include="../../Reader/UsbPortableMusicReader.cs" />
     <Compile Include="../../Helper/UsbMusicScan.cs;../../Reader/UsbDiskMusicReader.cs" />
+    <Compile Include="../../Helper/UsbExportConflicts.cs" />
     <Compile Include="../../Services/AudioConverterService.cs;../../Services/AudioFileWriteGate.cs;../../AudioConverters/FFmpegAudioConverter.cs;../../Model/ConversionMetadata.cs" />
     <Compile Include="../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsParser*.cs" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="ZLinq" Version="1.6.1" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />

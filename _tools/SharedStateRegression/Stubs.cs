@@ -136,6 +136,7 @@ namespace WinUIMusicPlayer.Helper
         }
         public Task CopyAsync(string source) => throw new NotSupportedException();
         public Task<Model.UsbFileFingerprint> GetLastCopiedFingerprintAsync() => throw new NotSupportedException();
+        public Task DeleteFileIfExistsAsync(string name) => throw new NotSupportedException();
         public void Dispose() { }
     }
 }

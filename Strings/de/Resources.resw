@@ -2738,4 +2738,5 @@ SHA-256: {5}
 {0}
 Vollständige Details stehen im Protokoll.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopierte Dateien bleiben erhalten, aber ihre Übertragungsdaten konnten nicht vollständig aktualisiert werden.</value></data>
+  <data name="UsbExportPathConflict" xml:space="preserve"><value>Konflikt im Zielpfad oder unklare Dateizuordnung. Zum Schutz vor Überschreiben übersprungen: {0}</value></data>
 </root>
