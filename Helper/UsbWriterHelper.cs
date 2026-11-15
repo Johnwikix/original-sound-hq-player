@@ -35,11 +35,12 @@ namespace WinUIMusicPlayer.Helper
         /// <paramref name="nextFileBase"/> 在每个文件完成后调用，返回该文件的完成基准百分比
         /// （= 已完成文件数/总数），用于跨批次的进度重置与聚合。
         /// <paramref name="onFileCopied"/> 在每首音频实际复制成功、歌词发送之前等待执行，
-        /// 用于逐曲发布状态；返回值分别记录音频成功与音频、歌词、状态失败。
+        /// 带上设备文件指纹以复用已确认标签；指纹读取失败不改变音频成功结果。
+        /// 返回值分别记录音频成功与音频、歌词、状态失败。
         /// </summary>
         public async Task<UsbExportResult> WriteToUsb(IList<Music> musicList, UsbStorageDevice device, string? format = null,
             int bitRateKbps = 320, IProgress<double>? progress = null, Func<double>? nextFileBase = null, CancellationToken cancellationToken = default,
-            Func<Music, string, Task>? onFileCopied = null)
+            Func<Music, string, UsbFileFingerprint, Task>? onFileCopied = null)
         {
             var result = new UsbExportResult(musicList.Count);
             double basePercent = 0;
@@ -114,7 +115,18 @@ namespace WinUIMusicPlayer.Helper
                         // 回调仅发布状态，不能重入 MTP 门；持久化由协调器在整批 I/O 结束后完成。
                         if (onFileCopied is not null)
                         {
-                            try { await onFileCopied(music, extension); }
+                            UsbFileFingerprint fingerprint = default;
+                            try
+                            {
+                                if (portableWriter is not null) fingerprint = await portableWriter.GetLastCopiedFingerprintAsync();
+                                else
+                                {
+                                    var file = new FileInfo(targetFilePath);
+                                    fingerprint = new(file.Length, file.LastWriteTimeUtc.Ticks);
+                                }
+                            }
+                            catch (Exception ex) { _logger.LogDebug(ex, "读取已复制文件指纹失败，将由后续扫描补齐: {File}", music.Path); }
+                            try { await onFileCopied(music, extension, fingerprint); }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "发布 USB 发送状态失败: {File}", music.Path);

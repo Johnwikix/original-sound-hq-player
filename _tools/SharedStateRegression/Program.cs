@@ -204,11 +204,11 @@ static async Task RunAsync()
         var lyricsWriter = new WinUIMusicPlayer.Helper.UsbWriterHelper(converter, failedLyrics);
         int copiedCallbacks = 0;
         results = await lyricsWriter.WriteToUsb([new(1, original)], device,
-            onFileCopied: (_, _) => { copiedCallbacks++; return Task.CompletedTask; });
+            onFileCopied: (_, _, _) => { copiedCallbacks++; return Task.CompletedTask; });
         Check(results.Succeeded.Count == 1 && results.UnsentCount == 0 && results.LyricsFailureCount == 1 && copiedCallbacks == 1,
             "A lyric failure must retain audio success and publish its icon once.");
         results = await writer.WriteToUsb([new(1, original)], device,
-            onFileCopied: (_, _) => throw new IOException("Fixture UI publication failed"));
+            onFileCopied: (_, _, _) => throw new IOException("Fixture UI publication failed"));
         Check(results.Succeeded.Count == 1 && results.UnsentCount == 0 && results.StatusFailureCount == 1,
             "An icon/status callback failure must not claim the audio copy failed.");
 
@@ -227,7 +227,7 @@ static async Task RunAsync()
         unchangedRow.PropertyChanged += (_, _) => unchangedNotifications++;
         foreach (var row in displayedRows)
             row.PropertyChanged += (_, _) => Check(Environment.CurrentManagedThreadId == usbUiThread, "Device icons must publish on the UI context.");
-        async Task PublishCopied(Music music, string extension)
+        async Task PublishCopied(Music music, string extension, UsbFileFingerprint fingerprint)
         {
             var publication = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             ui.Post(_ =>

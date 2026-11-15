@@ -282,7 +282,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnUsbDevicesChanged(object? sender, EventArgs e) { if (!_isDisposed) UpDateUsbDeviceMenuflyout(); }
         private void OnUsbMusicChanged(object? sender, UsbDeviceMusicChangedEventArgs e)
         {
-            if (!_isDisposed) UsbDeviceMusicPresence.Update(SongsSource, UsbDeviceService.MusicOnDevice, e.ChangedTitles);
+            if (!_isDisposed) UsbDeviceMusicPresence.Update(SongsSource, UsbDeviceService.MusicOnDevice, e.ChangedTitles, e.ChangedFileNames);
         }
         private void OnDesktopLyricsStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -374,6 +374,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _appendedSongIds = null;
             _libraryQueries.Invalidate();
+            RefreshUsbDeviceMusicList();
             if (reconcilePlayback) ReconcilePlaybackLibrary();
             SongsSourceChanged?.Invoke();
             RefreshPlayListSummaries();
@@ -505,6 +506,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void AppendSongsBatch(IReadOnlyList<Music> batch)
         {
             if (batch.Count == 0) return;
+            UsbDeviceMusicPresence.Update(batch, UsbDeviceService.MusicOnDevice);
             if (_appendedSongIds is null)
             {
                 _appendedSongIds = new HashSet<int>();

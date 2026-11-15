@@ -28,6 +28,7 @@
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../UsbTransferRegression/App.cs;../UsbTransferRegression/Stubs.cs" />
     <Compile Include="../../Reader/UsbStorageDeviceReader.cs;../../Reader/UsbPortableMusicReader.cs" />
+    <Compile Include="../../Helper/UsbMusicScan.cs;../../Reader/UsbDiskMusicReader.cs" />
     <Compile Include="../../Model/UsbStorageDevice.cs;../../Model/UsbDeviceMusic.cs;../../Model/UsbExportResult.cs;../../Model/LyricsDocument.cs;../../Model/ConversionMetadata.cs" />
     <Compile Include="../../Helper/UsbExportPaths.cs;../../Helper/UsbWriterHelper.cs;../../Helper/UsbPortableStorageWriter.cs" />
     <Compile Include="../../Services/UsbExportCoordinator.cs;../../Services/UsbDeviceService.cs;../../Services/UsbDeviceMusicPresence.cs;../../Services/MusicDatabaseService.UsbStorage.cs" />

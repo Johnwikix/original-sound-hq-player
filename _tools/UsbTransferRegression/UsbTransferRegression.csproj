@@ -15,6 +15,7 @@
     <Compile Include="../../Helper/UsbExportPaths.cs;../../Services/MusicDatabaseService.UsbStorage.cs" />
     <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
     <Compile Include="../../Reader/UsbPortableMusicReader.cs" />
+    <Compile Include="../../Helper/UsbMusicScan.cs;../../Reader/UsbDiskMusicReader.cs" />
     <Compile Include="../../Services/AudioConverterService.cs;../../Services/AudioFileWriteGate.cs;../../AudioConverters/FFmpegAudioConverter.cs;../../Model/ConversionMetadata.cs" />
     <Compile Include="../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsParser*.cs" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />

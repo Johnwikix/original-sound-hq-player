@@ -1,3 +1,13 @@
+## 2026-11-15 USB 缓存与增量扫描
+
+- `UsbDeviceService`：选择设备先显示本地台账；每个连接独立记录扫描是否完成，发送抢占后自动补扫，失败逐步退避重试，设备状态更新可唤醒；选择切换和退出等待实际扫描结束并屏蔽过期回调。
+- `UsbPortableMusicReader`、`UsbDiskMusicReader`、`UsbMusicScan`：仅核对根目录 Music，按路径、大小和修改时间复用标签；MTP 分页及基本属性预取，不支持预取时回退，磁盘串行读取新增或变化文件的标签；每 32 条或约 500ms 提交并刷新已完成批次。
+- `MusicDatabaseService.UsbStorage`：已提交批次在中断后保留，重试从已提交台账继续；仅完整目录枚举成功后删除 Music 范围内的缺失记录，不删除范围外历史记录。
+- `UsbDeviceMusic`、`LibraryDatabaseMigration`、`MusicDatabaseService`：新增大小、修改时间和标签状态缓存，数据库版本升至 3，沿统一入口备份并幂等增列；保留旧台账，首次扫描补齐指纹。
+- `UsbPortableStorageWriter`、`UsbWriterHelper`、`UsbExportCoordinator`：成功复制时保存轻量指纹，补扫不重复读取已确认的导出标签；发送结束解除扫描屏障。
+- `UsbDeviceMusicPresence`、`AppViewModel`：批量更新受影响歌曲，缺少标签时允许文件名候选而不标为完全一致；曲库晚加载或追加歌曲时立即应用现有设备状态。
+- 验证：按用户要求不执行构建、测试或设备操作，仅完成源码调用链与格式检查；本次数据库升级及设备行为尚未经运行验证。
+
 ## 2026-11-15 修复 USB 批量发送与逐曲状态更新
 
 - `UsbExportPaths`：统一处理目录末尾句点、空格、空目录名与 Windows 保留名，修复部分专辑在 MTP 创建目录时被拒绝的问题；台账使用相同目标路径，保留原始歌曲元数据。

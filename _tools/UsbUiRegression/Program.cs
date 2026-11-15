@@ -75,10 +75,10 @@ public sealed partial class RegressionApplication : Application
             root = await UsbStorageDeviceReader.OpenPortableStorageAsync(phone);
             await database.InitializeAsync(Path.Combine(local, "ledger.db"));
             devices = new(database, ProductionApp.GetLogger<UsbDeviceService>());
-            devices.DeviceMusicChanged += (_, e) => UsbDeviceMusicPresence.Update(window.Songs, devices.MusicOnDevice, e.ChangedTitles);
+            devices.DeviceMusicChanged += (_, e) => UsbDeviceMusicPresence.Update(window.Songs, devices.MusicOnDevice, e.ChangedTitles, e.ChangedFileNames);
             devices.Devices.Add(phone);
             devices.SelectedDevice = phone;
-            devices.CancelScanForExport();
+            using var scanPause = devices.PauseScanForExport();
             var state = window.State;
             state.Lifecycle.TransitionTo(AppPhase.Initializing);
             state.Lifecycle.TransitionTo(AppPhase.Ready);

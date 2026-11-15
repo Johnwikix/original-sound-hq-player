@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
@@ -32,6 +33,35 @@ namespace WinUIMusicPlayer.Services
         private readonly SemaphoreSlim _refreshGate = new(1, 1);
         private int _refreshVersion;
         private readonly List<Task> _selectionTasks = [];
+        private readonly SemaphoreSlim _scanGate = new(1, 1);
+        private readonly Dictionary<string, int> _musicIndices = new(StringComparer.OrdinalIgnoreCase);
+        private ScanSession? _session;
+        private int _exportsInProgress;
+        private volatile bool _refreshAfterExport;
+
+        private sealed class ExportPause(UsbDeviceService owner) : IDisposable
+        {
+            private UsbDeviceService? _owner = owner;
+            public void Dispose() => Interlocked.Exchange(ref _owner, null)?.ResumeScanAfterExport();
+        }
+
+        private sealed class ScanSession(UsbStorageDevice device, CancellationToken stopToken) : IDisposable
+        {
+            internal UsbStorageDevice Device { get; } = device;
+            internal CancellationTokenSource Cancellation { get; } = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
+            internal SemaphoreSlim Wake { get; } = new(0, 1);
+            internal bool Pending { get; set; } = true;
+            internal void Signal()
+            {
+                try { Wake.Release(); }
+                catch (SemaphoreFullException) { } // 合并连接状态更新和发送完成的唤醒。
+            }
+            public void Dispose()
+            {
+                Cancellation.Dispose();
+                Wake.Dispose();
+            }
+        }
 
         /// <summary>当前枚举到的 USB 存储设备（下拉框数据源）。</summary>
         public ObservableCollection<UsbStorageDevice> Devices { get; } = [];
@@ -43,10 +73,16 @@ namespace WinUIMusicPlayer.Services
             get => field;
             set
             {
-                if (ReferenceEquals(field, value)) return;
+                if (_stopped || ReferenceEquals(field, value)) return;
                 SetProperty(ref field, value);
+                var previous = _session;
+                _session = value is null ? null : new ScanSession(value, _watchCts.Token);
+                previous?.Cancellation.Cancel();
+                MusicOnDevice.Clear();
+                _musicIndices.Clear();
+                RaiseDeviceMusicChanged();
                 _selectionTasks.RemoveAll(static task => task.IsCompleted);
-                _selectionTasks.Add(SelectCoreAsync(value));
+                if (_session is { } session) _selectionTasks.Add(SelectCoreAsync(session));
             }
         }
 
@@ -138,6 +174,11 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 if (_stopped) return;
+                if (Volatile.Read(ref _exportsInProgress) > 0)
+                {
+                    _refreshAfterExport = true;
+                    return;
+                }
                 await _refreshGate.WaitAsync(_watchCts.Token);
                 entered = true;
                 if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
@@ -162,6 +203,8 @@ namespace WinUIMusicPlayer.Services
                     // 自动选中：当前无选中、或选中的设备已被拔出（按 UniqueId 判断）
                     if (SelectedDevice is null || Devices.AsValueEnumerable().All(d => d.UniqueId != SelectedDevice.UniqueId))
                         SelectedDevice = Devices[0];
+                    // 相同设备对象不再触发选择 setter；未完成的扫描需要独立唤醒。
+                    if (_session is { Pending: true } pending) pending.Signal();
                     DevicesChanged?.Invoke(this, EventArgs.Empty);
                 });
             }
@@ -176,34 +219,78 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        /// <summary>选择核心：清空旧台账 → 载入该设备历史台账 → 后台重扫设备文件并刷新。
-        /// device 为 null 时仅清空（设备全部移除/用户取消选择）。</summary>
-        private async Task SelectCoreAsync(UsbStorageDevice? device)
+        /// <summary>先发布缓存，再以单工作循环核对目录；取消或失败不会冒充扫描完成。</summary>
+        private async Task SelectCoreAsync(ScanSession session)
         {
-            _scanCts?.Cancel();
-            using var scan = CancellationTokenSource.CreateLinkedTokenSource(_watchCts.Token);
-            _scanCts = scan;
-            var ct = scan.Token;
-            MusicOnDevice.Clear();
-            RaiseDeviceMusicChanged();
+            var token = session.Cancellation.Token;
             try
             {
-                if (device is null || _stopped) return;
-                await LoadDeviceMusicAsync(device.UniqueId, ct);
-                ct.ThrowIfCancellationRequested();
-                await Task.Run(() => device.IsPortable
-                    ? _musicDatabaseService.ScanPortableUsbDeviceAsync(device, ct)
-                    : _musicDatabaseService.ScanUsbDeviceAsync(device.Path, device.UniqueId), ct);
-                await LoadDeviceMusicAsync(device.UniqueId, ct);
+                try { await LoadDeviceMusicAsync(session, token); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (Exception ex) { _logger.LogWarning(ex, "加载 USB 缓存失败，将在扫描时重试: {Device}", session.Device.Name); }
+                int failures = 0;
+                while (true)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (!session.Pending || Volatile.Read(ref _exportsInProgress) > 0)
+                    {
+                        await session.Wake.WaitAsync(token);
+                        continue;
+                    }
+                    await _scanGate.WaitAsync(token);
+                    bool interrupted = false;
+                    try
+                    {
+                        token.ThrowIfCancellationRequested();
+                        if (Volatile.Read(ref _exportsInProgress) > 0) continue;
+                        using var scan = CancellationTokenSource.CreateLinkedTokenSource(token);
+                        _scanCts = scan;
+                        try
+                        {
+                            var ct = scan.Token;
+                            // 上一批可能已入库但因抢占尚未发布；重试从已提交状态补齐 UI。
+                            await LoadDeviceMusicAsync(session, ct, overwrite: true);
+                            ct.ThrowIfCancellationRequested();
+                            bool complete = await Task.Run(() => _musicDatabaseService.ScanUsbDeviceAsync(session.Device, ct,
+                                records => PublishScanBatchAsync(session, records, ct),
+                                removed => PublishScanRemovalsAsync(session, removed, ct)), ct);
+                            ct.ThrowIfCancellationRequested();
+                            session.Pending = !complete;
+                            failures = complete ? 0 : failures + 1;
+                        }
+                        catch (OperationCanceledException) when (!token.IsCancellationRequested)
+                        {
+                            // 发送抢占了扫描；发送完成会唤醒此会话，继续核对尚未完成的部分。
+                            session.Pending = true;
+                            interrupted = true;
+                        }
+                        finally
+                        {
+                            if (ReferenceEquals(_scanCts, scan)) _scanCts = null;
+                        }
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                    catch (Exception ex)
+                    {
+                        session.Pending = true;
+                        failures++;
+                        _logger.LogWarning(ex, "USB 扫描未完成，将自动补扫: {Device}", session.Device.Name);
+                    }
+                    finally { _scanGate.Release(); }
+                    if (session.Pending && !interrupted && Volatile.Read(ref _exportsInProgress) == 0)
+                    {
+                        // 失败重试逐渐退避到两分钟；状态更新可以提前唤醒，但至少间隔两秒。
+                        double seconds = Math.Min(120, 5 * Math.Pow(2, Math.Min(failures - 1, 5)));
+                        await Task.Delay(TimeSpan.FromSeconds(2), token);
+                        await session.Wake.WaitAsync(TimeSpan.FromSeconds(Math.Max(0, seconds - 2)), token);
+                    }
+                }
             }
-            catch (OperationCanceledException) { }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "扫描 USB 设备失败: {Device}", device?.Name);
-            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             finally
             {
-                if (ReferenceEquals(_scanCts, scan)) _scanCts = null;
+                if (ReferenceEquals(_session, session)) _session = null;
+                session.Dispose();
             }
         }
 
@@ -214,54 +301,132 @@ namespace WinUIMusicPlayer.Services
             SelectedDevice = null;
         }
 
-        /// <summary>用户发送优先于后台扫描，不清除已加载的台账。</summary>
-        public void CancelScanForExport() => _scanCts?.Cancel();
+        /// <summary>发送期间暂停扫描；缓存读取继续，释放租约后自动补扫。入口和释放均由 UI 线程调用。</summary>
+        public IDisposable PauseScanForExport()
+        {
+            Interlocked.Increment(ref _exportsInProgress);
+            if (_session is { } session) session.Pending = true;
+            _scanCts?.Cancel();
+            return new ExportPause(this);
+        }
+
+        private void ResumeScanAfterExport()
+        {
+            if (Interlocked.Decrement(ref _exportsInProgress) != 0 || _stopped) return;
+            _session?.Signal();
+            if (_refreshAfterExport)
+            {
+                _refreshAfterExport = false;
+                _ = RefreshDevicesAsync();
+            }
+        }
 
         /// <summary>每首音频落盘后发布状态；同路径覆盖，同标题的不同文件均保留。</summary>
         public void AddSentRecords(IReadOnlyList<UsbDeviceMusic> sent, UsbStorageDevice device)
         {
             if (sent.Count == 0 || _stopped || SelectedDevice?.UniqueId != device.UniqueId) return;
-            _scanCts?.Cancel(); // 旧查询不得在发送完成后再覆盖当前台账。
-            var changedTitles = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var record in sent)
-            {
-                int index = -1;
-                for (int i = 0; i < MusicOnDevice.Count; i++)
-                {
-                    if (!string.Equals(MusicOnDevice[i].Path, record.Path, StringComparison.OrdinalIgnoreCase)) continue;
-                    index = i;
-                    break;
-                }
-                if (index >= 0)
-                {
-                    changedTitles.Add(MusicOnDevice[index].Title);
-                    MusicOnDevice[index] = record;
-                }
-                else
-                    MusicOnDevice.Add(record);
-                changedTitles.Add(record.Title);
-            }
-            RaiseDeviceMusicChanged(changedTitles);
+            ApplyRecords(sent);
         }
 
-        private async Task LoadDeviceMusicAsync(string uniqueId, CancellationToken token)
+        private void ApplyRecords(IReadOnlyList<UsbDeviceMusic> records, bool overwrite = true)
         {
-            var records = await _musicDatabaseService.GetUsbDeviceMusics(uniqueId) ?? [];
+            var changedTitles = new HashSet<string>(StringComparer.Ordinal);
+            var changedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var record in records)
+            {
+                if (_musicIndices.TryGetValue(record.Path, out int index))
+                {
+                    if (!overwrite) continue; // 缓存回读不能覆盖同时到达的新发送记录。
+                    var previous = MusicOnDevice[index];
+                    bool sameDisplay = previous.Title == record.Title && previous.Author == record.Author
+                        && previous.Album == record.Album && previous.Extension == record.Extension
+                        && (previous.ScanMetadataRead == false) == (record.ScanMetadataRead == false);
+                    if (sameDisplay)
+                    {
+                        // 指纹和数据库身份不参与绑定，避免每次缓存核对产生整库 Replace 通知。
+                        previous.Id = record.Id;
+                        previous.ScanFileSize = record.ScanFileSize;
+                        previous.ScanModifiedTicks = record.ScanModifiedTicks;
+                        previous.ScanMetadataRead = record.ScanMetadataRead;
+                        continue;
+                    }
+                    MusicOnDevice[index] = record;
+                    changedTitles.Add(previous.Title);
+                    changedFiles.Add(Path.GetFileNameWithoutExtension(previous.Path));
+                }
+                else
+                {
+                    _musicIndices[record.Path] = MusicOnDevice.Count;
+                    MusicOnDevice.Add(record);
+                }
+                changedTitles.Add(record.Title);
+                changedFiles.Add(Path.GetFileNameWithoutExtension(record.Path));
+            }
+            if (changedTitles.Count > 0) RaiseDeviceMusicChanged(changedTitles, changedFiles);
+        }
+
+        private async Task LoadDeviceMusicAsync(ScanSession session, CancellationToken token, bool overwrite = false)
+        {
+            var records = await _musicDatabaseService.GetUsbDeviceMusics(session.Device.UniqueId) ?? [];
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
-                if (_stopped || token.IsCancellationRequested || SelectedDevice?.UniqueId != uniqueId) return;
-                MusicOnDevice.Clear();
-                foreach (var r in records) MusicOnDevice.Add(r);
-                RaiseDeviceMusicChanged();
+                if (!CanPublish(session, token)) return;
+                ApplyRecords(records, overwrite);
+                if (overwrite)
+                {
+                    var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var record in records) present.Add(record.Path);
+                    var removed = new List<string>();
+                    foreach (var record in MusicOnDevice)
+                        if (!present.Contains(record.Path)) removed.Add(record.Path);
+                    RemoveRecords(removed);
+                }
             });
         }
 
-        private void RaiseDeviceMusicChanged(IReadOnlyCollection<string>? changedTitles = null)
-            => DeviceMusicChanged?.Invoke(this, new UsbDeviceMusicChangedEventArgs(changedTitles));
+        private bool CanPublish(ScanSession session, CancellationToken token)
+            => !_stopped && !token.IsCancellationRequested && ReferenceEquals(_session, session);
+
+        private Task PublishScanBatchAsync(ScanSession session, IReadOnlyList<UsbDeviceMusic> records, CancellationToken token)
+            => App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                if (CanPublish(session, token)) ApplyRecords(records);
+            });
+
+        private Task PublishScanRemovalsAsync(ScanSession session, IReadOnlyList<string> removed, CancellationToken token)
+            => App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                if (CanPublish(session, token)) RemoveRecords(removed);
+            });
+
+        private void RemoveRecords(IReadOnlyList<string> removed)
+        {
+            if (removed.Count == 0) return;
+            var paths = new HashSet<string>(removed, StringComparer.OrdinalIgnoreCase);
+            var titles = new HashSet<string>(StringComparer.Ordinal);
+            var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = MusicOnDevice.Count - 1; i >= 0; i--)
+            {
+                var record = MusicOnDevice[i];
+                if (!paths.Contains(record.Path)) continue;
+                titles.Add(record.Title);
+                files.Add(Path.GetFileNameWithoutExtension(record.Path));
+                MusicOnDevice.RemoveAt(i);
+            }
+            _musicIndices.Clear();
+            for (int i = 0; i < MusicOnDevice.Count; i++) _musicIndices[MusicOnDevice[i].Path] = i;
+            if (titles.Count > 0) RaiseDeviceMusicChanged(titles, files);
+        }
+
+        private void RaiseDeviceMusicChanged(IReadOnlyCollection<string>? changedTitles = null,
+            IReadOnlyCollection<string>? changedFiles = null)
+            => DeviceMusicChanged?.Invoke(this, new UsbDeviceMusicChangedEventArgs(changedTitles, changedFiles));
     }
 
-    public sealed class UsbDeviceMusicChangedEventArgs(IReadOnlyCollection<string>? changedTitles) : EventArgs
+    public sealed class UsbDeviceMusicChangedEventArgs(IReadOnlyCollection<string>? changedTitles,
+        IReadOnlyCollection<string>? changedFileNames = null) : EventArgs
     {
         public IReadOnlyCollection<string>? ChangedTitles { get; } = changedTitles;
+        public IReadOnlyCollection<string>? ChangedFileNames { get; } = changedFileNames;
     }
 }

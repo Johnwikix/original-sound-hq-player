@@ -44,18 +44,18 @@ public sealed class UsbExportCoordinator(AppState state, ApplicationTasks tasks,
         {
             await _gate.WaitAsync(token);
             entered = true;
-            devices.CancelScanForExport();
+            using var scanPause = devices.PauseScanForExport();
             state.Operations.Begin(key, ToolUtils.GetString("ProgressTransmitting"));
             // 文件 I/O 只占 95%；发送记录提交成功前不显示 100%。
             var progress = new Progress<double>(p => state.Operations.Report(key, Math.Clamp(p, 0, 100) * 0.95));
             var writer = new UsbWriterHelper(converter, database);
             var dispatcher = App.MainWindow.DispatcherQueue;
             var records = new List<UsbDeviceMusic>(songs.Count);
-            async Task OnFileCopied(Music music, string extension)
+            async Task OnFileCopied(Music music, string extension, UsbFileFingerprint fingerprint)
             {
                 await dispatcher.EnqueueAsync(() =>
                 {
-                    var record = MusicDatabaseService.CreateUsbExportRecord(music, extension, device);
+                    var record = MusicDatabaseService.CreateUsbExportRecord(music, extension, device, fingerprint);
                     records.Add(record);
                     devices.AddSentRecords(new[] { record }, device);
                 });

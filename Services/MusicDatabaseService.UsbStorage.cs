@@ -13,28 +13,63 @@ public partial class MusicDatabaseService
 {
     public async Task ScanPortableUsbDeviceAsync(UsbStorageDevice device, CancellationToken token)
     {
-        await UsbStorageDeviceReader.PortableIoGate.WaitAsync(token);
+        await ScanUsbDeviceAsync(device, token);
+    }
+
+    /// <summary>批次先提交再发布；仅完整目录枚举成功后处理删除。返回 false 表示仍有标签需补读。</summary>
+    public async Task<bool> ScanUsbDeviceAsync(UsbStorageDevice device, CancellationToken token,
+        Func<IReadOnlyList<UsbDeviceMusic>, Task>? onBatch = null, Func<IReadOnlyList<string>, Task>? onRemoved = null)
+    {
+        if (device.IsPortable) await UsbStorageDeviceReader.PortableIoGate.WaitAsync(token);
         try
         {
-            // 原生扫描与提交共用同一门，防止旧快照删除刚成功发送的记录。
-            var snapshot = await UsbPortableMusicReader.ReadCoreAsync(device, token);
+            var cached = new Dictionary<string, UsbDeviceMusic>(StringComparer.OrdinalIgnoreCase);
+            foreach (var record in await GetUsbDeviceMusics(device.UniqueId)) cached[record.Path] = record;
             token.ThrowIfCancellationRequested();
+            async Task CommitBatchAsync(IReadOnlyList<UsbDeviceMusic> records)
+            {
+                token.ThrowIfCancellationRequested();
+                // 已在 MTP 通道内，不能重入 SaveUsbExportRecordsAsync 再等待同一通道。
+                await _dbConnection.RunInTransactionAsync(connection =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    foreach (var record in records)
+                    {
+                        if (cached.TryGetValue(record.Path, out var previous))
+                        {
+                            record.Id = previous.Id;
+                            connection.Update(record);
+                        }
+                        else connection.Insert(record);
+                        // 同一批次内的同路径也按覆盖处理；失败回滚后会丢弃本次扫描索引并重新加载。
+                        cached[record.Path] = record;
+                    }
+                    token.ThrowIfCancellationRequested();
+                });
+                if (onBatch is not null) await onBatch(records);
+            }
+            var scan = device.IsPortable
+                ? await UsbPortableMusicReader.ReadCoreAsync(device, token, cached, CommitBatchAsync)
+                : await UsbDiskMusicReader.ReadAsync(device, cached, CommitBatchAsync, token);
+            token.ThrowIfCancellationRequested();
+            var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var record in scan.Records) present.Add(record.Path);
+            var removed = new List<string>();
+            string musicPrefix = Path.Combine(device.IsPortable ? string.Empty : device.Path, "MUSIC") + Path.DirectorySeparatorChar;
+            foreach (var path in cached.Keys)
+                if (path.StartsWith(musicPrefix, StringComparison.OrdinalIgnoreCase) && !present.Contains(path)) removed.Add(path);
             await _dbConnection.RunInTransactionAsync(connection =>
             {
                 token.ThrowIfCancellationRequested();
-                var remaining = new Dictionary<string, UsbDeviceMusic>(StringComparer.OrdinalIgnoreCase);
-                foreach (var record in snapshot) remaining[record.Path] = record;
-                foreach (var previous in connection.Table<UsbDeviceMusic>().Where(m => m.UniqueDeviceId == device.UniqueId).ToList())
-                {
-                    // MTP 常仅提供文件名、空歌手/专辑。已确认的导出元数据以本地台账为准。
-                    if (!remaining.Remove(previous.Path)) connection.Delete(previous);
-                }
-                connection.InsertAll(remaining.Values);
+                foreach (string path in removed) connection.Delete<UsbDeviceMusic>(cached[path].Id);
+                token.ThrowIfCancellationRequested();
             });
+            if (removed.Count > 0 && onRemoved is not null) await onRemoved(removed);
+            return !scan.NeedsRetry;
         }
         finally
         {
-            UsbStorageDeviceReader.PortableIoGate.Release();
+            if (device.IsPortable) UsbStorageDeviceReader.PortableIoGate.Release();
         }
     }
 
@@ -47,7 +82,8 @@ public partial class MusicDatabaseService
         return await SaveUsbExportRecordsAsync(records, device);
     }
 
-    public static UsbDeviceMusic CreateUsbExportRecord(Music music, string extension, UsbStorageDevice device)
+    public static UsbDeviceMusic CreateUsbExportRecord(Music music, string extension, UsbStorageDevice device,
+        UsbFileFingerprint fingerprint = default)
     {
         string relativePath = UsbExportPaths.GetRelativeFilePath(music, extension);
         return new UsbDeviceMusic
@@ -57,7 +93,10 @@ public partial class MusicDatabaseService
             Author = music.Author,
             Album = music.Album,
             Extension = extension.ToUpperInvariant(),
-            UniqueDeviceId = device.UniqueId
+            UniqueDeviceId = device.UniqueId,
+            ScanMetadataRead = true,
+            ScanFileSize = fingerprint.Size,
+            ScanModifiedTicks = fingerprint.ModifiedTicks
         };
     }
 

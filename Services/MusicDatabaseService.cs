@@ -134,6 +134,7 @@ namespace WinUIMusicPlayer.Services
             await db.CreateTableAsync<LastPlayListState>();
             await db.CreateTableAsync<SubFolder>();
             await db.CreateTableAsync<UsbDeviceMusic>();
+            await db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_UsbDeviceMusic_DevicePath ON UsbDeviceMusic(UniqueDeviceId, Path COLLATE NOCASE)");
             try
             {
                 await db.CreateTableAsync<PlaybackHistory>();
@@ -1575,62 +1576,11 @@ namespace WinUIMusicPlayer.Services
             return usbDeviceMusicsInsertList;
         }
 
-        public async Task ScanUsbDeviceAsync(string drivePath, string uniqueDeviceId)
-        {
-            try
-            {
-                var usbDeviceMusics = await GetUsbDeviceMusics(uniqueDeviceId) ?? [];
-                var diskPaths = await Task.Run(() =>
-                {
-                    var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var path in EnumerateAllMusicFiles(drivePath))
-                        paths.Add(path);
-                    return paths;
-                });
-
-                var toRemove = usbDeviceMusics.Where(m => !diskPaths.Contains(m.Path)).ToList();
-                foreach (var music in toRemove)
-                    await _dbConnection.DeleteAsync(music);
-
-                var existingPaths = new HashSet<string>(
-                    usbDeviceMusics.Select(m => m.Path), StringComparer.OrdinalIgnoreCase);
-                var newPaths = diskPaths.Where(p => !existingPaths.Contains(p)).ToList();
-
-                if (newPaths.Count > 0)
-                {
-                    var fetchTasks = newPaths.Select(path =>
-                        Task.Run(() => addFolderService.GetUsbDeviceMusicInfoByPath(path, drivePath, uniqueDeviceId)));
-                    var fetchResults = await Task.WhenAll(fetchTasks);
-                    var newMusic = fetchResults.Where(r => r is not null).ToList();
-                    if (newMusic.Count > 0)
-                        await _dbConnection.InsertAllAsync(newMusic);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ScanUsbDeviceAsync 扫描USB设备失败: {ex.Message}");
-            }
-        }
+        public Task ScanUsbDeviceAsync(string drivePath, string uniqueDeviceId)
+            => Task.Run(() => ScanUsbDeviceAsync(new UsbStorageDevice { Path = drivePath, UniqueId = uniqueDeviceId }, CancellationToken.None));
 
         private static readonly string[] _musicPatterns =
             [".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"];
-
-        private static List<string> EnumerateAllMusicFiles(string rootPath)
-        {
-            var paths = new List<string>();
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
-                {
-                    if (HasMusicExtension(file))
-                        paths.Add(file);
-                }
-            }
-            catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
-            {
-            }
-            return paths;
-        }
 
         private static List<string> EnumerateMusicFilesInDirectory(string folderPath)
         {

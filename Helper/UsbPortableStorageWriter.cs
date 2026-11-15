@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.Helper;
 public sealed class UsbPortableStorageWriter : IDisposable
 {
     private readonly StorageFolder _folder;
+    private StorageFile? _lastCopiedFile;
     private int _disposed;
 
     private UsbPortableStorageWriter(StorageFolder folder) => _folder = folder;
@@ -46,12 +47,24 @@ public sealed class UsbPortableStorageWriter : IDisposable
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         var source = await StorageFile.GetFileFromPathAsync(sourcePath);
-        await source.CopyAsync(_folder, source.Name, NameCollisionOption.ReplaceExisting);
+        _lastCopiedFile = await source.CopyAsync(_folder, source.Name, NameCollisionOption.ReplaceExisting);
+    }
+
+    public async Task<UsbFileFingerprint> GetLastCopiedFingerprintAsync()
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        var file = _lastCopiedFile ?? throw new InvalidOperationException("尚未复制文件");
+        var basic = await file.GetBasicPropertiesAsync();
+        long? modified = basic.DateModified > DateTimeOffset.FromFileTime(0) ? basic.DateModified.UtcDateTime.Ticks : null;
+        return new(checked((long)basic.Size), modified);
     }
 
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 0)
+        {
+            _lastCopiedFile = null;
             UsbStorageDeviceReader.PortableIoGate.Release();
+        }
     }
 }

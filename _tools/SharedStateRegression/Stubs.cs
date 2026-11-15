@@ -135,6 +135,7 @@ namespace WinUIMusicPlayer.Helper
             throw OpenError ?? new NotSupportedException("Use UsbTransferRegression for MTP integration.");
         }
         public Task CopyAsync(string source) => throw new NotSupportedException();
+        public Task<Model.UsbFileFingerprint> GetLastCopiedFingerprintAsync() => throw new NotSupportedException();
         public void Dispose() { }
     }
 }
