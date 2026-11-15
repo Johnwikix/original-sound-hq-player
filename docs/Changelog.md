@@ -1,3 +1,11 @@
+## 2026-11-15 修复 USB 批量发送与逐曲状态更新
+
+- `UsbExportPaths`：统一处理目录末尾句点、空格、空目录名与 Windows 保留名，修复部分专辑在 MTP 创建目录时被拒绝的问题；台账使用相同目标路径，保留原始歌曲元数据。
+- `UsbWriterHelper`、`UsbExportResult`、`UsbExportCoordinator`、`Strings/*/Resources.resw`：分开统计音频成功、未发送及歌词失败，展示失败歌曲和实际错误；只有全部文件与发送记录提交成功才显示 100%，取消后仍提交已发送记录。
+- `UsbDeviceService`、`UsbDeviceMusicPresence`、`AppViewModel`：每首音频复制成功即在 UI 线程更新目标存储图标，只通知受影响标题，避免整批结束才刷新和已有图标反复重置；用户发送优先于后台扫描。
+- `_tools/SharedStateRegression`、`_tools/UsbTransferRegression`、`_tools/UsbUiRegression`：覆盖异常目录名、部分失败分类、逐曲异步通知，以及真实手机批量回读与 WinUI 编译绑定。
+- 验证：修复前四首复现两首失败仍报 100%；修复后真我 GT5 Pro 上 128 首音频 SHA256、384 份歌词及台账核对通过，剪裁 WinUI 实机回归确认逐曲绑定、音频/歌词失败分类及进度语义，共享状态回归与全新目录 Release/x64 主程序剪裁发布通过。尚未实测中途拔线和手机撤销 USB 授权。
+
 ## 2026-11-15 支持无盘符的安卓手机 USB 传输
 
 - `UsbStorageDeviceReader`、`UsbStorageDevice`：同时发现可移动磁盘和 MTP 手机内部存储/SD 卡，不再用盘符过滤手机；设备下拉框与发送菜单显示手机及存储名称。

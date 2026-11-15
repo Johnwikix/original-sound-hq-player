@@ -2733,5 +2733,11 @@ SHA-256：{5}
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>请先保存各版本的草稿，再关联、拆分或撤销。</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} 个版本；{1} 组已收藏；{2} 个歌单位置，其中 {3} 个重复位置可选折叠。</value></data>
   <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>歌曲修改保存失败。请重新打开歌曲详情后重试。</value></data>
-  <data name="UsbExportFailed" xml:space="preserve"><value>未能完成发送到 {0}。请解锁设备并允许文件传输，检查 USB 连接后重试。</value></data>
+  <data name="UsbExportFailed" xml:space="preserve"><value>发送到 {0} 时发生错误：{1}。已复制的文件会保留，完整详情请查看日志。</value></data>
+  <data name="UsbExportIncomplete" xml:space="preserve"><value>发送未全部完成</value></data>
+  <data name="UsbExportSummary" xml:space="preserve"><value>{0}：已发送音频 {1}/{2} 首，未发送 {3} 首，歌词未完成 {4} 首。</value></data>
+  <data name="UsbExportFailureExamples" xml:space="preserve"><value>失败示例：
+{0}
+完整详情请查看日志。</value></data>
+  <data name="UsbExportStatusFailed" xml:space="preserve"><value>已复制的文件会保留，但发送记录未能完整更新。</value></data>
 </root>

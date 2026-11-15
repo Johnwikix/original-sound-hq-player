@@ -2731,5 +2731,11 @@ SHA-256: {5}
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>İlişkilendirme, ayırma veya geri alma öncesinde sürüm taslaklarını kaydedin.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} sürüm; {1} favori grup; {2} çalma listesi girdisi, {3} isteğe bağlı yinelenen girdi.</value></data>
   <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Şarkı değişiklikleri kaydedilemedi. Şarkı ayrıntılarını yeniden açıp tekrar deneyin.</value></data>
-  <data name="UsbExportFailed" xml:space="preserve"><value>{0} cihazına aktarım tamamlanamadı. Cihazın kilidini açın, dosya aktarımına izin verin, USB bağlantısını kontrol edip tekrar deneyin.</value></data>
+  <data name="UsbExportFailed" xml:space="preserve"><value>{0} cihazına aktarımda hata oluştu: {1}. Kopyalanan dosyalar korunur. Ayrıntılar için günlüğe bakın.</value></data>
+  <data name="UsbExportIncomplete" xml:space="preserve"><value>Aktarım tamamlanamadı</value></data>
+  <data name="UsbExportSummary" xml:space="preserve"><value>{0}: gönderilen ses {1}/{2}, gönderilmeyen {3}, tamamlanamayan şarkı sözü {4}.</value></data>
+  <data name="UsbExportFailureExamples" xml:space="preserve"><value>Hata örnekleri:
+{0}
+Tüm ayrıntılar için günlüğe bakın.</value></data>
+  <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopyalanan dosyalar korunur ancak aktarım kayıtları tam olarak güncellenemedi.</value></data>
 </root>

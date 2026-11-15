@@ -2731,5 +2731,11 @@ SHA-256: {5}
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Save version drafts before linking, splitting, or undoing.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} versions; {1} favorited groups; {2} playlist entries, including {3} optional duplicate entries.</value></data>
   <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Song changes could not be saved. Reopen the song details and try again.</value></data>
-  <data name="UsbExportFailed" xml:space="preserve"><value>Transfer to {0} did not finish. Unlock the device, allow file transfer, check the USB connection, and try again.</value></data>
+  <data name="UsbExportFailed" xml:space="preserve"><value>Transfer to {0} encountered an error: {1}. Files already copied are kept. See the log for full details.</value></data>
+  <data name="UsbExportIncomplete" xml:space="preserve"><value>Transfer incomplete</value></data>
+  <data name="UsbExportSummary" xml:space="preserve"><value>{0}: audio sent {1}/{2}, unsent {3}, lyrics incomplete {4}.</value></data>
+  <data name="UsbExportFailureExamples" xml:space="preserve"><value>Failure examples:
+{0}
+See the log for full details.</value></data>
+  <data name="UsbExportStatusFailed" xml:space="preserve"><value>Copied files are retained, but their transfer records could not be fully updated.</value></data>
 </root>

@@ -163,31 +163,96 @@ static async Task RunAsync()
     Directory.CreateDirectory(fixture);
     try
     {
+        Check(WinUIMusicPlayer.Helper.UsbExportPaths.GetFolderName("Sony Music Labels Inc.") == "Sony Music Labels Inc",
+            "USB export must trim trailing dots from folder names before calling Windows.Storage.");
+        Check(WinUIMusicPlayer.Helper.UsbExportPaths.GetFolderName("攻殻機動隊 新劇場版 O.S.T. ") == "攻殻機動隊 新劇場版 O.S.T",
+            "USB export must trim trailing spaces and dots together.");
+        Check(WinUIMusicPlayer.Helper.UsbExportPaths.GetFolderName(".. ") == "_"
+            && WinUIMusicPlayer.Helper.UsbExportPaths.GetFolderName("CON") == "_CON"
+            && WinUIMusicPlayer.Helper.UsbExportPaths.GetFolderName("COM².mix") == "_COM².mix"
+            && WinUIMusicPlayer.Helper.UsbExportPaths.GetFileName("lulu..flac") == "lulu..flac",
+            "USB path normalization must handle traversal/reserved names without altering valid internal dots.");
         string original = Path.Combine(fixture, "original.wav");
         await File.WriteAllTextAsync(original, "source");
         var converter = new AudioConverterService();
         var writer = new WinUIMusicPlayer.Helper.UsbWriterHelper(converter, new MusicDatabaseService());
         var device = new UsbStorageDevice { Name = "test", Path = Path.Combine(fixture, "usb"), UniqueId = "test" };
         var results = await writer.WriteToUsb([new(1, original), new(2, Path.Combine(fixture, "missing.wav"))], device, "mp3");
-        Check(results.Count == 1 && results[0].Extension == "wav", "Failed conversion must record the copied source extension; missing sources must not succeed.");
+        Check(results.Succeeded.Count == 1 && results.Succeeded[0].Extension == "wav", "Failed conversion must record the copied source extension; missing sources must not succeed.");
+        Check(results.UnsentCount == 1 && results.Failures.Count == 1 && results.Failures[0].Stage == UsbExportFailureStage.Audio,
+            "Partial audio failures must have exact counts and failed items.");
         converter.Succeed = true;
         results = await writer.WriteToUsb([new(1, original)], device, "mp3");
-        Check(results.Count == 1 && results[0].Extension == "mp3", "Successful conversion must record its actual output.");
+        Check(results.Succeeded.Count == 1 && results.Succeeded[0].Extension == "mp3", "Successful conversion must record its actual output.");
         results = await writer.WriteToUsb([new(1, original)], device, cancellationToken: new CancellationToken(true));
-        Check(results.Count == 0, "Cancelled batch must not claim successful copies.");
+        Check(results.Succeeded.Count == 0, "Cancelled batch must not claim successful copies.");
         var portable = new UsbStorageDevice { Name = "unavailable", PortableDeviceId = "test", UniqueId = "test" };
         WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls = 0;
         WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenError = new DirectoryNotFoundException();
         results = await writer.WriteToUsb([new(1, original), new(2, original)], portable);
-        Check(results.Count == 0 && WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls == 1,
+        Check(results.Succeeded.Count == 0 && WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls == 1,
             "Unavailable MTP storage must stop the batch rather than repeating a native timeout per song.");
         WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls = 0;
         WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenError = new IOException("MTP",
             new System.Runtime.InteropServices.COMException("Device hung", unchecked((int)0x802A0006)));
         results = await writer.WriteToUsb([new(1, original), new(2, original)], portable);
-        Check(results.Count == 0 && WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls == 1,
+        Check(results.Succeeded.Count == 0 && WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls == 1,
             "A wrapped WPD device-hung error must stop the batch.");
         WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenError = null;
+
+        var failedLyrics = new MusicDatabaseService { FailLyrics = true };
+        var lyricsWriter = new WinUIMusicPlayer.Helper.UsbWriterHelper(converter, failedLyrics);
+        int copiedCallbacks = 0;
+        results = await lyricsWriter.WriteToUsb([new(1, original)], device,
+            onFileCopied: (_, _) => { copiedCallbacks++; return Task.CompletedTask; });
+        Check(results.Succeeded.Count == 1 && results.UnsentCount == 0 && results.LyricsFailureCount == 1 && copiedCallbacks == 1,
+            "A lyric failure must retain audio success and publish its icon once.");
+        results = await writer.WriteToUsb([new(1, original)], device,
+            onFileCopied: (_, _) => throw new IOException("Fixture UI publication failed"));
+        Check(results.Succeeded.Count == 1 && results.UnsentCount == 0 && results.StatusFailureCount == 1,
+            "An icon/status callback failure must not claim the audio copy failed.");
+
+        string secondFile = Path.Combine(fixture, "second.wav");
+        await File.WriteAllTextAsync(secondFile, "second");
+        var firstRow = new Music(11, original) { Title = "first" };
+        var secondRow = new Music(12, secondFile) { Title = "second" };
+        var unchangedRow = new Music(13, original) { Title = "unrelated", IsExistOnDevice = 2 };
+        var displayedRows = new List<Music> { firstRow, secondRow, unchangedRow };
+        var ledger = new List<UsbDeviceMusic>();
+        var firstPublished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowNext = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ui = SynchronizationContext.Current!;
+        int usbUiThread = Environment.CurrentManagedThreadId;
+        int published = 0, unchangedNotifications = 0;
+        unchangedRow.PropertyChanged += (_, _) => unchangedNotifications++;
+        foreach (var row in displayedRows)
+            row.PropertyChanged += (_, _) => Check(Environment.CurrentManagedThreadId == usbUiThread, "Device icons must publish on the UI context.");
+        async Task PublishCopied(Music music, string extension)
+        {
+            var publication = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            ui.Post(_ =>
+            {
+                try
+                {
+                    ledger.Add(new UsbDeviceMusic { Title = music.Title, Author = music.Author, Album = music.Album, Extension = extension });
+                    UsbDeviceMusicPresence.Update(displayedRows, ledger, [music.Title]);
+                    published++;
+                    publication.SetResult();
+                    if (published == 1) firstPublished.SetResult();
+                }
+                catch (Exception ex) { publication.SetException(ex); firstPublished.TrySetException(ex); }
+            }, null);
+            await publication.Task;
+            if (published == 1) await allowNext.Task;
+        }
+        var copying = Task.Run(() => writer.WriteToUsb([firstRow, secondRow], device, onFileCopied: PublishCopied));
+        await firstPublished.Task;
+        Check(!copying.IsCompleted && firstRow.IsExistOnDevice == 2 && secondRow.IsExistOnDevice == 0 && unchangedNotifications == 0,
+            "The first icon must update before the batch ends without resetting unrelated icons.");
+        allowNext.SetResult();
+        results = await copying;
+        Check(published == 2 && secondRow.IsExistOnDevice == 2 && results.Succeeded.Count == 2 && unchangedNotifications == 0,
+            "Each copied song must publish exactly one targeted update.");
     }
     finally
     {

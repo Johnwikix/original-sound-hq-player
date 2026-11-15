@@ -10,6 +10,7 @@
     <Compile Include="../../Reader/UsbStorageDeviceReader.cs" Link="UsbStorageDeviceReader.cs" />
     <Compile Include="../../Model/UsbStorageDevice.cs" Link="UsbStorageDevice.cs" />
     <Compile Include="../../Model/UsbDeviceMusic.cs;../../Model/LyricsDocument.cs" />
+    <Compile Include="../../Model/UsbExportResult.cs" />
     <Compile Include="../../Helper/UsbWriterHelper.cs;../../Helper/UsbPortableStorageWriter.cs" />
     <Compile Include="../../Helper/UsbExportPaths.cs;../../Services/MusicDatabaseService.UsbStorage.cs" />
     <TrimmerRootDescriptor Include="TrimmerRoots.xml" />

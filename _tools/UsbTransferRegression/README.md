@@ -14,6 +14,14 @@ dotnet run --project _tools/UsbTransferRegression -c Release -- --copy
 
 `--log <绝对路径>` 将结果写入日志；完整复制回归成功必须出现 `PASS: all USB integration checks completed.`。
 
+`--bulk [数量]`（默认 128，最大 1000）创建独立测试目录，轮换末尾句点、空格、保留名及非法字符等元数据，发送原格式音频和每首三类歌词。逐个回读音频校验 SHA256，核对歌词、SQLite 目标路径及原始元数据，最后仅清理本次 GUID 目录。成功标记为 `PASS: all bulk USB integration checks completed.`。
+
+```powershell
+dotnet run --project _tools/UsbTransferRegression -c Release -- --bulk 128
+```
+
+逐曲 UI、错误计数及进度语义另见 [UsbUiRegression](../UsbUiRegression/README.md)。
+
 `invalid` 编码格式和不可用存储是预期失败输入，日志中的相应 Error 用于验证回退与重试；以进程退出码及最终 PASS 标记判断回归结果。
 
 设备发现、MTP 文件操作、歌词导出、FFmpeg 转码、MUSIC 扫描和 SQLite 台账均链接生产源码。现场生成静音 WAV，验证真实 MP3/AAC 编码，并把手机 MP3 读回检查嵌入标签；歌词内容和封面来源使用隔离数据，不访问用户曲库。

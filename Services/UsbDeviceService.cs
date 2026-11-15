@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>设备列表变化（插入/移除/枚举完成）→ 右键菜单同步。</summary>
         public event EventHandler? DevicesChanged;
         /// <summary>发送台账变化 → 依设备标记（IsExistOnDevice）刷新。</summary>
-        public event EventHandler? DeviceMusicChanged;
+        public event EventHandler<UsbDeviceMusicChangedEventArgs>? DeviceMusicChanged;
 
         public UsbDeviceService(MusicDatabaseService musicDatabaseService, ILogger<UsbDeviceService> logger)
         {
@@ -214,25 +214,34 @@ namespace WinUIMusicPlayer.Services
             SelectedDevice = null;
         }
 
-        /// <summary>发布已持久化的发送记录；同路径覆盖，同标题的不同文件均保留。</summary>
+        /// <summary>用户发送优先于后台扫描，不清除已加载的台账。</summary>
+        public void CancelScanForExport() => _scanCts?.Cancel();
+
+        /// <summary>每首音频落盘后发布状态；同路径覆盖，同标题的不同文件均保留。</summary>
         public void AddSentRecords(IReadOnlyList<UsbDeviceMusic> sent, UsbStorageDevice device)
         {
             if (sent.Count == 0 || _stopped || SelectedDevice?.UniqueId != device.UniqueId) return;
             _scanCts?.Cancel(); // 旧查询不得在发送完成后再覆盖当前台账。
-            var indices = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < MusicOnDevice.Count; i++)
-                indices[MusicOnDevice[i].Path] = i;
+            var changedTitles = new HashSet<string>(StringComparer.Ordinal);
             foreach (var record in sent)
             {
-                if (indices.TryGetValue(record.Path, out int index))
-                    MusicOnDevice[index] = record;
-                else
+                int index = -1;
+                for (int i = 0; i < MusicOnDevice.Count; i++)
                 {
-                    indices[record.Path] = MusicOnDevice.Count;
-                    MusicOnDevice.Add(record);
+                    if (!string.Equals(MusicOnDevice[i].Path, record.Path, StringComparison.OrdinalIgnoreCase)) continue;
+                    index = i;
+                    break;
                 }
+                if (index >= 0)
+                {
+                    changedTitles.Add(MusicOnDevice[index].Title);
+                    MusicOnDevice[index] = record;
+                }
+                else
+                    MusicOnDevice.Add(record);
+                changedTitles.Add(record.Title);
             }
-            RaiseDeviceMusicChanged();
+            RaiseDeviceMusicChanged(changedTitles);
         }
 
         private async Task LoadDeviceMusicAsync(string uniqueId, CancellationToken token)
@@ -247,6 +256,12 @@ namespace WinUIMusicPlayer.Services
             });
         }
 
-        private void RaiseDeviceMusicChanged() => DeviceMusicChanged?.Invoke(this, EventArgs.Empty);
+        private void RaiseDeviceMusicChanged(IReadOnlyCollection<string>? changedTitles = null)
+            => DeviceMusicChanged?.Invoke(this, new UsbDeviceMusicChangedEventArgs(changedTitles));
+    }
+
+    public sealed class UsbDeviceMusicChangedEventArgs(IReadOnlyCollection<string>? changedTitles) : EventArgs
+    {
+        public IReadOnlyCollection<string>? ChangedTitles { get; } = changedTitles;
     }
 }

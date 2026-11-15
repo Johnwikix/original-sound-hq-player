@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace WinUIMusicPlayer.Model
 {
-    public sealed record Music(int Id, string Path)
+    public sealed record Music(int Id, string Path) : System.ComponentModel.INotifyPropertyChanged
     {
         public int SongId { get; init; }
         public int? SongPreferredMusicId { get; init; }
@@ -22,6 +22,18 @@ namespace WinUIMusicPlayer.Model
         public string Album { get; init; } = "album";
         public string Extension => System.IO.Path.GetExtension(Path).TrimStart('.');
         public string Title { get; init; } = "title";
+        private int _isExistOnDevice;
+        public int IsExistOnDevice
+        {
+            get => _isExistOnDevice;
+            set
+            {
+                if (_isExistOnDevice == value) return;
+                _isExistOnDevice = value;
+                PropertyChanged?.Invoke(this, new(nameof(IsExistOnDevice)));
+            }
+        }
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         public string FolderPath { get; init; } = "folder";
         public string LastLevelFolderPath { get; init; } = "folder";
         public string AlbumArtist { get; set; } = "";
@@ -94,7 +106,10 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed partial class MusicDatabaseService
     {
-        public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => Task.FromResult(Model.LyricsDocument.Empty);
+        public bool FailLyrics { get; set; }
+        public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => FailLyrics
+            ? Task.FromException<Model.LyricsDocument>(new IOException("Fixture lyrics denied"))
+            : Task.FromResult(Model.LyricsDocument.Empty);
     }
 }
 namespace WinUIMusicPlayer.Extensions

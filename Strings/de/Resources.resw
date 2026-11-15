@@ -2731,5 +2731,11 @@ SHA-256: {5}
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Versionsentwürfe vor dem Verknüpfen, Trennen oder Rückgängigmachen speichern.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} Versionen; {1} favorisierte Gruppen; {2} Wiedergabelisteneinträge, davon {3} optionale Duplikate.</value></data>
   <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Die Änderungen am Titel konnten nicht gespeichert werden. Öffne die Titeldetails erneut und versuche es noch einmal.</value></data>
-  <data name="UsbExportFailed" xml:space="preserve"><value>Die Übertragung an {0} wurde nicht abgeschlossen. Entsperren Sie das Gerät, erlauben Sie die Dateiübertragung und prüfen Sie die USB-Verbindung. Versuchen Sie es dann erneut.</value></data>
+  <data name="UsbExportFailed" xml:space="preserve"><value>Bei der Übertragung an {0} ist ein Fehler aufgetreten: {1}. Bereits kopierte Dateien bleiben erhalten. Details finden Sie im Protokoll.</value></data>
+  <data name="UsbExportIncomplete" xml:space="preserve"><value>Übertragung unvollständig</value></data>
+  <data name="UsbExportSummary" xml:space="preserve"><value>{0}: Audio gesendet {1}/{2}, nicht gesendet {3}, Liedtexte unvollständig {4}.</value></data>
+  <data name="UsbExportFailureExamples" xml:space="preserve"><value>Beispiele fehlgeschlagener Dateien:
+{0}
+Vollständige Details stehen im Protokoll.</value></data>
+  <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopierte Dateien bleiben erhalten, aber ihre Übertragungsdaten konnten nicht vollständig aktualisiert werden.</value></data>
 </root>

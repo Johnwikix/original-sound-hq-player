@@ -5,6 +5,9 @@ namespace WinUIMusicPlayer;
 
 internal static class App
 {
+#if USB_UI_REGRESSION
+    public static Microsoft.UI.Xaml.Window MainWindow { get; set; } = null!;
+#endif
     public static IServiceProvider Services { get; } = new ServiceCollection()
         .AddSingleton<Services.MusicDatabaseService>().BuildServiceProvider();
     public static ILogger<T> GetLogger<T>() => new ProbeLogger<T>();

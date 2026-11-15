@@ -280,7 +280,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnLicenseStateChanged() => EnqueueUnlessUIThread(ref _licenseStateChangedHandler, ApplyLicenseState);
         private void OnUsbDevicesChanged(object? sender, EventArgs e) { if (!_isDisposed) UpDateUsbDeviceMenuflyout(); }
-        private void OnUsbMusicChanged(object? sender, EventArgs e) { if (!_isDisposed) RefreshUsbDeviceMusicList(); }
+        private void OnUsbMusicChanged(object? sender, UsbDeviceMusicChangedEventArgs e)
+        {
+            if (!_isDisposed) UsbDeviceMusicPresence.Update(SongsSource, UsbDeviceService.MusicOnDevice, e.ChangedTitles);
+        }
         private void OnDesktopLyricsStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(IsPlayingDetailVisible)) OnPropertyChanged(e);
@@ -541,28 +544,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshUsbDeviceMusicList()
         {
-            var usbMusicGroups = UsbDeviceService.MusicOnDevice.AsValueEnumerable()
-                            .GroupBy(u => u.Title)
-                            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
-            foreach (var music in SongsSource)
-            {
-                music.IsExistOnDevice = 0;
-
-                if (usbMusicGroups.TryGetValue(music.Title, out var matchingItems))
-                {
-                    music.IsExistOnDevice = 1;
-                    foreach (var usbMusic in matchingItems)
-                    {
-                        if (music.Author == usbMusic.Author &&
-                            music.Album == usbMusic.Album &&
-                            music.Extension == usbMusic.Extension)
-                        {
-                            music.IsExistOnDevice = 2;
-                            break;
-                        }
-                    }
-                }
-            }
+            UsbDeviceMusicPresence.Update(SongsSource, UsbDeviceService.MusicOnDevice);
         }
 
         public Task ReGetLyrics(IEnumerable<Music> songs, Music? selectedMusic = null)

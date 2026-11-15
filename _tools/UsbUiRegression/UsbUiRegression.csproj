@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Features>$(Features);runtime-async=on</Features>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN;USB_UI_REGRESSION</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
+    <PackageReference Include="z440.atl.core" Version="7.19.0" />
+    <PackageReference Include="ZLinq" Version="1.6.1" />
+    <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
+    <Compile Include="../UsbTransferRegression/App.cs;../UsbTransferRegression/Stubs.cs" />
+    <Compile Include="../../Reader/UsbStorageDeviceReader.cs;../../Reader/UsbPortableMusicReader.cs" />
+    <Compile Include="../../Model/UsbStorageDevice.cs;../../Model/UsbDeviceMusic.cs;../../Model/UsbExportResult.cs;../../Model/LyricsDocument.cs;../../Model/ConversionMetadata.cs" />
+    <Compile Include="../../Helper/UsbExportPaths.cs;../../Helper/UsbWriterHelper.cs;../../Helper/UsbPortableStorageWriter.cs" />
+    <Compile Include="../../Services/UsbExportCoordinator.cs;../../Services/UsbDeviceService.cs;../../Services/UsbDeviceMusicPresence.cs;../../Services/MusicDatabaseService.UsbStorage.cs" />
+    <Compile Include="../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../State/ShellState.cs;../../ViewModel/ProgressCenter.cs" />
+    <Compile Include="../../Services/AudioConverterService.cs;../../Services/AudioFileWriteGate.cs;../../AudioConverters/FFmpegAudioConverter.cs" />
+    <Compile Include="../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsParser*.cs" />
+    <PRIResource Include="../../Strings/**/Resources.resw" Link="Strings/%(RecursiveDir)%(Filename)%(Extension)" />
+    <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
+    <Content Include="../../Libraries/FFmpeg/x64/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

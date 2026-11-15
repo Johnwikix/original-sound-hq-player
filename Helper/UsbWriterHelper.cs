@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -35,12 +34,14 @@ namespace WinUIMusicPlayer.Helper
         /// <paramref name="progress"/> 收到整批聚合百分比（0-100）；
         /// <paramref name="nextFileBase"/> 在每个文件完成后调用，返回该文件的完成基准百分比
         /// （= 已完成文件数/总数），用于跨批次的进度重置与聚合。
+        /// <paramref name="onFileCopied"/> 在每首音频实际复制成功、歌词发送之前等待执行，
+        /// 用于逐曲发布状态；返回值分别记录音频成功与音频、歌词、状态失败。
         /// </summary>
-        public async Task<List<(Music Music, string Extension)>> WriteToUsb(IList<Music> musicList, UsbStorageDevice device, string? format = null,
-            int bitRateKbps = 320, IProgress<double>? progress = null, Func<double>? nextFileBase = null, CancellationToken cancellationToken = default)
+        public async Task<UsbExportResult> WriteToUsb(IList<Music> musicList, UsbStorageDevice device, string? format = null,
+            int bitRateKbps = 320, IProgress<double>? progress = null, Func<double>? nextFileBase = null, CancellationToken cancellationToken = default,
+            Func<Music, string, Task>? onFileCopied = null)
         {
-            List<(Music Music, string Extension)> succeeded = new(musicList.Count);
-            char[] invalidChars = Path.GetInvalidFileNameChars();
+            var result = new UsbExportResult(musicList.Count);
             double basePercent = 0;
             double currentFilePercent = 0;
             // 转换服务的进度事件（0-100）映射为当前文件的内部进度参与聚合
@@ -60,11 +61,13 @@ namespace WinUIMusicPlayer.Helper
                     currentFilePercent = 0;
                     progress?.Report(basePercent);
                     string? stagingPath = null;
+                    bool audioCopied = false;
                     try
                     {
                         if (!File.Exists(music.Path))
                         {
                             _logger.LogWarning($"源文件不存在，跳过: {music.Path}");
+                            result.AddFailure(music, UsbExportFailureStage.Audio, new FileNotFoundException(null, music.Path).Message);
                             continue;
                         }
                         string sanitizedAuthor = UsbExportPaths.GetFolderName(music.Author);
@@ -77,7 +80,7 @@ namespace WinUIMusicPlayer.Helper
                         string targetBasePath = stagingPath ?? Path.Combine(device.Path, "MUSIC", sanitizedAuthor, sanitizedAlbum);
                         Directory.CreateDirectory(targetBasePath);
 
-                        string sanitizedFileName = ToolUtils.SanitizeFileName(Path.GetFileName(music.Path), invalidChars);
+                        string sanitizedFileName = UsbExportPaths.GetFileName(Path.GetFileName(music.Path));
                         string convertedPath = Path.Combine(targetBasePath,
                             Path.ChangeExtension(sanitizedFileName, "." + AudioConverterService.GetExtensionForFormat(format ?? music.Extension)));
                         string originalPath = Path.Combine(targetBasePath, sanitizedFileName);
@@ -105,12 +108,27 @@ namespace WinUIMusicPlayer.Helper
                             await portableWriter.CopyAsync(targetFilePath);
 
                         _logger.LogInformation("已发送 {File} 到 {Device}", music.Path, device.Name);
-                        succeeded.Add((music, Path.GetExtension(targetFilePath).TrimStart('.')));
-                        await WriteLyricsFileAsync(music, targetBasePath, sanitizedFileName);
+                        string extension = Path.GetExtension(targetFilePath).TrimStart('.');
+                        result.AddSuccess(music, extension);
+                        audioCopied = true;
+                        // 回调仅发布状态，不能重入 MTP 门；持久化由协调器在整批 I/O 结束后完成。
+                        if (onFileCopied is not null)
+                        {
+                            try { await onFileCopied(music, extension); }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "发布 USB 发送状态失败: {File}", music.Path);
+                                result.AddFailure(music, UsbExportFailureStage.Status, ex.Message);
+                            }
+                        }
+                        string? lyricsError = await WriteLyricsFileAsync(music, targetBasePath, sanitizedFileName);
+                        if (lyricsError is not null)
+                            result.AddFailure(music, UsbExportFailureStage.Lyrics, lyricsError);
                         if (portableWriter is not null)
                         {
-                            foreach (string lyricsPath in Directory.EnumerateFiles(targetBasePath, "*.lrc"))
-                                await portableWriter.CopyAsync(lyricsPath);
+                            if (lyricsError is null)
+                                foreach (string lyricsPath in Directory.EnumerateFiles(targetBasePath, "*.lrc"))
+                                    await portableWriter.CopyAsync(lyricsPath);
                             progress?.Report(basePercent + 100.0 / musicList.Count);
                         }
                     }
@@ -121,6 +139,7 @@ namespace WinUIMusicPlayer.Helper
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, $"将 {music.Path} 发送到 {device.Name} 时失败: {ex.Message}");
+                        result.AddFailure(music, audioCopied ? UsbExportFailureStage.Lyrics : UsbExportFailureStage.Audio, ex.Message);
                         // MTP 会话已失效时停止整批，避免每首重复等待驱动超时。
                         if (device.IsPortable && IsDeviceUnavailable(ex)) break;
                     }
@@ -139,7 +158,7 @@ namespace WinUIMusicPlayer.Helper
             {
                 _converterService.updateProgress -= OnConverterProgress;
             }
-            return succeeded;
+            return result;
         }
 
         private static bool IsDeviceUnavailable(Exception error)
@@ -177,20 +196,22 @@ namespace WinUIMusicPlayer.Helper
             });
         }
 
-        private async Task WriteLyricsFileAsync(Music music, string targetBasePath, string sanitizedFileName)
+        private async Task<string?> WriteLyricsFileAsync(Music music, string targetBasePath, string sanitizedFileName)
         {
             try
             {
                 var document = await _musicDatabaseService.GetLyricsDocumentAsync(music);
                 string lyricsText = new WinUIMusicPlayer.Services.Lyrics.LyricsParser().ExportLrc(document);
-                if (string.IsNullOrEmpty(lyricsText)) return;
+                if (string.IsNullOrEmpty(lyricsText)) return null;
                 string lrcFilePath = Path.Combine(targetBasePath, Path.ChangeExtension(sanitizedFileName, ".lrc"));
                 await WinUIMusicPlayer.Services.Lyrics.LyricsExporter.SaveFilesAsync(lrcFilePath,
                     document with { Original = new(lyricsText, LyricsFormat.Lrc) }, CancellationToken.None);
+                return null;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, $"写入歌词文件失败: {music.Path}: {ex.Message}");
+                return ex.Message;
             }
         }
     }

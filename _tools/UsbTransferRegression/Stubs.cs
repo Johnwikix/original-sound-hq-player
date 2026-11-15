@@ -1,9 +1,24 @@
 namespace WinUIMusicPlayer.Model
 {
-    public sealed record Music(string Path, string Author, string Album)
+    public sealed class Music(string path, string author, string album) : System.ComponentModel.INotifyPropertyChanged
     {
+        public string Path { get; set; } = path;
+        public string Author { get; set; } = author;
+        public string Album { get; set; } = album;
+        private int _isExistOnDevice;
+        public int IsExistOnDevice
+        {
+            get => _isExistOnDevice;
+            set
+            {
+                if (_isExistOnDevice == value) return;
+                _isExistOnDevice = value;
+                PropertyChanged?.Invoke(this, new(nameof(IsExistOnDevice)));
+            }
+        }
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         public string Extension => System.IO.Path.GetExtension(Path).TrimStart('.');
-        public string Title { get; init; } = "测试标题（与文件名不同）";
+        public string Title { get; set; } = "测试标题（与文件名不同）";
         public bool IsRemote => false;
         public int TrackNumber => 1;
         public int DiskNumber => 1;
@@ -24,7 +39,10 @@ namespace WinUIMusicPlayer.Services
         public Task<List<Model.UsbDeviceMusic>> GetUsbDeviceMusics(string id)
             => _dbConnection.Table<Model.UsbDeviceMusic>().Where(m => m.UniqueDeviceId == id).ToListAsync();
         public Task CloseAsync() => _dbConnection?.CloseAsync() ?? Task.CompletedTask;
-        public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => Task.FromResult(
+        public string? LyricsErrorForTitle { get; set; }
+        public Task ScanUsbDeviceAsync(string path, string id) => throw new NotSupportedException("This fixture tests MTP storage only.");
+        public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => music.Title == LyricsErrorForTitle
+            ? Task.FromException<Model.LyricsDocument>(new IOException("Controlled lyrics read failure")) : Task.FromResult(
             new Model.LyricsDocument(new("[00:00.00]USB regression", Model.LyricsFormat.Lrc), "[00:00.00]翻译", "[00:00.00]pronunciation"));
         public Task AddConvertedFileAsync(string path) => throw new InvalidOperationException("USB export must not add staged files to the library.");
     }
@@ -43,6 +61,9 @@ namespace WinUIMusicPlayer.Utils
 {
     public static class ToolUtils
     {
+#if USB_UI_REGRESSION
+        public static string GetString(string key) => new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString(key);
+#endif
         public static string SanitizeFileName(string value, char[] invalid)
         {
             foreach (char c in invalid) value = value.Replace(c, '_');

@@ -17,6 +17,8 @@
     <Compile Include="../../Services/AppLifecycle.cs" />
     <Compile Include="../../Helper/UsbWriterHelper.cs" />
     <Compile Include="../../Helper/UsbExportPaths.cs" />
+    <Compile Include="../../Model/UsbExportResult.cs;../../Model/UsbDeviceMusic.cs;../../Services/UsbDeviceMusicPresence.cs" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <Compile Include="../../Model/UsbStorageDevice.cs;../../Model/LyricsDocument.cs" />
     <Compile Include="../../ViewModel/StatsViewModel.cs" />
     <Compile Include="../../Services/ShutdownCoordinator.cs" />

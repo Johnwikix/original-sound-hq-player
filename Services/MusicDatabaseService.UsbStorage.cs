@@ -43,18 +43,27 @@ public partial class MusicDatabaseService
     {
         var records = new List<UsbDeviceMusic>(sent.Count);
         foreach (var (music, extension) in sent)
+            records.Add(CreateUsbExportRecord(music, extension, device));
+        return await SaveUsbExportRecordsAsync(records, device);
+    }
+
+    public static UsbDeviceMusic CreateUsbExportRecord(Music music, string extension, UsbStorageDevice device)
+    {
+        string relativePath = UsbExportPaths.GetRelativeFilePath(music, extension);
+        return new UsbDeviceMusic
         {
-            string relativePath = UsbExportPaths.GetRelativeFilePath(music, extension);
-            records.Add(new UsbDeviceMusic
-            {
-                Path = device.IsPortable ? relativePath : Path.Combine(device.Path, relativePath),
-                Title = music.Title,
-                Author = music.Author,
-                Album = music.Album,
-                Extension = extension.ToUpperInvariant(),
-                UniqueDeviceId = device.UniqueId
-            });
-        }
+            Path = device.IsPortable ? relativePath : Path.Combine(device.Path, relativePath),
+            Title = music.Title,
+            Author = music.Author,
+            Album = music.Album,
+            Extension = extension.ToUpperInvariant(),
+            UniqueDeviceId = device.UniqueId
+        };
+    }
+
+    public async Task<IReadOnlyList<UsbDeviceMusic>> SaveUsbExportRecordsAsync(
+        IReadOnlyList<UsbDeviceMusic> records, UsbStorageDevice device)
+    {
         if (records.Count == 0) return records;
 
         if (device.IsPortable) await UsbStorageDeviceReader.PortableIoGate.WaitAsync();
