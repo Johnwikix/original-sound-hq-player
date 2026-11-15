@@ -103,6 +103,10 @@ namespace WinUIMusicPlayer.Model
         public string? EmbeddedLyrics { get; set; }
         [Ignore]
         public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;
+        /// <summary>艺术家卡片仅拆分显示名称，设备状态仍绑定原始曲库歌曲。</summary>
+        [Ignore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Music? ArtistTileSource { get; set => SetProperty(ref field, value); }
         public string ImageHash { get; set => SetProperty(ref field, value); } = string.Empty;
         /// <summary>获取或设置本版本的数据库封面原件，不随可重建缓存清理。</summary>
         public string CoverOverridePath { get; set; } = "";

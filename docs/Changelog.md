@@ -1,3 +1,8 @@
+## 2026-11-15 修复艺术家卡片的设备存在图标
+
+- `ArtistHelper`、`Music`、`ArtistGridCardControl.xaml`：艺术家名称投影保留原歌曲引用，图标通过编译 `x:Bind OneWay` 跟随原歌曲的设备状态，覆盖已加载缓存、逐曲发送、分批扫描及切换设备；来源引用不参与 SQLite 或 JSON 持久化。
+- 验证：按用户要求不执行构建或测试，仅核对卡片投影、属性通知和绑定调用链。
+
 ## 2026-11-15 修复 USB 审查发现的六项问题
 
 - `UsbExportConflicts`、`UsbWriterHelper`、`UsbExportCoordinator`、`Strings/*/Resources.resw`：写入前预检原格式、转码回退及歌词目标路径，冲突项明确报错而不覆盖；核对已有台账的来源及目录归属，保留正常同源重发与同曲多格式原文件并存。

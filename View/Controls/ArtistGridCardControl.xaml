@@ -49,7 +49,7 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 FontSize="16"
-                Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(Music.IsExistOnDevice), Mode=OneWay}" />
+                Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(Music.ArtistTileSource.IsExistOnDevice), Mode=OneWay}" />
         </Grid>
         <TextBlock
             Width="150"

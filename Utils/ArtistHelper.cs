@@ -75,6 +75,7 @@ namespace WinUIMusicPlayer.Utils
         {
             return new Music
             {
+                ArtistTileSource = source,
                 Id = source.Id,
                 SourceId = source.SourceId,
                 Path = source.Path,
