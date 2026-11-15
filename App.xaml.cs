@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer
         public static MainWindow MainWindow { get; set; }
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
+        private readonly SingleInstanceEndpoint _activation;
 
         private static readonly string LogDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
@@ -201,8 +202,9 @@ namespace WinUIMusicPlayer
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
-        public App()
+        internal App(SingleInstanceEndpoint activation)
         {
+            _activation = activation;
             WinUIMusicPlayer.Utils.AudioMetadataTags.ConfigureTitleReading();
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
             // 崩溃诊断要先于任何可能失败的初始化：配置 createdump 本地转储兜底，供崩溃时由运行时拉起。
@@ -314,20 +316,14 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                // 文件关联/打开方式激活的最早捕获：第二实例需据此转发给现有实例，第一实例立即开始解析。
-                string? activatedFilePath = OneShotPlaybackService.CaptureActivationPath();
-                // 检查应用程序是否已经在运行
-                if (!SingleInstanceHelper.CheckSingleInstance())
-                {
-                    // 应用程序已在运行，转发待播文件并激活现有实例
-                    SingleInstanceHelper.ActivateExistingInstance(activatedFilePath);
-                    Environment.Exit(0);
-                    return;
-                }
+                Services.GetRequiredService<ShutdownCoordinator>().RegisterStop(_activation.StopAsync);
+                string? activatedFilePath = ActivationFileResolver.CapturePath();
                 if (activatedFilePath is not null)
                 {
                     Services.GetRequiredService<OneShotPlaybackService>().Begin(activatedFilePath);
                 }
+                _activation.Attach(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread(), HandleActivation,
+                    ex => _logger.LogWarning(ex, "单实例激活请求处理失败"));
                 await _host.StartAsync();
                 if (Services.GetRequiredService<AppLifecycle>().Phase == AppPhase.Stopping) return;
                 Services.GetRequiredService<ShutdownCoordinator>().HostStarted(() => _host.StopAsync());
@@ -342,6 +338,14 @@ namespace WinUIMusicPlayer
                 ShowStartupErrorBox(ex);
                 ExitDuringStartup(1);
             }
+        }
+
+        private void HandleActivation(string? path)
+        {
+            if (Services.GetRequiredService<AppLifecycle>().Phase == AppPhase.Stopping) return;
+            if (path is not null && MusicFileTypes.Contains(Path.GetExtension(path)))
+                Services.GetRequiredService<OneShotPlaybackService>().PlayNow(path);
+            Services.GetRequiredService<ShellService>().ShowMainWindow();
         }
 
         internal static void ExitDuringStartup(int exitCode = 0) => _ = ExitApplicationAsync(exitCode);
@@ -363,7 +367,6 @@ namespace WinUIMusicPlayer
         {
             if (!await Services.GetRequiredService<ShutdownCoordinator>().ShutdownAsync()) return;
             try { Log.CloseAndFlush(); } catch { }
-            SingleInstanceHelper.ReleaseMutex();
             Environment.Exit(exitCode);
         }
     }

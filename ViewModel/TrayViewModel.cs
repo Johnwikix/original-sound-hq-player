@@ -2,8 +2,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using Microsoft.UI.Windowing;
-using WinUIEx;
 using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -28,13 +26,13 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
     public IRelayCommand ResetDesktopLyricsBoundsCommand { get; }
     public IRelayCommand<string> SetDesktopLyricsModeCommand { get; }
 
-    public TrayViewModel(AppLifecycle lifecycle, AppViewModel state, DesktopLyricsViewModel lyrics, PlaybackCommands playback)
+    public TrayViewModel(AppLifecycle lifecycle, AppViewModel state, DesktopLyricsViewModel lyrics, PlaybackCommands playback, ShellService shell)
     {
         _lifecycle = lifecycle; State = state; DesktopLyrics = lyrics; Playback = playback;
-        ShowWindowCommand = new RelayCommand(ShowWindow);
+        ShowWindowCommand = new RelayCommand(shell.ShowMainWindow);
         ExitCommand = new AsyncRelayCommand(App.Current_Exit);
-        OpenSettingsCommand = ReadyCommand(() => { ShowWindow(); App.Services.GetRequiredService<MainPage>().NavigateToSettingsPage(); });
-        ShowPlayingDetailCommand = ReadyCommand(() => { ShowWindow(); App.Services.GetRequiredService<MainPage>().NavigateToPlayingDetailPage(); });
+        OpenSettingsCommand = ReadyCommand(() => { shell.ShowMainWindow(); App.Services.GetRequiredService<MainPage>().NavigateToSettingsPage(); });
+        ShowPlayingDetailCommand = ReadyCommand(() => { shell.ShowMainWindow(); App.Services.GetRequiredService<MainPage>().NavigateToPlayingDetailPage(); });
         ToggleDesktopLyricsCommand = ReadyCommand(() => lyrics.IsEnabled = !lyrics.IsEnabled);
         ToggleDesktopLyricsKaraokeCommand = ReadyCommand(() => lyrics.IsKaraokeEnabled = !lyrics.IsKaraokeEnabled);
         ToggleDesktopLyricsLockCommand = ReadyCommand(() => lyrics.IsLocked = !lyrics.IsLocked);
@@ -50,16 +48,6 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
         DesktopLyrics.Mode = parsed;
     }
     private RelayCommand ReadyCommand(Action action) => new(() => { if (IsReady) action(); }, () => IsReady);
-    private static void ShowWindow()
-    {
-        var window = App.MainWindow;
-        if (window is null) return;
-        window.Show();
-        if (window.AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } presenter)
-            presenter.Restore();
-        window.Activate();
-        window.SetForegroundWindow();
-    }
     private void LifecycleChanged(object? sender, EventArgs e)
     {
         OnPropertyChanged(nameof(IsReady));

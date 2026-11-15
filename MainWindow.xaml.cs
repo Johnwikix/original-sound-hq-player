@@ -8,7 +8,6 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Timers;
 using Windows.Graphics;
 using Windows.UI;
@@ -68,11 +67,10 @@ namespace WinUIMusicPlayer
             InitializeApp();
             this.AppWindow.Closing += AppWindow_Closing;
             this.AppWindow.Changed += AppWindow_Changed;
-            //重复启动显示窗口
+            // 原生窗口过程仅处理全局快捷键。
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
-            SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
         }
@@ -176,21 +174,6 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private void SaveMainWindowHandle(IntPtr handle)
-        {
-            try
-            {
-                //使用注册表
-                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\SennpeiStudio\OriginalSoundHIFIPlayer"))
-                {
-                    key.SetValue("MainWindowHandle", handle.ToInt64());
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"保存窗口句柄失败: {ex.Message}");
-            }
-        }
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
         {
             _ = DispatcherQueue.EnqueueAsync(() =>
@@ -203,34 +186,11 @@ namespace WinUIMusicPlayer
                 }
             });
         }
-        //显示窗口
+        // 全局快捷键；激活转发由命名管道接收。
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             try
             {
-                if (msg == SingleInstanceHelper.WM_SHOWME)
-                {
-                    //Debug.WriteLine("收到显示窗口消息");
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        if (this is null)
-                        {
-                            return;
-                        }
-
-                        if (!this.Visible)
-                        {
-                            this.Show();
-                            InitializeTaskbarHelper();
-                        }
-                    });
-                    return IntPtr.Zero;
-                }
-                if (msg == SingleInstanceHelper.WM_COPYDATA)
-                {
-                    HandleCopyData(lParam);
-                    return IntPtr.Zero;
-                }
                 if (msg == 0x0312) // WM_HOTKEY
                 {
                     int id = (int)wParam;
@@ -247,31 +207,6 @@ namespace WinUIMusicPlayer
             }
         }
 
-
-        //第二实例转发的待播文件路径：SendMessage 返回后对端缓冲即失效，负载必须在 WndProc 内同步拷贝完成，
-        //播放与界面更新再转交 UI 线程。显示窗口仍由第二实例的 WM_SHOWME/前台逻辑负责。
-        private void HandleCopyData(IntPtr lParam)
-        {
-            try
-            {
-                var copyData = System.Runtime.InteropServices.Marshal.PtrToStructure<SingleInstanceHelper.CopyDataStruct>(lParam);
-                if (copyData.dwData != SingleInstanceHelper.CopyDataMagic || copyData.cbData <= sizeof(char)) return;
-                int charCount = copyData.cbData / sizeof(char) - 1; // 去掉终止符
-                if (charCount <= 0 || copyData.lpData == IntPtr.Zero) return;
-                var chars = new char[charCount];
-                System.Runtime.InteropServices.Marshal.Copy(copyData.lpData, chars, 0, charCount);
-                string path = new string(chars);
-                if (!ToolUtils.IsMusicFile(Path.GetExtension(path))) return;
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    App.Services.GetRequiredService<OneShotPlaybackService>().PlayNow(path);
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "处理第二实例转发的播放请求失败");
-            }
-        }
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
@@ -381,10 +316,7 @@ namespace WinUIMusicPlayer
             }
             else
             {
-                this.Show();
-                InitializeTaskbarHelper();
-                this.Activate();
-                WindowHelper.SetForegroundWindow(AppData.HWnd);
+                App.Services.GetRequiredService<ShellService>().ShowMainWindow();
             }
         }
 

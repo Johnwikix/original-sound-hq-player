@@ -15,6 +15,7 @@
     <!-- 仓库不随附 pubxml（.gitignore 忽略 *.pubxml），命令行发布直接用 dotnet publish；
          原先的 PublishProfile 指向不存在的 win-x64.pubxml，仅产生 NETSDK1198 且无实际作用。 -->
     <UseWinUI>true</UseWinUI>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
 	<!-- 本地诊断、回归工程及其生成文件不属于主程序；Git 忽略规则不影响 SDK 默认扫描。 -->

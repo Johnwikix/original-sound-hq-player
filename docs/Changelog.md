@@ -1,3 +1,10 @@
+## 2026-11-15 使用互斥量与命名管道恢复单实例激活
+
+- `Program`、`SingleInstanceEndpoint`：参考 EhviewerDownloadReader，在 Host/XAML 创建前取得原命名互斥量并监听当前用户、当前会话的管道；后续进程收到投递确认后退出，连接失败不启动第二套 Host/音频进程；启动早期请求缓存后分批交给 UI，退出先关闭管道并排空监听，保存完成前继续持有互斥量。
+- `ActivationFileResolver`、`MusicFileTypes`、`ToolUtils`、`OneShotPlaybackService`：保留 MSIX 文件关联和命令行文件播放，扩展名表独立于日志/DI，第二进程解析参数不会提前创建 Host；管道使用带长度上限的 UTF-8 路径，普通启动仅请求显示，不误播旧文件。
+- `MainWindow`、`WindowActivationHelper`、`ShellService`、`TrayViewModel`：移除注册表 HWND 和 WM_COPYDATA/WM_SHOWME 转发，保留全局快捷键消息；二次启动、托盘及显示快捷键共用隐藏/最小化恢复与前台请求，系统拒绝时提示任务栏。
+- 验证：全新目录 Release/x64 剪裁发布；后台回归使用与主程序相同的 Satori GC、ReadyToRun、COM 选项和剪裁，覆盖未打包及 AppX 包身份下连续/并发进程、启动排队、异常连接、退出和崩溃后的接管，以及原生窗口恢复。测试使用独立名称，替换最终前台调用，不启动音频或真实播放器，也未点击实际开始菜单；未做完整主程序交互验证。
+
 ## 2026-11-15 修复艺术家卡片的设备存在图标
 
 - `ArtistHelper`、`Music`、`ArtistGridCardControl.xaml`：艺术家名称投影保留原歌曲引用，图标通过编译 `x:Bind OneWay` 跟随原歌曲的设备状态，覆盖已加载缓存、逐曲发送、分批扫描及切换设备；来源引用不参与 SQLite 或 JSON 持久化。

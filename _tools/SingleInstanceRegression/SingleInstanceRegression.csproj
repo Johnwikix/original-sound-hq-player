@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.42242472725.2" />
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Features>$(Features);runtime-async=on</Features>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <Compile Include="../../Services/SingleInstanceEndpoint.cs;../../Services/ShellService.cs;../../Services/AppLifecycle.cs;../../State/ShellState.cs" />
+    <Compile Include="../../Helper/ActivationFileResolver.cs;../../Helper/WindowActivationHelper.cs;../../Utils/MusicFileTypes.cs" />
+    <Compile Include="../../ViewModel/TrayViewModel.cs;../../Model/DesktopLyricsMode.cs" />
+  </ItemGroup>
+</Project>

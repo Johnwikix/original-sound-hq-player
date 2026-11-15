@@ -672,14 +672,9 @@ namespace WinUIMusicPlayer.Utils
             return $"{minutes:D2}:{seconds:D2}.{milliseconds:D3}";
         }
 
-        private static readonly HashSet<string> MusicExtensions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"
-        };
-
         public static bool IsMusicFile(string fileType)
         {
-            return MusicExtensions.Contains(fileType);
+            return MusicFileTypes.Contains(fileType);
         }
 
         // 将字典转换为JSON字符串的方法

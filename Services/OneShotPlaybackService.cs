@@ -1,12 +1,10 @@
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Windows.AppLifecycle;
 using System;
 using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Activation;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -51,50 +49,6 @@ public sealed class OneShotPlaybackService : IDisposable
         _logger = logger;
         _appViewModel.PropertyChanged += OnViewModelPropertyChanged;
         _lifecycle.Changed += OnLifecycleChanged;
-    }
-
-    /// <summary>
-    /// 启动最早期捕获激活文件路径：MSIX 文件激活走 AppLifecycle 激活参数；
-    /// unpackaged（开发调试）下回退解析命令行。多选文件只取第一个受支持的音频文件。
-    /// </summary>
-    public static string? CaptureActivationPath()
-    {
-        try
-        {
-            var activated = AppInstance.GetCurrent().GetActivatedEventArgs();
-            if (activated.Kind == ExtendedActivationKind.File
-                && activated.Data is IFileActivatedEventArgs fileArgs)
-            {
-                foreach (var file in fileArgs.Files)
-                {
-                    if (IsPlayablePath(file.Path, out var path)) return path;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // 此处可能早于任何 DI 依赖就绪，只走诊断输出，不触碰 App.Services。
-            System.Diagnostics.Debug.WriteLine($"读取文件激活参数失败: {ex.Message}");
-        }
-        // 打包应用的命令行不含 shell 传递的文件路径；此回退仅服务 unpackaged 调试场景。
-        try
-        {
-            var args = Environment.GetCommandLineArgs();
-            for (int i = 1; i < args.Length; i++)
-            {
-                if (IsPlayablePath(args[i], out var path)) return path;
-            }
-        }
-        catch { /* 命令行不可用时静默跳过，不影响正常启动 */ }
-        return null;
-
-        static bool IsPlayablePath(string? path, out string result)
-        {
-            result = path ?? string.Empty;
-            return result.Length > 0
-                && ToolUtils.IsMusicFile(Path.GetExtension(result))
-                && File.Exists(result);
-        }
     }
 
     /// <summary>冷启动登记待播文件并立即开始解析；在 OnLaunched 早期调用，与 Host/IPC/数据库初始化并行。</summary>

@@ -137,6 +137,7 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterCleanup(App.Services.GetRequiredService<PlaybackCommands>().Dispose);
             shutdown.RegisterCleanup(App.Services.GetRequiredService<OneShotPlaybackService>().Dispose);
             App.MainWindow.Activate();
+            shell.CompleteWindowCreation();
             await WaitForContentLoadedAsync((FrameworkElement)App.MainWindow.Content);
             logger.LogInformation("启动窗口就绪：{ElapsedMs} ms", startup.ElapsedMilliseconds);
             // 主界面立即显示：无 Loading 过渡层，缓存库/播放状态/引擎就绪后逐步流入。

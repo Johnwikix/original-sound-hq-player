@@ -62,7 +62,7 @@
         <uap:Extension Category="windows.protocol">
           <uap:Protocol Name="originalsoundhqplayer"/>
         </uap:Extension>
-        <!-- 文件关联：扩展名与 Utils/ToolUtils.cs MusicExtensions 保持一致；
+        <!-- 文件关联：扩展名与 Utils/MusicFileTypes.cs 保持一致；
              声明后应用出现在系统"打开方式"候选，处理见 Services/OneShotPlaybackService.cs。 -->
         <uap:Extension Category="windows.fileTypeAssociation">
           <uap:FileTypeAssociation Name="audio">
