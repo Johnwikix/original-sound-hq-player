@@ -222,7 +222,9 @@ namespace WinUIMusicPlayer.Utils
             {
                 var deviceItem = new MenuModel
                 {
-                    Title = $"{usb.Name} , {GetString("Path")}：{usb.Path} , {GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB",
+                    Title = usb.IsPortable
+                        ? $"{usb.Name} , {GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB"
+                        : $"{usb.Name} , {GetString("Path")}：{usb.Path} , {GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB",
                     Children =
                     [
                         new()

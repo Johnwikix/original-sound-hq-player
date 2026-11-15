@@ -1,3 +1,13 @@
+## 2026-11-15 支持无盘符的安卓手机 USB 传输
+
+- `UsbStorageDeviceReader`、`UsbStorageDevice`：同时发现可移动磁盘和 MTP 手机内部存储/SD 卡，不再用盘符过滤手机；设备下拉框与发送菜单显示手机及存储名称。
+- `UsbWriterHelper`、`UsbPortableStorageWriter`、`UsbExportPaths`：通过 Windows 存储 API 发送手机音频及三类歌词；转码使用逐曲本地暂存，失败回退原格式并清理临时文件。
+- `UsbDeviceService`、`UsbPortableMusicReader`、`MusicDatabaseService.UsbStorage`、`StartupCoordinator`：手机仅扫描 MUSIC 目录，完整扫描后提交台账；MTP 发现、扫描和发送共享串行通道，阻止过期扫描覆盖当前选择，退出等待在途扫描和枚举。
+- `UsbExportCoordinator`、`MusicDatabaseService.UsbStorage`：成功发送按真实目标路径持久化台账，MTP 歌手/专辑字段为空时保留已确认信息；扫描快照及提交共用传输门，按文件路径保留同名歌曲和不同格式。
+- `UsbExportCoordinator`、`Strings/*/Resources.resw`：部分失败显示七语重试提示；MTP 会话失效时停止整批，避免逐首重复等待驱动超时。
+- `_tools/UsbTransferRegression`：链接真实 FFmpeg、MTP、歌词导出及隔离 SQLite，覆盖音频读回、MP3/AAC 转码与标签、覆盖、扫描/导出并发、排队取消、失败重试、台账重开和删除同步。
+- 验证：真我 GT5 Pro 保持解锁后，普通 Release 及剪裁包身份完整实机回归、共享状态/磁盘导出回归通过；全新目录 Release/x64 主程序剪裁发布成功，真实发送菜单中的手机、原格式与转码入口可用，开发版已同步本次产物，用户手动验证正常。未做传输中拔线及多存储设备验证。
+
 ## 2026-11-14 播放列表重命名后立即同步详情标题
 
 - `PlaylistDetailViewModel`、`PlaylistDetailControl.xaml`：详情保留当前展示的播放列表引用，标题通过 `x:Bind` 直接跟踪 `Name`，移除名称字符串快照，使重命名立即同步；关闭动画期间仍保留原歌单标题。

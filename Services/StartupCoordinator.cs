@@ -44,6 +44,10 @@ namespace WinUIMusicPlayer.Services
             var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
             shutdown.RegisterStop(UiLayoutDiagnostics.StopAsync);
             var lifecycle = App.Services.GetRequiredService<AppLifecycle>();
+            // 先停止 USB 发现/扫描，再等待导出任务排空，避免台账提交被长扫描阻塞。
+            var usb = AppViewModel.UsbDeviceService;
+            shutdown.RegisterStop(usb.StopAsync);
+            shutdown.RegisterCleanup(usb.StopWatching);
             var settings = App.Services.GetRequiredService<SettingsCoordinator>();
             MusicDatabaseService.AttachSettingsCapture(App.Services.GetRequiredService<SettingsSnapshotFactory>());
             settings.Start();
@@ -270,8 +274,6 @@ namespace WinUIMusicPlayer.Services
                 App.MainWindow.Visible;
             App.MainWindow.InitializeTaskbarHelper();
             var usb = App.Services.GetRequiredService<UsbDeviceService>();
-            App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(usb.StopWatching);
-            App.Services.GetRequiredService<ShutdownCoordinator>().RegisterStop(() => { usb.StopWatching(); return Task.CompletedTask; });
             usb.StartWatching();
             App.Services.GetRequiredService<SystemMediaControlsService>().EnableControls();
             App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(DesktopLyricsManager.Shutdown);

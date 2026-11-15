@@ -1,7 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -10,10 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
-using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
-using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
 namespace WinUIMusicPlayer.Services
@@ -29,8 +26,12 @@ namespace WinUIMusicPlayer.Services
         private readonly MusicDatabaseService _musicDatabaseService;
         private readonly ILogger<UsbDeviceService> _logger;
         private DeviceWatcher? _deviceWatcher;
-        private bool _stopped;
+        private volatile bool _stopped;
         private CancellationTokenSource? _scanCts;
+        private readonly CancellationTokenSource _watchCts = new();
+        private readonly SemaphoreSlim _refreshGate = new(1, 1);
+        private int _refreshVersion;
+        private readonly List<Task> _selectionTasks = [];
 
         /// <summary>当前枚举到的 USB 存储设备（下拉框数据源）。</summary>
         public ObservableCollection<UsbStorageDevice> Devices { get; } = [];
@@ -44,7 +45,8 @@ namespace WinUIMusicPlayer.Services
             {
                 if (ReferenceEquals(field, value)) return;
                 SetProperty(ref field, value);
-                _ = SelectCoreAsync(value);
+                _selectionTasks.RemoveAll(static task => task.IsCompleted);
+                _selectionTasks.Add(SelectCoreAsync(value));
             }
         }
 
@@ -73,13 +75,12 @@ namespace WinUIMusicPlayer.Services
             {
                 string deviceSelector = StorageDevice.GetDeviceSelector();
                 _deviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
-                _deviceWatcher.Added += async (_, _) =>
-                {
-                    await Task.Delay(1500); // 等待设备挂载稳定
-                    if (!_stopped) await RefreshDevicesAsync();
-                };
-                _deviceWatcher.Removed += async (_, _) => await RefreshDevicesAsync();
+                _deviceWatcher.Added += OnDeviceAdded;
+                _deviceWatcher.Removed += OnDeviceChanged;
+                _deviceWatcher.Updated += OnDeviceChanged;
+                _deviceWatcher.EnumerationCompleted += OnEnumerationCompleted;
                 _deviceWatcher.Start();
+                _ = RefreshDevicesAsync();
             }
             catch (Exception ex)
             {
@@ -89,43 +90,89 @@ namespace WinUIMusicPlayer.Services
 
         public void StopWatching()
         {
+            if (_stopped) return;
             _stopped = true;
+            _watchCts.Cancel();
+            if (_deviceWatcher is not null)
+            {
+                _deviceWatcher.Added -= OnDeviceAdded;
+                _deviceWatcher.Removed -= OnDeviceChanged;
+                _deviceWatcher.Updated -= OnDeviceChanged;
+                _deviceWatcher.EnumerationCompleted -= OnEnumerationCompleted;
+            }
             if (_deviceWatcher?.Status is DeviceWatcherStatus.Started or DeviceWatcherStatus.EnumerationCompleted)
                 _deviceWatcher.Stop();
             _deviceWatcher = null;
             _scanCts?.Cancel();
         }
 
+        public async Task StopAsync()
+        {
+            StopWatching();
+            await Task.WhenAll(_selectionTasks);
+            // 枚举无法中断；等待实际调用返回后再释放数据库和 UI 依赖。
+            await _refreshGate.WaitAsync();
+            _refreshGate.Release();
+        }
+
+        private async void OnDeviceAdded(DeviceWatcher sender, DeviceInformation args)
+        {
+            try
+            {
+                await Task.Delay(1500, _watchCts.Token); // 等待手机公开内部存储
+                await RefreshDevicesAsync();
+            }
+            catch (OperationCanceledException) when (_stopped) { }
+        }
+
+        private async void OnDeviceChanged(DeviceWatcher sender, DeviceInformationUpdate args) => await RefreshDevicesAsync();
+
+        private async void OnEnumerationCompleted(DeviceWatcher sender, object args) => await RefreshDevicesAsync();
+
         /// <summary>重新枚举 USB 存储设备并更新设备列表/可见性；
         /// 无选中或选中设备被移除时自动选中第一项，免去插拔后的手动选择。</summary>
         public async Task RefreshDevicesAsync()
         {
+            int version = Interlocked.Increment(ref _refreshVersion);
+            bool entered = false;
             try
             {
                 if (_stopped) return;
-                var devices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
-                if (_stopped) return;
+                await _refreshGate.WaitAsync(_watchCts.Token);
+                entered = true;
+                if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
+                var devices = await Task.Run(UsbStorageDeviceReader.GetUsbStorageDevicesAsync);
+                if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
                 var dq = App.MainWindow.DispatcherQueue;
                 await dq.EnqueueAsync(() =>
                 {
-                    if (_stopped) return;
-                    Devices.Clear();
-                    foreach (var d in devices) Devices.Add(d);
+                    if (_stopped || version != Volatile.Read(ref _refreshVersion)) return;
+                    // 保留相同 ID 的对象，避免刷新清空 ItemsSource 时 TwoWay 绑定撤销选择。
+                    for (int i = Devices.Count - 1; i >= 0; i--)
+                        if (!devices.Exists(d => d.UniqueId == Devices[i].UniqueId)) Devices.RemoveAt(i);
+                    foreach (var device in devices)
+                        if (Devices.AsValueEnumerable().All(d => d.UniqueId != device.UniqueId)) Devices.Add(device);
                     DevicesVisibility = Devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                     if (Devices.Count == 0)
                     {
                         ClearSelection();
+                        DevicesChanged?.Invoke(this, EventArgs.Empty);
                         return;
                     }
                     // 自动选中：当前无选中、或选中的设备已被拔出（按 UniqueId 判断）
                     if (SelectedDevice is null || Devices.AsValueEnumerable().All(d => d.UniqueId != SelectedDevice.UniqueId))
                         SelectedDevice = Devices[0];
+                    DevicesChanged?.Invoke(this, EventArgs.Empty);
                 });
-                DevicesChanged?.Invoke(this, EventArgs.Empty);
             }
+            catch (OperationCanceledException) when (_stopped) { }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"枚举 USB 设备失败: {ex.Message}");
+            }
+            finally
+            {
+                if (entered) _refreshGate.Release();
             }
         }
 
@@ -134,24 +181,29 @@ namespace WinUIMusicPlayer.Services
         private async Task SelectCoreAsync(UsbStorageDevice? device)
         {
             _scanCts?.Cancel();
-            _scanCts = new CancellationTokenSource();
-            var ct = _scanCts.Token;
-
+            using var scan = CancellationTokenSource.CreateLinkedTokenSource(_watchCts.Token);
+            _scanCts = scan;
+            var ct = scan.Token;
             MusicOnDevice.Clear();
             RaiseDeviceMusicChanged();
-            if (device is null) return;
-
-            await LoadDeviceMusicAsync(device.UniqueId);
             try
             {
-                await Task.Run(() => _musicDatabaseService.ScanUsbDeviceAsync(device.Path, device.UniqueId), ct);
-                if (!ct.IsCancellationRequested)
-                    await LoadDeviceMusicAsync(device.UniqueId);
+                if (device is null || _stopped) return;
+                await LoadDeviceMusicAsync(device.UniqueId, ct);
+                ct.ThrowIfCancellationRequested();
+                await Task.Run(() => device.IsPortable
+                    ? _musicDatabaseService.ScanPortableUsbDeviceAsync(device, ct)
+                    : _musicDatabaseService.ScanUsbDeviceAsync(device.Path, device.UniqueId), ct);
+                await LoadDeviceMusicAsync(device.UniqueId, ct);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"扫描 USB 设备失败: {device.Path}: {ex.Message}");
+                _logger.LogError(ex, "扫描 USB 设备失败: {Device}", device?.Name);
+            }
+            finally
+            {
+                if (ReferenceEquals(_scanCts, scan)) _scanCts = null;
             }
         }
 
@@ -162,34 +214,37 @@ namespace WinUIMusicPlayer.Services
             SelectedDevice = null;
         }
 
-        /// <summary>记录一次发送（已存在同标题记录时幂等跳过），并触发状态标记刷新。</summary>
-        public void AddSentRecords(IEnumerable<(Music Music, string Extension)> sent, UsbStorageDevice device)
+        /// <summary>发布已持久化的发送记录；同路径覆盖，同标题的不同文件均保留。</summary>
+        public void AddSentRecords(IReadOnlyList<UsbDeviceMusic> sent, UsbStorageDevice device)
         {
-            foreach (var (music, extension) in sent)
+            if (sent.Count == 0 || _stopped || SelectedDevice?.UniqueId != device.UniqueId) return;
+            _scanCts?.Cancel(); // 旧查询不得在发送完成后再覆盖当前台账。
+            var indices = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < MusicOnDevice.Count; i++)
+                indices[MusicOnDevice[i].Path] = i;
+            foreach (var record in sent)
             {
-                if (MusicOnDevice.AsValueEnumerable().Any(m => m.Title == music.Title))
-                    continue;
-                MusicOnDevice.Add(new UsbDeviceMusic
+                if (indices.TryGetValue(record.Path, out int index))
+                    MusicOnDevice[index] = record;
+                else
                 {
-                    Title = music.Title,
-                    Author = music.Author,
-                    Album = music.Album,
-                    Extension = extension,
-                    UniqueDeviceId = device.UniqueId,
-                });
+                    indices[record.Path] = MusicOnDevice.Count;
+                    MusicOnDevice.Add(record);
+                }
             }
             RaiseDeviceMusicChanged();
         }
 
-        private async Task LoadDeviceMusicAsync(string uniqueId)
+        private async Task LoadDeviceMusicAsync(string uniqueId, CancellationToken token)
         {
             var records = await _musicDatabaseService.GetUsbDeviceMusics(uniqueId) ?? [];
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
+                if (_stopped || token.IsCancellationRequested || SelectedDevice?.UniqueId != uniqueId) return;
                 MusicOnDevice.Clear();
                 foreach (var r in records) MusicOnDevice.Add(r);
+                RaiseDeviceMusicChanged();
             });
-            RaiseDeviceMusicChanged();
         }
 
         private void RaiseDeviceMusicChanged() => DeviceMusicChanged?.Invoke(this, EventArgs.Empty);

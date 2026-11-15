@@ -175,6 +175,19 @@ static async Task RunAsync()
         Check(results.Count == 1 && results[0].Extension == "mp3", "Successful conversion must record its actual output.");
         results = await writer.WriteToUsb([new(1, original)], device, cancellationToken: new CancellationToken(true));
         Check(results.Count == 0, "Cancelled batch must not claim successful copies.");
+        var portable = new UsbStorageDevice { Name = "unavailable", PortableDeviceId = "test", UniqueId = "test" };
+        WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls = 0;
+        WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenError = new DirectoryNotFoundException();
+        results = await writer.WriteToUsb([new(1, original), new(2, original)], portable);
+        Check(results.Count == 0 && WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls == 1,
+            "Unavailable MTP storage must stop the batch rather than repeating a native timeout per song.");
+        WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls = 0;
+        WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenError = new IOException("MTP",
+            new System.Runtime.InteropServices.COMException("Device hung", unchecked((int)0x802A0006)));
+        results = await writer.WriteToUsb([new(1, original), new(2, original)], portable);
+        Check(results.Count == 0 && WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenCalls == 1,
+            "A wrapped WPD device-hung error must stop the batch.");
+        WinUIMusicPlayer.Helper.UsbPortableStorageWriter.OpenError = null;
     }
     finally
     {

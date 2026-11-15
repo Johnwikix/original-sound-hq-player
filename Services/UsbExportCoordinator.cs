@@ -44,14 +44,29 @@ public sealed class UsbExportCoordinator(AppState state, ApplicationTasks tasks,
             var progress = new Progress<double>(p => state.Operations.Report(key, p));
             var writer = new UsbWriterHelper(converter, database);
             var succeeded = await Task.Run(() => writer.WriteToUsb(songs, device, format, bitRateKbps, progress, cancellationToken: token));
-            devices.AddSentRecords(succeeded, device);
+            var records = await database.SaveUsbExportRecordsAsync(succeeded, device);
+            devices.AddSentRecords(records, device);
+            if (succeeded.Count < songs.Count && !token.IsCancellationRequested)
+                ReportFailure(device);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { logger.LogError(ex, "USB 导出失败"); }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "USB 导出失败");
+            ReportFailure(device);
+        }
         finally
         {
             state.Operations.Complete(key);
             if (entered) _gate.Release();
         }
+    }
+
+    private void ReportFailure(UsbStorageDevice device)
+    {
+        if (!state.Lifecycle.IsReady) return;
+        state.Shell.InfoBarTitle = ToolUtils.GetString("Error");
+        state.Shell.InfoBarMessage = string.Format(ToolUtils.GetString("UsbExportFailed"), device.Name);
+        state.Shell.InfoBarIsOpen = true;
     }
 }

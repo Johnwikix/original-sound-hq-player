@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Reader/UsbStorageDeviceReader.cs" Link="UsbStorageDeviceReader.cs" />
+    <Compile Include="../../Model/UsbStorageDevice.cs" Link="UsbStorageDevice.cs" />
+    <Compile Include="../../Model/UsbDeviceMusic.cs;../../Model/LyricsDocument.cs" />
+    <Compile Include="../../Helper/UsbWriterHelper.cs;../../Helper/UsbPortableStorageWriter.cs" />
+    <Compile Include="../../Helper/UsbExportPaths.cs;../../Services/MusicDatabaseService.UsbStorage.cs" />
+    <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
+    <Compile Include="../../Reader/UsbPortableMusicReader.cs" />
+    <Compile Include="../../Services/AudioConverterService.cs;../../Services/AudioFileWriteGate.cs;../../AudioConverters/FFmpegAudioConverter.cs;../../Model/ConversionMetadata.cs" />
+    <Compile Include="../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsParser*.cs" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
+    <PackageReference Include="ZLinq" Version="1.6.1" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
+    <PackageReference Include="z440.atl.core" Version="7.19.0" />
+    <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="../../Libraries/FFmpeg/x64/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

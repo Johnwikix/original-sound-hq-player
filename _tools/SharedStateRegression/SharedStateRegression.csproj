@@ -16,6 +16,7 @@
     <Compile Include="../../Services/ApplicationTasks.cs" />
     <Compile Include="../../Services/AppLifecycle.cs" />
     <Compile Include="../../Helper/UsbWriterHelper.cs" />
+    <Compile Include="../../Helper/UsbExportPaths.cs" />
     <Compile Include="../../Model/UsbStorageDevice.cs;../../Model/LyricsDocument.cs" />
     <Compile Include="../../ViewModel/StatsViewModel.cs" />
     <Compile Include="../../Services/ShutdownCoordinator.cs" />

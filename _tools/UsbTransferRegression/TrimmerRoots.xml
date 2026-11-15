@@ -1,0 +1,5 @@
+<linker>
+  <assembly fullname="UsbTransferRegression">
+    <type fullname="WinUIMusicPlayer.Model.UsbDeviceMusic" preserve="all" />
+  </assembly>
+</linker>

@@ -107,6 +107,23 @@ namespace WinUIMusicPlayer.Extensions
 }
 
 // USB progress/lifecycle tests do not request lyric content; format/IO behavior is covered by LyricsUnificationRegression.
+// The Windows/MTP destination is exercised against a real phone by UsbTransferRegression.
+namespace WinUIMusicPlayer.Helper
+{
+    public sealed class UsbPortableStorageWriter : IDisposable
+    {
+        public static int OpenCalls { get; set; }
+        public static Exception? OpenError { get; set; }
+        public static Task<UsbPortableStorageWriter> OpenAsync(Model.UsbStorageDevice device, string author, string album, CancellationToken token = default)
+        {
+            OpenCalls++;
+            throw OpenError ?? new NotSupportedException("Use UsbTransferRegression for MTP integration.");
+        }
+        public Task CopyAsync(string source) => throw new NotSupportedException();
+        public void Dispose() { }
+    }
+}
+
 namespace WinUIMusicPlayer.Services.Lyrics
 {
     public class LyricsParser { public string ExportLrc(Model.LyricsDocument document) => ""; }

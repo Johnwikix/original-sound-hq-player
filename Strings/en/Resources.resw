@@ -2731,4 +2731,5 @@ SHA-256: {5}
   <data name="SongVersionsDraftHint" xml:space="preserve"><value>Save version drafts before linking, splitting, or undoing.</value></data>
   <data name="SongVersionsMergeStats" xml:space="preserve"><value>{0} versions; {1} favorited groups; {2} playlist entries, including {3} optional duplicate entries.</value></data>
   <data name="MusicDetailsDatabaseSaveFailed" xml:space="preserve"><value>Song changes could not be saved. Reopen the song details and try again.</value></data>
+  <data name="UsbExportFailed" xml:space="preserve"><value>Transfer to {0} did not finish. Unlock the device, allow file transfer, check the USB connection, and try again.</value></data>
 </root>

@@ -1,0 +1,56 @@
+namespace WinUIMusicPlayer.Model
+{
+    public sealed record Music(string Path, string Author, string Album)
+    {
+        public string Extension => System.IO.Path.GetExtension(Path).TrimStart('.');
+        public string Title { get; init; } = "测试标题（与文件名不同）";
+        public bool IsRemote => false;
+        public int TrackNumber => 1;
+        public int DiskNumber => 1;
+        public int Year => 2026;
+    }
+}
+
+namespace WinUIMusicPlayer.Services
+{
+    public sealed partial class MusicDatabaseService
+    {
+        private SQLite.SQLiteAsyncConnection _dbConnection = null!;
+        public async Task InitializeAsync(string path)
+        {
+            _dbConnection = new(path);
+            await _dbConnection.CreateTableAsync<Model.UsbDeviceMusic>();
+        }
+        public Task<List<Model.UsbDeviceMusic>> GetUsbDeviceMusics(string id)
+            => _dbConnection.Table<Model.UsbDeviceMusic>().Where(m => m.UniqueDeviceId == id).ToListAsync();
+        public Task CloseAsync() => _dbConnection?.CloseAsync() ?? Task.CompletedTask;
+        public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => Task.FromResult(
+            new Model.LyricsDocument(new("[00:00.00]USB regression", Model.LyricsFormat.Lrc), "[00:00.00]翻译", "[00:00.00]pronunciation"));
+        public Task AddConvertedFileAsync(string path) => throw new InvalidOperationException("USB export must not add staged files to the library.");
+    }
+}
+
+namespace WinUIMusicPlayer.ViewModel
+{
+    public sealed class AppViewModel
+    {
+        public int DsdPcmFreq => 0;
+        public int DsdGain => 0;
+    }
+}
+
+namespace WinUIMusicPlayer.Utils
+{
+    public static class ToolUtils
+    {
+        public static string SanitizeFileName(string value, char[] invalid)
+        {
+            foreach (char c in invalid) value = value.Replace(c, '_');
+            return value;
+        }
+        public static bool IsMusicFile(string extension) => extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".m4a", StringComparison.OrdinalIgnoreCase);
+        public static Task<byte[]?> GetRawImage(Model.Music music) => Task.FromResult<byte[]?>(null);
+    }
+}
