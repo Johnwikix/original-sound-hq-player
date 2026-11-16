@@ -33,7 +33,12 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AppViewModel
     {
-        public bool TryFindById(int id, out Model.Music? music) { music = null; return false; }
+        public event Action? SongsSourceChanged;
+        public bool TryFindById(int id, out Model.Music? music)
+        {
+            music = SongsSource.Find(song => song.Id == id);
+            return music is not null;
+        }
     }
 }
 namespace WinUIMusicPlayer.ViewModel.Pages { public class Unused { } }

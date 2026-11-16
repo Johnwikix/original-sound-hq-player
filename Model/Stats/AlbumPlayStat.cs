@@ -22,8 +22,8 @@ namespace WinUIMusicPlayer.Model.Stats
         /// <summary>该组最近一次会话的歌曲 Id（封面与播放锚点，歌曲可能已删除）。</summary>
         public int MusicId { get; init; }
 
-        /// <summary>由 <see cref="MusicId"/> 解析出的歌曲对象（删除后为 null）。</summary>
-        public Music? Music { get; set; }
+        /// <summary>获取或设置封面歌曲；历史文件失效时回退到当前曲库中的同专辑歌曲。</summary>
+        public Music? Music { get => field; set => SetProperty(ref field, value); }
 
         /// <summary>达标（听满阈值比例）次数。</summary>
         public int PlayCount { get => field; set => SetProperty(ref field, value); }

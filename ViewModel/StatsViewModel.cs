@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Services;
 
@@ -106,6 +107,8 @@ namespace WinUIMusicPlayer.ViewModel
             if (_active) return;
             _active = true;
             _statsService.StatsUpdated += OnStatsUpdated;
+            _appViewModel.SongsSourceChanged += RefreshCoverMusic;
+            RefreshCoverMusic();
             RequestLoad();
         }
 
@@ -116,6 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
             _requestedVersion++;
             _loadCancellation?.Cancel();
             _statsService.StatsUpdated -= OnStatsUpdated;
+            _appViewModel.SongsSourceChanged -= RefreshCoverMusic;
         }
 
         public async Task StopAsync()
@@ -377,26 +381,44 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void ResolveMusic(SongPlayStat stat)
         {
-            if (_appViewModel.TryFindById(stat.MusicId, out var m) && m is not null)
-            {
-                stat.Music = m;
-            }
+            _appViewModel.TryFindById(stat.MusicId, out var music);
+            stat.Music = music;
         }
 
         private void ResolveMusic(ArtistPlayStat stat)
         {
-            if (_appViewModel.TryFindById(stat.MusicId, out var m) && m is not null)
-            {
-                stat.Music = m;
-            }
+            _appViewModel.TryFindById(stat.MusicId, out var music);
+            stat.Music = music ?? FindGroupMusic(stat.Artist, isAlbum: false);
         }
 
         private void ResolveMusic(AlbumPlayStat stat)
         {
-            if (_appViewModel.TryFindById(stat.MusicId, out var m) && m is not null)
+            _appViewModel.TryFindById(stat.MusicId, out var music);
+            stat.Music = music ?? FindGroupMusic(stat.Album, isAlbum: true);
+        }
+
+        /// <summary>历史文件已删除或重新入库时，从当前完整曲库选取同组封面，不受浏览页来源筛选影响。</summary>
+        private Music? FindGroupMusic(ReadOnlySpan<char> name, bool isAlbum)
+        {
+            if (name.IsEmpty) return null;
+            var songs = _appViewModel.SongsSource;
+            for (int i = 0; i < songs.Count; i++)
             {
-                stat.Music = m;
+                var music = songs[i];
+                // 仅在历史 ID 失效的冷路径扫描；Span 比较不分配临时名称或候选集合。
+                if ((isAlbum ? music.Album : music.Author).AsSpan().Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return music;
             }
+            return null;
+        }
+
+        /// <summary>曲库在 UI 线程发布后只刷新封面引用，保留榜单对象、计数与在途统计查询。</summary>
+        private void RefreshCoverMusic()
+        {
+            if (!_active) return;
+            foreach (var stat in TopSongs) ResolveMusic(stat);
+            foreach (var stat in TopArtists) ResolveMusic(stat);
+            foreach (var stat in TopAlbums) ResolveMusic(stat);
         }
 
         private static string FormatHours(double totalSeconds)

@@ -24,7 +24,7 @@ namespace WinUIMusicPlayer.Model.Stats
         public int MusicId { get; init; }
 
         /// <summary>由 <see cref="MusicId"/> 解析出的歌曲对象（删除后为 null）。</summary>
-        public Music? Music { get; set; }
+        public Music? Music { get => field; set => SetProperty(ref field, value); }
 
         /// <summary>达标（听满阈值比例）次数。</summary>
         public int PlayCount { get => field; set => SetProperty(ref field, value); }
