@@ -367,5 +367,7 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# ZCode session artifacts
+# Agent working directories and temporary folders (local only, must not be committed)
+.workbuddy/
+.tmp/
 .zcode/
