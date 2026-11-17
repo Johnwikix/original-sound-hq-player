@@ -61,11 +61,13 @@
   - 按歌曲、艺术家、专辑、文件夹或收藏夹多维分类浏览
   - 手动添加本地文件夹扫描，自动重新扫描实时同步文件变动
   - 一键定位心仪曲目
+  - 支持按默认、标题、艺术家、专辑、专辑艺术家、流派、发行年份、添加时间与更新时间排序
   - 搜索覆盖标题、艺术家、专辑、自定义标签与原始文件名（含扩展名）
 
 - 🏠 **首页与个性化推荐**
-  - 精选轮播、为你推荐、最近常听、换个流派听听等栏目
+  - 精选轮播、为你推荐、最近常听、相似听感、好久没听、换个流派听听等栏目
   - 基于本地标签与音频特征的个性化推荐，可结合 Last.fm 相似信号，「换一批」降低重复
+  - 轮播、侧卡与推荐共用同一播放队列，换批不会打断正在播放的队列
   - 空库支持拖放导入；可在设置中将首页设为启动默认入口
 
 - ☁️ **WebDAV 音乐源**
@@ -80,6 +82,12 @@
 - 📂 **收藏与播放列表**
   - 创建并管理自定义播放列表
   - 支持将歌曲加入收藏的「最爱音频列表」
+
+- 🎚️ **歌曲版本管理**
+  - 标题、专辑与艺术家署名一致的重复文件自动归组为同一首歌的多个版本，不删除也不改写音频文件
+  - 歌曲详情「版本」页可切换版本、设为首选、关联已有版本或拆出为独立歌曲，并可撤销上一次分组操作
+  - 自动播放优先使用可用的本地文件，其次是完整缓存与在线版本，同类版本优先选择更高音质
+  - 文件缺失的版本整行置灰并可移除，同一首歌的收藏、歌单位置与歌词共享关系保持不变
 
 - 🎛️ **完整播放控制**
   - 播放、暂停、切歌、随机播放、顺序播放、单曲循环
@@ -122,8 +130,12 @@
   - 本地播放历史可按原始时间补报（默认最近 14 天）
   - 本地收藏与 Last.fm 喜爱曲目单向同步，也可手动上报现有收藏
 
-- 📱 **Sony Walkman 支持**
-  - 通过 USB 将匹配元信息的音乐（含歌词）传输至 Sony Walkman
+- 📱 **USB 设备传输（Walkman / 手机）**
+  - 同时识别可移动磁盘与无盘符的安卓手机（MTP 内部存储与 SD 卡），在曲库页的设备下拉框中直接选择
+  - 右键「发送至USB设备」：原始格式直传，或转码为 WAV、FLAC、ALAC、MP3、AAC、OGG、OPUS（有损格式可选码率）
+  - 同步原文、翻译与音译三类歌词文件；转码失败时回退原格式
+  - 增量扫描设备音乐并缓存标签，发送台账避免重复传输；写入前预检目标路径，冲突文件不覆盖
+  - 逐曲显示发送状态，曲库中已发送的歌曲带设备存在标记
   - 扫描并导入已连接 USB 设备中的音乐
 
 - 🪟 **现代化界面体验**
@@ -137,7 +149,7 @@
 
 - 🗃️ **数据与基础能力**
   - SQLite 存储音乐库与播放列表数据
-  - 单实例运行，窗口最小尺寸保护
+  - 单实例运行，二次启动会激活已有窗口；窗口最小尺寸保护
 
 ## 🎵 音频输出模式
 
@@ -186,7 +198,7 @@
 
 **前置条件**
 
-- [.NET 11 SDK](https://dotnet.microsoft.com/)（仓库 `global.json` 锁定 11.0 RC1 系列，需允许安装预览版 SDK）
+- [.NET 11 SDK](https://dotnet.microsoft.com/)（主程序与播放进程均以 Satori GC 发布，对应的 MSBuild SDK 由 NuGet 自动还原）
 - Windows 10 19041 或更高版本
 - Visual Studio 2026 及以上，需安装 WinUI 工作负载
 
@@ -196,7 +208,7 @@
    ```bash
    git clone https://github.com/Johnwikix/original-sound-hq-player.git
    ```
-2. 安装私有包 `Microsoft.Windows.CsWinRT 2.3.2-prerelease.260804.1`：项目引用的是作者自行修改的版本，未发布到任何 NuGet 仓库，需从 [CsWinRT Release 页面](https://github.com/Johnwikix/CsWinRT/releases/tag/2.3.2) 下载 `Microsoft.Windows.CsWinRT.2.3.2-prerelease.260804.1.nupkg`，放入本地任意文件夹（如 `C:\nuget-local`）作为本地 nupkg 仓库，并将其注册为 NuGet 包源后再还原：
+2. 安装私有包 `Microsoft.Windows.CsWinRT 2.3.2-prerelease.261026.1-nogcpressure`：项目引用的是作者自行修改的版本，未发布到任何 NuGet 仓库，需从 [CsWinRT Release 页面](https://github.com/Johnwikix/CsWinRT/releases/tag/2.3.2-prerelease.261026.1) 下载 `Microsoft.Windows.CsWinRT.2.3.2-prerelease.261026.1-nogcpressure.nupkg`，放入本地任意文件夹（如 `C:\nuget-local`）作为本地 nupkg 仓库，并将其注册为 NuGet 包源后再还原：
    ```powershell
    dotnet nuget add source "C:\nuget-local" --name local
    ```
@@ -256,6 +268,8 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 | [atldotnet（z440.atl.core）](https://github.com/Zeugma440/atldotnet) | 多种音频格式元数据读取 | MIT |
 | [FFmpeg](https://ffmpeg.org/)（9.0.1 音频最小化构建） | 音频解码/重采样/转码（主程序与播放进程共用同一套 DLL） | LGPL-2.1+ |
 | [FFmpeg.AutoGen](https://github.com/FFmpeg/FFmpeg.AutoGen) | FFmpeg 的 .NET 绑定 | MIT |
+| [Satori GC](https://github.com/hez2010/Satori) | .NET 11 实验性 GC（主程序与播放进程发布使用） | MIT |
+| [WavPack](https://www.wavpack.com/) | WavPack / WavPack-DSD 解码（原生库） | BSD-3-Clause |
 | [Lyricify.Lyrics.Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper) | 歌词搜索与解析 | MIT |
 | [Isolation](https://github.com/Storyteller-Studios/Isolation) | 着色器流体背景 | MIT |
 | [Microsoft.PinYinConverter](https://github.com/stanzhai/MsPinyinConverter) | 拼音转换 | MIT |
@@ -291,6 +305,8 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 ### 曲库迁移备份与恢复
 
 旧曲库第一次用新版打开，以及今后需要大规模改表或重写数据时，播放器会在曲库目录的 `Backups` 子目录创建完整的 SQLite 快照。默认位置是系统“文档”下的 `OriginalSoundPlayer\DataBase\Backups`。使用应用本地目录的曲库在对应目录保存备份，启动日志会记录完整路径。文件名中的 `v0-to-v1` 表示从引入统一版本号之前的曲库升级至第 1 代。文件名末尾是快照的 SHA-256，可用 PowerShell 的 `Get-FileHash -Algorithm SHA256` 核对文件内容。
+
+曲库结构每升级一代（歌曲版本归组、USB 发送台账、标签缓存等）都会生成对应代次的快照，`v2-to-v3` 即表示第 2 代升级至第 3 代，因此 `Backups` 目录中可能出现多份不同代次的文件。
 
 快照包含当时已提交的曲目、收藏、歌单、歌词、播放历史等主库数据。音频文件、外部封面、独立缓存和设置文件需单独保存。备份按迁移保留，确认新版曲库正常后可自行归档或清理；迁移中断时请保留对应快照供下次启动校验和续迁。首次从旧文件导入时，磁盘需要同时容纳一份完整快照和一份新版工作库。
 

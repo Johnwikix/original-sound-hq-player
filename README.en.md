@@ -61,11 +61,13 @@ While restricted, your existing settings are never modified or erased — comple
   - Multi-dimensional browsing by song, artist, album, folder, or favorites
   - Manual local folder scanning with automatic rescan to keep your library in sync
   - Quick access to your favorite tracks
+  - Sort by default, title, artist, album, album artist, genre, release year, added time, or updated time
   - Search covers title, artist, album, custom tags, and original file names (with extension)
 
 - 🏠 **Home & Personalized Recommendations**
-  - A featured carousel plus For You, Recently Played, and Explore Other Genres sections
+  - A featured carousel plus For You, Recently Played, Soundalikes, Rediscover, and Explore Other Genres sections
   - Recommendations from local tags and audio features, optionally blended with Last.fm similarity; "another batch" reduces repeats
+  - The carousel, side cards, and recommendations share one playback queue, so refreshing the batch never interrupts what is playing
   - Drag-and-drop import for an empty library; the home page can be set as the default start page
 
 - ☁️ **WebDAV Music Sources**
@@ -80,6 +82,12 @@ While restricted, your existing settings are never modified or erased — comple
 - 📂 **Favorites & Playlists**
   - Create and manage custom playlists
   - A dedicated "Favorite Audio List" for quick access
+
+- 🎚️ **Song Version Management**
+  - Duplicate files with matching title, album, and artist credits are grouped automatically as multiple versions of one song — audio files are never deleted or rewritten
+  - The "Versions" page in song details can switch versions, set a preferred one, link existing versions, or split a version into a standalone song, and the last grouping action can be undone
+  - Automatic playback prefers an available local file, then a fully cached or online copy, and picks the higher-quality source among equivalents
+  - Versions whose files are missing are greyed out and can be removed, while the song's favorites, playlist entries, and shared lyrics stay intact
 
 - 🎛️ **Full Playback Control**
   - Play, pause, skip, shuffle, sequential, single-loop
@@ -122,8 +130,12 @@ While restricted, your existing settings are never modified or erased — comple
   - Submit local play history with original timestamps (last 14 days by default)
   - One-way sync of local favorites to Last.fm loved tracks, with manual upload of existing favorites
 
-- 📱 **Sony Walkman Support**
-  - Transfer music with metadata (including lyrics) to Sony Walkman over USB
+- 📱 **USB Device Transfer (Walkman / Phone)**
+  - Detects removable disks and drive-less Android phones (MTP internal storage and SD cards); pick one from the device drop-down in the library page
+  - Right-click "Send to USB Device": send the original format, or transcode to WAV, FLAC, ALAC, MP3, AAC, OGG, or OPUS (with a bitrate choice for lossy formats)
+  - Original, translation, and pronunciation lyrics are written alongside the audio; transcoding failures fall back to the original format
+  - Device music is scanned incrementally with cached tags, and a send ledger avoids repeated transfers; target paths are checked before writing so conflicting files are never overwritten
+  - Per-track send status is shown, and songs already on a device are marked in the library
   - Scan and import music from connected USB devices
 
 - 🪟 **Modern UI Experience**
@@ -137,7 +149,7 @@ While restricted, your existing settings are never modified or erased — comple
 
 - 🗃️ **Data & Core Capabilities**
   - SQLite-powered music library and playlists
-  - Single-instance enforcement with minimum window size guard
+  - Single-instance enforcement — a second launch activates the running window; minimum window size guard
 
 ## 🎵 Audio Output Modes
 
@@ -186,7 +198,7 @@ Issues and Pull Requests are welcome.
 
 **Prerequisites**
 
-- [.NET 11 SDK](https://dotnet.microsoft.com/) (pinned to the 11.0 RC1 series by `global.json`; prerelease SDKs must be allowed)
+- [.NET 11 SDK](https://dotnet.microsoft.com/) (both the main app and the playback process are published with Satori GC; its MSBuild SDK is restored from NuGet automatically)
 - Windows 10 19041 or later
 - Visual Studio 2026 or later with the WinUI workload
 
@@ -196,7 +208,7 @@ Issues and Pull Requests are welcome.
    ```bash
    git clone https://github.com/Johnwikix/original-sound-hq-player.git
    ```
-2. Install the private package `Microsoft.Windows.CsWinRT 2.3.2-prerelease.260804.1`: the project references a modified build by the author that is not published to any NuGet feed. Download `Microsoft.Windows.CsWinRT.2.3.2-prerelease.260804.1.nupkg` from the [CsWinRT release page](https://github.com/Johnwikix/CsWinRT/releases/tag/2.3.2), place it in any local folder (e.g. `C:\nuget-local`) to serve as a local nupkg repository, and register that folder as a NuGet package source before restoring:
+2. Install the private package `Microsoft.Windows.CsWinRT 2.3.2-prerelease.261026.1-nogcpressure`: the project references a modified build by the author that is not published to any NuGet feed. Download `Microsoft.Windows.CsWinRT.2.3.2-prerelease.261026.1-nogcpressure.nupkg` from the [CsWinRT release page](https://github.com/Johnwikix/CsWinRT/releases/tag/2.3.2-prerelease.261026.1), place it in any local folder (e.g. `C:\nuget-local`) to serve as a local nupkg repository, and register that folder as a NuGet package source before restoring:
    ```powershell
    dotnet nuget add source "C:\nuget-local" --name local
    ```
@@ -260,6 +272,8 @@ If you find OriginalSound HI-FI Player helpful, consider buying the developer a 
 | [atldotnet (z440.atl.core)](https://github.com/Zeugma440/atldotnet) | Audio format metadata reading | MIT |
 | [FFmpeg](https://ffmpeg.org/) (9.0.1 minimal audio build) | Audio decoding/resampling/conversion (one shared DLL set for both processes) | LGPL-2.1+ |
 | [FFmpeg.AutoGen](https://github.com/FFmpeg/FFmpeg.AutoGen) | .NET bindings for FFmpeg | MIT |
+| [Satori GC](https://github.com/hez2010/Satori) | Experimental .NET 11 GC (used when publishing the main app and the playback process) | MIT |
+| [WavPack](https://www.wavpack.com/) | WavPack / WavPack-DSD decoding (native library) | BSD-3-Clause |
 | [Lyricify.Lyrics.Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper) | Lyrics search and parsing | MIT |
 | [Isolation](https://github.com/Storyteller-Studios/Isolation) | Shader fluid background | MIT |
 | [Microsoft.PinYinConverter](https://github.com/stanzhai/MsPinyinConverter) | Pinyin conversion | MIT |
@@ -295,6 +309,8 @@ Application data is stored at:
 ### Library migration backups
 
 Before a major schema change or bulk data migration, the player saves a standalone SQLite snapshot under `Backups` beside the active database. The default location is `OriginalSoundPlayer\DataBase\Backups` in your Documents folder. The startup log records the exact path. The filename includes the source and target library generations and the SHA-256 digest. An initial import needs space for both the snapshot and the new working database.
+
+Each library generation upgrade (song version grouping, the USB send ledger, tag caches, etc.) produces its own snapshot — `v2-to-v3` means generation 2 upgraded to generation 3 — so the `Backups` folder may hold several generations side by side.
 
 The snapshot includes tracks, favorites, playlists, lyrics, and history stored in the main library. Audio files, external artwork, separate caches, and settings have their own storage. Keep the snapshot while a migration is in progress. Once you have verified the upgraded library, you can archive or remove older snapshots.
 
