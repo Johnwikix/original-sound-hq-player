@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.42242472725.2" />
+  <Sdk Name="PublishWithSatoriGC" Version="11.0.1-satori.43688079600.1" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
@@ -148,7 +148,7 @@
     <PackageReference Include="System.IO.Hashing" Version="11.0.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
     <PackageReference Include="WinUIEx" Version="2.9.3" />
-    <PackageReference Include="z440.atl.core" Version="7.19.0" />
+    <PackageReference Include="z440.atl.core" Version="7.20.1" />
     <PackageReference Include="ZLinq" Version="1.6.1" />
   </ItemGroup>
   <ItemGroup>
