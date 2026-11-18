@@ -101,6 +101,8 @@ public sealed class PlaybackSelectionTracker
         {
             if (_queue)
             {
+                // 拖拽排序会连续增删集合条目；此时回写索引会与拖动位置互相拉扯。
+                if (_app.State.Queue.IsReordering) return;
                 int index = _app.GetSelectedPlaybackIndex();
                 if (index >= 0 && index < _list.Items.Count && _list.SelectedIndex != index) _list.SelectedIndex = index;
                 return;

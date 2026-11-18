@@ -488,6 +488,12 @@ namespace WinUIMusicPlayer.View
             _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(index);
         }
 
+        private void CurrentPlayListView_DragItemsStarting(object sender, DragItemsStartingEventArgs args)
+            => ViewModel.AppViewModel.State.Queue.BeginReorder();
+
+        private void CurrentPlayListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+            => ViewModel.AppViewModel.State.Queue.EndReorder();
+
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (sender is AutoScrollView autoScrollView)
@@ -532,7 +538,11 @@ namespace WinUIMusicPlayer.View
         }
 
         private void CurrentPlayListTeachingTip_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
-            => _queueCentering.Cancel();
+        {
+            // 弹层可能在拖拽未完成时关闭，提交兜底避免队列一直冻结在重排中。
+            ViewModel.AppViewModel.State.Queue.EndReorder();
+            _queueCentering.Cancel();
+        }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
         {

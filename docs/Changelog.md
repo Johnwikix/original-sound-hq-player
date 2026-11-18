@@ -1,3 +1,10 @@
+## 2026-11-18 当前播放列表支持拖拽排序
+
+- `State/PlaybackQueueState.cs`：新增 `BeginReorder`/`EndReorder`，拖拽期间冻结兼容路径并按最终顺序重排；出现项身份、固定版本与来源保留，随机模式只调整遍历顺序，集合被替换或取消拖拽时安全退出。
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：两个队列弹层启用 `CanDragItems`/`CanReorderItems`/`AllowDrop`，接入拖拽开始、完成与弹层关闭兜底。
+- `Behaviors/PlaybackSelectionTracker.cs`：拖拽期间不回写选择索引，避免与列表的实时重排互相拉扯。
+- `_tools/SharedStateRegression`：新增顺序/随机模式拖拽、固定版本保留和取消拖拽回归。
+
 ## 2026-11-18 当前播放队列条目取消点击进入详情
 
 - `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：TeachingTip 队列条目回退为纯文本，恢复整行单击选中与双击切歌；此前铺满整行的透明 `Button` 会被双击处理器判定为按钮命中而直接返回，只剩条目边距可触发播放。

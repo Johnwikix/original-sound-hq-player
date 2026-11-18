@@ -115,6 +115,49 @@ static async Task RunAsync()
     Check(preciseRestore.CurrentEntryId == secondEntry && preciseRestore.IndexOf(first) == 0, "Library refresh must preserve current entry identity.");
     Console.WriteLine("PASS: stable duplicate identity, remove, library refresh, shuffle order and precise restore.");
 
+    var reorder = new PlaybackQueueState();
+    var reorderA = new Music(21, "reorder-a.flac");
+    var reorderB = new Music(22, "reorder-b.flac");
+    var reorderC = new Music(23, "reorder-c.flac");
+    reorder.Replace([reorderA, reorderB, reorderC]);
+    long pinnedEntry = reorder.EntryIdAt(0);
+    reorder.SetRequestedVersion(pinnedEntry, 7);
+    long[] canonicalBefore = reorder.CaptureEntryIds();
+    reorder.BeginReorder();
+    var reorderVisible = reorder.Playing;
+    var draggedMusic = reorderVisible[0];
+    reorderVisible.RemoveAt(0);
+    reorderVisible.Insert(2, draggedMusic);
+    reorder.EndReorder();
+    Check(reorder.EntryIdAt(2) == pinnedEntry && reorder.RequestedVersion(pinnedEntry) == 7,
+        "Drag reorder must keep the moved occurrence identity and pinned version.");
+    Check(reorder.CaptureEntryIds().SequenceEqual(canonicalBefore.Skip(1).Append(canonicalBefore[0])),
+        "Sequential drag must rewrite the canonical order.");
+    Check(reorder.CaptureOrderIds().SequenceEqual(reorder.CaptureEntryIds()),
+        "Sequential traversal must follow the reordered canonical queue.");
+    long[] afterDrag = reorder.CaptureOrderIds();
+    reorder.BeginReorder();
+    reorder.EndReorder();
+    Check(reorder.CaptureOrderIds().SequenceEqual(afterDrag), "A cancelled drag must leave the queue untouched.");
+    Console.WriteLine("PASS: sequential drag keeps occurrence identity, pinned version and cancelled drag is inert.");
+
+    var randomReorder = new PlaybackQueueState();
+    randomReorder.Replace([reorderA, reorderB, reorderC]);
+    randomReorder.Mode = PlayMode.RandomLoop;
+    long[] randomCanonical = randomReorder.CaptureEntryIds();
+    long[] randomOrder = randomReorder.CaptureOrderIds();
+    randomReorder.BeginReorder();
+    var randomVisible = randomReorder.Playing;
+    var randomDragged = randomVisible[0];
+    randomVisible.RemoveAt(0);
+    randomVisible.Insert(2, randomDragged);
+    randomReorder.EndReorder();
+    Check(randomReorder.CaptureOrderIds().SequenceEqual(randomOrder.Skip(1).Append(randomOrder[0])),
+        "Random drag must reorder the traversal order.");
+    Check(randomReorder.EntryIdAt(2) == randomOrder[0], "Random drag must carry the moved occurrence identity.");
+    Check(randomReorder.CaptureEntryIds().SequenceEqual(randomCanonical), "Random drag must not rewrite the canonical queue.");
+    Console.WriteLine("PASS: random drag reorders only the traversal order.");
+
     int writes = 0, value = 0, saved = 0;
     var firstWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -404,7 +404,11 @@ namespace WinUIMusicPlayer.View
         }
 
         private void CurrentPlayListTeachingTipPlayingDetail_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
-            => _queueCentering.Cancel();
+        {
+            // 弹层可能在拖拽未完成时关闭，提交兜底避免队列一直冻结在重排中。
+            ViewModel.AppViewModel.State.Queue.EndReorder();
+            _queueCentering.Cancel();
+        }
 
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
@@ -414,6 +418,12 @@ namespace WinUIMusicPlayer.View
             e.Handled = true;
             _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(index);
         }
+
+        private void CurrentPlayListViewPlayingDetail_DragItemsStarting(object sender, DragItemsStartingEventArgs args)
+            => ViewModel.AppViewModel.State.Queue.BeginReorder();
+
+        private void CurrentPlayListViewPlayingDetail_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+            => ViewModel.AppViewModel.State.Queue.EndReorder();
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
@@ -512,6 +522,8 @@ namespace WinUIMusicPlayer.View
         {
             if (dispose)
             {
+                // 页面先于队列弹层关闭时也要提交拖拽，避免队列冻结在重排中。
+                ViewModel?.AppViewModel?.State.Queue.EndReorder();
                 App.MainWindow?.SizeChanged -= MainWindow_SizeChanged;
                 if (App.MainWindow?.AppWindow is { } appWindow)
                     appWindow.Changed -= AppWindow_Changed;

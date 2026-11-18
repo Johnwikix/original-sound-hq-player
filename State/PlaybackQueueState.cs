@@ -17,11 +17,15 @@ public sealed class PlaybackQueueState : ObservableObject
     private List<Entry> _order = [];
     private long _nextId;
     private long _currentEntryId;
+    private bool _mutating;
+    private bool _reorderActive;
+    private BulkObservableCollection<Music>? _reorderPlaying;
     private readonly Dictionary<long, int> _requestedVersions = [];
     private readonly Dictionary<long, int> _sourceScopes = [];
     private readonly Dictionary<long, int> _playlistEntries = [];
-    private bool _mutating;
     public long CurrentEntryId => _currentEntryId;
+    /// <summary>拖拽排序进行中；此时集合顺序尚未提交为遍历顺序。</summary>
+    public bool IsReordering => _reorderActive;
     /// <summary>Published after a complete order mutation, once per bulk operation.</summary>
     public long Version { get; private set; }
 
@@ -120,6 +124,57 @@ public sealed class PlaybackQueueState : ObservableObject
         _order = Mode == PlayMode.RandomLoop ? order.Select(id => byId[id]).ToList() : new(_entries);
         PublishOrder();
     }
+    /// <summary>
+    /// 冻结拖拽期间的兼容路径。ListView 排序以 Remove+Insert 改写绑定集合，
+    /// 逐条解释会重建出现项并丢弃其固定版本与来源；结束后按最终顺序一次性重排。
+    /// </summary>
+    public void BeginReorder()
+    {
+        if (_reorderActive) return;
+        _reorderActive = true;
+        _reorderPlaying = Playing;
+    }
+
+    /// <summary>
+    /// 提交拖拽结果。随机遍历只调整可见遍历顺序，规范顺序保持不变；
+    /// 同一歌曲的多个出现项按出现顺序复用身份（ListView 不暴露拖拽的源/目标索引）。
+    /// </summary>
+    public void EndReorder()
+    {
+        if (!_reorderActive) return;
+        _reorderActive = false;
+        var playing = _reorderPlaying;
+        _reorderPlaying = null;
+        // 期间队列被整体替换时，替换路径已按新集合重建，不能再套用旧拖拽结果。
+        if (!ReferenceEquals(playing, Playing)) return;
+        if (ReferenceEquals(Playing, Sequential))
+        {
+            _entries = RebuildEntries(Sequential, _entries);
+            _order = new(_entries);
+        }
+        else
+        {
+            _order = RebuildEntries(Playing, _entries);
+        }
+        PruneEntryOptions();
+        CommitOrderChange();
+    }
+
+    /// <summary>按出现顺序把现有条目映射到给定顺序；未匹配的项创建新条目。</summary>
+    private List<Entry> RebuildEntries(IReadOnlyList<Music> order, List<Entry> pool)
+    {
+        var available = new Dictionary<Music, Queue<Entry>>(ReferenceEqualityComparer.Instance);
+        foreach (var entry in pool)
+        {
+            if (!available.TryGetValue(entry.Music, out var bucket)) available.Add(entry.Music, bucket = new());
+            bucket.Enqueue(entry);
+        }
+        var updated = new List<Entry>(order.Count);
+        foreach (var music in order)
+            updated.Add(available.TryGetValue(music, out var bucket) && bucket.Count > 0 ? bucket.Dequeue() : new(++_nextId, music));
+        return updated;
+    }
+
     /// <summary>库刷新按条目批量替换引用，保留顺序和游标；避免每首更新都重建整条队列。</summary>
     public void ReconcileLibrary(IReadOnlyDictionary<int, Music> songs, Music? current, Func<int, int, Music?>? findDisplayVersion = null)
     {
@@ -154,6 +209,7 @@ public sealed class PlaybackQueueState : ObservableObject
     private void SequentialChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (_mutating) return;
+        if (_reorderActive) return;
         if (e.Action == NotifyCollectionChangedAction.Remove && e.OldStartingIndex >= 0)
             _entries.RemoveRange(e.OldStartingIndex, e.OldItems!.Count);
         else if (e.Action == NotifyCollectionChangedAction.Move && e.OldItems?.Count == 1)
@@ -162,17 +218,7 @@ public sealed class PlaybackQueueState : ObservableObject
             _entries.RemoveAt(e.OldStartingIndex);
             _entries.Insert(e.NewStartingIndex, moved);
         }
-        // Compatibility collection mutations retain identities by occurrence in O(n).
-        var available = new Dictionary<Music, Queue<Entry>>(ReferenceEqualityComparer.Instance);
-        foreach (var entry in _entries)
-        {
-            if (!available.TryGetValue(entry.Music, out var bucket)) available.Add(entry.Music, bucket = new());
-            bucket.Enqueue(entry);
-        }
-        var updated = new List<Entry>(Sequential.Count);
-        foreach (var music in Sequential)
-            updated.Add(available.TryGetValue(music, out var bucket) && bucket.Count > 0 ? bucket.Dequeue() : new(++_nextId, music));
-        _entries = updated;
+        _entries = RebuildEntries(Sequential, _entries);
         PruneEntryOptions();
         if (Mode == PlayMode.RandomLoop)
         {
