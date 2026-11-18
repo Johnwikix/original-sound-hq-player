@@ -173,6 +173,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
         this.Loaded += OnLoaded;
         this.Unloaded += OnUnloaded;
+        this.ActualThemeChanged += OnActualThemeChanged;
         SizeChanged += OnSizeChanged;
         PointerEntered += OnPointerEntered;
         PointerExited += OnPointerExited;
@@ -301,6 +302,12 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     #region Property Changed Callbacks
 
+    private void OnActualThemeChanged(FrameworkElement sender, object args)
+    {
+        ApplyTextForeground();
+        InvalidateCanvas();
+    }
+
     private void ForegroundChangedCallback(DependencyObject sender, DependencyProperty dp)
     {
         ApplyTextForeground();
@@ -410,6 +417,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         if (Document != null)
         {
             DrawDocument(sender, sender.Size.Width, args.DrawingSession);
+            _standaloneFramePending = false;
             return;
         }
 
@@ -587,7 +595,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
-    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y, float opacity = 1, bool hasColorGlyphs = false)
+    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y, float opacity = 1,
+        bool hasColorGlyphs = false, Color? foreground = null)
     {
         if (_textBrush != null)
         {
@@ -596,7 +605,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         }
         else
         {
-            var color = _textColor;
+            var color = foreground ?? _textColor;
             using var layer = hasColorGlyphs && opacity < 1 ? ds.CreateLayer(opacity) : null;
             if (!hasColorGlyphs)
                 color.A = (byte)Math.Round(color.A * opacity);

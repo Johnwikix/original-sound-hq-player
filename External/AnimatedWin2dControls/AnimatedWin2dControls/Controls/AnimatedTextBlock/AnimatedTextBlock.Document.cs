@@ -4,10 +4,12 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Windows.Foundation;
+using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
@@ -214,13 +216,14 @@ public sealed partial class AnimatedTextBlock
             else
                 BeginTextAnimation();
         }
+        Color foreground = GetDocumentForeground(sender);
         if (_currentState == AnimatedTextBlockRedrawState.Idle)
         {
             EnsureDocumentHoverScroll(sender, (float)width);
             if (_hoverLines != null)
             {
                 foreach (var line in _hoverLines)
-                    DrawHoverLine(ds, line);
+                    DrawHoverLine(ds, line, foreground);
                 return;
             }
         }
@@ -232,11 +235,11 @@ public sealed partial class AnimatedTextBlock
             {
                 if (_currentState == AnimatedTextBlockRedrawState.Idle || _textEffect == null)
                 {
-                    DrawTextLayout(ds, item.NewLayout, 0, item.Y, (float)item.Paragraph.Opacity, item.HasColorGlyphs);
+                    DrawTextLayout(ds, item.NewLayout, 0, item.Y, (float)item.Paragraph.Opacity, item.HasColorGlyphs, foreground);
                     continue;
                 }
                 ds.Transform = Matrix3x2.CreateTranslation(0, item.Y) * originalTransform;
-                var color = _textColor;
+                var color = foreground;
                 bool useOpacityLayer = _textBrush != null || item.HasColorGlyphs;
                 if (!useOpacityLayer)
                     color.A = (byte)Math.Round(color.A * item.Paragraph.Opacity);
@@ -252,6 +255,20 @@ public sealed partial class AnimatedTextBlock
         {
             ds.Transform = originalTransform;
         }
+    }
+
+    private Color GetDocumentForeground(ICanvasResourceCreator sender)
+    {
+        if (!ReferenceEquals(sender, _sceneDevice) || ReadLocalValue(ForegroundProperty) != DependencyProperty.UnsetValue
+            || Foreground is not SolidColorBrush themeForeground)
+            return _textColor;
+
+        // The theme brush supplies the ink polarity. Keep it opaque in the linear scene,
+        // where the Windows SDR brush's alpha would otherwise mix the background into fully covered glyphs.
+        Color ink = themeForeground.Color;
+        if (ink.A > 0)
+            ink.A = 255;
+        return ink;
     }
 
     private void EnsureDocumentHoverScroll(ICanvasResourceCreator sender, float width)

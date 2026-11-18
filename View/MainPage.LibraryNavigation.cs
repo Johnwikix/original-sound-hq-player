@@ -15,10 +15,12 @@ public sealed partial class MainPage
     private bool _backBeforeMusicDetails;
     private readonly MusicDetailsPresenter _detailsPresenter;
 
-    private void DismissMusicDetailsForNavigation()
+    private void PrepareForBrowseNavigation()
     {
         _pendingMusicDetails = null;
         _returnPlayingAfterDetails = false;
+        if (_playingNavigation.IsPreparingShow)
+            NavigatebackToMusicBrowsePage();
         if (!_detailsPresenter.IsOpen) return;
         _detailsPresenter.Dismiss();
         // 先还原来源状态，随后目标页的导航负责发布自己的返回可用性。
@@ -27,7 +29,7 @@ public sealed partial class MainPage
 
     private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
     {
-        DismissMusicDetailsForNavigation();
+        PrepareForBrowseNavigation();
         if (pageType == typeof(HomePage))
         {
             AppData.CurrentPage = typeof(HomePage);
@@ -42,7 +44,7 @@ public sealed partial class MainPage
 
     public void NavigateToFoldersPage()
     {
-        DismissMusicDetailsForNavigation();
+        PrepareForBrowseNavigation();
         foreach (var item in NavigationViewControl.MenuItems)
             if (item is NavigationViewItem navigationItem && navigationItem.Tag?.ToString() == "Folders")
             {
@@ -56,7 +58,7 @@ public sealed partial class MainPage
     public void NavigateToMusicBrowsePage()
     {
         // 即便主 Frame 已在曲库，底栏仍可能要切换内层 Frame；先释放临时详情及旧返回回调。
-        DismissMusicDetailsForNavigation();
+        PrepareForBrowseNavigation();
         if (MainFrame.Content is not MusicBrowsePage)
         {
             foreach (var item in NavigationViewControl.MenuItems)
@@ -77,6 +79,8 @@ public sealed partial class MainPage
         if (_isPageTransitioning)
         {
             _pendingMusicDetails = request;
+            if (_playingNavigation.IsPreparingShow)
+                NavigatebackToMusicBrowsePage();
             return;
         }
         if (PlayingFrame.Visibility == Visibility.Visible)

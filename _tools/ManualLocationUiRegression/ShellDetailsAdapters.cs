@@ -16,6 +16,13 @@ public sealed partial class MainPage : Page
     private readonly Frame PlayingFrame = new() { Visibility = Visibility.Collapsed };
     private readonly NavigationView NavigationViewControl = new();
     private readonly TeachingTip CurrentPlayListTeachingTip = new();
+    private sealed class FixturePlaybackNavigation
+    {
+        public bool IsPreparingShow { get; set; }
+    }
+
+    private readonly FixturePlaybackNavigation _playingNavigation = new();
+    public bool IsPreparingPlayback => _playingNavigation.IsPreparingShow;
     private bool _isPageTransitioning;
     private FixtureShellViewModel? _viewModel;
     public FixtureShellViewModel ViewModel => _viewModel ??= new(App.Services.GetRequiredService<AppViewModel>());
@@ -31,10 +38,23 @@ public sealed partial class MainPage : Page
         Content = MainFrame;
     }
     public void NavigateToPlayingDetailPage() => ReturnedToPlaying++;
-    public void NavigatebackToMusicBrowsePage() { PlayingFrame.Visibility = Visibility.Collapsed; OpenPendingDetails(); }
+    public void NavigatebackToMusicBrowsePage()
+    {
+        PlayingFrame.Visibility = Visibility.Collapsed;
+        FinishPlayingTransitionForFixture();
+    }
     public void CancelDetailsForFixture() => _detailsPresenter.Dismiss();
-    public void FinishPlayingTransitionForFixture() { _isPageTransitioning = false; OpenPendingDetails(); }
-    public void BeginPlayingTransitionForFixture() => _isPageTransitioning = true;
+    public void FinishPlayingTransitionForFixture()
+    {
+        _playingNavigation.IsPreparingShow = false;
+        _isPageTransitioning = false;
+        OpenPendingDetails();
+    }
+    public void BeginPlayingTransitionForFixture(bool preparingHdr = false)
+    {
+        _playingNavigation.IsPreparingShow = preparingHdr;
+        _isPageTransitioning = true;
+    }
 }
 public sealed class FixtureShellViewModel(AppViewModel app) { public AppViewModel AppViewModel { get; } = app; }
 // 独立文件夹的真实页面在 FolderBrowserUiRegression 中验证。

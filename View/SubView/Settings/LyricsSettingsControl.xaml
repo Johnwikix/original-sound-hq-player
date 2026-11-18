@@ -343,7 +343,7 @@
                             </Grid>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard>
+                        <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('PlaybackHdrGlowAmountDescription')}">
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="GlowAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>

@@ -46,8 +46,6 @@ namespace WinUIMusicPlayer.Controls
         public static readonly DependencyProperty StretchProperty =
             DependencyProperty.Register(nameof(Stretch), typeof(Stretch), typeof(ShadowImage), new PropertyMetadata(Stretch.Uniform));
 
-        internal void SetArtworkOpacity(double opacity) => ArtworkPixels.Opacity = opacity;
-
         internal Windows.Foundation.Rect GetArtworkBounds(UIElement relativeTo) =>
             ArtworkPixels.TransformToVisual(relativeTo).TransformBounds(
                 new Windows.Foundation.Rect(0, 0, ArtworkPixels.ActualWidth, ArtworkPixels.ActualHeight));

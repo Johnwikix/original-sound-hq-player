@@ -55,11 +55,7 @@
                     x:Name="CoverContainer"
                     Grid.Row="1"
                     Grid.Column="1">
-                    <Grid
-                        x:Name="PlayingDetailAlbumCoverImageGrid"
-                        Padding="20"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
+                    <Grid Padding="20">
                         <uc:ImageSwitcher
                             x:Name="DetailCoverSwitcher"
                             CornerRadiusAmount="12"

@@ -74,6 +74,25 @@ public sealed partial class ProbeApp : Application
         try
         {
             VerifyPublishedControls();
+            if (Environment.GetCommandLineArgs().Contains("--check-cover-motion"))
+            {
+                window = new Window { Title = "Playback cover motion check" };
+                await CheckCoverMotionAsync(window);
+                return;
+            }
+            if (Environment.GetCommandLineArgs().Contains("--check-page-cover"))
+            {
+                window = new Window { Title = "Playback detail cover check" };
+                await CheckPageCoverAsync(window);
+                return;
+            }
+            if (Environment.GetCommandLineArgs().Contains("--check-hdr-handoff"))
+            {
+                var handoffRoot = new Grid();
+                window = new Window { Content = handoffRoot, Title = "Playback HDR handoff check" };
+                await CheckHdrHandoffAsync(window, handoffRoot);
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--check-hdr-memory"))
             {
                 var memoryRoot = new Grid();
@@ -223,7 +242,7 @@ public sealed partial class ProbeApp : Application
             if (sample)
             {
                 await CheckCoverOnDisplayAsync(testCover, window, host, (float)white, (float)Math.Min(600, display.MaxLuminanceInNits));
-                await CheckTitleAsync(root, window, host, white, Math.Min(600, display.MaxLuminanceInNits));
+                await CheckTitleAsync(root, window, host, white);
                 if (Environment.GetCommandLineArgs().Contains("--move-displays"))
                 {
                     await CheckMonitorMovesAsync(window, host, root, testCover);
@@ -303,7 +322,7 @@ public sealed partial class ProbeApp : Application
         }
     }
 
-    private static async Task CheckTitleAsync(Grid root, Window window, AnimatedWin2dControls.Controls.NowPlayingCanvas host, double whiteNits, double peakNits)
+    private static async Task CheckTitleAsync(Grid root, Window window, AnimatedWin2dControls.Controls.NowPlayingCanvas host, double whiteNits)
     {
         static AnimatedTextDocument MakeTitle(string suffix) => new(
             new AnimatedTextParagraph("████" + suffix, 40, Microsoft.UI.Text.FontWeights.Bold, 56));
@@ -328,14 +347,18 @@ public sealed partial class ProbeApp : Application
                 throw new Exception("Idle title did not match SDR reference white inside the HDR scene");
             title.Document = MakeTitle("B");
             await Task.Delay(140);
-            double glowLimit = Math.Min(1.15 * whiteNits, peakNits) / 80;
             if (!TrySample(hwnd, points, "Animated scene title", out var animated)
-                || animated.Max() <= 0 || animated.Max() > glowLimit + .08)
-                throw new Exception("The title disappeared during its transition or exceeded its HDR glow limit");
+                || animated.Max() <= 0 || animated.Max() > idle.Max() + .08)
+                throw new Exception("The title disappeared during its transition or exceeded reference white");
             await Task.Delay(1100);
             if (!TrySample(hwnd, points, "Settled scene title", out var settled) || Math.Abs(settled.Max() - idle.Max()) > .10f)
                 throw new Exception("The settled title did not return to reference white");
-            Console.WriteLine("PASS animated title, transition within the glow limit and settled ink at reference white");
+            title.TextEffect = new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextWipeEffect();
+            title.Document = MakeTitle("C");
+            await Task.Delay(370);
+            if (!TrySample(hwnd, points, "Wipe title at reference white", out var wipe) || Math.Abs(wipe.Max() - idle.Max()) > .12)
+                throw new Exception("An HDR title transition brightened the original white ink");
+            Console.WriteLine("PASS HDR title preserves original fade, wipe and steady reference white");
         }
         finally
         {
@@ -393,6 +416,7 @@ public sealed partial class ProbeApp : Application
 
     private static async Task<PlaybackSceneCover> CheckCoverAsync()
     {
+        await CoverPresenterChecks.RunAsync();
         // Four neutral RGBA16 samples: black, 200 nit, 600 nit, and 600 nit at half coverage.
         const string fixture = "iVBORw0KGgoAAAANSUhEUgAAAAQAAAABEAYAAACprNOOAAAABGNJQ1AJEAABTSMj/gAAABtJREFUeJxjYACD//+nOILg//+bHEAQRjcwAADXFw6msE0u5gAAAABJRU5ErkJggg==";
         string path = Path.Combine(Path.GetTempPath(), $"playback-hdr-{Guid.NewGuid():N}.png");
@@ -415,11 +439,11 @@ public sealed partial class ProbeApp : Application
             const string sdrFixture = "iVBORw0KGgoAAAANSUhEUgAAAAYAAAABCAYAAAD9yd/wAAAAGklEQVR4nGNgYGD4X1ZW9v/OnTv/oaABiBkAvhARaqhotO8AAAAASUVORK5CYII=";
             await File.WriteAllBytesAsync(path, Convert.FromBase64String(sdrFixture));
             var ordinary = await PlaybackSceneCover.ReadAsync(path, true, default) ?? throw new Exception("Ordinary album cover did not enter the HDR scene");
-            CheckPixels(DrawCover(ordinary, 200, 600), [0, .453f, 1.870f, 3.056f, 1.534f, 0]);
-            CheckPixels(DrawCover(ordinary, 400, 600), [0, .906f, 3.699f, 5.833f, 2.928f, 0]);
-            CheckPixels(DrawCover(ordinary, 200, 1000), [0, .453f, 1.875f, 3.088f, 1.550f, 0]);
-            CheckPixels(DrawCover(ordinary, 200, 200), [0, .453f, 1.789f, 2.5f, 1.255f, 0]);
-            CheckPixels(DrawCover(ordinary, 80, 4000), [0, .181f, .752f, 1.249f, .627f, 0]);
+            CheckPixels(DrawCover(ordinary, 200, 600), [0, .498f, 2.057f, 3.362f, 1.687f, 0]);
+            CheckPixels(DrawCover(ordinary, 400, 600), [0, .997f, 4.069f, 6.416f, 3.221f, 0]);
+            CheckPixels(DrawCover(ordinary, 200, 1000), [0, .498f, 2.063f, 3.397f, 1.705f, 0]);
+            CheckPixels(DrawCover(ordinary, 200, 200), [0, .498f, 1.932f, 2.5f, 1.255f, 0]);
+            CheckPixels(DrawCover(ordinary, 80, 4000), [0, .199f, .827f, 1.374f, .690f, 0]);
             CheckCoverRamp();
             // Three 8x8 JPEG tiles: neutral gray, warm peach and white. Raw music caches can have any extension.
             const string jpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAAIABgDAREAAhEBAxEB/8QAFgAAAwAAAAAAAAAAAAAAAAAABwkK/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/EABUBAQEAAAAAAAAAAAAAAAAAAAgA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AF6SzAFzIMYOgN3//2Q==";
@@ -427,7 +451,7 @@ public sealed partial class ProbeApp : Application
             var jpegCover = await PlaybackSceneCover.ReadAsync(path, true, default) ?? throw new Exception("Missing JPEG scene artwork");
             var jpegPixels = DrawCover(jpegCover, 200, 600);
             var warm = MemoryMarshal.Cast<byte, Half>(jpegPixels).Slice(12 * 4, 3);
-            if (Math.Abs((float)MemoryMarshal.Cast<byte, Half>(jpegPixels)[0] - .453f) > .03f ||
+            if (Math.Abs((float)MemoryMarshal.Cast<byte, Half>(jpegPixels)[0] - .498f) > .015f ||
                 (float)warm[0] <= 2.5f || (float)warm[0] <= (float)warm[1] * 1.3f || (float)warm[1] <= (float)warm[2] * 1.3f)
                 throw new Exception("SDR JPEG lost its midtones, hue or highlight headroom");
             CheckArtworkScale(jpegCover, jpegPixels);
@@ -446,16 +470,34 @@ public sealed partial class ProbeApp : Application
             pixels[code * 4 + 3] = 255;
         }
         var ramp = new PlaybackSceneCover(pixels, 256, 1, DirectXPixelFormat.B8G8R8A8UIntNormalized, 0);
-        var output = MemoryMarshal.Cast<byte, Half>(DrawCover(ramp, 300, 600));
-        float lastNits = 0;
-        for (int code = 1; code < 256; code++)
+        foreach (var (peakNits, expectedWhite) in new[] { (600f, 396f), (310f, 310f), (300f, 300f) })
         {
-            float nits = (float)output[code * 4] * 80;
-            if (nits <= lastNits || nits - lastNits > 4.5f)
-                throw new Exception($"Cover ramp lost its brightness gradient at sRGB code {code}");
-            lastNits = nits;
+            var output = MemoryMarshal.Cast<byte, Half>(DrawCover(ramp, 300, peakNits));
+            float lastNits = 0;
+            for (int code = 1; code < 256; code++)
+            {
+                float nits = (float)output[code * 4] * 80;
+                if (nits <= lastNits || nits - lastNits > 5 || nits > peakNits + .2f)
+                    throw new Exception($"Cover ramp lost its gradient or exceeded {peakNits} nit at sRGB code {code}");
+                lastNits = nits;
+            }
+            float midGray = (float)output[128 * 4] * 80;
+            if (Math.Abs(lastNits - expectedWhite) > .25f || Math.Abs(midGray - 71.23f) > .25f)
+                throw new Exception($"Unexpected cover exposure: mid-gray {midGray} nit, white {lastNits} nit");
+            Console.WriteLine($"PASS 256-step cover ramp at 300/{peakNits:F0}, mid-gray {midGray:F1} nit and white {lastNits:F1} nit");
         }
-        Console.WriteLine($"PASS monotonic 256-step SDR cover ramp, white {lastNits:F1} nit at 300/600");
+
+        // A fully saturated red channel must also respect the peak when luma alone is low.
+        var colored = new PlaybackSceneCover([64, 128, 255, 255, 32, 64, 128, 128], 2, 1,
+            DirectXPixelFormat.B8G8R8A8UIntNormalized, 0);
+        var rgba = MemoryMarshal.Cast<byte, Half>(DrawCover(colored, 300, 300));
+        float[] opaque = [3.75f, .8095f, .1923f, 1f];
+        for (int channel = 0; channel < 4; channel++)
+        {
+            if (Math.Abs((float)rgba[channel] - opaque[channel]) > .01f ||
+                Math.Abs((float)rgba[channel + 4] - opaque[channel] * (128f / 255)) > .01f)
+                throw new Exception("The cover shoulder changed saturated RGB ratios, alpha, or the peak.");
+        }
     }
 
     private static void CheckArtworkScale(PlaybackSceneCover cover, byte[] reference)

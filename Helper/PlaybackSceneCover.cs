@@ -12,9 +12,30 @@ namespace WinUIMusicPlayer.Helper;
 /// <summary>Original artwork for the playback scene. Both pixel formats are premultiplied.</summary>
 internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, DirectXPixelFormat Format, float PeakNits)
 {
+    internal static Task<PlaybackSceneCover?> ReadDefaultAsync(bool isDark, CancellationToken token)
+    {
+        string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
+        return ReadAsync(Path.Combine(AppContext.BaseDirectory, "Assets", name), includeSdr: true, token);
+    }
+
     internal static async Task<PlaybackSceneCover?> ReadAsync(string path, bool includeSdr, CancellationToken token)
     {
-        using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+        token.ThrowIfCancellationRequested();
+        try
+        {
+            using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+            return await DecodeAsync(input, includeSdr, token).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException ||
+            ((uint)ex.HResult & 0xffffff00u) == 0x88982f00u) // WIC cannot decode this image.
+        {
+            token.ThrowIfCancellationRequested();
+            return null;
+        }
+    }
+
+    private static async Task<PlaybackSceneCover?> DecodeAsync(Stream input, bool includeSdr, CancellationToken token)
+    {
         bool isPq = HasSupportedColorEncoding(input);
         if (!includeSdr && !isPq) return null;
         input.Position = 0;
@@ -31,6 +52,7 @@ internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, 
             isPq ? BitmapAlphaMode.Straight : BitmapAlphaMode.Premultiplied, transform, ExifOrientationMode.RespectExifOrientation,
             isPq ? ColorManagementMode.DoNotColorManage : ColorManagementMode.ColorManageToSRgb)
             .AsTask(token).ConfigureAwait(false);
+        token.ThrowIfCancellationRequested();
         var pixels = data.DetachPixelData();
         if (pixels.Length != (long)w * h * (isPq ? 8 : 4)) return null;
         if (width != height && decoder.OrientedPixelWidth == height) (w, h) = (h, w);

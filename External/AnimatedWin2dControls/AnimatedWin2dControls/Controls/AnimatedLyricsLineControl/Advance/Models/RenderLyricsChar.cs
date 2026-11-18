@@ -20,7 +20,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         private CropEffect? _crop;
         private GaussianBlurEffect? _glow;
-        private PixelShaderEffect<PlaybackTextHaloEffect>? _hdrHalo;
+        private PixelShaderEffect<PlaybackTextGlowCoreEffect>? _hdrHalo;
         private PixelShaderEffect<PlaybackTextGlowCoreEffect>? _hdrGlow;
 
         /// <summary>Gets the cached crop effect when this character first needs native drawing.</summary>
@@ -29,11 +29,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// <summary>Gets the cached glow effect when glow or retirement blur is actually drawn.</summary>
         public GaussianBlurEffect Glow => _glow ??= new GaussianBlurEffect { Source = Crop, BorderMode = EffectBorderMode.Soft };
 
-        internal PixelShaderEffect<PlaybackTextHaloEffect> GetHdrHalo()
+        internal PixelShaderEffect<PlaybackTextGlowCoreEffect> GetHdrHalo()
         {
             if (_hdrHalo is null)
             {
-                _hdrHalo = new PixelShaderEffect<PlaybackTextHaloEffect>();
+                _hdrHalo = new PixelShaderEffect<PlaybackTextGlowCoreEffect>();
                 _hdrHalo.Sources[0] = Glow;
             }
             return _hdrHalo;

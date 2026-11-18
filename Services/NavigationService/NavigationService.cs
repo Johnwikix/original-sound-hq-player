@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.View;
@@ -22,6 +23,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
         // volatile 保证多线程可见性；Show/Dismiss 用 Interlocked.CompareExchange 做互斥
         private volatile int _isAnimating = 0; // 0 = idle, 1 = busy
         private ILogger<NavigationService> _logger;
+        private Action? _cancelPendingHdrEntrance;
+        public bool IsPreparingShow => _cancelPendingHdrEntrance is not null;
 
         public Frame ContentFrame { get; set; }
         public bool CanGoBack => ContentFrame?.CanGoBack ?? false;
@@ -280,82 +283,181 @@ namespace WinUIMusicPlayer.Services.NavigationService
         //  Show（overlay 滑入，带布局等待保护）
         // ────────────────────────────────────────────────────────────
 
-        public void Show(Type pageType, int animeTime = 300, Action? onCompleted = null)
+        public void Show(Type pageType, int animeTime = 300, Action? onCompleted = null, Action? onRevealing = null)
         {
-            if (ContentFrame is null) return;
-            // 原子性抢锁：只有从 0 → 1 成功才继续
-            if (Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0) return;
+            if (ContentFrame is not { } frame || Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0) return;
 
             if (!_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
                 Interlocked.Exchange(ref _isAnimating, 0);
+                onCompleted?.Invoke();
                 return;
             }
 
+            PlayingDetailPage? playingPage = null;
+            bool wasHitTestVisible = frame.IsHitTestVisible;
             try
             {
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
-                ContentFrame.Content = pageInstance;
-                ContentFrame.Visibility = Visibility.Visible;
-                if (pageInstance is PlayingDetailPage playingPage)
-                    playingPage.ResumeCanvasRendering();
-
-                void StartAnimation()
+                playingPage = pageInstance as PlayingDetailPage;
+                bool prepareHdr = playingPage?.ShouldPrepareHdrEntrance == true;
+                if (playingPage is not null)
                 {
-                    var height = SafeHeight(ContentFrame);
-
-                    var translate = new TranslateTransform();
-                    ContentFrame.RenderTransform = translate;
-
-                    var slideAnim = new DoubleAnimation
-                    {
-                        From = height,
-                        To = 0,
-                        Duration = TimeSpan.FromMilliseconds(animeTime),
-                        EasingFunction = _easingOutFunction
-                    };
-                    var opacityAnim = new DoubleAnimation { From = 0, To = 1, Duration = TimeSpan.FromMilliseconds(animeTime) };
-
-                    Storyboard.SetTarget(slideAnim, translate); Storyboard.SetTargetProperty(slideAnim, "Y");
-                    Storyboard.SetTarget(opacityAnim, ContentFrame); Storyboard.SetTargetProperty(opacityAnim, "Opacity");
-
-                    var sb = new Storyboard();
-                    sb.Children.Add(slideAnim);
-                    sb.Children.Add(opacityAnim);
-
-                    EventHandler<object> onAnimCompleted = null;
-                    onAnimCompleted = (s, e) =>
-                    {
-                        sb.Completed -= onAnimCompleted;
-                        ContentFrame.RenderTransform = null;
-                        ContentFrame.ClearValue(UIElement.RenderTransformProperty);
-                        Interlocked.Exchange(ref _isAnimating, 0);
-                        onCompleted?.Invoke();
-                    };
-                    sb.Completed += onAnimCompleted;
-                    sb.Begin();
+                    _ = playingPage.SetCanvasNavigationTransitionAsync(!prepareHdr);
+                    frame.Opacity = 0;
+                    if (prepareHdr)
+                        frame.IsHitTestVisible = false;
                 }
+                frame.Content = pageInstance;
+                frame.Visibility = Visibility.Visible;
 
-                if (ContentFrame.ActualHeight > 0)
+                if (prepareHdr && playingPage is not null)
                 {
-                    StartAnimation();
+                    playingPage.ResumeCanvasRendering();
+                    _ = RevealWhenPreparedAsync(playingPage);
                 }
                 else
                 {
-                    // 窗口刚从托盘恢复，布局尚未完成，等 LayoutUpdated 后再启动
-                    void OnLayoutUpdated(object? s, object e)
-                    {
-                        if (ContentFrame.ActualHeight <= 0) return;
-                        ContentFrame.LayoutUpdated -= OnLayoutUpdated;
-                        StartAnimation();
-                    }
-                    ContentFrame.LayoutUpdated += OnLayoutUpdated;
+                    playingPage?.ResumeCanvasRendering();
+                    StartAnimationWhenArranged();
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Show 滑入错误: {ex.Message}");
+                _logger.LogError(ex, "Show 滑入错误");
+                onRevealing?.Invoke();
+                FinishShow();
+            }
+
+            async Task RevealWhenPreparedAsync(PlayingDetailPage page)
+            {
+                using var preparation = new CancellationTokenSource();
+                _cancelPendingHdrEntrance = CancelPreparedShow;
+                frame.Unloaded += CancelOnUnload;
+                try
+                {
+                    bool hdr;
+                    do
+                    {
+                        hdr = await page.PrepareHdrEntranceAsync(preparation.Token);
+                        preparation.Token.ThrowIfCancellationRequested();
+                    }
+                    while (hdr && page.ShouldPrepareHdrEntrance && !page.IsHdrEntrancePresented);
+
+                    if (!hdr || !page.ShouldPrepareHdrEntrance)
+                    {
+                        await page.PrepareSdrEntranceAsync().WaitAsync(preparation.Token);
+                        preparation.Token.ThrowIfCancellationRequested();
+                        _cancelPendingHdrEntrance = null;
+                        StartAnimationWhenArranged();
+                        return;
+                    }
+
+                    _cancelPendingHdrEntrance = null;
+                    onRevealing?.Invoke();
+                    FinishShow();
+                }
+                catch (OperationCanceledException)
+                {
+                    CancelPreparedShow();
+                }
+                catch (Exception ex)
+                {
+                    if (_cancelPendingHdrEntrance != (Action)CancelPreparedShow) return;
+                    _cancelPendingHdrEntrance = null;
+                    _logger.LogError(ex, "Show 播放页呈现错误");
+                    _ = page.SetCanvasNavigationTransitionAsync(true);
+                    StartAnimationWhenArranged();
+                }
+                finally
+                {
+                    frame.Unloaded -= CancelOnUnload;
+                }
+
+                void CancelPreparedShow()
+                {
+                    if (_cancelPendingHdrEntrance != (Action)CancelPreparedShow) return;
+                    _cancelPendingHdrEntrance = null;
+                    preparation.Cancel();
+                    frame.Visibility = Visibility.Collapsed;
+                    frame.Opacity = 1;
+                    frame.IsHitTestVisible = wasHitTestVisible;
+                    frame.ClearValue(UIElement.RenderTransformProperty);
+                    page.PauseCanvasRendering();
+                    _ = page.SetCanvasNavigationTransitionAsync(false);
+                    Interlocked.Exchange(ref _isAnimating, 0);
+                    onCompleted?.Invoke();
+                }
+
+                void CancelOnUnload(object sender, RoutedEventArgs args) => CancelPreparedShow();
+            }
+
+            void StartAnimationWhenArranged()
+            {
+                if (frame.ActualHeight > 0)
+                {
+                    StartAnimation();
+                    return;
+                }
+                frame.LayoutUpdated += OnLayoutUpdated;
+                frame.Unloaded += OnUnloaded;
+
+                void Detach()
+                {
+                    frame.LayoutUpdated -= OnLayoutUpdated;
+                    frame.Unloaded -= OnUnloaded;
+                }
+                void OnLayoutUpdated(object? sender, object args)
+                {
+                    if (frame.ActualHeight <= 0) return;
+                    Detach();
+                    StartAnimation();
+                }
+                void OnUnloaded(object sender, RoutedEventArgs args)
+                {
+                    Detach();
+                    FinishShow();
+                }
+            }
+
+            void StartAnimation()
+            {
+                frame.IsHitTestVisible = wasHitTestVisible;
+                onRevealing?.Invoke();
+                var translate = new TranslateTransform();
+                frame.RenderTransform = translate;
+                var slide = new DoubleAnimation
+                {
+                    From = SafeHeight(frame),
+                    To = 0,
+                    Duration = TimeSpan.FromMilliseconds(animeTime),
+                    EasingFunction = _easingOutFunction
+                };
+                var opacity = new DoubleAnimation { From = 0, To = 1, Duration = TimeSpan.FromMilliseconds(animeTime) };
+                Storyboard.SetTarget(slide, translate); Storyboard.SetTargetProperty(slide, "Y");
+                Storyboard.SetTarget(opacity, frame); Storyboard.SetTargetProperty(opacity, "Opacity");
+                var storyboard = new Storyboard();
+                storyboard.Children.Add(slide);
+                storyboard.Children.Add(opacity);
+                storyboard.Completed += OnAnimationCompleted;
+                storyboard.Begin();
+
+                void OnAnimationCompleted(object? sender, object args)
+                {
+                    storyboard.Completed -= OnAnimationCompleted;
+                    storyboard.Stop();
+                    FinishShow();
+                }
+            }
+
+            void FinishShow()
+            {
+                frame.Opacity = 1;
+                frame.IsHitTestVisible = wasHitTestVisible;
+                frame.ClearValue(UIElement.RenderTransformProperty);
+                _ = playingPage?.SetCanvasNavigationTransitionAsync(false);
                 Interlocked.Exchange(ref _isAnimating, 0);
+                onCompleted?.Invoke();
             }
         }
 
@@ -363,13 +465,23 @@ namespace WinUIMusicPlayer.Services.NavigationService
         //  Dismiss（overlay 滑出）
         // ────────────────────────────────────────────────────────────
 
-        public void Dismiss(int animeTime = 300, Action? onCompleted = null)
+        public async void Dismiss(int animeTime = 300, Action? onCompleted = null)
         {
-            if (ContentFrame is null || ContentFrame.Visibility == Visibility.Collapsed) return;
-            if (Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0) return;
+            if (ContentFrame is not { } frame || frame.Visibility == Visibility.Collapsed) return;
 
+            var playingPage = frame.Content as PlayingDetailPage;
+            if (_cancelPendingHdrEntrance is { } cancel)
+            {
+                cancel();
+                onCompleted?.Invoke();
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0) return;
             try
             {
+                if (playingPage is not null)
+                    await playingPage.SetCanvasNavigationTransitionAsync(true);
                 var height = SafeHeight(ContentFrame);
 
                 var translate = new TranslateTransform();
@@ -390,11 +502,11 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 {
                     sb.Completed -= onAnimCompleted;
                     ContentFrame.Visibility = Visibility.Collapsed;
-                    if (ContentFrame.Content is PlayingDetailPage playingPage)
-                        playingPage.PauseCanvasRendering();
+                    playingPage?.PauseCanvasRendering();
                     ContentFrame.Opacity = 1;
                     ContentFrame.RenderTransform = null;
                     ContentFrame.ClearValue(UIElement.RenderTransformProperty);
+                    _ = playingPage?.SetCanvasNavigationTransitionAsync(false);
                     Interlocked.Exchange(ref _isAnimating, 0);
                     onCompleted?.Invoke();
                 };
@@ -403,6 +515,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
             catch (Exception ex)
             {
+                _ = playingPage?.SetCanvasNavigationTransitionAsync(false);
                 _logger.LogError(ex, $"Dismiss 滑出错误: {ex.Message}");
                 Interlocked.Exchange(ref _isAnimating, 0);
             }

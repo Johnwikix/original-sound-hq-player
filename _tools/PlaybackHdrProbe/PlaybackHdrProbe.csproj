@@ -12,20 +12,39 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <PageCoverXaml>$(BaseIntermediateOutputPath)PageCover/PlayingDetailPage.xaml</PageCoverXaml>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
+    <Compile Include="../../Services/NavigationService/INavigationService.cs;../../Services/NavigationService/INavigatable.cs;../../Services/NavigationService/NavigationService.cs" />
     <Compile Include="../../Helper/PlaybackHdrDisplay.cs" />
     <Compile Include="../../Helper/PlaybackSceneCover.cs" />
     <Compile Include="../../Helper/PlaybackSceneCoverDrawing.cs" />
+    <Compile Include="../../Helper/PlaybackSceneCoverPresenter.cs" />
+    <Compile Include="../../Controls/ImageSwitchType.cs" />
+    <Compile Include="../../Constants/Time.cs" />
+    <Content Include="../../Assets/default_cover_*.png" Link="Assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Helper/PlaybackCoverImage.cs" />
     <Compile Include="../../Helper/CustomAcrylicSystemBackdrop.cs" />
     <Compile Include="../../State/AppearancePreferencesState.cs" />
     <Compile Include="../../Model/EffectComboBoxItem.cs" />
     <Compile Include="../../Model/FontInfo.cs" />
+    <Compile Include="../../View/PlayingDetailPage.HdrCover.cs;../../View/PlayingDetailPage.HdrEntrance.cs;../../View/PlayingDetailPage.Layout.cs" />
+    <Compile Include="../../ViewModel/Pages/PlayingDetailViewModel.Presentation.cs" />
+    <Compile Include="../../Controls/ImageSwitcher.xaml.cs;../../Controls/ShadowImage.xaml.cs" />
+    <Compile Include="../../Helper/CoverLoadState.cs;../../Helper/ImageHelper.cs;../../Helper/TransitionCache.cs" />
+    <Page Include="../../Controls/ImageSwitcher.xaml" Link="Controls/ImageSwitcher.xaml" />
+    <Page Include="../../Controls/ShadowImage.xaml" Link="Controls/ShadowImage.xaml" />
+    <Page Include="$(PageCoverXaml)" Link="View/PlayingDetailPage.xaml" />
   </ItemGroup>
+  <Target Name="PreparePageCoverXaml" BeforeTargets="MarkupCompilePass1"
+          Inputs="../../View/PlayingDetailPage.xaml;PreparePageCoverXaml.ps1" Outputs="$(PageCoverXaml)">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;PreparePageCoverXaml.ps1&quot; -Source &quot;../../View/PlayingDetailPage.xaml&quot; -Output &quot;$(PageCoverXaml)&quot;" />
+  </Target>
 </Project>

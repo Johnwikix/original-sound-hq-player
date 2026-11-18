@@ -12,8 +12,11 @@ internal sealed class CoverLoadState
     public bool Begin(string? hash, bool isDark, out int version)
     {
         version = ++_version; // 即使复用已显示内容，也使先前请求失效（A → B → A）。
-        return !_hasSource || (hash ?? "") != _displayedHash || (_usesDefault && isDark != _isDark);
+        return !MatchesDisplay(hash, isDark);
     }
+
+    public bool MatchesDisplay(string? hash, bool isDark) =>
+        _hasSource && (hash ?? "") == _displayedHash && (!_usesDefault || isDark == _isDark);
 
     public bool IsCurrent(int version) => version == _version;
 

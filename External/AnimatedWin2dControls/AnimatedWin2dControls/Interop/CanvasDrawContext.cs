@@ -101,6 +101,20 @@ public readonly unsafe ref struct CanvasDrawContext
     public void FillRoundedRectangle(Rect rectangle, float radiusX, float radiusY, Color color)
         => ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, RectAbi, float, float, Color, int>)Method(72))(_session, new(rectangle), radiusX, radiusY, color));
 
+    /// <summary>Draws a rounded rectangle edge with the given color and DIP stroke width.</summary>
+    public void DrawRoundedRectangle(Rect rectangle, float radiusX, float radiusY, Color color, float strokeWidth)
+        => ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, RectAbi, float, float, Color, float, int>)Method(64))(
+            _session, new(rectangle), radiusX, radiusY, color, strokeWidth));
+
+    /// <summary>Fills a rounded rectangle using the given brush in the drawing session color space.</summary>
+    public void FillRoundedRectangle(Rect rectangle, float radiusX, float radiusY, ICanvasBrush brush)
+    {
+        using var reference = new CanvasInterfaceReference<ICanvasBrush>(brush);
+        ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, RectAbi, float, float, nint, int>)Method(70))(
+            _session, new(rectangle), radiusX, radiusY, reference.GetAbi()));
+        GC.KeepAlive(brush);
+    }
+
     /// <summary>Creates a scoped native opacity layer.</summary>
     public CanvasActiveLayerScope CreateLayer(float opacity)
     {

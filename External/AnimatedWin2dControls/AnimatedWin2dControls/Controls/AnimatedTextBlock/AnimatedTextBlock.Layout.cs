@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using Windows.Foundation;
+using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
@@ -310,12 +311,12 @@ public sealed partial class AnimatedTextBlock
             : -loopDistance * progress);
     }
 
-    private void DrawHoverLine(CanvasDrawingSession ds, HoverLine line)
+    private void DrawHoverLine(CanvasDrawingSession ds, HoverLine line, Color? foreground = null)
     {
         float offset = GetHoverOffset(line.Distance, line.LoopDistance);
-        DrawTextLayout(ds, line.Layout, offset, line.Y, line.Opacity, line.HasColorGlyphs);
+        DrawTextLayout(ds, line.Layout, offset, line.Y, line.Opacity, line.HasColorGlyphs, foreground);
         if (line.LoopDistance > 0)
             DrawTextLayout(ds, line.Layout, offset + line.LoopDistance, line.Y,
-                line.Opacity, line.HasColorGlyphs);
+                line.Opacity, line.HasColorGlyphs, foreground);
     }
 }

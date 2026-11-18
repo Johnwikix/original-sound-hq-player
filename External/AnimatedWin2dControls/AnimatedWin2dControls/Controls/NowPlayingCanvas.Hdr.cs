@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics.DirectX;
 using SceneTitle = AnimatedWin2dControls.Controls.AnimatedTextBlock.AnimatedTextBlock;
@@ -30,6 +31,13 @@ public sealed partial class NowPlayingCanvas
     private bool _sdrAllowed = true;
     private volatile bool _sdrFrameEnabled;
     private FrameEventSubscription? _hdrClock;
+    private FrameEventSubscription? _sdrHandoffClock;
+    private TaskCompletionSource? _sdrHandoffCompletion;
+    private long _sdrHandoffStarted;
+    private volatile bool _sdrFrameSubmitted;
+    private bool _sdrFrameObserved;
+    private bool _releaseHdrAfterHandoff;
+    private bool _navigationTransitionActive;
     private volatile bool _hdrOwnsFrame;
     private bool _hdrPresented;
     private bool _hdrFailed;
@@ -39,6 +47,13 @@ public sealed partial class NowPlayingCanvas
     private Rect _sceneTitleRegion;
 
     public event Action<bool, bool>? HdrPresentationChanged;
+
+    public bool HasHdrPresentationSurface => _hdrPanel is not null;
+    public bool HasHdrPresentationFailed => _hdrFailed;
+    public bool IsHdrFramePresented => _hdrPresented;
+
+    /// <summary>Commits XAML foreground ownership after a successful HDR Present on the UI thread.</summary>
+    public event Action? HdrFramePresented;
 
     /// <summary>Draws the cover above lyrics and below the title in the same HDR session.</summary>
     public event Action<CanvasDrawingSession, float>? DrawHdrForeground;
@@ -63,6 +78,26 @@ public sealed partial class NowPlayingCanvas
         UpdateCanvasPaused(replaceHdr: displayChanged);
     }
 
+    /// <summary>Uses the SDR scene while the containing page is animating.</summary>
+    public Task SetHdrNavigationTransitionAsync(bool active)
+    {
+        if (_navigationTransitionActive != active)
+        {
+            _navigationTransitionActive = active;
+            UpdateCanvasPaused();
+        }
+        return _sdrHandoffCompletion?.Task ?? Task.CompletedTask;
+    }
+
+    /// <summary>Primes a current SDR frame while the UI prepares to reveal the page.</summary>
+    public Task PrepareSdrNavigationFrameAsync()
+    {
+        _ = SetHdrNavigationTransitionAsync(true);
+        if (CanRenderScene && _sdrAllowed && _canvas is { } canvas)
+            BeginSdrHandoff(canvas, releaseDevice: false);
+        return _sdrHandoffCompletion?.Task ?? Task.CompletedTask;
+    }
+
     public void RetryHdrPresentation()
     {
         _hdrFailed = false;
@@ -76,13 +111,13 @@ public sealed partial class NowPlayingCanvas
             _sceneTitle?.SetScenePresentation(false);
         _sceneTitle = title;
         _sceneTitleRegion = region;
-        _sceneTitle?.SetScenePresentation(_hdrPresented);
     }
 
     private bool CanRenderScene => !_hdrShuttingDown && IsLoaded && _isActive
         && !_pausedByParent && !_pausedByWindow && !_pausedByVisibility;
 
-    private bool CanPresentHdr => CanRenderScene && _hdrColor.IsEnabled && !_hdrFailed && _hdrPanel is not null;
+    private bool CanPresentHdr => CanRenderScene && !_navigationTransitionActive
+        && _hdrColor.IsEnabled && !_hdrFailed && _hdrPanel is not null;
 
     private void RenderHdrFrame()
     {
@@ -118,6 +153,8 @@ public sealed partial class NowPlayingCanvas
 
             var swapChain = replacement ?? _hdrSwapChain!;
             var frame = new PlaybackCanvasFrame(device, swapChain.Size, dpi, _hdrColor);
+            var title = _sceneTitle;
+            bool drewTitle;
             using (var session = swapChain.CreateDrawingSession(Colors.Black))
             {
                 // Direct2D may rasterize scaled effects into intermediate surfaces.
@@ -133,7 +170,7 @@ public sealed partial class NowPlayingCanvas
                 DrawHdrScene(frame, session, elapsed);
 
                 DrawHdrForeground?.Invoke(session, frame.Hdr.Peak * 80f);
-                _sceneTitle?.DrawInScene(session, frame, _sceneTitleRegion, elapsed);
+                drewTitle = title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed) == true;
             }
 
             swapChain.Present(0);
@@ -150,6 +187,19 @@ public sealed partial class NowPlayingCanvas
 
             _lastHdrTick = now;
             _hdrDeviceLostRetried = false;
+            bool firstFrame = !_hdrPresented;
+            if (firstFrame)
+            {
+                if (_canvas is { } canvas)
+                    canvas.Opacity = 0;
+                _hdrPresented = true;
+                panel.Visibility = Visibility.Visible;
+            }
+            if (ReferenceEquals(title, _sceneTitle))
+                title?.SetScenePresentation(drewTitle);
+            HdrFramePresented?.Invoke();
+            if (firstFrame)
+                HdrPresentationChanged?.Invoke(true, false);
         }
         catch (Exception ex)
         {
@@ -158,24 +208,15 @@ public sealed partial class NowPlayingCanvas
             _hdrFailed = !retry;
             replacement?.Dispose();
             replacement = null;
-            bool wasPresented = StopHdrPresentation(releaseDevice: true);
+            StopHdrPresentation(releaseDevice: true);
             UpdateCanvasPaused();
             RaiseException(ex);
-            if (wasPresented || !retry)
-                HdrPresentationChanged?.Invoke(false, !retry);
+            HdrPresentationChanged?.Invoke(false, !retry);
             return;
         }
         finally
         {
             replacement?.Dispose();
-        }
-
-        if (!_hdrPresented)
-        {
-            _hdrPresented = true;
-            panel.Visibility = Visibility.Visible;
-            _sceneTitle?.SetScenePresentation(true);
-            HdrPresentationChanged?.Invoke(true, false);
         }
     }
 
@@ -203,8 +244,65 @@ public sealed partial class NowPlayingCanvas
         }
     }
 
+    private void BeginSdrHandoff(CanvasAnimatedControl canvas, bool releaseDevice)
+    {
+        _releaseHdrAfterHandoff |= releaseDevice;
+        if (_sdrHandoffClock is not null)
+            return;
+
+        // Leave the last complete HDR image attached while the SDR game loop
+        // builds a current frame behind it. This includes current lyric time.
+        _hdrClock?.Dispose();
+        _hdrClock = null;
+        lock (_cacheGate)
+        {
+            if (_hdrOwnsFrame)
+                ReleaseSceneResources();
+            if (_canvasResourcesReady && !_rendererResourcesLoaded)
+                LoadActiveResources();
+            _hdrOwnsFrame = false;
+        }
+
+        _sceneTitle?.PrepareStandalonePresentation();
+        _sdrFrameSubmitted = false;
+        _sdrFrameObserved = false;
+        _sdrHandoffStarted = Stopwatch.GetTimestamp();
+        _sdrHandoffCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        _sdrHandoffClock = FrameEventSubscription.SubscribeRendering(CompleteSdrHandoff);
+        _sdrFrameEnabled = true;
+        canvas.Paused = false;
+    }
+
+    private void CompleteSdrHandoff()
+    {
+        // A Draw callback precedes the native EndDraw/Present. Give it a
+        // composition interval before exposing that swap chain to the user.
+        if (!_sdrFrameObserved && Stopwatch.GetElapsedTime(_sdrHandoffStarted) < TimeSpan.FromMilliseconds(250))
+        {
+            _sdrFrameObserved = _sdrFrameSubmitted && _sceneTitle?.IsStandaloneFramePending != true;
+            return;
+        }
+
+        bool stopped = StopHdrPresentation(_releaseHdrAfterHandoff);
+        if (_canvas is { } canvas)
+            canvas.Opacity = 1;
+        if (stopped)
+            HdrPresentationChanged?.Invoke(false, false);
+    }
+
+    private void CancelSdrHandoff()
+    {
+        _sdrHandoffClock?.Dispose();
+        _sdrHandoffClock = null;
+        _releaseHdrAfterHandoff = false;
+        var completion = _sdrHandoffCompletion;
+        _sdrHandoffCompletion = null;
+        completion?.TrySetResult();
+    }
+
     private bool StopHdrPresentation(bool releaseDevice)
     {
+        CancelSdrHandoff();
         _hdrClock?.Dispose();
         _hdrClock = null;
         _lastHdrTick = 0;

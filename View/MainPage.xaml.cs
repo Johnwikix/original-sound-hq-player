@@ -260,9 +260,9 @@ namespace WinUIMusicPlayer.View
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
                 NavigationViewControl.Visibility = Visibility.Visible;
-                _playingNavigation.Dismiss(300);
                 ViewModel.AppViewModel.IsPlayingDetailVisible = false;
                 ViewModel.AppViewModel.IsPointerOverTitleBar = true;
+                _playingNavigation.Dismiss(300);
             }
             if (MainFrame.Content is not SettingsPage)
             {
@@ -293,7 +293,7 @@ namespace WinUIMusicPlayer.View
                 };
             }
 
-            if (targetType is not null) DismissMusicDetailsForNavigation();
+            if (targetType is not null) PrepareForBrowseNavigation();
             if (targetType is not null && MainFrame.Content?.GetType() != targetType)
             {
                 NavigateTo(targetType, null, new EntranceNavigationTransitionInfo());
@@ -316,19 +316,21 @@ namespace WinUIMusicPlayer.View
 
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
-                var pendingCount = 1;
-                void OnOneCompleted()
+                void OnShowCompleted()
                 {
-                    if (Interlocked.Decrement(ref pendingCount) == 0)
+                    if (PlayingFrame.Visibility == Visibility.Collapsed)
                     {
-                        _isPageTransitioning = false;
-                        OpenPendingDetails();
+                        NavigationViewControl.Visibility = Visibility.Visible;
+                        ViewModel.AppViewModel.IsPlayingDetailVisible = false;
+                        ViewModel.AppViewModel.IsPointerOverTitleBar = true;
                     }
+                    _isPageTransitioning = false;
+                    OpenPendingDetails();
                 }
-                _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
-                NavigationViewControl.Visibility = Visibility.Collapsed;
                 ViewModel.AppViewModel.IsPlayingDetailVisible = true;
                 ViewModel.AppViewModel.IsPointerOverTitleBar = false;
+                _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnShowCompleted,
+                    onRevealing: () => NavigationViewControl.Visibility = Visibility.Collapsed);
             }
             else
             {
@@ -338,7 +340,8 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatebackToMusicBrowsePage()
         {
-            if (_isPageTransitioning) return;
+            bool cancellingEntrance = _playingNavigation.IsPreparingShow;
+            if (_isPageTransitioning && !cancellingEntrance) return;
             _isPageTransitioning = true;
 
             if (PlayingFrame.Visibility is Visibility.Visible)
@@ -352,10 +355,10 @@ namespace WinUIMusicPlayer.View
                         OpenPendingDetails();
                     }
                 }
-                _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Visible;
                 ViewModel.AppViewModel.IsPlayingDetailVisible = false;
                 ViewModel.AppViewModel.IsPointerOverTitleBar = true;
+                _playingNavigation.Dismiss(300, onCompleted: cancellingEntrance ? null : OnOneCompleted);
             }
             else
             {
@@ -365,6 +368,11 @@ namespace WinUIMusicPlayer.View
 
         public void HandleBackNavigation()
         {
+            if (_playingNavigation.IsPreparingShow)
+            {
+                NavigatebackToMusicBrowsePage();
+                return;
+            }
             if (_detailsPresenter.IsOpen)
             {
                 CloseMusicDetails();

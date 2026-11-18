@@ -10,7 +10,6 @@ namespace AnimatedWin2dControls.Interop;
 public readonly record struct PlaybackHdrColor(float White, float Peak)
 {
     public bool IsEnabled => White > 0f;
-    internal float TextGlowPeak => Math.Min(White * 1.15f, Peak);
 
     public static PlaybackHdrColor FromNits(double white, double peak)
         => double.IsFinite(white) && white is > 0 and <= 10000 &&

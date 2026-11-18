@@ -78,12 +78,9 @@ namespace WinUIMusicPlayer.Controls
 
         private readonly CoverLoadState _loadState = new();
         private string? _presentedHash;
-        private long _transitionStarted;
 
-        internal bool IsCoverSettled(string hash) => _presentedHash == hash &&
-            System.Diagnostics.Stopwatch.GetElapsedTime(_transitionStarted) >= Time.AnimationDuration;
+        internal bool IsCoverSettled(string hash) => _presentedHash == hash && LastAlbumArtImage.Source is null;
 
-        internal void SetArtworkOpacity(double opacity) => AlbumArtImage.SetArtworkOpacity(opacity);
         internal Windows.Foundation.Rect GetArtworkBounds(UIElement relativeTo) => AlbumArtImage.GetArtworkBounds(relativeTo);
         private CancellationTokenSource? _cts;
         private DispatcherQueueTimer? _lastSourceClearTimer;
@@ -122,6 +119,12 @@ namespace WinUIMusicPlayer.Controls
 
             if ((bool)e.NewValue)
             {
+                if (!switcher._loadState.MatchesDisplay(switcher.ImageHash, switcher.IsDark))
+                {
+                    switcher.SetSourceImmediately(null);
+                    switcher._presentedHash = null;
+                    switcher._loadState.Reset();
+                }
                 _ = switcher.UpdateSourceAsync();
             }
             else
@@ -183,18 +186,15 @@ namespace WinUIMusicPlayer.Controls
                 token.ThrowIfCancellationRequested();
                 if (!_loadState.IsCurrent(version)) return;
 
-                switch (SwitchType)
-                {
-                    case ImageSwitchType.Crossfade:
-                        UpdateSourceCrossfade(imageSource);
-                        break;
-                    case ImageSwitchType.Slide:
-                        UpdateSourceSlide(imageSource);
-                        break;
-                    case ImageSwitchType.ScaleInOut:
-                        UpdateSourceScaleInOut(imageSource);
-                        break;
-                }
+                bool animate = !usesDefault && _presentedHash is not null && AlbumArtImage.Source is not null;
+                if (!animate)
+                    SetSourceImmediately(imageSource);
+                else if (SwitchType == ImageSwitchType.Slide)
+                    UpdateSourceSlide(imageSource);
+                else if (SwitchType == ImageSwitchType.ScaleInOut)
+                    UpdateSourceScaleInOut(imageSource);
+                else
+                    UpdateSourceCrossfade(imageSource);
                 bool hasImage = imageSource is not null;
                 // Transfer ownership only after the target control actually holds it.
                 if (IsSourceOwned(imageSource))
@@ -203,7 +203,6 @@ namespace WinUIMusicPlayer.Controls
                 {
                     _loadState.Commit(version, newHash, usesDefault, isDark);
                     _presentedHash = usesDefault ? null : newHash;
-                    _transitionStarted = System.Diagnostics.Stopwatch.GetTimestamp();
                 }
                 else _loadState.Reset();
             }
@@ -221,6 +220,19 @@ namespace WinUIMusicPlayer.Controls
         {
             string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
             return await ImageHelper.DecodeApplicationAssetAsync(assetName, token);
+        }
+
+        private void SetSourceImmediately(ImageSource? source)
+        {
+            StopLastSourceClearTimer();
+            ReplaceImageSource(LastAlbumArtImage, null);
+            AlbumArtImage.ScaleTransition = null;
+            AlbumArtImage.TranslationTransition = null;
+            AlbumArtImage.OpacityTransition = null;
+            AlbumArtImage.Scale = System.Numerics.Vector3.One;
+            AlbumArtImage.Translation = System.Numerics.Vector3.Zero;
+            AlbumArtImage.Opacity = 1;
+            ReplaceImageSource(AlbumArtImage, source);
         }
 
         private void UpdateSourceCrossfade(ImageSource? source)
@@ -364,12 +376,5 @@ namespace WinUIMusicPlayer.Controls
             source is not null
             && (ReferenceEquals(source, AlbumArtImage.Source)
                 || ReferenceEquals(source, LastAlbumArtImage.Source));
-    }
-
-    public enum ImageSwitchType : byte
-    {
-        Crossfade,
-        Slide,
-        ScaleInOut
     }
 }

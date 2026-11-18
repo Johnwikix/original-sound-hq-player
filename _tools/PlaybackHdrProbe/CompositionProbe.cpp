@@ -7,6 +7,7 @@
 #include <wrl/client.h>
 #include <new>
 #include <memory>
+#include <vector>
 using Microsoft::WRL::ComPtr;
 
 struct Probe {
@@ -149,8 +150,9 @@ extern "C" __declspec(dllexport) void ChangeBackdrop(HWND behind) {
     DwmFlush();
 }
 
-static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int count, float* rgb) {
-    if (count <= 0 || count > 16) return E_INVALIDARG;
+static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int count, float* rgb,
+    INT64* times = nullptr, int maximumFrames = 1, int* frames = nullptr) {
+    if (count <= 0 || count > 1024 || maximumFrames <= 0) return E_INVALIDARG;
     ComPtr<IDXGIFactory1> factory;
     CHECK(CreateDXGIFactory1(IID_PPV_ARGS(&factory)));
     HMONITOR monitor = MonitorFromWindow(host, MONITOR_DEFAULTTONEAREST);
@@ -206,7 +208,7 @@ static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int co
     if (source.Format != format) return DXGI_ERROR_UNSUPPORTED;
     RECT win{};
     GetWindowRect(host, &win);
-    printf("%s frame %ux%u desktop (%ld,%ld)-(%ld,%ld), probe (%ld,%ld)-(%ld,%ld), DPI %u\n",
+    if (!times) printf("%s frame %ux%u desktop (%ld,%ld)-(%ld,%ld), probe (%ld,%ld)-(%ld,%ld), DPI %u\n",
         windowOnly ? "Window" : "Monitor", source.Width, source.Height, desc.DesktopCoordinates.left, desc.DesktopCoordinates.top,
         desc.DesktopCoordinates.right, desc.DesktopCoordinates.bottom, win.left, win.top, win.right, win.bottom, GetDpiForWindow(host));
     RECT origin = desc.DesktopCoordinates;
@@ -224,6 +226,7 @@ static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int co
     CHECK(device->CreateTexture2D(&staging, nullptr, &sample));
     RECT client{};
     GetClientRect(host, &client);
+    std::vector<D3D11_BOX> boxes(count);
     for (int i = 0; i < count; ++i) {
         POINT point = points[i];
         if (!PtInRect(&client, point) || !ClientToScreen(host, &point)) return E_INVALIDARG;
@@ -242,17 +245,38 @@ static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int co
                 screen.x, screen.y, at ? covering : L"(none)", IsWindowVisible(host), IsIconic(host), cloaked);
             return HRESULT_FROM_WIN32(ERROR_INVALID_WINDOW_HANDLE);
         }
-        D3D11_BOX box{static_cast<UINT>(point.x), static_cast<UINT>(point.y), 0,
+        boxes[i] = {static_cast<UINT>(point.x), static_cast<UINT>(point.y), 0,
             static_cast<UINT>(point.x + 1), static_cast<UINT>(point.y + 1), 1};
-        ctx->CopySubresourceRegion(sample.Get(), 0, i, 0, 0, capture.Get(), 0, &box);
     }
-    D3D11_MAPPED_SUBRESOURCE data{};
-    CHECK(ctx->Map(sample.Get(), 0, D3D11_MAP_READ, 0, &data));
-    auto pixels = static_cast<const uint16_t*>(data.pData);
-    for (int i = 0; i < count; ++i)
-        for (int c = 0; c < 3; ++c) rgb[3*i+c] = DirectX::PackedVector::XMConvertHalfToFloat(pixels[4*i+c]);
-    ctx->Unmap(sample.Get(), 0);
-    frame.Close();
+    int captured = 0;
+    ULONGLONG stop = GetTickCount64() + 650;
+    while (frame && captured < maximumFrames) {
+        for (int i = 0; i < count; ++i)
+            ctx->CopySubresourceRegion(sample.Get(), 0, i, 0, 0, capture.Get(), 0, &boxes[i]);
+        D3D11_MAPPED_SUBRESOURCE data{};
+        CHECK(ctx->Map(sample.Get(), 0, D3D11_MAP_READ, 0, &data));
+        auto pixels = static_cast<const uint16_t*>(data.pData);
+        for (int i = 0; i < count; ++i)
+            for (int c = 0; c < 3; ++c) rgb[3*i+c] = DirectX::PackedVector::XMConvertHalfToFloat(pixels[4*i+c]);
+        ctx->Unmap(sample.Get(), 0);
+        if (times) times[captured] = frame.SystemRelativeTime().count();
+        rgb += count * 3;
+        ++captured;
+        frame.Close();
+        frame = nullptr;
+        capture.Reset();
+        access = nullptr;
+        if (captured == maximumFrames) break;
+        while (!frame && GetTickCount64() < stop) {
+            Sleep(2);
+            frame = pool.TryGetNextFrame();
+        }
+        if (frame) {
+            access = frame.Surface().as<::Windows::Graphics::DirectX::Direct3D11::IDirect3DDxgiInterfaceAccess>();
+            CHECK(access->GetInterface(IID_PPV_ARGS(&capture)));
+        }
+    }
+    if (frames) *frames = captured;
     session.Close();
     pool.Close();
     return S_OK;
@@ -260,6 +284,12 @@ static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int co
 
 extern "C" __declspec(dllexport) HRESULT SampleFrame(HWND host, BOOL windowOnly, const POINT* points, int count, float* rgb) noexcept {
     try { return ReadFrame(host, windowOnly != FALSE, points, count, rgb); }
+    catch (...) { return winrt::to_hresult(); }
+}
+
+extern "C" __declspec(dllexport) HRESULT SampleMotionFrames(HWND host, const POINT* points, int count, float* rgb,
+    INT64* times, int maximumFrames, int* frames) noexcept {
+    try { return ReadFrame(host, true, points, count, rgb, times, maximumFrames, frames); }
     catch (...) { return winrt::to_hresult(); }
 }
 

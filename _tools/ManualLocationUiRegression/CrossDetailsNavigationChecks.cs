@@ -51,6 +51,14 @@ internal sealed partial class TestWindow
             await Task.Delay(200);
             Check(!_shell.HasMusicDetails && _app.IsBackBtnEnable,
                 "cross-link cancels a pending details request before the playing transition can reopen it");
+            _shell.BeginPlayingTransitionForFixture(preparingHdr: true);
+            _shell.NavigateToMusicBrowsePage();
+            Check(!_shell.IsPreparingPlayback && ReferenceEquals(browser, _shell.CurrentLibraryPage),
+                "browsing while HDR is preparing cancels the pending playback reveal");
+            _shell.BeginPlayingTransitionForFixture(preparingHdr: true);
+            _shell.ShowMusicDetails(new MusicDetailsRequest(_all[0], typeof(SongListPage)));
+            await Wait(() => _shell.HasMusicDetails);
+            Check(!_shell.IsPreparingPlayback, "a details request cancels HDR preparation and opens the requested track");
             Check(outerNavigations == 0 && _shell.ReturnedToPlaying == 0,
                 "footer cross-links neither reconstruct the browser nor bounce back to the playing overlay");
         }

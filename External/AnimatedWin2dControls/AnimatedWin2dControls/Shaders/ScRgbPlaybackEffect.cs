@@ -92,21 +92,3 @@ internal readonly partial struct PlaybackTextGlowCoreEffect(float white, float p
         return new float4(ink.XYZ * gain, ink.W);
     }
 }
-
-[D2DInputCount(1)]
-[D2DInputSimple(0)]
-[D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
-[D2DGeneratedPixelShaderDescriptor]
-[D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
-internal readonly partial struct PlaybackTextHaloEffect(float white, float peak, float strength) : ID2D1PixelShader
-{
-    public float4 Execute()
-    {
-        float4 blur = D2D.GetInput(0);
-        float light = PlaybackTextGlow.LightInkWeight(blur, white);
-        float shadow = (1f - light) * (0.22f * strength);
-        float emission = light * (peak / white - 1f) * (0.22f * strength);
-        // Dark ink casts a low-opacity tinted halo. Light ink adds radiance with zero coverage.
-        return new float4(blur.XYZ * (shadow + emission), blur.W * shadow);
-    }
-}

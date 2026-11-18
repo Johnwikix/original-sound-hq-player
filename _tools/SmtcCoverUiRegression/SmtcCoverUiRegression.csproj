@@ -32,6 +32,7 @@
     <Compile Include="../../Helper/TransitionCache.cs" />
     <Compile Include="../../Constants/Time.cs" />
     <Compile Include="../../Controls/ImageSwitcher.xaml.cs" />
+    <Compile Include="../../Controls/ImageSwitchType.cs" />
     <Compile Include="../../Controls/ShadowImage.xaml.cs" />
     <Page Include="../../Controls/ImageSwitcher.xaml" Link="Controls/ImageSwitcher.xaml" />
     <Page Include="../../Controls/ShadowImage.xaml" Link="Controls/ShadowImage.xaml" />

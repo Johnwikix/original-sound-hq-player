@@ -129,22 +129,24 @@ internal sealed partial class ProbeApplication
             };
         }
         var spatial = MeasureLyricSweep(device);
+        var haloClipping = MeasureLyricHaloClipping(device);
+        var hover = MeasureLyricHoverContrast(device);
         TimeProgressBus.SetClock(null);
         if (Math.Abs(spatial.PlayedCore - Hdr.White) > 0.015f || Math.Abs(spatial.NextWordCore - Hdr.White) > 0.015f
             || Math.Abs(spatial.UnplayedInk - 0.5f * Hdr.White) > 0.03f
             || Math.Abs(spatial.BeforeWordEnd - Hdr.White) > 0.015f || Math.Abs(spatial.AfterWordEnd - Hdr.White) > 0.015f
             || spatial.MaximumCoreLossWithGlow > 0.035f || spatial.MaximumBackgroundLossWithGlow > 0.02f
-            || spatial.MaximumGlowOutsideInk is < 0.01f or > 0.4f || spatial.GlowArea > 0.015f
-            || Math.Abs(spatial.GlowPeak - 1.15f * Hdr.White) > 0.012f
+            || spatial.MaximumGlowOutsideInk < 0.12f || spatial.GlowArea is < 0.001f or > 0.06f
+            || Math.Abs(spatial.GlowPeak - 1.7f * Hdr.White) > 0.012f
             || Math.Abs(spatial.TightGlowPeak - TightHeadroom.Peak) > 0.006f
             || Math.Abs(spatial.NoHeadroomPeak - Hdr.White) > 0.015f
             || Math.Abs(spatial.RaisedWhiteInk - 4f) > 0.015f
-            || spatial.BlackGlowPeak > 0.015f || spatial.DarkHaloLoss is < 0.025f or > 0.60f
+            || spatial.BlackGlowPeak > 0.015f || spatial.DarkHaloLoss < 0.025f || spatial.DarkHaloLoss >= Hdr.White
             || spatial.DarkHaloArea is <= 0 or > 0.025f || spatial.CustomGlowHueDrift > 0.005f
             || spatial.FadingGlowPeak <= Hdr.White || spatial.FadingGlowPeak >= spatial.GlowPeak
             || Math.Abs(spatial.SettledGlowPeak - Hdr.White) > 0.015f)
             throw new InvalidOperationException($"Failed sustained lyric fill, boundary or glow luminance: {spatial}.");
-        return (backgrounds, new { Readback = lyrics, Sweep = spatial }, warmMotion);
+        return (backgrounds, new { Readback = lyrics, Sweep = spatial, HaloClipping = haloClipping, Hover = hover }, warmMotion);
     }
 
     private static IEnumerable<BaseBackgroundRenderer> CreateBackgrounds()

@@ -665,6 +665,13 @@ namespace AnimatedWin2dControls.Controls
             // Navigation and feature settings end the HDR session. A minimized window
             // can resume the same device after its presentation clock has stopped.
             bool releaseHdr = !_hdrColor.IsEnabled || _hdrFailed || !_isActive || _pausedByParent || _pausedByVisibility;
+            if (canPresentSdr && !replaceHdr && (_hdrPresented || _sdrHandoffClock is not null) && _canvas is { } sdrCanvas)
+            {
+                BeginSdrHandoff(sdrCanvas, releaseHdr);
+                return;
+            }
+
+            CancelSdrHandoff();
             bool stoppedHdr = (replaceHdr || !canPresentHdr) && StopHdrPresentation(releaseHdr);
             if (canPresentHdr)
                 _hdrClock ??= FrameEventSubscription.SubscribeRendering(RenderHdrFrame);
@@ -680,7 +687,7 @@ namespace AnimatedWin2dControls.Controls
                 _sdrFrameEnabled = canPresentSdr;
                 // A paused swap chain retains its last frame. HDR-only image mode needs
                 // the window's image to show through until the new panel has presented.
-                canvas.Opacity = _sdrAllowed ? 1 : 0;
+                canvas.Opacity = _sdrAllowed && !_hdrPresented ? 1 : 0;
                 canvas.Paused = !canPresentSdr;
             }
 
@@ -793,6 +800,8 @@ namespace AnimatedWin2dControls.Controls
                 if (PrepareSceneResources(frame.Device))
                     UpdateScene(frame.Device, TimeSpan.Zero);
                 DrawScene(frame, ds);
+                if (!_sdrFrameSubmitted)
+                    _sdrFrameSubmitted = true;
             }
             catch (Exception ex)
             {
@@ -954,6 +963,7 @@ namespace AnimatedWin2dControls.Controls
             LyricLineClicked = null;
             RenderError = null;
             HdrPresentationChanged = null;
+            HdrFramePresented = null;
             DrawHdrForeground = null;
             GC.SuppressFinalize(this);
         }

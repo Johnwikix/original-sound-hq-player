@@ -2739,6 +2739,7 @@ SHA-256: {5}
   <data name="PlaybackHdr" xml:space="preserve"><value>HDR на странице воспроизведения</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Яркость опорного белого</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Пиковая яркость бликов</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>На странице воспроизведения HDR уровни свечения текста песни 0, 5 и 10 повышают яркость опорного белого на 0 %, 50 % и 100 % в пределах пика HDR.</value></data>
   <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR выключен</value></data>
   <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Этот дисплей работает в SDR</value></data>
   <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Материал окна · передний план в SDR</value></data>

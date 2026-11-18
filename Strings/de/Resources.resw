@@ -2739,6 +2739,7 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>HDR auf der Wiedergabeseite</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Helligkeit des Referenzweiß</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Spitzenhelligkeit der Glanzlichter</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>Auf der HDR-Wiedergabeseite erhöhen die Leuchtstufen des Liedtexts 0, 5 und 10 das Referenzweiß um 0 %, 50 % und 100 %. Die HDR-Spitzenhelligkeit begrenzt die Verstärkung.</value></data>
   <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR ist ausgeschaltet</value></data>
   <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Diese Anzeige verwendet SDR</value></data>
   <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Fenstermaterial · SDR-Vordergrund</value></data>

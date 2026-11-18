@@ -362,6 +362,7 @@
     <ProjectReference Include="External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content Update="Assets\default_cover_*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="Assets\Fonts\UntamedFluentIcons.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -21,7 +21,6 @@ using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
 using ZLinq;
-using CommunityToolkit.WinUI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -36,16 +35,10 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         public MainViewModel QueueViewModel { get; }
         private readonly Windows.UI.ViewManagement.UISettings _motionSettings = new();
+        private bool IsCoverMotionEnabled => _motionSettings.AnimationsEnabled;
         private readonly ListViewCentering _queueCentering;
         private readonly PlaybackSelectionTracker _playbackSelection;
         private ILogger<PlayingDetailPage> _logger;
-        private float _dpiScale = 1.0f;
-        private bool _isPortraitLayout;
-        private bool _isPortraitWanted;
-        private const double PortraitEnterRatio = 1.15;
-        private const double PortraitExitRatio = 1.10;
-        private const double PortraitTopVerticalMargin = 20;
-        private const double textScale = 1.6;  
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             ViewModel = viewModel;
@@ -87,7 +80,6 @@ namespace WinUIMusicPlayer.View
             App.MainWindow.Activated += MainWindow_Activated;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
-            _ = ChangeControlsFontSize();
             // 首次进入也下发：null 时着色器回退内置配色，避免沿用其它页面的残留状态
             NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
             NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
@@ -101,6 +93,7 @@ namespace WinUIMusicPlayer.View
 
         private void DetachPresentationEvents()
         {
+            CancelHdrEntrance();
             if (!_isLoaded) return;
             _isLoaded = false;
             if (_hdrXamlRoot is { } root)
@@ -133,15 +126,6 @@ namespace WinUIMusicPlayer.View
                 NowPlaying?.RetryHdrPresentation();
             }
             ScheduleLyricsRegionUpdate();
-        }
-
-        private void UpdateHdrPresentation()
-        {
-            if (!_isLoaded || _disposed) return;
-            var app = ViewModel.AppViewModel;
-            bool enabled = ViewModel.UseHdrPresentation;
-            NowPlaying?.SetHdrPresentation(enabled ? app.PlaybackHdrWhiteNits : 0,
-                enabled ? app.PlaybackHdrEffectivePeakNits : 0, ViewModel.IsBackgroundActive, app.PlaybackHdrDisplayId);
         }
 
         private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -237,6 +221,7 @@ namespace WinUIMusicPlayer.View
         {
             bool paused = !window.IsVisible || XamlRoot is { IsHostVisible: false }
                 || WindowHelper.IsIconic(AppData.HWnd);
+            UpdateHdrEntranceWindowPaused(paused);
             NowPlaying?.SetWindowPaused(paused);
             LyricsView?.SetWindowPaused(paused);
         }
@@ -250,7 +235,6 @@ namespace WinUIMusicPlayer.View
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             UpdateWindowRendering(App.MainWindow.AppWindow);
-            _ = ChangeControlsFontSize();
             ScheduleLyricsRegionUpdate();
         }
 
@@ -258,6 +242,8 @@ namespace WinUIMusicPlayer.View
         {
             var canvas = (NowPlayingCanvas)sender;
             AttachHdrCoverCanvas(canvas);
+            ObserveHdrEntrance(canvas);
+            _ = canvas.SetHdrNavigationTransitionAsync(_canvasNavigationTransition);
             canvas.HdrPresentationChanged -= PlaybackHdrPresentationChanged;
             canvas.HdrPresentationChanged += PlaybackHdrPresentationChanged;
 
@@ -266,17 +252,6 @@ namespace WinUIMusicPlayer.View
             UpdateWindowRendering(App.MainWindow.AppWindow);
             UpdateHdrPresentation();
             ScheduleLyricsRegionUpdate();
-        }
-
-        private void PlaybackHdrPresentationChanged(bool active, bool failed)
-        {
-            // A failed first Present can already own a cover texture while the reported state is still SDR.
-            if (!active)
-            {
-                RestoreCoverPreview();
-                ReleaseHdrCoverTexture();
-            }
-            ViewModel.AppViewModel.ReportPlaybackHdrPresentation(active, failed);
         }
 
         private void AnimatedPlayingDetailTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -291,173 +266,6 @@ namespace WinUIMusicPlayer.View
             var bounds = title.TransformToVisual(canvas).TransformBounds(
                 new Windows.Foundation.Rect(0, 0, title.ActualWidth, title.ActualHeight));
             canvas.SetHdrTitle(title, bounds);
-        }
-
-        private async Task ChangeControlsFontSize()
-        {
-            var windowSize = App.MainWindow.AppWindow.Size;
-            _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
-
-            bool wantPortrait = _isPortraitWanted;
-            if (windowSize.Width > 0)
-            {
-                double ratio = (double)windowSize.Height / windowSize.Width;
-                wantPortrait = _isPortraitWanted
-                    ? ratio > PortraitExitRatio
-                    : ratio > PortraitEnterRatio;
-            }
-
-            bool portrait = wantPortrait;
-            double driver = windowSize.Width / _dpiScale;
-            var (lyrics, title, artist,info, topHeight) = driver switch
-            {
-                <= 1024 => (32, 24, 20, 10,  260),
-                < 1280 => (36, 26, 22, 11,  280),
-                < 1600 => (42, 32, 24, 13, 300),
-                < 1920 => (48, 36, 30,  14, 320),
-                < 2560 => (56, 42, 34, 15, 340),
-                < 2880 => (64, 48, 38, 16, 360),
-                _ => (76, 56, 44, 18, 380)
-            };
-
-            if (portrait)
-            { 
-                lyrics = (int)(lyrics * AppViewModel.PortraitLyricsScale);
-                title = (int)(title * textScale);
-                artist = (int)(artist * textScale);
-                info = (int)(info * textScale);
-            }
-
-            // 4. 应用变更
-            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
-            {
-                ViewModel.TitleFontSize = title;
-                ViewModel.ArtistAlbumFontSize = artist;
-                ViewModel.InfoFontSize = info;
-                ViewModel.AppViewModel.LyricsFontSize = lyrics;
-
-                if (windowSize.Width > 0 && wantPortrait != _isPortraitWanted)
-                {
-                    _isPortraitWanted = wantPortrait;
-                    ApplyAspectRatioLayout(wantPortrait, topHeight);
-                    ScheduleLyricsRegionUpdate();
-                }
-            });
-        }
-
-        private void ApplyAspectRatioLayout(bool portrait, double topHeight = 300)
-        {
-            if (_isPortraitLayout == portrait) return;
-            _isPortraitLayout = portrait;
-            ViewModel.AppViewModel.IsPortraitLayout = portrait;
-
-            if (portrait)
-            {
-                // Z-order: LyricsRegionHost 最底层，LeftControlPanel 浮在上面（不用 Remove/Insert 避免 Unloaded 触发 PrepareForShutdown）
-                Canvas.SetZIndex(LyricsRegionHost, 0);
-                Canvas.SetZIndex(LeftControlPanel, 2);
-
-                PlayingDetail.RowDefinitions.Clear();
-                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                PlayingDetail.ColumnDefinitions.Clear();
-                PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                // LyricsRegionHost 占满全页
-                Grid.SetRow(LyricsRegionHost, 0);
-                Grid.SetColumn(LyricsRegionHost, 0);
-                Grid.SetRowSpan(LyricsRegionHost, 1);
-                Grid.SetColumnSpan(LyricsRegionHost, 1);
-                LyricsRegionHost.Margin = new Thickness(0,60,0,0);
-
-                // LeftControlPanel 固定在顶部，浮在 lyrics 之上
-                LeftControlPanel.Height = topHeight;
-                LeftControlPanel.VerticalAlignment = VerticalAlignment.Top;
-                Grid.SetRow(LeftControlPanel, 0);
-                Grid.SetColumn(LeftControlPanel, 0);
-                Grid.SetRowSpan(LeftControlPanel, 1);
-                Grid.SetColumnSpan(LeftControlPanel, 1);
-
-                LeftControlPanel.ColumnDefinitions.Clear();
-                LeftControlPanel.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                LeftControlPanel.Margin = new Thickness(10, PortraitTopVerticalMargin, 10, 0);
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(topHeight, GridUnitType.Pixel) });
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                LeftControlPanel.RowDefinitions.Clear();
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-                CoverContainer.VerticalAlignment = VerticalAlignment.Center;
-                CoverContainer.HorizontalAlignment = HorizontalAlignment.Center;
-                Grid.SetRow(CoverContainer, 0);
-                Grid.SetRowSpan(CoverContainer, 3);
-                Grid.SetColumn(CoverContainer, 0);
-                Grid.SetColumnSpan(CoverContainer, 1);
-
-                AnimatedTextBlock.Margin = new Thickness(16, 0, 16, 0);
-                Grid.SetRow(AnimatedTextBlock, 1);
-                Grid.SetColumn(AnimatedTextBlock, 1);
-                Grid.SetRowSpan(AnimatedTextBlock, 1);
-                Grid.SetColumnSpan(AnimatedTextBlock, 1);
-            }
-            else
-            {
-                PlayingDetail.RowDefinitions.Clear();
-                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                PlayingDetail.ColumnDefinitions.Clear();
-                PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                // 还原 Z-order
-                LyricsRegionHost.ClearValue(Canvas.ZIndexProperty);
-                LeftControlPanel.ClearValue(Canvas.ZIndexProperty);
-
-                LeftControlPanel.ClearValue(FrameworkElement.HeightProperty);
-                LeftControlPanel.ClearValue(FrameworkElement.VerticalAlignmentProperty);
-                LeftControlPanel.ClearValue(FrameworkElement.MarginProperty);
-                LeftControlPanel.Background = null;
-
-                Grid.SetRow(LeftControlPanel, 0);
-                Grid.SetColumn(LeftControlPanel, 0);
-                Grid.SetRowSpan(LeftControlPanel, 1);
-                Grid.SetColumnSpan(LeftControlPanel, 1);
-
-                LeftControlPanel.ColumnDefinitions.Clear();               
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4, GridUnitType.Star) });
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                LeftControlPanel.RowDefinitions.Clear();
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8, GridUnitType.Star) });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50, GridUnitType.Pixel) });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-                CoverContainer.ClearValue(FrameworkElement.MarginProperty);
-                CoverContainer.ClearValue(FrameworkElement.VerticalAlignmentProperty);
-                CoverContainer.ClearValue(FrameworkElement.HorizontalAlignmentProperty);
-                Grid.SetRow(CoverContainer, 1);
-                Grid.SetRowSpan(CoverContainer, 1);
-                Grid.SetColumn(CoverContainer, 1);
-                Grid.SetColumnSpan(CoverContainer, 1);
-                AnimatedTextBlock.ClearValue(FrameworkElement.VerticalAlignmentProperty);
-                AnimatedTextBlock.ClearValue(FrameworkElement.MarginProperty);
-                AnimatedTextBlock.Margin = new Thickness(20, 0, 20, 0);
-                Grid.SetRow(AnimatedTextBlock, 2);
-                Grid.SetColumn(AnimatedTextBlock, 1);
-                Grid.SetRowSpan(AnimatedTextBlock, 1);
-                Grid.SetColumnSpan(AnimatedTextBlock, 1);
-
-                Grid.SetRow(LyricsRegionHost, 0);
-                Grid.SetColumn(LyricsRegionHost, 1);
-                Grid.SetRowSpan(LyricsRegionHost, 1);
-                Grid.SetColumnSpan(LyricsRegionHost, 1);
-                LyricsRegionHost.Margin = new Thickness(0, 40, 0, 40);
-            }
-
-            PlayingDetail.UpdateLayout();
-            LeftControlPanel.UpdateLayout();
-            ScheduleLyricsRegionUpdate();
         }
 
         private void ControlsStack_PointerEntered(object sender, PointerRoutedEventArgs e)

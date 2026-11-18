@@ -38,7 +38,7 @@ namespace PlaybackHdrProbe
 namespace WinUIMusicPlayer.Utils
 {
     // The unrelated animated-text selection reads its localized label during state construction.
-    internal static class ToolUtils
+    internal static partial class ToolUtils
     {
         public static string GetString(string key) => key == "TextDefaultEffect" ? "Default" : throw new ArgumentException(key);
     }

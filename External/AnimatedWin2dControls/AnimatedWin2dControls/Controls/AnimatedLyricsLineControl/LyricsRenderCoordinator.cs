@@ -120,6 +120,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _isMouseInLyricsArea;
         private Point _lastMousePos;
         private bool _hoverDirty;
+        private bool _isDarkTheme;
+        private CanvasSolidColorBrush? _hdrHoverBrush;
+        private CanvasDevice? _hdrHoverDevice;
+        private float _hdrHoverWhite = -1;
 
         private int _cachedVisibleStart;
         private int _cachedVisibleEnd;
@@ -219,6 +223,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 DisposeRenderLines();
                 _lineRenderer.ClearSharedResources();
                 _edgeFadeMask.Reset();
+                ReleaseHoverBrush();
                 OnCreateResources();
             }
         }
@@ -239,6 +244,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _lineRenderer.Line = null;
                 _lineRenderer.ClearSharedResources();
                 _edgeFadeMask.Dispose();
+                ReleaseHoverBrush();
                 Canvas = null;
             }
         }
@@ -262,6 +268,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _renderLines = [];
                 _lineRenderer.Line = null;
                 _edgeFadeMask.Reset();
+                ReleaseHoverBrush();
                 Canvas = null;
                 _layoutDirty = true;
                 _cachedEdgeFadeWidth = -1;
@@ -294,7 +301,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedLyricsTextAlignment = s.LyricsTextAlignment;
             _cachedScrollSensitivity = s.ScrollSensitivity;
             _cachedLyricsBlurAmount = s.LyricsBlurAmount;
-            _cachedGlowAmount = s.GlowAmount;
+            _cachedGlowAmount = double.IsFinite(s.GlowAmount) ? Math.Clamp(s.GlowAmount, 0, 10) : 0;
             _cachedCharFloatAmount = s.CharFloatAmount;
             _cachedCharScaleAmount = s.CharScaleAmount;
             _cachedLongSyllableThreshold = s.LongSyllableThreshold;
@@ -313,13 +320,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (Canvas is not null)
                 Canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / s.TargetFrameRate);
 
-            bool isDark = s.IsDark;
+            _isDarkTheme = s.IsDark;
             if (s.IsCustomColorEnabled)
             {
                 _playedColor = s.LyricsCustomColor;
                 _unplayedColor = s.LyricsCustomColor;
             }
-            else if (isDark)
+            else if (_isDarkTheme)
             {
                 _playedColor = Colors.White;
                 _unplayedColor = Colors.White;
@@ -395,6 +402,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnIsDarkChanged(bool isDark)
         {
+            _isDarkTheme = isDark;
             if (isDark)
             {
                 _playedColor = Colors.White;
@@ -850,8 +858,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int endIdx = Math.Min(lines.Count - 1, _cachedVisibleEnd + 3);
             if (UsesLineScroll && (_cachedVisibleStart < 0 || _cachedVisibleEnd < 0)) return;
 
-            double yOffsetBase = ry + rh * playingLineTopOffsetFactor + combinedScroll;
+            double lineOrigin = ry + rh * playingLineTopOffsetFactor;
+            double yOffsetBase = lineOrigin + combinedScroll;
             double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
+            _lineRenderer.SetPlaybackColor(hdr, _cachedGlowAmount);
+
+            if (_hoveredLineIndex >= startIdx && _hoveredLineIndex <= endIdx
+                && lines[_hoveredLineIndex] is { } hovered && hovered.PrimaryTextLayout?.LayoutBounds.Width > 0)
+            {
+                double hoveredY = UsesLineScroll
+                    ? lineOrigin + hovered.ScrollMotion.Value + _mouseYScrollTransition.Value
+                    : yOffsetBase;
+                DrawHoverBackground(sender, ds, hovered, rx, rw, hoveredY, hdr);
+            }
 
             for (int i = startIdx; i <= endIdx; i++)
             {
@@ -860,7 +879,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) continue;
 
                 double yOffset = UsesLineScroll
-                    ? ry + rh * playingLineTopOffsetFactor + line.ScrollMotion.Value + _mouseYScrollTransition.Value
+                    ? lineOrigin + line.ScrollMotion.Value + _mouseYScrollTransition.Value
                     : yOffsetBase;
 
                 bool isPlayingLine = line.GetIsHighlighted(currentTimeMs) || line.IsWordEffectsRetiring;
@@ -882,36 +901,63 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 ds.Transform *= Matrix3x2.CreateTranslation((float)rx, (float)yOffset);
                 ds.Transform *= Matrix3x2.CreateTranslation(0, (float)(line.LayoutOffsetY * lineScale));
 
-                _lineRenderer.Hdr = hdr;
                 _lineRenderer.IsPlaying = isPlayingLine;
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
                 _lineRenderer.PlayedFillColor = _playedColor;
                 _lineRenderer.UnplayedFillColor = _unplayedColor;
-                _lineRenderer.IsGlowEnabled = _cachedGlowAmount > 0;
                 _lineRenderer.IsScaleEnabled = _cachedCharScaleAmount > 0;
                 _lineRenderer.IsFloatEnabled = _cachedCharFloatAmount > 0;
 
                 _lineRenderer.Draw(sender, ds);
                 ds.Transform = prevTransform;
-
-                if (i == _hoveredLineIndex)
-                {
-                    var hoverRect = new Rect(
-                        rx + line.TopLeftPosition.X - 20,
-                        yOffset + line.TopLeftPosition.Y - 20,
-                        line.BottomRightPosition.X - line.TopLeftPosition.X + 40,
-                        line.BottomRightPosition.Y - line.TopLeftPosition.Y + 40);
-
-                    double rightBound = rx + rw;
-                    if (hoverRect.X < rx) { hoverRect.Width += hoverRect.X - rx; hoverRect.X = rx; }
-                    if (hoverRect.X + hoverRect.Width > rightBound) hoverRect.Width = rightBound - hoverRect.X;
-                    if (hoverRect.Width <= 0) continue;
-
-                    ds.FillRoundedRectangle(hoverRect, 6, 6,
-                        Color.FromArgb(30, 255, 255, 255));
-                }
             }
+        }
+
+        private void DrawHoverBackground(ICanvasResourceCreator sender, CanvasDrawContext ds, RenderLyricsLine line,
+            double regionX, double regionWidth, double lineY, PlaybackHdrColor hdr)
+        {
+            // Brighten the surface at paper white and give light themes a visible edge near white.
+            const byte hoverAlpha = 30;
+            double left = Math.Max(regionX, regionX + line.TopLeftPosition.X - 20);
+            double right = Math.Min(regionX + regionWidth, regionX + line.BottomRightPosition.X + 20);
+            if (right <= left) return;
+            var bounds = new Rect(left, lineY + line.TopLeftPosition.Y - 20, right - left,
+                line.BottomRightPosition.Y - line.TopLeftPosition.Y + 40);
+
+            if (hdr.IsEnabled)
+            {
+                var device = sender.Device;
+                if (_hdrHoverBrush is null || !ReferenceEquals(_hdrHoverDevice, device))
+                {
+                    ReleaseHoverBrush();
+                    _hdrHoverBrush = new CanvasSolidColorBrush(device, Colors.White);
+                    _hdrHoverDevice = device;
+                }
+                if (_hdrHoverWhite != hdr.White)
+                {
+                    _hdrHoverBrush.ColorHdr = hdr.GetColor(Color.FromArgb(hoverAlpha, 255, 255, 255));
+                    _hdrHoverWhite = hdr.White;
+                }
+                ds.FillRoundedRectangle(bounds, 6, 6, _hdrHoverBrush);
+            }
+            else
+            {
+                ds.FillRoundedRectangle(bounds, 6, 6, Color.FromArgb(hoverAlpha, 255, 255, 255));
+            }
+            if (!_isDarkTheme && bounds.Width > 1 && bounds.Height > 1)
+            {
+                var edge = new Rect(bounds.X + 0.5, bounds.Y + 0.5, bounds.Width - 1, bounds.Height - 1);
+                ds.DrawRoundedRectangle(edge, 5.5f, 5.5f, Color.FromArgb(32, 0, 0, 0), 1f);
+            }
+        }
+
+        private void ReleaseHoverBrush()
+        {
+            _hdrHoverBrush?.Dispose();
+            _hdrHoverBrush = null;
+            _hdrHoverDevice = null;
+            _hdrHoverWhite = -1;
         }
 
         private void DisposeRenderLines()

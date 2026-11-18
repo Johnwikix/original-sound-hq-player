@@ -10,6 +10,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI;
+using Windows.Graphics.DirectX;
 
 internal sealed partial class ProbeApplication
 {
@@ -20,7 +21,12 @@ internal sealed partial class ProbeApplication
         float NextWordCore, float MaximumCoreLossWithGlow, float MaximumBackgroundLossWithGlow,
         float MaximumGlowOutsideInk, float GlowArea, float GlowPeak, float TightGlowPeak, float NoHeadroomPeak,
         float RaisedWhiteInk, float BlackGlowPeak, float DarkHaloLoss, float DarkHaloArea,
-        float CustomGlowHueDrift, float FadingGlowPeak, float SettledGlowPeak);
+        float CustomGlowHueDrift, float FadingGlowPeak, float SettledGlowPeak, LyricGlowComparison GlowSettings);
+    private sealed record GlowSpread(float Core, float CoreLoss, float HaloPeak, float HaloEnergy, int HaloPixels);
+    private sealed record LyricGlowComparison(GlowSpread Sdr, GlowSpread Disabled, GlowSpread NoGain,
+        GlowSpread Amount5, GlowSpread Amount10, GlowSpread Tight, float MaximumHdrAlphaShift,
+        float MaximumSdrAlphaDelta, float SamePrecisionSdrAlphaDelta, float BrightBackgroundLoss,
+        float BrightBackgroundDriftOutsideHalo);
 
     private static BackgroundGradient MeasureBackgroundGradient(byte[] paper, byte[] high, int width)
     {
@@ -133,8 +139,8 @@ internal sealed partial class ProbeApplication
         LyricsFontSizeBus.Publish(52);
         UILyricsBus.Publish([new LyricLine
         {
-            EndMs = 2000,
-            HighlightEndMs = 2000,
+            EndMs = 2100,
+            HighlightEndMs = 2100,
             Words =
             [
                 new() { Word = "MMMM", StartMs = 0, DurationMs = 1000 },
@@ -169,11 +175,11 @@ internal sealed partial class ProbeApplication
         float secondWord = MaxInk(Draw(false), midpoint, midpoint + split * 2, 0.99f);
         Step(768);
         byte[] plainMask = Draw(false);
-        byte[] plainOverBackground = Draw(true);
+        byte[] plainOverBackground = Draw(true, Hdr, .6f);
         var raisedWhite = PlaybackHdrColor.FromNits(320, 600);
         float raisedWhiteInk = ReadMax(Draw(true, raisedWhite, 0)).Rgb;
         StartGlow();
-        byte[] glowing = Draw(true);
+        byte[] glowing = Draw(true, Hdr, .6f);
         float maxCoreLoss = 0, maxBackgroundLoss = 0, maxGlow = 0;
         int glowingPixels = 0;
         for (int i = 0; i < glowing.Length; i += 8)
@@ -198,6 +204,7 @@ internal sealed partial class ProbeApplication
         foreach (var character in activeLine.PrimaryRenderChars)
             character.GlowTransition.JumpTo(0);
         float settledGlowPeak = ReadMax(Draw(true, Hdr, 0)).Rgb;
+        var glowSettings = MeasureGlowSettings();
 
         SetSettings(0, Colors.Black);
         Step(768);
@@ -225,22 +232,131 @@ internal sealed partial class ProbeApplication
         return new(played, unplayed, before, after, secondWord, maxCoreLoss, maxBackgroundLoss, maxGlow,
             (float)glowingPixels / (width * height), peak, tightPeak, noHeadroomPeak,
             raisedWhiteInk, blackGlowPeak, darkHaloLoss, (float)darkHaloPixels / (width * height),
-            customGlowHueDrift, fadingGlowPeak, settledGlowPeak);
+            customGlowHueDrift, fadingGlowPeak, settledGlowPeak, glowSettings);
 
         static void SetSettings(double glow, Windows.UI.Color? color = null)
             => LyricsSettingsBus.Publish(new("Consolas", CanvasHorizontalAlignment.Left, color != Colors.Black,
                 1, 0, glow, 0, 0, 100, false, false, 0.5, 0.7, 0,
                 EasingType.Sine, EaseMode.Out, 0.35, 60, color.HasValue && color != Colors.Black, color ?? Colors.White));
 
-        void StartGlow(Windows.UI.Color? color = null)
+        void StartGlow(Windows.UI.Color? color = null, double amount = 7)
         {
-            SetSettings(7.0, color);
+            SetSettings(amount, color);
             Step(1200);
             for (long time = 0; time <= 768; time += 4)
             {
                 position = time;
                 _lyrics.OnUpdate(target, TimeSpan.FromMilliseconds(4));
             }
+        }
+
+        LyricGlowComparison MeasureGlowSettings()
+        {
+            StartGlow(amount: 5);
+            Step(2020);
+            var characters = activeLine.PrimaryRenderChars;
+            foreach (var character in characters) character.ProgressPlayed = 1;
+
+            // Match the SDR surface format and render the same exact playback clock and character geometry.
+            using var sdrTarget = new CanvasRenderTarget(device, width, height, 96,
+                DirectXPixelFormat.B8G8R8A8UIntNormalized, CanvasAlphaMode.Premultiplied);
+            foreach (var character in characters) character.GlowTransition.JumpTo(0);
+            byte[] mask = Draw(false);
+            byte[] sdrMask = DrawSdr();
+            foreach (var character in characters) character.GlowTransition.JumpTo(5);
+            byte[] sdrGlow = DrawSdr();
+            byte[] floatSdrGlow = Draw(false, default(PlaybackHdrColor));
+
+            // Publish a settings snapshot without advancing the clock. The geometry and blur radius stay
+            // frozen, so a reference-white cap can isolate RGB gain with the same active blur mask.
+            SetSettings(0);
+            byte[] disabled = Draw(false);
+            SetSettings(double.NaN);
+            if (!Draw(false).AsSpan().SequenceEqual(disabled))
+                throw new InvalidOperationException("A non-finite lyric glow setting enabled glow.");
+            SetSettings(5);
+            byte[] noGain = Draw(false, PaperWhite);
+            byte[] amount5 = Draw(false);
+            SetSettings(10);
+            byte[] amount10 = Draw(false);
+            byte[] tight = Draw(false, TightHeadroom);
+            byte[] brightNoGain = Draw(true, PaperWhite, 5.5f);
+            byte[] brightWithGain = Draw(true, Hdr, 5.5f);
+            SetSettings(11);
+            if (!Draw(false).AsSpan().SequenceEqual(amount10))
+                throw new InvalidOperationException("The lyric glow setting exceeded its 10-point range.");
+            float hdrAlphaShift = 0, sdrAlphaDelta = 0, floatSdrAlphaDelta = 0, brightLoss = 0, outsideGlow = 0;
+            for (int i = 6; i < mask.Length; i += 8)
+            {
+                float alpha = ReadHalf(noGain, i);
+                hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(amount5, i) - alpha));
+                hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(amount10, i) - alpha));
+                hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(tight, i) - alpha));
+                if (ReadHalf(mask, i) <= .001f && sdrMask[i / 2] == 0)
+                {
+                    sdrAlphaDelta = Math.Max(sdrAlphaDelta, Math.Abs(sdrGlow[i / 2] / 255f - alpha));
+                    floatSdrAlphaDelta = Math.Max(floatSdrAlphaDelta, Math.Abs(ReadHalf(floatSdrGlow, i) - alpha));
+                }
+                float brightRise = Luminance(brightWithGain, i - 6) - Luminance(brightNoGain, i - 6);
+                brightLoss = Math.Max(brightLoss, -brightRise);
+                if (alpha == 0) outsideGlow = Math.Max(outsideGlow, Math.Abs(brightRise));
+            }
+
+            var result = new LyricGlowComparison(Measure(sdrGlow, true), Measure(disabled), Measure(noGain),
+                Measure(amount5), Measure(amount10), Measure(tight), hdrAlphaShift, sdrAlphaDelta, floatSdrAlphaDelta,
+                brightLoss, outsideGlow);
+            if (Math.Abs(result.Disabled.Core - 1) > .006f || result.Disabled.HaloPixels != 0
+                || Math.Abs(result.NoGain.Core - 1) > .006f
+                || Math.Abs(result.Amount5.Core - 1.5f) > .006f
+                || Math.Abs(result.Amount10.Core - 2f) > .006f
+                || Math.Abs(result.Tight.Core - TightHeadroom.Peak / Hdr.White) > .006f
+                || result.Amount5.CoreLoss > .015f || result.Tight.CoreLoss > .015f
+                || result.Amount5.HaloEnergy <= result.NoGain.HaloEnergy
+                || result.Amount5.HaloEnergy <= result.Sdr.HaloEnergy
+                || result.Amount10.HaloEnergy <= result.Amount5.HaloEnergy
+                || result.MaximumHdrAlphaShift > .006f || result.MaximumSdrAlphaDelta > .060f
+                || result.SamePrecisionSdrAlphaDelta > .012f
+                || result.BrightBackgroundLoss > .01f || result.BrightBackgroundDriftOutsideHalo > .001f)
+                throw new InvalidOperationException($"Lyric glow changed alpha coverage or missed the brightness mapping: {result}.");
+            return result;
+
+            byte[] DrawSdr()
+            {
+                using (var drawing = sdrTarget.CreateDrawingSession())
+                {
+                    drawing.Clear(Colors.Transparent);
+                    using var scope = CanvasDrawingSessionScope.Borrow(drawing);
+                    _lyrics.OnDraw(sdrTarget, scope.Context, default);
+                }
+                return sdrTarget.GetPixelBytes();
+            }
+
+            GlowSpread Measure(byte[] pixels, bool sdr = false)
+            {
+                const float threshold = .01f; // Measure only at least 1% of relative paper white.
+                float core = 0, loss = 0, maxHalo = 0, energy = 0;
+                int area = 0;
+                for (int i = 0; i < mask.Length; i += 8)
+                {
+                    float alpha = ReadHalf(mask, i + 6);
+                    float baseline = sdr ? DecodeSrgb(sdrMask[i / 2 + 2] / 255f) : Luminance(mask, i) / Hdr.White;
+                    float sample = sdr ? DecodeSrgb(pixels[i / 2 + 2] / 255f) : Luminance(pixels, i) / Hdr.White;
+                    if (alpha >= .99f)
+                    {
+                        core = Math.Max(core, sample);
+                        loss = Math.Max(loss, baseline - sample);
+                    }
+                    if (alpha > .001f || sdrMask[i / 2 + 3] != 0) continue;
+                    float added = sample - baseline;
+                    maxHalo = Math.Max(maxHalo, added);
+                    energy += Math.Max(0, added);
+                    if (added > threshold) area++;
+                }
+                return new(core, loss, maxHalo, energy, area);
+            }
+
+            static float DecodeSrgb(float value) => value <= .04045f ? value / 12.92f :
+                MathF.Pow((value + .055f) / 1.055f, 2.4f);
         }
 
         void Step(long time)
@@ -278,6 +394,91 @@ internal sealed partial class ProbeApplication
                     result = Math.Max(result, Luminance(pixels, offset) / (normalizeCoverage ? alpha : 1));
             }
             return result;
+        }
+    }
+
+    private object MeasureLyricHoverContrast(CanvasDevice device)
+    {
+        using var target = CreateFloatTarget(device, 1100, 700);
+        using var surface = new CanvasSolidColorBrush(device, Colors.Black);
+        var hoverIndex = typeof(LyricsRenderCoordinator).GetField("_hoveredLineIndex", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        SetUpLyrics();
+
+        var results = new List<object>();
+        foreach (PlaybackHdrColor hdr in new[] { Hdr, default })
+        {
+            foreach (var (isDark, backdropFraction) in new[] { (true, 0f), (false, 0.75f), (false, 1f) })
+            {
+                LyricsSettingsBus.Publish(new("Consolas", CanvasHorizontalAlignment.Left, isDark,
+                    1, 0, 0, 0, 0, 100, false, false, 0.5, 0.7, 0, EasingType.Sine, EaseMode.Out,
+                    0.35, 60, false, Colors.White));
+                for (int frame = 0; frame < 40; frame++)
+                    _lyrics.OnUpdate(target, Delta);
+                float paperWhite = hdr.IsEnabled ? hdr.White : 1f;
+                float background = paperWhite * backdropFraction;
+                byte[] mask = Draw(false, false, hdr, background);
+                byte[] clear = Draw(true, false, hdr, background);
+                byte[] hover = Draw(true, true, hdr, background);
+                float positive = 0, negative = 0, glyphShift = 0;
+                int opaqueInk = 0;
+                for (int i = 0; i < mask.Length; i += 8)
+                {
+                    float alpha = ReadHalf(mask, i + 6);
+                    float delta = Luminance(hover, i) - Luminance(clear, i);
+                    if (alpha <= 0.001f)
+                    {
+                        positive = Math.Max(positive, delta);
+                        negative = Math.Max(negative, -delta);
+                    }
+                    if (alpha >= 0.999f)
+                    {
+                        opaqueInk++;
+                        glyphShift = Math.Max(glyphShift, Math.Abs(delta));
+                    }
+                }
+                var result = new { IsHdr = hdr.IsEnabled, IsDark = isDark, Background = background, PositiveBackdrop = positive,
+                    NegativeBackdrop = negative, GlyphShift = glyphShift, OpaqueInk = opaqueInk };
+                if (opaqueInk == 0 || glyphShift > 0.01f
+                    || isDark && (positive < paperWhite * 0.10f || negative > 0.01f)
+                    || !isDark && (negative < paperWhite * 0.045f
+                        || (backdropFraction < 1f ? positive < paperWhite * 0.02f : positive > 0.01f)))
+                    throw new InvalidOperationException($"Incorrect lyric hover color or z-order: {result}.");
+                results.Add(result);
+            }
+        }
+
+        hoverIndex.SetValue(_lyrics, -1);
+        return results;
+
+        void SetUpLyrics()
+        {
+            TimeProgressBus.SetClock(static () => 850);
+            IsPlayingBus.Publish(true);
+            LyricsFontSizeBus.Publish(52);
+            UILyricsBus.Publish([new LyricLine
+            {
+                EndMs = 1000,
+                HighlightEndMs = 1000,
+                Words = [new() { Word = "MMMM", StartMs = 0, DurationMs = 1000 }]
+            }]);
+        }
+
+        byte[] Draw(bool paintBackground, bool isHovered, PlaybackHdrColor hdr, float background)
+        {
+            hoverIndex.SetValue(_lyrics, isHovered ? 0 : -1);
+            using (var drawing = target.CreateDrawingSession())
+            {
+                drawing.Clear(paintBackground ? Colors.Black : Colors.Transparent);
+                drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+                if (paintBackground && background > 0)
+                {
+                    surface.ColorHdr = new Vector4(background, background, background, 1f);
+                    drawing.FillRectangle(0, 0, 1100, 700, surface);
+                }
+                using var scope = CanvasDrawingSessionScope.Borrow(drawing);
+                _lyrics.OnDraw(target, scope.Context, hdr);
+            }
+            return target.GetPixelBytes();
         }
     }
 

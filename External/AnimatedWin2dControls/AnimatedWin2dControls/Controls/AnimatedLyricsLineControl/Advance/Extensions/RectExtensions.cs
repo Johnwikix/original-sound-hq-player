@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Windows.Foundation;
 
@@ -18,6 +19,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public static Rect Extend(this Rect rect, double horizontalPadding, double verticalPadding)
             => Extend(rect, horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+
+        /// <summary>Includes the output of a soft-border Gaussian blur outside the input rectangle.</summary>
+        internal static Rect ExtendForGaussianBlur(this Rect rect, double deviation, double scale = 1)
+            => deviation > 0 ? rect.Extend(Math.Ceiling(deviation * 3) * scale) : rect;
 
         public static Rect Scale(this Rect rect, double scale)
         {

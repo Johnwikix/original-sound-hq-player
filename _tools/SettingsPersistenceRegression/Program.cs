@@ -31,17 +31,21 @@ try
     var legacyHdr = JsonSerializer.Deserialize("""{"PlaybackHdrEnabled":true,"PlaybackHdrPeakNits":420}""", SettingsJsonContext.Default.SaveSettings)!;
     Check(legacyHdr.PlaybackHdrEnabled && legacyHdr.PlaybackHdrPeakNits == 420 && legacyHdr.PlaybackHdrReferenceWhiteNits == 300, "Legacy peak was lost.");
     var previousPlaybackSettings = JsonSerializer.Deserialize(
-        """{"IsWin2dAnimatedText":false,"EnableAdvancedLyricsEffect":false,"PlaybackHdrPeakNits":530}""",
+        """{"IsWin2dAnimatedText":false,"EnableAdvancedLyricsEffect":false,"PlaybackHdrPeakNits":530,"GlowAmount":7.5,"PlaybackHdrGlowBoostPercent":75,"PlaybackHdrHaloStrengthPercent":225}""",
         SettingsJsonContext.Default.SaveSettings)!;
     using var migratedPlaybackSettings = JsonDocument.Parse(JsonSerializer.Serialize(previousPlaybackSettings, SettingsJsonContext.Default.SaveSettings));
-    Check(previousPlaybackSettings.PlaybackHdrPeakNits == 530
+    Check(previousPlaybackSettings.PlaybackHdrPeakNits == 530 && previousPlaybackSettings.GlowAmount == 7.5
         && !migratedPlaybackSettings.RootElement.TryGetProperty("IsWin2dAnimatedText", out _)
-        && !migratedPlaybackSettings.RootElement.TryGetProperty("EnableAdvancedLyricsEffect", out _),
-        "Retired playback modes must be ignored on load and omitted on save.");
-    var hdrSettings = new SaveSettings { PlaybackHdrEnabled = true, PlaybackHdrReferenceWhiteNits = 350, PlaybackHdrPeakNits = 950 };
+        && !migratedPlaybackSettings.RootElement.TryGetProperty("EnableAdvancedLyricsEffect", out _)
+        && !migratedPlaybackSettings.RootElement.TryGetProperty("PlaybackHdrGlowBoostPercent", out _)
+        && !migratedPlaybackSettings.RootElement.TryGetProperty("PlaybackHdrHaloStrengthPercent", out _),
+        "Old playback settings must preserve the common glow control and omit retired keys on save.");
+    var hdrSettings = new SaveSettings { PlaybackHdrEnabled = true, PlaybackHdrReferenceWhiteNits = 350, PlaybackHdrPeakNits = 950, GlowAmount = 6.4 };
     var hdrCopy = JsonSerializer.Deserialize(JsonSerializer.Serialize(hdrSettings, SettingsJsonContext.Default.SaveSettings),
         SettingsJsonContext.Default.SaveSettings)!;
-    Check(hdrCopy.PlaybackHdrEnabled && hdrCopy.PlaybackHdrReferenceWhiteNits == 350 && hdrCopy.PlaybackHdrPeakNits == 950, "HDR settings did not survive restart.");
+    Check(hdrCopy.PlaybackHdrEnabled && hdrCopy.PlaybackHdrReferenceWhiteNits == 350
+        && hdrCopy.PlaybackHdrPeakNits == 950 && hdrCopy.GlowAmount == 6.4, "HDR brightness and the shared glow setting did not survive restart.");
+    Console.WriteLine("PASS: retired HDR glow keys are ignored and the shared glow setting survives restart.");
     var firstStartupPath = Path.Combine(directory, "FirstStartup.json");
     var firstStartup = await AtomicSettingsFile.LoadAsync(firstStartupPath, SettingsJsonContext.Default.SaveSettings,
         SaveSettings.CreateForNewUser, SaveSettings.CreateForNewUser);

@@ -51,6 +51,7 @@ namespace WinUIMusicPlayer
                     throw new Exception("ImageHelper 未返回 SoftwareBitmapSource");
                 probeSource.Dispose();
 
+                await VerifyFirstCoverAsync(host);
                 var control = new ImageSwitcher { IsActive = false, Width = 300, Height = 300 };
                 host.Children.Add(control);
                 await WaitAsync(() => control.IsLoaded);
@@ -73,13 +74,6 @@ namespace WinUIMusicPlayer
                 await WaitAsync(() => control.IsCoverSettled("portrait"));
                 if (control.IsCoverSettled("large") || control.GetArtworkBounds(host).Height <= 0)
                     throw new Exception("场景交接使用了旧封面或空布局");
-                var portraitControl = (ShadowImage)control.FindName("AlbumArtImage");
-                var previewPixels = (Image)portraitControl.FindName("ArtworkPixels");
-                control.SetArtworkOpacity(0);
-                if (previewPixels.Opacity != 0 || portraitControl.Opacity == 0 || Current(control) != portraitSource)
-                    throw new Exception("HDR 场景接管像素时丢失了预览布局或阴影");
-                control.SetArtworkOpacity(1);
-                if (previewPixels.Opacity != 1) throw new Exception("SDR 回退没有恢复封面");
                 largeSource = null;
                 control.ImageHash = "small";
                 await WaitAsync(() => IsSoftwareSource(Current(control)) &&
@@ -148,6 +142,43 @@ namespace WinUIMusicPlayer
             window.Close();
             Exit();
         }
+        private static async Task VerifyFirstCoverAsync(Grid host)
+        {
+            foreach (var effect in new[] { ImageSwitchType.ScaleInOut, ImageSwitchType.Slide, ImageSwitchType.Crossfade })
+            {
+                var control = new ImageSwitcher { Width = 300, Height = 230, IsActive = false, SwitchType = effect, ImageHash = "large" };
+                host.Children.Add(control);
+                try
+                {
+                    await WaitAsync(() => control.IsLoaded);
+                    control.IsActive = true;
+                    await WaitAsync(() => Current(control) is not null);
+                    if (!control.IsCoverSettled("large"))
+                        throw new Exception($"{effect}: the first cover started a song-change transition");
+                    await WaitAsync(() => control.GetArtworkBounds(host).Height > 0);
+                    var first = control.GetArtworkBounds(host);
+                    await Task.Delay(350);
+                    var settled = control.GetArtworkBounds(host);
+                    if (Math.Abs(first.Width - settled.Width) > 1 || Math.Abs(first.Height - settled.Height) > 1 ||
+                        Math.Abs(first.X - settled.X) > 1 || Math.Abs(first.Y - settled.Y) > 1)
+                        throw new Exception($"{effect}: first cover bounds {first} changed to {settled}");
+                    control.ImageHash = "portrait";
+                    await WaitAsync(() => ((ShadowImage)control.FindName("LastAlbumArtImage")).Source is not null);
+                    await WaitAsync(() => control.IsCoverSettled("portrait"));
+                    var old = Current(control);
+                    control.IsActive = false;
+                    control.ImageHash = "small";
+                    control.IsActive = true;
+                    if (old is not null && ReferenceEquals(old, Current(control)))
+                        throw new Exception($"{effect}: the hidden page exposed the previous song on re-entry");
+                    await WaitAsync(() => Current(control) is not null);
+                    if (!control.IsCoverSettled("small"))
+                        throw new Exception($"{effect}: the cover on re-entry started at the wrong animation size");
+                }
+                finally { host.Children.Remove(control); }
+            }
+        }
+
         private static ImageSource? Current(ImageSwitcher control)
             => ((ShadowImage)control.FindName("AlbumArtImage")).Source;
 

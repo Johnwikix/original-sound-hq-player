@@ -1,3 +1,18 @@
+## 2026-11-19 修正 HDR 模糊裁切、封面换图节奏与播放页入场
+
+- `AnimatedTextBlock` 移除 HDR 标题转场上的额外辉光。歌名、专辑和艺人按参考白绘制原版文字动画。
+- `LyricsLineRenderer` 保留逐字歌词原有的模糊覆盖率，扩大发散边缘的绘制范围。发光强度 0、5、10 档的活动字芯最高分别为参考白的 1、1.5、2 倍，受有效峰值限制。
+- `LyricsSettingsControl` 复用原发光强度和已有数值，移除过渡版本的两个 HDR 增益滑条。
+- `PlaybackSceneCoverPresenter` 对淡入淡出、滑动和缩放采用与 XAML 相同的 350 毫秒缓动。
+- `NavigationService`、`PlayingDetailPage` 在不透明 HDR 首帧就绪后切入播放页，消除每次入场先暗后亮的闪变。
+
+## 2026-11-19 增强播放页 HDR 辉光，统一封面呈现并修正首帧
+
+- `CoverBackgroundSettingsControl`、`PlaybackHdrColor` 将原发光强度接入标题和逐字歌词的 HDR 辉光。HDR 设置新增相对白点的辉光亮度增益和独立光晕强度，默认 +35% 和 150%。
+- `AnimatedTextBlock`、`LyricsRenderCoordinator` 修正默认主题标题发灰，歌词悬停的亮色底纹绘制在文字下方。
+- `PlayingDetailPage`、`PlaybackSceneCoverPresenter` 在着色器和图片背景下将封面、阴影及换曲过渡绘入同一 HDR 交换链。普通封面在线性空间提亮 10%，高光仍受有效峰值约束。
+- `ImageSwitcher`、`PlayingDetailPage.Layout` 在首帧使用最终封面尺寸。`NowPlayingCanvas`、`NavigationService` 在页面转场与 HDR/SDR 首帧交接时保留已就绪的画面，修正双影和旧帧闪现。
+
 ## 2026-11-18 调整播放页文字辉光，移除简洁模式并回收 HDR 显存
 
 - `AnimatedTextBlock`、`LyricsLineRenderer` 按实际字色呈现标题与逐字辉光。静止白字和已唱白字使用参考白，活动亮光最高为参考白的 115%，受有效峰值限制。

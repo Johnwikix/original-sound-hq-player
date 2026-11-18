@@ -2739,6 +2739,7 @@ See the log for full details.</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>Playback page HDR</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Reference white brightness</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Highlight peak brightness</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>On the HDR playback page, lyric glow levels 0, 5, and 10 add 0%, +50%, and +100% to reference white, up to the HDR peak.</value></data>
   <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR is off</value></data>
   <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>This display is using SDR</value></data>
   <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Window material · SDR foreground</value></data>

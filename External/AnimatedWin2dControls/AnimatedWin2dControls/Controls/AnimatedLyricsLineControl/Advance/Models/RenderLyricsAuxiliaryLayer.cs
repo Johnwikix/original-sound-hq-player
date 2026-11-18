@@ -89,6 +89,7 @@ public sealed class RenderLyricsAuxiliaryLayer
         _crop!.SourceRectangle = source;
         _blur!.BlurAmount = (float)blur;
         _opacity!.Opacity = (float)(opacity * Reveal.Value);
+        source = source.ExtendForGaussianBlur(blur);
         var target = source;
         target.X += destination.X;
         target.Y += destination.Y;

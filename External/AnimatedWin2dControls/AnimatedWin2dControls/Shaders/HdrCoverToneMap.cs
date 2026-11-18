@@ -18,12 +18,15 @@ public readonly partial struct HdrCoverToneMap(float inputPeak, float outputPeak
         {
             float3 linear = PlaybackShaderColor.ToLinear(Hlsl.Saturate(pixel.XYZ / Hlsl.Max(pixel.W, 0.000001f)));
             float y = Hlsl.Dot(linear, new float3(0.2126f, 0.7152f, 0.0722f));
-            // Most album artwork was graded for SDR. Keep diffuse colors at their
-            // authored exposure and reserve a small, hue-preserving lift for near-white detail.
+            // Exposure is applied in linear light after the original near-white lift.
             float headroom = Hlsl.Max(outputPeak - sdrWhite, 0f);
             float limit = 0.25f * sdrWhite;
             float lift = limit * headroom / (limit + headroom);
-            float gain = sdrWhite + lift * Hlsl.SmoothStep(0.60f, 1f, y);
+            float gain = 1.10f * (sdrWhite + lift * Hlsl.SmoothStep(0.60f, 1f, y));
+            // With a tight display peak, roll off the extra gain using the brightest
+            // channel. A common gain preserves saturated colors and semi-transparent edges.
+            float brightest = Hlsl.Max(linear.X, Hlsl.Max(linear.Y, linear.Z));
+            gain -= Hlsl.Max(gain - outputPeak, 0f) * Hlsl.SmoothStep(0.60f, 1f, brightest);
             result = new float4(linear * (gain * pixel.W), pixel.W);
         }
         else
