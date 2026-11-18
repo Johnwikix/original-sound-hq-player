@@ -35,11 +35,16 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         public abstract void LoadResources();
         public abstract void Update(TimeSpan deltaTime);
-        public abstract void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds);
+        public void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
+        {
+            using var scope = CanvasDrawingSessionScope.Borrow(ds);
+            Draw(new PlaybackCanvasFrame(control), scope.Context);
+        }
 
-        /// <summary>Draws using a scoped native session, retaining the legacy extension contract.</summary>
-        public virtual void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
-            => Draw(control, ds.GetManagedSessionForCompatibility());
+        public void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
+            => Draw(new PlaybackCanvasFrame(control), ds);
+
+        public abstract void Draw(PlaybackCanvasFrame control, CanvasDrawContext ds);
         public abstract void Dispose();
 
         // ── 颜色入口 ─────────────────────────────────────────────────────

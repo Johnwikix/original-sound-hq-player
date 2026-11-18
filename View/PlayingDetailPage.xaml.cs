@@ -1,4 +1,4 @@
-using WinUIMusicPlayer.Controls;
+using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
@@ -35,6 +35,7 @@ namespace WinUIMusicPlayer.View
     {
         public PlayingDetailViewModel ViewModel { get; }
         public MainViewModel QueueViewModel { get; }
+        private readonly Windows.UI.ViewManagement.UISettings _motionSettings = new();
         private readonly ListViewCentering _queueCentering;
         private readonly PlaybackSelectionTracker _playbackSelection;
         private ILogger<PlayingDetailPage> _logger;
@@ -50,11 +51,13 @@ namespace WinUIMusicPlayer.View
             ViewModel = viewModel;
             QueueViewModel = App.Services.GetRequiredService<MainViewModel>();
             this.InitializeComponent();
+            InitializeHdrCover();
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             DataContext = this;
             _queueCentering = new ListViewCentering(CurrentPlayListViewPlayingDetail);
             _playbackSelection = new PlaybackSelectionTracker(CurrentPlayListViewPlayingDetail, ViewModel.AppViewModel, queue: true);
             Loaded += PlayingDetailPage_Loaded;
+            Unloaded += PlayingDetailPage_Unloaded;
             _logger = App.GetLogger<PlayingDetailPage>();
         }
 
@@ -62,14 +65,26 @@ namespace WinUIMusicPlayer.View
 
         private bool _isLoaded;
         private bool _disposed;
+        private XamlRoot? _hdrXamlRoot;
+        private double _hdrRasterizationScale;
+        private bool _sceneRegionsQueued;
         public bool IsLoaded => _isLoaded;
 
         private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_isLoaded || _disposed) return;
             _isLoaded = true;
+            _hdrXamlRoot = XamlRoot;
+            _hdrRasterizationScale = _hdrXamlRoot?.RasterizationScale ?? 1;
+            if (_hdrXamlRoot is not null)
+                _hdrXamlRoot.Changed += PlaybackXamlRootChanged;
+            if (SupportsAnimationSettingsEvent)
+                _motionSettings.AnimationsEnabledChanged += MotionSettingsChanged;
+            ViewModel.PropertyChanged += Presentation_PropertyChanged;
             ViewModel.RefreshPresentation();
             ApplyAnimatedTextEffect();
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
+            App.MainWindow.Activated += MainWindow_Activated;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
             _ = ChangeControlsFontSize();
@@ -77,16 +92,65 @@ namespace WinUIMusicPlayer.View
             NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
             NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
             UpdateLyricsRegion();
-            Loaded -= PlayingDetailPage_Loaded;
+            UpdateHdrPresentation();
+            UpdateHdrTitleRegion();
+            UpdateWindowRendering(App.MainWindow.AppWindow);
+        }
+
+        private void PlayingDetailPage_Unloaded(object sender, RoutedEventArgs e) => DetachPresentationEvents();
+
+        private void DetachPresentationEvents()
+        {
+            if (!_isLoaded) return;
+            _isLoaded = false;
+            if (_hdrXamlRoot is { } root)
+                root.Changed -= PlaybackXamlRootChanged;
+            _hdrXamlRoot = null;
+            if (SupportsAnimationSettingsEvent)
+                _motionSettings.AnimationsEnabledChanged -= MotionSettingsChanged;
+            ViewModel.PropertyChanged -= Presentation_PropertyChanged;
+            ViewModel.AppViewModel.PropertyChanged -= AppViewModel_PropertyChanged;
+            if (App.MainWindow is { } window)
+            {
+                window.SizeChanged -= MainWindow_SizeChanged;
+                window.Activated -= MainWindow_Activated;
+                window.AppWindow.Changed -= AppWindow_Changed;
+            }
+        }
+
+        private void Presentation_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PlayingDetailViewModel.UseHdrPresentation))
+                UpdateHdrPresentation();
+        }
+
+        private void PlaybackXamlRootChanged(XamlRoot sender, XamlRootChangedEventArgs args)
+        {
+            UpdateWindowRendering(App.MainWindow.AppWindow);
+            if (_hdrRasterizationScale != sender.RasterizationScale)
+            {
+                _hdrRasterizationScale = sender.RasterizationScale;
+                NowPlaying?.RetryHdrPresentation();
+            }
+            ScheduleLyricsRegionUpdate();
+        }
+
+        private void UpdateHdrPresentation()
+        {
+            if (!_isLoaded || _disposed) return;
+            var app = ViewModel.AppViewModel;
+            bool enabled = ViewModel.UseHdrPresentation;
+            NowPlaying?.SetHdrPresentation(enabled ? app.PlaybackHdrWhiteNits : 0,
+                enabled ? app.PlaybackHdrEffectivePeakNits : 0, ViewModel.IsBackgroundActive, app.PlaybackHdrDisplayId);
         }
 
         private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName is null or ""
                 or nameof(AppViewModel.IsFluidBackgroundEnabled)
-                or nameof(AppViewModel.EnableAdvancedLyricsEffect)
                 or nameof(AppViewModel.WindowBackgroundImagePath)
-                or nameof(AppViewModel.IsWin2dAnimatedText))
+                or nameof(AppViewModel.PlaybackHdrEnabled)
+                or nameof(AppViewModel.PlaybackHdrDisplayAvailable))
             {
                 if (DispatcherQueue.HasThreadAccess)
                     ViewModel.RefreshPresentation();
@@ -94,7 +158,16 @@ namespace WinUIMusicPlayer.View
                     DispatcherQueue.TryEnqueue(ViewModel.RefreshPresentation);
             }
 
-            if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
+            if (e.PropertyName is nameof(AppViewModel.PlaybackHdrDisplayId) or nameof(AppViewModel.PlaybackHdrWhiteNits)
+                or nameof(AppViewModel.PlaybackHdrEffectivePeakNits))
+            {
+                UpdateHdrPresentation();
+            }
+            else if (e.PropertyName == nameof(AppViewModel.IsPlayingDetailVisible))
+            {
+                UpdateWindowRendering(App.MainWindow.AppWindow);
+            }
+            else if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
             {
                 // null 也下发：让着色器回退内置配色，避免滞留上一首的调色板
                 NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
@@ -111,25 +184,35 @@ namespace WinUIMusicPlayer.View
             {
                 ApplyAnimatedTextEffect();
             }
-            else if (e.PropertyName == nameof(AppViewModel.IsWin2dAnimatedText))
-            {
-                ApplyAnimatedTextEffect();
-            }
         }
 
         private void AnimatedPlayingDetailTextBlock_Loaded(object sender, RoutedEventArgs e)
         {
             // Reapply the current effect after the Win2D template is ready.
             ApplyAnimatedTextEffect();
+            UpdateHdrTitleRegion();
+        }
+
+        private static readonly bool SupportsAnimationSettingsEvent =
+            Windows.Foundation.Metadata.ApiInformation.IsEventPresent("Windows.UI.ViewManagement.UISettings", "AnimationsEnabledChanged");
+
+        private void MotionSettingsChanged(Windows.UI.ViewManagement.UISettings sender, object args)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_isLoaded) ApplyAnimatedTextEffect();
+            });
         }
 
         private void ApplyAnimatedTextEffect()
         {
             var textBlock = AnimatedPlayingDetailTextBlock;
-            if (textBlock is null || !ViewModel.AppViewModel.IsWin2dAnimatedText)
+            if (textBlock is null)
                 return;
 
-            textBlock.TextEffect = CreateAnimatedTextEffect(ViewModel.AppViewModel.Win2dTextEffectType.Value);
+            textBlock.TextEffect = _motionSettings.AnimationsEnabled
+                ? CreateAnimatedTextEffect(ViewModel.AppViewModel.Win2dTextEffectType.Value)
+                : null;
         }
 
         private static AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateAnimatedTextEffect(AnimatedTextEffect type) => type switch
@@ -146,28 +229,68 @@ namespace WinUIMusicPlayer.View
 
         private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
         {
-            if (args.DidVisibilityChange)
-            {
-                bool visible = sender.IsVisible;
-                NowPlaying?.SetWindowPaused(!visible);
-                LyricsView?.SetWindowPaused(!visible);
-            }
+            if (args.DidVisibilityChange || args.DidPresenterChange || args.DidSizeChange)
+                UpdateWindowRendering(sender);
         }
+
+        private void UpdateWindowRendering(AppWindow window)
+        {
+            bool paused = !window.IsVisible || XamlRoot is { IsHostVisible: false }
+                || WindowHelper.IsIconic(AppData.HWnd);
+            NowPlaying?.SetWindowPaused(paused);
+            LyricsView?.SetWindowPaused(paused);
+        }
+
+        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+            => UpdateWindowRendering(App.MainWindow.AppWindow);
+
+        private void PlaybackLyrics_Loaded(object sender, RoutedEventArgs args)
+            => UpdateWindowRendering(App.MainWindow.AppWindow);
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
+            UpdateWindowRendering(App.MainWindow.AppWindow);
             _ = ChangeControlsFontSize();
+            ScheduleLyricsRegionUpdate();
         }
 
         private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
         {
-            // Reapply the cached presentation state after the Win2D template is ready.
-            NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
-            NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+            var canvas = (NowPlayingCanvas)sender;
+            AttachHdrCoverCanvas(canvas);
+            canvas.HdrPresentationChanged -= PlaybackHdrPresentationChanged;
+            canvas.HdrPresentationChanged += PlaybackHdrPresentationChanged;
 
-            // Recalculate after the Win2D template has completed layout so the
-            // coordinator receives coordinates in the current canvas.
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
+            canvas.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
+            canvas.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+            UpdateWindowRendering(App.MainWindow.AppWindow);
+            UpdateHdrPresentation();
+            ScheduleLyricsRegionUpdate();
+        }
+
+        private void PlaybackHdrPresentationChanged(bool active, bool failed)
+        {
+            // A failed first Present can already own a cover texture while the reported state is still SDR.
+            if (!active)
+            {
+                RestoreCoverPreview();
+                ReleaseHdrCoverTexture();
+            }
+            ViewModel.AppViewModel.ReportPlaybackHdrPresentation(active, failed);
+        }
+
+        private void AnimatedPlayingDetailTextBlock_SizeChanged(object sender, SizeChangedEventArgs e)
+            => UpdateHdrTitleRegion();
+
+        private void UpdateHdrTitleRegion()
+        {
+            if (NowPlaying is not { IsLoaded: true } canvas || AnimatedPlayingDetailTextBlock is not { } title
+                || !title.IsLoaded || title.ActualWidth <= 0 || title.ActualHeight <= 0)
+                return;
+
+            var bounds = title.TransformToVisual(canvas).TransformBounds(
+                new Windows.Foundation.Rect(0, 0, title.ActualWidth, title.ActualHeight));
+            canvas.SetHdrTitle(title, bounds);
         }
 
         private async Task ChangeControlsFontSize()
@@ -217,7 +340,7 @@ namespace WinUIMusicPlayer.View
                 {
                     _isPortraitWanted = wantPortrait;
                     ApplyAspectRatioLayout(wantPortrait, topHeight);
-                    UpdateLyricsRegion();
+                    ScheduleLyricsRegionUpdate();
                 }
             });
         }
@@ -454,33 +577,6 @@ namespace WinUIMusicPlayer.View
             CurrentPlayListTeachingTipPlayingDetail.IsOpen = false;
         }
 
-        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            if (ViewModel.AppViewModel.IsWin2dAnimatedText) return;
-            if (sender is AutoScrollView autoScrollView)
-            {
-                autoScrollView.IsPlaying = true;
-            }
-        }
-
-        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
-        {
-            if (ViewModel.AppViewModel.IsWin2dAnimatedText) return;
-            if (sender is AutoScrollView autoScrollView)
-            {
-                autoScrollView.IsPlaying = false;
-            }
-        }
-
-        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            if (ViewModel.AppViewModel.IsWin2dAnimatedText) return;
-            if (sender is AutoScrollView autoScrollView)
-            {
-                autoScrollView.IsPlaying = false;
-            }
-        }
-
         private void VolumeSlider_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             if (ViewModel.AppViewModel.IsMouseOverVolumeSlider)
@@ -508,12 +604,14 @@ namespace WinUIMusicPlayer.View
 
         public void PauseCanvasRendering()
         {
+            AnimatedPlayingDetailTextBlock.IsActive = false;
             NowPlaying?.PauseRendering();
             LyricsView?.PauseRendering();
         }
 
         public void ResumeCanvasRendering()
         {
+            AnimatedPlayingDetailTextBlock.IsActive = true;
             NowPlaying?.ResumeRendering();
             LyricsView?.ResumeRendering();
         }
@@ -524,17 +622,13 @@ namespace WinUIMusicPlayer.View
             {
                 // 页面先于队列弹层关闭时也要提交拖拽，避免队列冻结在重排中。
                 ViewModel?.AppViewModel?.State.Queue.EndReorder();
-                App.MainWindow?.SizeChanged -= MainWindow_SizeChanged;
-                if (App.MainWindow?.AppWindow is { } appWindow)
-                    appWindow.Changed -= AppWindow_Changed;
-                if (ViewModel?.AppViewModel is { } appvm)
-                    appvm.PropertyChanged -= AppViewModel_PropertyChanged;
-                LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
-                LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
-                LyricsView?.ShutdownLyricsCanvas();
-                AnimatedPlayingDetailTextBlock?.PrepareForShutdown();
-                NowPlaying?.ExceptionOccurred -= BackGround_ExceptionOccurred;
+                DetachPresentationEvents();
+                DisposeHdrCover();
+                LyricsView?.LyricLineClicked -= LyricsView_LyricInteracted;
+                LyricsView?.RenderError -= LyricsView_ExceptionInteracted;
+                LyricsView?.PrepareForShutdown();
                 NowPlaying?.Dispose();
+                AnimatedPlayingDetailTextBlock?.PrepareForShutdown();
             }
         }
 
@@ -581,11 +675,6 @@ namespace WinUIMusicPlayer.View
             _logger.LogError(e, "背景渲染错误");
         }
 
-        private void NowPlaying_LyricLineClicked(object? sender, TimeSpan e)
-        {
-            LyricsView_LyricInteracted(sender, e);
-        }
-
         private void LyricsRegionHost_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateLyricsRegion();
@@ -593,7 +682,16 @@ namespace WinUIMusicPlayer.View
 
         private void ScheduleLyricsRegionUpdate()
         {
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
+            if (!_sceneRegionsQueued)
+                _sceneRegionsQueued = DispatcherQueue.TryEnqueue(UpdateSceneRegions);
+        }
+
+        private void UpdateSceneRegions()
+        {
+            _sceneRegionsQueued = false;
+            if (!_isLoaded || _disposed) return;
+            UpdateLyricsRegion();
+            UpdateHdrTitleRegion();
         }
 
         private void UpdateLyricsRegion()

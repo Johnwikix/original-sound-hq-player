@@ -10,8 +10,9 @@ namespace AnimatedWin2dControls.Shaders
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
-    public readonly partial struct SnowEffect(float time, float2 dispatchSize, float density, float speed) : ID2D1PixelShader
+    public readonly partial struct SnowEffect(float time, float2 dispatchSize, float density, float speed, float hdrWhite = 0f) : ID2D1PixelShader
     {
         public float4 Execute()
         {
@@ -53,6 +54,11 @@ namespace AnimatedWin2dControls.Shaders
                 }
             }
 
+            if (hdrWhite > 0f)
+            {
+                float alpha = Hlsl.Saturate(snow);
+                return new float4(new float3(alpha * hdrWhite, alpha * hdrWhite, alpha * hdrWhite), alpha);
+            }
             return (float4)snow;
         }
     }

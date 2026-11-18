@@ -1195,8 +1195,8 @@
   <data name="RebootToApply" xml:space="preserve">
     <value>Değişikliklerin etkili olması için uygulamayı yeniden başlatın.</value>
   </data>
-  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
-    <value>Win2D animasyonlu metin bloğu</value>
+  <data name="PlaybackTitleEffect.Text" xml:space="preserve">
+    <value>Başlık animasyonu</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
     <value>Varsayılan (düşük GPU yükü)</value>
@@ -1231,14 +1231,11 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Şarkı sözü zaman kaydırması</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>Gelişmiş sözcük sözcük şarkı sözleri efektlerini etkinleştir</value>
+  <data name="WordLyricsEffects.Text" xml:space="preserve">
+    <value>Sözcük sözcük şarkı sözü efektleri</value>
   </data>
   <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
     <value>Özel şarkı sözü rengi</value>
-  </data>
-  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
-    <value>Yalnızca gelişmiş şarkı sözleri için</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Ayarlar</value>
@@ -2317,7 +2314,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Ana pencere arka plan resmi</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Arka plan resmi</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Ana pencere için yerel bir resim seçin. Pencere malzemesini geri yüklemek için resmi temizleyin. Gölgelendirici arka planı kapalı ve gelişmiş karaoke açıkken resim sözler tuvalinde çizilir.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Ana pencere için yerel bir görsel seçin. Pencere malzemesini geri yüklemek için görseli kaldırın.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Resim seç</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Resmi temizle</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Bulanıklık</value></data>
@@ -2739,4 +2736,13 @@ SHA-256: {5}
 Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopyalanan dosyalar korunur ancak aktarım kayıtları tam olarak güncellenemedi.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Hedef yol çakışıyor veya dosyanın kaynağı doğrulanamadı. Üzerine yazılmaması için atlandı: {0}</value></data>
+  <data name="PlaybackHdr" xml:space="preserve"><value>Oynatma sayfasında HDR</value></data>
+  <data name="PlaybackHdrWhite" xml:space="preserve"><value>Referans beyaz parlaklığı</value></data>
+  <data name="PlaybackHdrPeak" xml:space="preserve"><value>Vurguların tepe parlaklığı</value></data>
+  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR kapalı</value></data>
+  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Bu ekran SDR kullanıyor</value></data>
+  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Pencere malzemesi · SDR ön plan</value></data>
+  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR kullanılamıyor · SDR etkin</value></data>
+  <data name="PlaybackHdrReady" xml:space="preserve"><value>Oynatma sayfası için HDR hazır</value></data>
+  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR etkin · referans beyazı {0:0} nit · tepe {1:0} nit</value></data>
 </root>

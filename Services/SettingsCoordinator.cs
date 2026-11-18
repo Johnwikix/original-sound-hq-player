@@ -17,6 +17,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     public event Action? ThemeChanged;
     private bool _started;
     private DispatcherQueueTimer? _desktopStyleTimer;
+    private DispatcherQueueTimer? _hdrSaveTimer;
 
     internal void ScheduleDesktopLyricsStyleCommit()
     {
@@ -50,6 +51,20 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     {
         switch (e.PropertyName)
         {
+            case nameof(state.Preferences.PlaybackHdrReferenceWhiteNits):
+            case nameof(state.Preferences.PlaybackHdrPeakNits):
+                if (!state.Lifecycle.IsReady) break;
+                if (_hdrSaveTimer is null)
+                {
+                    _hdrSaveTimer = App.MainWindow.DispatcherQueue.CreateTimer();
+                    _hdrSaveTimer.IsRepeating = false;
+                    _hdrSaveTimer.Interval = TimeSpan.FromMilliseconds(350);
+                    _hdrSaveTimer.Tick += SaveHdrPreference;
+                }
+                _hdrSaveTimer.Stop();
+                _hdrSaveTimer.Start();
+                break;
+            case nameof(state.Preferences.PlaybackHdrEnabled):
             case nameof(state.Preferences.UseIndependentDesktopLyricsFont):
             case nameof(state.Preferences.WindowBackgroundImagePath):
             case nameof(state.Preferences.WindowBackgroundBlurAmount):
@@ -570,12 +585,19 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     }
 
 
+    private void SaveHdrPreference(DispatcherQueueTimer sender, object args)
+    {
+        if (_started && state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
+    }
+
     public Task FlushAsync() => database.FlushSettingsAsync();
 
     public void Dispose()
     {
         if (!_started) return;
         _started = false;
+        _hdrSaveTimer?.Stop();
+        if (_hdrSaveTimer is not null) _hdrSaveTimer.Tick -= SaveHdrPreference;
         _desktopStyleTimer?.Stop();
         if (_desktopStyleTimer is not null) _desktopStyleTimer.Tick -= CommitDesktopStyle;
         state.Preferences.PropertyChanged -= OnPreferencesChanged;

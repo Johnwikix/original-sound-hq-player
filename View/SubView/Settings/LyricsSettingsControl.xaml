@@ -296,14 +296,12 @@
                     </Grid>
                 </controls:SettingsCard>
 
-                <!--  高级歌词效果:依赖总开关的细项收进二级折叠  -->
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
-                        <TextBlock x:Uid="EnableAdvancedLyricsEffect" TextWrapping="Wrap" />
+                        <TextBlock x:Uid="WordLyricsEffects" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="CharFloatAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
@@ -324,7 +322,7 @@
                             </Grid>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="CharScaleAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
@@ -345,7 +343,7 @@
                             </Grid>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="GlowAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
@@ -366,7 +364,7 @@
                             </Grid>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="LongSyllableThreshold" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
@@ -387,7 +385,7 @@
                             </Grid>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="TargetFrameRate" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
@@ -406,13 +404,10 @@
                             </ComboBox>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="EnableCustomLyricsColor" />
                             </controls:SettingsCard.Header>
-                            <controls:SettingsCard.Description>
-                                <TextBlock x:Uid="EnableCustomLyricsColorHint" TextWrapping="Wrap" />
-                            </controls:SettingsCard.Description>
                             <Grid Width="300" ColumnDefinitions="Auto,*">
                                 <ToggleSwitch
                                     Grid.Column="0"
@@ -422,12 +417,12 @@
                                 <controls:ColorPickerButton
                                     Grid.Column="1"
                                     HorizontalAlignment="Stretch"
-                                    IsEnabled="{x:Bind tool:BindUtils.BothTrue(ViewModel.AppViewModel.IsCustomLyricsColorEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect), Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsCustomLyricsColorEnabled, Mode=OneWay}"
                                     SelectedColor="{x:Bind ViewModel.AppViewModel.LyricsCustomColor, Mode=TwoWay}" />
                             </Grid>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="ScrollEasingType" />
                             </controls:SettingsCard.Header>
@@ -451,7 +446,7 @@
                             </ComboBox>
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                        <controls:SettingsCard>
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="ScrollEasingMode" />
                             </controls:SettingsCard.Header>

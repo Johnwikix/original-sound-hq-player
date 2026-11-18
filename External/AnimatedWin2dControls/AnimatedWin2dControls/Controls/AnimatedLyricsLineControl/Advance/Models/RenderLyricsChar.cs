@@ -1,4 +1,6 @@
 #nullable enable
+using AnimatedWin2dControls.Shaders;
+using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas.Effects;
 using System;
 using Windows.Foundation;
@@ -18,12 +20,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         private CropEffect? _crop;
         private GaussianBlurEffect? _glow;
+        private PixelShaderEffect<PlaybackTextHaloEffect>? _hdrHalo;
+        private PixelShaderEffect<PlaybackTextGlowCoreEffect>? _hdrGlow;
 
         /// <summary>Gets the cached crop effect when this character first needs native drawing.</summary>
         public CropEffect Crop => _crop ??= new CropEffect { BorderMode = EffectBorderMode.Hard };
 
         /// <summary>Gets the cached glow effect when glow or retirement blur is actually drawn.</summary>
         public GaussianBlurEffect Glow => _glow ??= new GaussianBlurEffect { Source = Crop, BorderMode = EffectBorderMode.Soft };
+
+        internal PixelShaderEffect<PlaybackTextHaloEffect> GetHdrHalo()
+        {
+            if (_hdrHalo is null)
+            {
+                _hdrHalo = new PixelShaderEffect<PlaybackTextHaloEffect>();
+                _hdrHalo.Sources[0] = Glow;
+            }
+            return _hdrHalo;
+        }
+
+        internal PixelShaderEffect<PlaybackTextGlowCoreEffect> GetHdrGlow()
+            => _hdrGlow ??= new PixelShaderEffect<PlaybackTextGlowCoreEffect>();
 
         public double ProgressPlayed { get; set; }
 
@@ -45,12 +62,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public void DisposeEffects()
         {
             // 只退休已经创建的效果；设备/布局缓存重建允许同一字符再次惰性创建。
+            var hdrGlow = _hdrGlow;
+            var hdrHalo = _hdrHalo;
             var glow = _glow;
             var crop = _crop;
+            _hdrGlow = null;
+            _hdrHalo = null;
             _glow = null;
             _crop = null;
-            try { glow?.Dispose(); }
-            finally { crop?.Dispose(); }
+            try { hdrGlow?.Dispose(); }
+            finally
+            {
+                try { hdrHalo?.Dispose(); }
+                finally
+                {
+                    try { glow?.Dispose(); }
+                    finally { crop?.Dispose(); }
+                }
+            }
         }
     }
 }

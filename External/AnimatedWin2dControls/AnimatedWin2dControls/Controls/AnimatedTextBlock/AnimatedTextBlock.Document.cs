@@ -27,6 +27,7 @@ public sealed partial class AnimatedTextBlock
     private AnimatedTextDocument _renderedDocument;
     private AnimatedTextDocument _transitionSourceDocument;
     private ParagraphLayouts[] _documentLayouts;
+    private CanvasDevice _documentDevice;
     private bool _documentLayoutDirty = true;
     private int _documentFormatVersion;
 
@@ -116,14 +117,14 @@ public sealed partial class AnimatedTextBlock
         return new Size(measuredWidth, height);
     }
 
-    private static CanvasTextLayout CreateParagraphLayout(CanvasControl sender, string text, CanvasTextFormat format)
+    private static CanvasTextLayout CreateParagraphLayout(ICanvasResourceCreator sender, double width, string text, CanvasTextFormat format)
     {
-        var layout = new CanvasTextLayout(sender, text, format, (float)sender.Size.Width, float.MaxValue);
+        var layout = new CanvasTextLayout(sender, text, format, (float)width, float.MaxValue);
         try
         {
             layout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
             layout.VerticalAlignment = CanvasVerticalAlignment.Top;
-            layout.RequestedSize = new Size(sender.Size.Width, Math.Ceiling(layout.LayoutBounds.Height));
+            layout.RequestedSize = new Size(width, Math.Ceiling(layout.LayoutBounds.Height));
             return layout;
         }
         catch
@@ -133,7 +134,7 @@ public sealed partial class AnimatedTextBlock
         }
     }
 
-    private void PrepareDocumentLayouts(CanvasControl sender)
+    private void PrepareDocumentLayouts(ICanvasResourceCreator sender, double width)
     {
         bool needsDiff = _textEffect != null && _currentState == AnimatedTextBlockRedrawState.TextChanged;
         // Layout changes during a transition must keep its original source frame.
@@ -161,10 +162,10 @@ public sealed partial class AnimatedTextBlock
                 item.HasColorGlyphs = ShapedText.MayContainColorGlyphs(newText) || ShapedText.MayContainColorGlyphs(item.OldText);
                 layouts[i] = item;
                 item.Format = CreateParagraphFormat(paragraph);
-                item.NewLayout = CreateParagraphLayout(sender, newText, item.Format);
+                item.NewLayout = CreateParagraphLayout(sender, width, newText, item.Format);
                 if (needsDiff)
                 {
-                    item.OldLayout = CreateParagraphLayout(sender, item.OldText, item.Format);
+                    item.OldLayout = CreateParagraphLayout(sender, width, item.OldText, item.Format);
                     // Fade/Wipe operate on complete layouts; grapheme effects share
                     // one combined progress list, including paragraph-wide staggering.
                     if (_textEffect is not Effects.TextFadeEffect && _textEffect is not Effects.TextWipeEffect)
@@ -186,6 +187,7 @@ public sealed partial class AnimatedTextBlock
         DisposeDocumentLayouts();
         TextRenderingHelper.DisposeShapedText(_diffResults);
         _documentLayouts = layouts;
+        _documentDevice = sender.Device;
         _diffResults = combinedDiffs;
         _renderedDocument = Document;
         _transitionSourceDocument = needsDiff ? sourceDocument : Document;
@@ -193,14 +195,17 @@ public sealed partial class AnimatedTextBlock
         _documentLayoutDirty = false;
     }
 
-    private void DrawDocument(CanvasControl sender, CanvasDrawingSession ds)
+    private void DrawDocument(ICanvasResourceCreator sender, double width, CanvasDrawingSession ds)
     {
-        if (_documentLayoutDirty || _documentLayouts == null || _documentFormatVersion != _formatVersion)
+        bool deviceChanged = !ReferenceEquals(_documentDevice, sender.Device);
+        if (deviceChanged || _documentLayoutDirty || _documentLayouts == null || _documentFormatVersion != _formatVersion)
         {
+            if (deviceChanged)
+                ApplyTextForeground(sender);
             StopHoverScroll();
             if (_currentState == AnimatedTextBlockRedrawState.Animating)
                 SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
-            PrepareDocumentLayouts(sender);
+            PrepareDocumentLayouts(sender, width);
         }
         if (_currentState == AnimatedTextBlockRedrawState.TextChanged)
         {
@@ -211,7 +216,7 @@ public sealed partial class AnimatedTextBlock
         }
         if (_currentState == AnimatedTextBlockRedrawState.Idle)
         {
-            EnsureDocumentHoverScroll(sender);
+            EnsureDocumentHoverScroll(sender, (float)width);
             if (_hoverLines != null)
             {
                 foreach (var line in _hoverLines)
@@ -249,7 +254,7 @@ public sealed partial class AnimatedTextBlock
         }
     }
 
-    private void EnsureDocumentHoverScroll(CanvasControl sender)
+    private void EnsureDocumentHoverScroll(ICanvasResourceCreator sender, float width)
     {
         if (!CanPrepareHoverScroll()) return;
         _hoverChecked = true;
@@ -262,7 +267,7 @@ public sealed partial class AnimatedTextBlock
         try
         {
             foreach (var paragraph in _documentLayouts)
-                scrollable |= AppendHoverLines(sender, paragraph.NewLayout, paragraph.Format,
+                scrollable |= AppendHoverLines(sender, width, paragraph.NewLayout, paragraph.Format,
                     paragraph.NewText, paragraph.Y, (float)paragraph.Paragraph.Opacity, lines);
             if (scrollable)
             {
@@ -282,5 +287,6 @@ public sealed partial class AnimatedTextBlock
         if (_documentLayouts == null) return;
         foreach (var paragraph in _documentLayouts) paragraph.Dispose();
         _documentLayouts = null;
+        _documentDevice = null;
     }
 }

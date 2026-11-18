@@ -27,11 +27,12 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DRequiresScenePosition]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     public readonly partial struct RotatingMeshCompositeEffect(
         float2 dispatchSize,
         bool isDark,
         float lumaStrength,
-        float ditherStrength) : ID2D1PixelShader
+        float ditherStrength, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         public float4 Execute()
         {
@@ -43,9 +44,12 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float3 color = SampleTreatedMaterial(meshUv);
 
-            color = FinishMaterial(color, scene);
-
-            return new float4(Hlsl.Saturate(color.X), Hlsl.Saturate(color.Y), Hlsl.Saturate(color.Z), 1f);
+            float3 standard = FinishMaterial(color, scene);
+            float crest = Hlsl.Dot(color, new float3(0.2126f, 0.7152f, 0.0722f)) * 0.6f;
+            float3 output = hdrWhite > 0f
+                ? PlaybackShaderColor.Background(Hlsl.Max(color, 0.07f), hdrWhite, hdrPeak, crest)
+                : Hlsl.Saturate(standard);
+            return new float4(output, 1f);
         }
 
         /// <summary>

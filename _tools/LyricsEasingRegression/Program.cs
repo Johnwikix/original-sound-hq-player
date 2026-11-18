@@ -289,6 +289,8 @@ foreach (string view in new[] { "View/SubView/SettingsDialog.xaml", "View/SubVie
 {
     var xaml = XDocument.Load(Path.Combine(root, view));
     XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+    Check(!xaml.Descendants().Attributes().Any(a => a.Value.Contains("EnableAdvancedLyricsEffect", StringComparison.Ordinal)),
+        $"Word effects must be directly available, including for upgraded users: {view}");
     foreach (string uid in new[] { "EasingTypeFlowWave", "EaseModeFlowWave" })
         Check(xaml.Descendants().Count(e => (string?)e.Attribute(x + "Uid") == uid) == 1,
             $"Missing setting option: {view}, {uid}");

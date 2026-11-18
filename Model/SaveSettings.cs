@@ -71,6 +71,9 @@ namespace WinUIMusicPlayer.Model
         public int CoverSize { get; set; } = 150;
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;
         public bool IsFluidBackgroundEnabled { get; set; } = true;
+        public bool PlaybackHdrEnabled { get; set; }
+        public double PlaybackHdrReferenceWhiteNits { get; set; } = 300;
+        public double PlaybackHdrPeakNits { get; set; } = 600;
         public int BackgroundShader { get; set; } = 0;   // 0=Fluid, 1=PS3XMB, 2=RotatingMesh, 3=LiquidFlow, 4=GradientFlow, 5=WavyBackground, 6=ChromaticResonance (与 BackgroundShaderMode 枚举一致)
         public bool IsFogEffectEnabled { get; set; } = false;
         public bool IsSnowEffectEnabled { get; set; } = false;
@@ -97,7 +100,6 @@ namespace WinUIMusicPlayer.Model
         public bool UseImageDominantTheme { get; set; } = false;
         public bool EnableLightWave { get; set; } = true;
         public int PaletteAlgorithm { get; set; } = 0;
-        public bool IsWin2dAnimatedText { get; set; } = true;
         public bool IsHoverScrollEnabled { get; set; } = false;
         public double CharFloatAmount { get; set; } = 5.0;
         public double CharScaleAmount { get; set; } = 110.0;
@@ -107,7 +109,6 @@ namespace WinUIMusicPlayer.Model
         public double TranslatedOpacityPercent { get; set; } = 60.0;
         public double UnplayedOpacityPercent { get; set; } = 50.0;
         public double TargetFrameRate { get; set; } = 120.0;
-        public bool EnableAdvancedLyricsEffect { get; set; } = true;
         [JsonConverter(typeof(LyricsEasingTypeJsonConverter))]
         public EasingType ScrollEasingType { get; set; } = EasingType.FlowWave;
         [JsonConverter(typeof(LyricsEaseModeJsonConverter))]

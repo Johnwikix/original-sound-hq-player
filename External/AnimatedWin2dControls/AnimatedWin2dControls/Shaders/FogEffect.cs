@@ -10,8 +10,9 @@ namespace AnimatedWin2dControls.Shaders
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
-    public readonly partial struct FogEffect(float time, float2 dispatchSize) : ID2D1PixelShader
+    public readonly partial struct FogEffect(float time, float2 dispatchSize, float hdrWhite = 0f) : ID2D1PixelShader
     {
         private static readonly Float2x2 _noiseMatrix = new Float2x2(1.6f, -1.2f, 1.2f, 1.6f);
 
@@ -104,6 +105,8 @@ namespace AnimatedWin2dControls.Shaders
             }
 
             // 对应 GLSL 'fragColor /= vec4(2.0);'
+            if (hdrWhite > 0f)
+                totalColor.XYZ *= hdrWhite;
             return totalColor / 2.0f;
         }
     }

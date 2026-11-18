@@ -1195,8 +1195,8 @@
   <data name="RebootToApply" xml:space="preserve">
     <value>変更を適用するにはアプリを再起動してください。</value>
   </data>
-  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
-    <value>Win2D アニメーションテキストブロック</value>
+  <data name="PlaybackTitleEffect.Text" xml:space="preserve">
+    <value>タイトルアニメーション</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
     <value>デフォルト(GPU 負荷が低い)</value>
@@ -1231,14 +1231,11 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>歌詞タイムオフセット</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>�߶Ȥ�һ�Z���ĸ��~���ե����Ȥ��Є��ˤ���</value>
+  <data name="WordLyricsEffects.Text" xml:space="preserve">
+    <value>歌詞の単語ごとのエフェクト</value>
   </data>
   <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
     <value>Custom Lyrics Color</value>
-  </data>
-  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
-    <value>For Advanced Lyrics only</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>設定</value>
@@ -2317,7 +2314,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>メインウィンドウの画像背景</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>背景画像</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>メインウィンドウの背景にローカル画像を選択します。解除すると元のウィンドウ素材に戻ります。シェーダー背景を無効にして高度な歌詞効果を有効にすると、画像は歌詞キャンバスで描画されます。</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>メインウィンドウの背景に使うローカル画像を選択します。画像を解除すると元のウィンドウ素材に戻ります。</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>画像を選択</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>画像を解除</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>ぼかしの強さ</value></data>
@@ -2739,4 +2736,13 @@ SHA-256: {5}
 詳細はログを確認してください。</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>コピー済みのファイルは保持されますが、転送記録を完全に更新できませんでした。</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>転送先のパスが競合するか、ファイルの対応を確認できません。上書きを避けるためスキップしました：{0}</value></data>
+  <data name="PlaybackHdr" xml:space="preserve"><value>再生ページの HDR</value></data>
+  <data name="PlaybackHdrWhite" xml:space="preserve"><value>基準白の輝度</value></data>
+  <data name="PlaybackHdrPeak" xml:space="preserve"><value>ハイライトのピーク輝度</value></data>
+  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR はオフです</value></data>
+  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>このディスプレイは SDR です</value></data>
+  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>ウィンドウ素材 · 前景は SDR</value></data>
+  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR を表示できないため SDR を使用中</value></data>
+  <data name="PlaybackHdrReady" xml:space="preserve"><value>再生ページの HDR 準備完了</value></data>
+  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR 表示中 · 基準白 {0:0} nit · ピーク {1:0} nit</value></data>
 </root>

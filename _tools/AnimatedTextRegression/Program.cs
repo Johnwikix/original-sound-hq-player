@@ -6,13 +6,17 @@ using System.Threading.Tasks;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Interop;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Windows.Foundation;
+using Windows.Graphics.DirectX;
 
 namespace AnimatedTextRegression;
 
@@ -56,6 +60,169 @@ public sealed partial class TestApp : Application
     private static float HoverOffset(AnimatedTextBlock c, int index) =>
         (float)typeof(AnimatedTextBlock).GetMethod("GetHoverOffset", Private).Invoke(c,
             new object[] { LineValue<float>(c, index, "Distance"), LineValue<float>(c, index, "LoopDistance") });
+    private string CheckHdrTitle(AnimatedTextBlock control, float dpi, float scale)
+    {
+        control.RequestedTheme = ElementTheme.Dark;
+        SetForeground(Microsoft.UI.Colors.White);
+        control.TextEffect = null;
+        control.TextAlignment = TextAlignment.Left;
+        control.Document = DocumentLayoutRegressionPage.CreateDocument("Static title", "Album\r\nArtist", 44, 30);
+        var canvas = (CanvasControl)Field(control, "_canvas");
+        var device = canvas.Device;
+        var size = canvas.Size;
+        var region = new Rect(0, 0, size.Width, size.Height);
+        var frame = new PlaybackCanvasFrame(device, size, dpi, PlaybackHdrColor.FromNits(200, 600));
+        using var target = new CanvasRenderTarget(device, (float)size.Width * scale, (float)size.Height * scale, dpi,
+            DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
+        Check(target.Dpi == dpi, $"HDR title target DPI is {dpi}");
+        int titleBottom = (int)Math.Ceiling(62 * scale * dpi / 96f);
+        Invoke(control, "SetScenePresentation", true);
+        var defaultPaper = Measure(Draw(TimeSpan.Zero, useFloatPrecision: false));
+        var paper = Measure(Draw(TimeSpan.Zero));
+        Check(Math.Abs(paper.Title.X - 2.5f) < 0.015f && paper.Metadata is > 1 and <= 2.5f,
+            $"Static HDR title and metadata stay at paper white ({paper})");
+        Check(canvas.Opacity == 0 && !(bool)Field(control, "_isClockRegistered"),
+            "HDR title uses only the scene clock and drawing surface");
+        var peer = FrameworkElementAutomationPeer.CreatePeerForElement(control)!;
+        Check(peer.GetAutomationControlType() == AutomationControlType.Text && peer.GetName() == "Static title",
+            "The composited title exposes its document title through a Text peer");
+        AutomationProperties.SetName(control, "Accessible track title");
+        AutomationProperties.SetHelpText(control, "Album and artist");
+        Check(peer.GetName() == "Accessible track title" && peer.GetHelpText() == "Album and artist",
+            "The title peer respects the current AutomationProperties name and help text");
+        control.ClearValue(AutomationProperties.NameProperty);
+        control.ClearValue(AutomationProperties.HelpTextProperty);
+
+        BeginWipe("Transition title");
+        var transition = Measure(Draw(TimeSpan.FromMilliseconds(320)));
+        Check(Math.Abs(transition.Title.X - 2.875f) < 0.015f && transition.Metadata is > 0 and <= 2.5f
+            && transition.PartialCoverage, $"The title glow reaches 115% of paper white with soft edges ({transition})");
+        var tight = Measure(Draw(TimeSpan.Zero, PlaybackHdrColor.FromNits(200, 206)));
+        var noHeadroom = Measure(Draw(TimeSpan.Zero, PlaybackHdrColor.FromNits(200, 200)));
+        Check(Math.Abs(tight.Title.X - 206f / 80) < 0.006f && Math.Abs(noHeadroom.Title.X - 2.5f) < 0.015f,
+            $"Title glow follows the display cap ({tight}, {noHeadroom})");
+        var fading = Measure(Draw(TimeSpan.FromMilliseconds(510)));
+        var settled = Measure(Draw(TimeSpan.FromMilliseconds(200)));
+        Check(fading.Title.X > 2.5f && fading.Title.X < transition.Title.X && Math.Abs(settled.Title.X - 2.5f) < 0.015f,
+            $"Title glow fades back to paper white ({transition}, {fading}, {settled})");
+
+        control.RequestedTheme = ElementTheme.Light;
+        SetForeground(Microsoft.UI.Colors.Black);
+        control.TextEffect = null;
+        control.Document = DocumentLayoutRegressionPage.CreateDocument("Dark title", "Album\r\nArtist", 44, 30);
+        byte[] darkIdle = Draw(TimeSpan.Zero);
+        BeginWipe("Dark title");
+        byte[] darkActive = Draw(TimeSpan.FromMilliseconds(320));
+        var dark = Measure(darkActive);
+        float darkHaloCoverage = 0;
+        for (int offset = 0; offset < darkActive.Length; offset += 8)
+        {
+            if (offset / 8 / (int)target.SizeInPixels.Width >= titleBottom) break;
+            if (ReadHalf(darkIdle, offset + 6) <= 0.001f)
+                darkHaloCoverage = Math.Max(darkHaloCoverage, ReadHalf(darkActive, offset + 6));
+        }
+        Check(dark.Title.X <= 0.001f && dark.OpaqueCoverage && darkHaloCoverage is > 0.02f and < 0.24f,
+            $"Light-theme text stays black with a subtle dark halo ({dark}, halo coverage {darkHaloCoverage:F3})");
+        Draw(TimeSpan.FromSeconds(2));
+
+        control.RequestedTheme = ElementTheme.Dark;
+        var tint = Windows.UI.Color.FromArgb(255, 236, 145, 85);
+        SetForeground(tint);
+        var tintIdle = Measure(Draw(TimeSpan.Zero));
+        BeginWipe("Tinted title");
+        var tintActive = Measure(Draw(TimeSpan.FromMilliseconds(320)));
+        float hueDrift = System.Numerics.Vector3.Distance(System.Numerics.Vector3.Normalize(tintIdle.Title),
+            System.Numerics.Vector3.Normalize(tintActive.Title));
+        Check(float.IsFinite(hueDrift) && hueDrift < 0.008f && tintActive.Title.X > tintIdle.Title.X,
+            $"Title glow retains custom hues ({tintIdle}, {tintActive})");
+        Draw(TimeSpan.FromSeconds(2));
+
+        Invoke(control, "SetScenePresentation", false);
+        Check(canvas.Opacity == 1 && Field(control, "_sceneTarget") == null && Field(control, "_sceneTitleGlow") == null,
+            "The usual title canvas is restored and glow resources are released when the scene is detached");
+
+        if (dpi == 96 && scale == 1)
+            CheckDetachedSceneDevice();
+
+        return $"{dpi:G} DPI at {scale:G}x: default static {defaultPaper.Title.X:F3}, FP16 static/glow/fade/settled {paper.Title.X:F3}/{transition.Title.X:F3}/{fading.Title.X:F3}/{settled.Title.X:F3}, tight peak {tight.Title.X:F3}, dark halo coverage {darkHaloCoverage:F3}, custom hue drift {hueDrift:F5}";
+
+        void SetForeground(Windows.UI.Color color)
+            => control.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
+
+        void BeginWipe(string title)
+        {
+            control.TextEffect = new TextWipeEffect { AnimationDuration = TimeSpan.FromSeconds(1) };
+            control.Document = DocumentLayoutRegressionPage.CreateDocument(title, "Album\r\nArtist", 44, 30);
+            Draw(TimeSpan.Zero);
+        }
+
+        byte[] Draw(TimeSpan elapsed, PlaybackHdrColor? hdr = null, bool useFloatPrecision = true)
+        {
+            using (var drawing = target.CreateDrawingSession())
+            {
+                drawing.Clear(Microsoft.UI.Colors.Transparent);
+                drawing.EffectBufferPrecision = useFloatPrecision ? CanvasBufferPrecision.Precision16Float : null;
+                drawing.Transform = System.Numerics.Matrix3x2.CreateScale(scale);
+                Invoke(control, "DrawInScene", drawing, hdr is { } color ? frame with { Hdr = color } : frame, region, elapsed);
+            }
+            return target.GetPixelBytes();
+        }
+
+        (System.Numerics.Vector3 Title, float Metadata, bool PartialCoverage, bool OpaqueCoverage) Measure(byte[] pixels)
+        {
+            int width = (int)target.SizeInPixels.Width;
+            var title = System.Numerics.Vector3.Zero;
+            float metadata = 0;
+            bool transparentEdge = false, opaque = false;
+            for (int i = 0; i < pixels.Length; i += 8)
+            {
+                var rgb = new System.Numerics.Vector3(ReadHalf(pixels, i), ReadHalf(pixels, i + 2), ReadHalf(pixels, i + 4));
+                if (i / 8 / width < titleBottom)
+                {
+                    title = System.Numerics.Vector3.Max(title, rgb);
+                    float coverage = ReadHalf(pixels, i + 6);
+                    transparentEdge |= coverage is > 0.05f and < 0.95f;
+                    opaque |= coverage == 1;
+                }
+                else
+                {
+                    metadata = Math.Max(metadata, rgb.X);
+                }
+            }
+            return (title, metadata, transparentEdge, opaque);
+        }
+
+        void CheckDetachedSceneDevice()
+        {
+            using var isolated = new CanvasDevice();
+            using var isolatedTarget = new CanvasRenderTarget(isolated, (float)size.Width, (float)size.Height, 96,
+                DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
+            control.Foreground = new Microsoft.UI.Xaml.Media.LinearGradientBrush
+            {
+                GradientStops =
+                {
+                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Microsoft.UI.Colors.White },
+                    new Microsoft.UI.Xaml.Media.GradientStop { Color = Microsoft.UI.Colors.LightGray, Offset = 1 }
+                }
+            };
+            Invoke(control, "SetScenePresentation", true);
+            using (var drawing = isolatedTarget.CreateDrawingSession())
+            {
+                drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+                Invoke(control, "DrawInScene", drawing, frame with { Device = isolated }, region, TimeSpan.Zero);
+            }
+            Check(ReferenceEquals(Field(control, "_documentDevice"), isolated) && Field(control, "_textBrush") != null,
+                "The isolated HDR title uses its device for layout and gradient resources");
+            Invoke(control, "SetScenePresentation", false);
+            Check(Field(control, "_documentDevice") == null && Field(control, "_documentLayouts") == null
+                && Field(control, "_textBrush") == null && Field(control, "_sceneTarget") == null,
+                "Leaving HDR drops layouts and brushes owned by the isolated scene device");
+        }
+
+        static float ReadHalf(byte[] pixels, int offset)
+            => (float)BitConverter.UInt16BitsToHalf(BitConverter.ToUInt16(pixels, offset));
+    }
+
     private static string DescribeLayout(DependencyObject node, int depth)
     {
         string text = new string(' ', depth * 2) + node.GetType().Name;
@@ -126,13 +293,13 @@ public sealed partial class TestApp : Application
         using (var drawing = animatedEndpoint.CreateDrawingSession())
         {
             drawing.Clear(Microsoft.UI.Colors.Transparent);
-            Invoke(control, "DrawDocument", endpointCanvas, drawing);
+            Invoke(control, "DrawDocument", endpointCanvas, endpointCanvas.Size.Width, drawing);
         }
         Invoke(control, "SetRedrawState", AnimatedTextBlockRedrawState.Idle, false);
         using (var drawing = staticEndpoint.CreateDrawingSession())
         {
             drawing.Clear(Microsoft.UI.Colors.Transparent);
-            Invoke(control, "DrawDocument", endpointCanvas, drawing);
+            Invoke(control, "DrawDocument", endpointCanvas, endpointCanvas.Size.Width, drawing);
         }
         await animatedEndpoint.SaveAsync(Path.Combine(AppContext.BaseDirectory, $"endpoint-{label}-animation.png"), CanvasBitmapFileFormat.Png);
         await staticEndpoint.SaveAsync(Path.Combine(AppContext.BaseDirectory, $"endpoint-{label}-static.png"), CanvasBitmapFileFormat.Png);
@@ -426,7 +593,7 @@ public sealed partial class TestApp : Application
                 using (var drawing = bitmap.CreateDrawingSession())
                 {
                     drawing.Clear(Microsoft.UI.Colors.Transparent);
-                    Invoke(unified, "DrawDocument", canvas, drawing);
+                    Invoke(unified, "DrawDocument", canvas, canvas.Size.Width, drawing);
                 }
                 byte[] pixels = bitmap.GetPixelBytes();
                 int pixelWidth = (int)bitmap.SizeInPixels.Width;
@@ -488,6 +655,8 @@ public sealed partial class TestApp : Application
                 LongText, LongText + "\r\nArtist 中文", 44, 30), 96, "Trimmed");
             await CheckEndpoint(unified, new TextDefaultEffect(), DocumentLayoutRegressionPage.CreateDocument(
                 "中文 😀 Music", "专辑 🌈 Album\r\nArtist 中文", 44, 30), 96, "Emoji");
+            var title96 = CheckHdrTitle(unified, 96, 1);
+            var title144 = CheckHdrTitle(unified, 144, 1.3f);
             foreach (var retiredControl in new[] { c, page.TitleControl, page.InfoControl, unified })
             {
                 retiredControl.PrepareForShutdown();
@@ -496,7 +665,7 @@ public sealed partial class TestApp : Application
                     && Field(retiredControl, "_documentLayouts") == null && !(bool)Field(retiredControl, "_isClockRegistered"),
                     "Final shutdown releases native resources and the shared clock");
             }
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_assertions} assertions; initial auto height={initial}; real WinUI layout/draw/transition/unload/reload.");
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_assertions} assertions; initial auto height={initial}; real WinUI layout/draw/transition/unload/reload. HDR title {title96}; {title144}.");
         }
         catch (Exception ex)
         {

@@ -51,27 +51,19 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="Win2dAnimatedTitle" />
+                        <TextBlock x:Uid="PlaybackTitleEffect" />
                     </controls:SettingsCard.Header>
-                    <Grid Width="300" ColumnDefinitions="Auto,*">
-                        <ToggleSwitch
-                            Grid.Column="0"
-                            MinWidth="0"
-                            Margin="0,0,10,0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
-                        <ComboBox
-                            Grid.Column="1"
-                            HorizontalAlignment="Stretch"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
-                            ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
-                            SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="model:EffectComboBoxItem">
-                                    <TextBlock Text="{x:Bind DisplayName}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </Grid>
+                    <ComboBox
+                        Width="200"
+                        HorizontalAlignment="Stretch"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
+                        SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:EffectComboBoxItem">
+                                <TextBlock Text="{x:Bind DisplayName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -80,7 +72,6 @@
                     <ToggleSwitch
                         MinWidth="0"
                         VerticalAlignment="Center"
-                        IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.AppViewModel.IsHoverScrollEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
@@ -116,6 +107,58 @@
                         </ComboBox>
                     </Grid>
                 </controls:SettingsCard>
+
+                <controls:SettingsExpander
+                    Header="{x:Bind tool:ToolUtils.GetString('PlaybackHdr')}"
+                    Description="{x:Bind ViewModel.AppViewModel.PlaybackHdrStatusText, Mode=OneWay}">
+                    <ToggleSwitch
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackHdr')}"
+                        IsOn="{x:Bind ViewModel.AppViewModel.PlaybackHdrEnabled, Mode=TwoWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard
+                            Header="{x:Bind tool:ToolUtils.GetString('PlaybackHdrWhite')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackHdrEnabled, Mode=OneWay}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Slider
+                                    Width="200"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="PlaybackHdrReferenceWhiteNits"
+                                    AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackHdrWhite')}"
+                                    Minimum="80"
+                                    Maximum="1000"
+                                    StepFrequency="10"
+                                    Value="{x:Bind ViewModel.AppViewModel.PlaybackHdrReferenceWhiteNits, Mode=TwoWay}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    MinWidth="60"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind ViewModel.AppViewModel.FormatPlaybackHdrNits(ViewModel.AppViewModel.PlaybackHdrReferenceWhiteNits), Mode=OneWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
+                            Header="{x:Bind tool:ToolUtils.GetString('PlaybackHdrPeak')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackHdrEnabled, Mode=OneWay}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Slider
+                                    Width="200"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="PlaybackHdrPeakNits"
+                                    AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackHdrPeak')}"
+                                    Minimum="80"
+                                    Maximum="4000"
+                                    StepFrequency="10"
+                                    Value="{x:Bind ViewModel.AppViewModel.PlaybackHdrPeakNits, Mode=TwoWay}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    MinWidth="60"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind ViewModel.AppViewModel.FormatPlaybackHdrNits(ViewModel.AppViewModel.PlaybackHdrPeakNits), Mode=OneWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
                 <TextBlock
                     x:Uid="ShaderBackgroundExpander"

@@ -10,11 +10,12 @@ namespace AnimatedWin2dControls.Shaders
     [D2DRequiresScenePosition]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     public readonly partial struct FluidBackgroundEffect(
         float2 dispatchSize, float time,
         float3 color1, float3 color2, float3 color3, float3 color4,
         float randomValue1, float randomValue2, float randomValue3,
-        bool useHSVBlending, bool enableLightWave, bool enableDithering = true) : ID2D1PixelShader
+        bool useHSVBlending, bool enableLightWave, bool enableDithering = true, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         private float2 Rotate(float2 p, float a)
         {
@@ -144,7 +145,7 @@ namespace AnimatedWin2dControls.Shaders
             float amplitude = 25.0f;
             float speed = time * 0.75f;
 
-            float3 diter = enableDithering ? ScreenSpaceDither(scene, time) : new float3(0.0f, 0.0f, 0.0f);
+            float3 diter = enableDithering && hdrWhite == 0f ? ScreenSpaceDither(scene, time) : new float3(0.0f, 0.0f, 0.0f);
 
             tuv.X += Hlsl.Sin((tuv.Y * frequency) + speed) / amplitude;
             tuv.Y += Hlsl.Sin(((tuv.X * frequency) * 1.5f) + speed) / (amplitude * 0.5f);
@@ -174,21 +175,14 @@ namespace AnimatedWin2dControls.Shaders
 
             float3 finalComp = Hlsl.Lerp(layer1, layer2, Hlsl.SmoothStep(0.5f, -0.3f, tuv.Y));
 
+            float3 rgb = useHSVBlending ? Hsv2Rgb(finalComp) : finalComp;
             if (enableLightWave)
-            {
-                return new float4(Hlsl.Saturate(LightWave(finalComp, useHSVBlending, uv) + diter), 1.0f);
-            }
-            else
-            {
-                if (useHSVBlending)
-                {
-                    return new float4(Hlsl.Saturate(Hsv2Rgb(finalComp) + diter), 1.0f);
-                }
-                else
-                {
-                    return new float4(Hlsl.Saturate(finalComp + diter), 1.0f);
-                }
-            }
+                rgb = LightWave(finalComp, useHSVBlending, uv);
+
+            float crest = Hlsl.Max(rgb.X, Hlsl.Max(rgb.Y, rgb.Z)) * (enableLightWave ? 1.5f : 0.5f);
+            float3 output = hdrWhite > 0f ? PlaybackShaderColor.Background(rgb, hdrWhite, hdrPeak, crest)
+                : Hlsl.Saturate(rgb + diter);
+            return new float4(output, 1f);
         }
     }
 }

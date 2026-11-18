@@ -253,6 +253,15 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnPreferencesStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e);
+            if (e.PropertyName is nameof(PlaybackHdrEnabled) or nameof(PlaybackHdrPeakNits) or nameof(PlaybackHdrReferenceWhiteNits)
+                or nameof(IsFluidBackgroundEnabled) or nameof(WindowBackgroundImagePath) or nameof(BackdropType))
+            {
+                if (e.PropertyName == nameof(PlaybackHdrPeakNits))
+                    OnPropertyChanged(nameof(PlaybackHdrEffectivePeakNits));
+                if (e.PropertyName == nameof(PlaybackHdrReferenceWhiteNits))
+                    OnPropertyChanged(nameof(PlaybackHdrWhiteNits));
+                OnPropertyChanged(nameof(PlaybackHdrStatusText));
+            }
             string? computed = e.PropertyName switch
             {
                 nameof(PaletteAlgorithm) => nameof(PaletteAlgorithmIndex),

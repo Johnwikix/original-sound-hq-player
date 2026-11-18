@@ -13,6 +13,7 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
     public readonly partial struct ChromaticResonanceEffect(
         float time,
@@ -23,7 +24,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color4,
         float musicReaction = 0f,
         bool isDark = true,
-        bool enableDithering = true) : ID2D1PixelShader
+        bool enableDithering = true, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         private const float PI = 3.14159265359f;
         private const float PI2 = PI * 2f;
@@ -154,7 +155,9 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float3 diter = enableDithering ? ScreenSpaceDither(fragCoord, time) : new float3(0f, 0f, 0f);
 
-            return new float4(Hlsl.Saturate(col + diter), 1f);
+            float crest = Hlsl.Saturate((lum - 0.35f) * 1.6f) * 0.84f;
+            float3 output = hdrWhite > 0f ? PlaybackShaderColor.Background(col, hdrWhite, hdrPeak, crest) : Hlsl.Saturate(col + diter);
+            return new float4(output, 1f);
         }
     }
 }

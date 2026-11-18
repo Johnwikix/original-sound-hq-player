@@ -1135,6 +1135,9 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.DsdPcmFreq = audio.DsdPcmFreq;
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.IsFluidBackgroundEnabled = settings.IsFluidBackgroundEnabled;
+                AppViewModel.PlaybackHdrReferenceWhiteNits = settings.PlaybackHdrReferenceWhiteNits;
+                AppViewModel.PlaybackHdrPeakNits = settings.PlaybackHdrPeakNits;
+                AppViewModel.PlaybackHdrEnabled = settings.PlaybackHdrEnabled;
                 AppViewModel.BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)settings.BackgroundShader;
                 AppViewModel.IsFogEffectEnabled = settings.IsFogEffectEnabled;
                 AppViewModel.IsSnowEffectEnabled = settings.IsSnowEffectEnabled;
@@ -1194,7 +1197,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
                 AppViewModel.PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)settings.PaletteAlgorithm;
-                AppViewModel.IsWin2dAnimatedText = settings.IsWin2dAnimatedText;
                 AppViewModel.IsHoverScrollEnabled = settings.IsHoverScrollEnabled;
                 AppViewModel.Win2dTextEffectType = AppViewModel.TextEffectItems.AsValueEnumerable().FirstOrDefault(t => t.Value == settings.Win2dTextEffectType) ?? AppViewModel.TextEffectItems[0];
                 AppViewModel.CharFloatAmount = settings.CharFloatAmount;
@@ -1205,7 +1207,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.TranslatedOpacityPercent = settings.TranslatedOpacityPercent;
                 AppViewModel.UnplayedOpacityPercent = settings.UnplayedOpacityPercent;
                 AppViewModel.TargetFrameRate = settings.TargetFrameRate;
-                AppViewModel.EnableAdvancedLyricsEffect = settings.EnableAdvancedLyricsEffect;
                 AppViewModel.ScrollEasingType = settings.ScrollEasingType;
                 AppViewModel.ScrollEasingMode = settings.ScrollEasingMode;
                 AppViewModel.PlayOrPauseShortcut = settings.PlayOrPauseShortcut;

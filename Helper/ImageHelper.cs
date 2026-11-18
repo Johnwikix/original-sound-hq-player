@@ -23,7 +23,8 @@ namespace WinUIMusicPlayer.Helper
         private sealed class ImageHelperLogMarker { }
 
         internal static async Task<ImageSource?> DecodeFileToBitmapAsync(
-            string path, CancellationToken token, uint maxPixelSize = 0)
+            string path, CancellationToken token, uint maxPixelSize = 0,
+            ColorManagementMode colorManagement = ColorManagementMode.DoNotColorManage)
         {
             // BitmapImage has no deterministic disposal API; keep the decoded
             // native frame behind SoftwareBitmapSource so ownership is explicit.
@@ -47,7 +48,7 @@ namespace WinUIMusicPlayer.Helper
                     BitmapAlphaMode.Premultiplied,
                     transform,
                     ExifOrientationMode.RespectExifOrientation,
-                    ColorManagementMode.DoNotColorManage);
+                    colorManagement);
                 token.ThrowIfCancellationRequested();
                 var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
                 bitmap = null;

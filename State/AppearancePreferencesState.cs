@@ -16,11 +16,41 @@ public sealed class AppearancePreferencesState : ObservableObject
     public bool IsHoverScrollEnabled { get; set => SetProperty(ref field, value); } = false;
     public bool UseImageDominantTheme { get; set => SetProperty(ref field, value); } = false;
     public bool IsFluidBackgroundEnabled { get; set => SetProperty(ref field, value); }
+    public bool PlaybackHdrEnabled { get; set => SetProperty(ref field, value); }
+    private double _hdrReferenceWhite = 300;
+    private double _hdrPeak = 600;
+    public double PlaybackHdrReferenceWhiteNits
+    {
+        get => _hdrReferenceWhite;
+        set
+        {
+            double white = double.IsFinite(value) ? Math.Clamp(value, 80, 1000) : 300;
+            SetHdrLuminance(white, Math.Max(white, _hdrPeak));
+        }
+    }
+    public double PlaybackHdrPeakNits
+    {
+        get => _hdrPeak;
+        set
+        {
+            double peak = double.IsFinite(value) ? Math.Clamp(value, 80, 4000) : 600;
+            SetHdrLuminance(Math.Min(_hdrReferenceWhite, peak), peak);
+        }
+    }
+
+    private void SetHdrLuminance(double white, double peak)
+    {
+        bool whiteChanged = white != _hdrReferenceWhite;
+        bool peakChanged = peak != _hdrPeak;
+        _hdrReferenceWhite = white;
+        _hdrPeak = peak;
+        if (whiteChanged) OnPropertyChanged(nameof(PlaybackHdrReferenceWhiteNits));
+        if (peakChanged) OnPropertyChanged(nameof(PlaybackHdrPeakNits));
+    }
     public bool IsFogEffectEnabled { get; set => SetProperty(ref field, value); }
     public bool IsSnowEffectEnabled { get; set => SetProperty(ref field, value); }
     public bool IsRaindropEffectEnabled { get; set => SetProperty(ref field, value); }
     public bool EnableLightWave { get; set => SetProperty(ref field, value); } = true;
-    public bool IsWin2dAnimatedText { get; set => SetProperty(ref field, value); } = true;
     public EffectComboBoxItem Win2dTextEffectType { get; set => SetProperty(ref field, value); } = new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextDefaultEffect"), Value = AnimatedTextEffect.TextDefaultEffect };
     public bool IsMusicInfoVisible { get; set => SetProperty(ref field, value); } = true;
     public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm { get; set => SetProperty(ref field, value); } = AnimatedWin2dControls.Impressionist.PaletteAlgorithm.KMeansPP;

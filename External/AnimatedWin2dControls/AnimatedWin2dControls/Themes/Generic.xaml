@@ -70,11 +70,17 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:NowPlayingCanvas">
-                    <canvas:CanvasAnimatedControl
-                        x:Name="PART_Canvas"
-                        ClearColor="Transparent"
-                        HorizontalAlignment="Stretch"
-                        IsHitTestVisible="True" />
+                    <Grid>
+                        <canvas:CanvasAnimatedControl
+                            x:Name="PART_Canvas"
+                            ClearColor="Transparent"
+                            HorizontalAlignment="Stretch"
+                            IsHitTestVisible="True" />
+                        <canvas:CanvasSwapChainPanel
+                            x:Name="PART_HdrPanel"
+                            IsHitTestVisible="False"
+                            Visibility="Collapsed" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -87,10 +93,15 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="lyrics:AdvanceLyricsCanvasControl">
-                    <canvas:CanvasAnimatedControl
-                        x:Name="PART_Canvas"
-                        ClearColor="Transparent"
-                        IsHitTestVisible="True" />
+                    <Grid>
+                        <canvas:CanvasAnimatedControl
+                            x:Name="PART_Canvas"
+                            ClearColor="Transparent"
+                            IsHitTestVisible="True" />
+                        <canvas:CanvasControl
+                            x:Name="PART_TransparentCanvas"
+                            Visibility="Collapsed" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

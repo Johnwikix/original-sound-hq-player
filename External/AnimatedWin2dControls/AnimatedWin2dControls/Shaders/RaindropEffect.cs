@@ -10,6 +10,7 @@ namespace AnimatedWin2dControls.Shaders
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
     public readonly partial struct RaindropEffect(
         float time,
@@ -18,7 +19,7 @@ namespace AnimatedWin2dControls.Shaders
         float size,
         float density,
         float lightAngle,
-        float shadowIntensity) : ID2D1PixelShader
+        float shadowIntensity, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         private static readonly float _randomSeed = 4.3315f;
 
@@ -263,12 +264,11 @@ namespace AnimatedWin2dControls.Shaders
 
             float alpha = dropMask * Hlsl.Saturate(0.25f + specular);
 
-            return new Float4(
-                baseBrightness,
-                baseBrightness,
-                baseBrightness,
-                alpha
-            );
+            float3 standard = new float3(baseBrightness, baseBrightness, baseBrightness);
+            float3 output = hdrWhite > 0f
+                ? PlaybackShaderColor.Background(standard, hdrWhite, hdrPeak, specular) * alpha
+                : standard;
+            return new float4(output, alpha);
         }
     }
 }

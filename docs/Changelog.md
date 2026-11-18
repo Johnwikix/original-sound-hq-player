@@ -1,3 +1,29 @@
+## 2026-11-18 调整播放页文字辉光，移除简洁模式并回收 HDR 显存
+
+- `AnimatedTextBlock`、`LyricsLineRenderer` 按实际字色呈现标题与逐字辉光。静止白字和已唱白字使用参考白，活动亮光最高为参考白的 115%，受有效峰值限制。
+- `PlayingDetailPage`、播放设置和七种语言资源移除旧标题与简洁歌词开关。旧配置继续加载，Windows 关闭动画时标题直接更新。
+- `NowPlayingCanvas` 在关闭 HDR 或退出播放页时释放独立 HDR 设备和关联缓存，再次进入时按当前显示器重建。
+
+## 2026-11-18 修复播放页 HDR 跨屏切换，调整歌词与封面亮度
+
+- `PlaybackHdrDisplay`、`NowPlayingCanvas` 根据窗口所在显示器切换 SDR/HDR，在目标 DPI 和尺寸重新呈现。
+- `LyricsLineRenderer`、`AnimatedTextBlock` 将已唱字芯与标题统一到用户参考白点，换歌时标题维持纸白，辉光仅作小幅提亮。
+- `HdrCoverToneMap` 对普通 SDR 封面采用受限的高光曲线，300/600 nit 设置下纯白映射为 360 nit，中间调沿用原曝光。
+
+## 2026-11-18 修正播放页 HDR 的亮度层次、歌词和普通封面
+
+- `CoverBackgroundSettingsControl`、`AppearancePreferencesState`：HDR 折叠项新增独立参考白点和峰值，默认 300/600 nit，已有峰值继续生效。
+- `PlaybackSceneCover`、`PlayingDetailPage`：着色器 HDR 背景下普通封面也进入浮点场景，中间调跟随白点，亮部平滑扩展至峰值。
+- `NowPlayingCanvas`：为 HDR 帧的 Direct2D 中间效果表面指定 FP16，修复按布局缩放时高光被截到 1.0 scRGB 的问题。
+- `PlaybackShaderColor`、`LyricsLineRenderer`：修正背景渐变及已唱歌词高亮，保留辉光字芯。透明亚克力继续使用 SDR 前景。
+
+## 2026-11-18 播放详情页支持 HDR 歌词与着色器背景
+
+- `NowPlayingCanvas`、`PlayingDetailPage`：用同一条 Win2D FP16/scRGB 交换链绘制 ComputeSharp 背景、逐字高光和动态标题。透明材质使用桌面亚克力与 SDR 歌词，图片模式在 HDR 呈现失败后恢复窗口背景。
+- `CoverBackgroundSettingsControl`、`PlaybackHdrDisplay`：新增默认关闭的 HDR 开关、峰值滑条和当前输出状态，普通白跟随窗口所在显示器。
+- `ImageSwitcher`、`PqPngCover`：普通封面按 SDR 色彩管理显示，带全范围 BT.2020/PQ 标记的 PNG 从原图解码并在 HDR 场景中显示。
+- `_tools/PlaybackHdrProbe`、`_tools/DrawPathProbe`：增加真实显示器浮点采样、封面及背景/歌词高光回归。
+
 ## 2026-11-18 当前播放列表支持拖拽排序
 
 - `State/PlaybackQueueState.cs`：新增 `BeginReorder`/`EndReorder`，拖拽期间冻结兼容路径并按最终顺序重排；出现项身份、固定版本与来源保留，随机模式只调整遍历顺序，集合被替换或取消拖拽时安全退出。

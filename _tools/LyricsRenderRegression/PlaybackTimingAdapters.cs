@@ -31,7 +31,8 @@ namespace WinUIMusicPlayer.Services
     public sealed class UnusedLyricsRepository
     {
         public Task<LyricsSnapshot> GetAsync(int id, CancellationToken token) => throw new InvalidOperationException("Unexpected database read");
-        public Task<bool> SaveAsync(int id, LyricsDocument doc, long revision, string kind, string key = "", CancellationToken token = default) => throw new InvalidOperationException("Unexpected database write");
+        public Task<bool> SaveAsync(int id, LyricsDocument doc, long revision, string kind, string key = "", CancellationToken token = default, int expectedOwnerId = 0)
+            => throw new InvalidOperationException("Unexpected database write");
     }
     public sealed class WebDavLibraryService
     {

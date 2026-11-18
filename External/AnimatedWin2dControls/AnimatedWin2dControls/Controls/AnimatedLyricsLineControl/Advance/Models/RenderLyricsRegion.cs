@@ -1,4 +1,8 @@
+using AnimatedWin2dControls.Interop;
+using AnimatedWin2dControls.Shaders;
+using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
+using System.Numerics;
 using Microsoft.Graphics.Canvas.Effects;
 using System;
 
@@ -90,10 +94,42 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             };
         }
 
+        private PixelShaderEffect<PlaybackLyricSweepEffect>? _hdrSweep;
+        private bool _hdrEnabled;
+
+        internal void SetHdr(PlaybackHdrColor hdr, Vector4 played, Vector4 unplayed, float range)
+        {
+            if (hdr.IsEnabled != _hdrEnabled)
+            {
+                _hdrEnabled = hdr.IsEnabled;
+                CanvasBufferPrecision? precision = _hdrEnabled ? CanvasBufferPrecision.Precision16Float : null;
+                FillColorPlayed.BufferPrecision = precision;
+                FillColorUnplayed.BufferPrecision = precision;
+                FillComposite.BufferPrecision = precision;
+                FinalFillEffect.BufferPrecision = precision;
+                if (_hdrEnabled)
+                {
+                    _hdrSweep ??= new PixelShaderEffect<PlaybackLyricSweepEffect>();
+                    _hdrSweep.Sources[0] = FillCropFade;
+                    FillComposite.Sources[1] = _hdrSweep;
+                }
+                else
+                {
+                    FillComposite.Sources[1] = FillColorFade;
+                }
+            }
+
+            if (_hdrEnabled)
+            {
+                _hdrSweep!.ConstantBuffer = new PlaybackLyricSweepEffect(played, unplayed, range);
+            }
+        }
+
         public void Dispose()
         {
             FinalFillEffect?.Dispose();
             FillComposite?.Dispose();
+            _hdrSweep?.Dispose();
             FillColorPlayed?.Dispose();
             FillColorFade?.Dispose();
             FillColorUnplayed?.Dispose();

@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Renderer.Background;
 using AnimatedWin2dControls.Shaders;
 using ComputeSharp;
@@ -47,7 +48,7 @@ namespace AnimatedWin2dControls.Renderer
             Advance(deltaTime);
         }
 
-        public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
+        public override void Draw(PlaybackCanvasFrame control, CanvasDrawContext ds)
         {
             if (!Monitor.TryEnter(_gate, 0)) return;
             try
@@ -68,7 +69,7 @@ namespace AnimatedWin2dControls.Renderer
                     _rnd1, _rnd2, _rnd3,
                     useHSVBlending: false,
                     enableLightWave: EnableLightWave,
-                    enableDithering: true);
+                    enableDithering: true, hdrWhite: control.Hdr.White, hdrPeak: control.Hdr.Peak);
 
                 if (Opacity >= 1.0)
                 {
@@ -79,7 +80,8 @@ namespace AnimatedWin2dControls.Renderer
                     using var opacityEffect = new OpacityEffect
                     {
                         Source = effect,
-                        Opacity = (float)Opacity
+                        Opacity = (float)Opacity,
+                        BufferPrecision = control.Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null
                     };
                     ds.DrawImage(opacityEffect);
                 }

@@ -33,7 +33,6 @@ public sealed class LyricsPreferencesState : ObservableObject
         }
     } = FontInfo.CreateDefault();
     public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
-    public bool EnableAdvancedLyricsEffect { get; set => SetProperty(ref field, value); } = true;
     public string LocalLyricsFormatOrder { get => field; set => SetProperty(ref field, WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(value)); } = "krc,qrc,lrc,ttml";
     public bool PreferDatabaseLyrics { get; set => SetProperty(ref field, value); }
     public bool IsAutoLyricsEnabled { get; set => SetProperty(ref field, value); } = true;

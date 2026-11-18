@@ -35,6 +35,9 @@ public sealed partial class SettingsSnapshotFactory(AppState state)
         newSettings.CoverSize = state.Preferences.CoverSize;
         newSettings.Win2dTextEffectType = state.Preferences.Win2dTextEffectType.Value;
         newSettings.IsFluidBackgroundEnabled = state.Preferences.IsFluidBackgroundEnabled;
+        newSettings.PlaybackHdrEnabled = state.Preferences.PlaybackHdrEnabled;
+        newSettings.PlaybackHdrReferenceWhiteNits = state.Preferences.PlaybackHdrReferenceWhiteNits;
+        newSettings.PlaybackHdrPeakNits = state.Preferences.PlaybackHdrPeakNits;
         newSettings.BackgroundShader = (int)state.Preferences.BackgroundShader;
         newSettings.IsFogEffectEnabled = state.Preferences.IsFogEffectEnabled;
         newSettings.IsSnowEffectEnabled = state.Preferences.IsSnowEffectEnabled;
@@ -60,7 +63,6 @@ public sealed partial class SettingsSnapshotFactory(AppState state)
         newSettings.UseImageDominantTheme = state.Preferences.UseImageDominantTheme;
         newSettings.EnableLightWave = state.Preferences.EnableLightWave;
         newSettings.PaletteAlgorithm = (int)state.Preferences.PaletteAlgorithm;
-        newSettings.IsWin2dAnimatedText = state.Preferences.IsWin2dAnimatedText;
         newSettings.IsHoverScrollEnabled = state.Preferences.IsHoverScrollEnabled;
         newSettings.CharFloatAmount = state.Preferences.CharFloatAmount;
         newSettings.CharScaleAmount = state.Preferences.CharScaleAmount;
@@ -70,7 +72,6 @@ public sealed partial class SettingsSnapshotFactory(AppState state)
         newSettings.TranslatedOpacityPercent = state.Preferences.TranslatedOpacityPercent;
         newSettings.UnplayedOpacityPercent = state.Preferences.UnplayedOpacityPercent;
         newSettings.TargetFrameRate = state.Preferences.TargetFrameRate;
-        newSettings.EnableAdvancedLyricsEffect = state.Preferences.EnableAdvancedLyricsEffect;
         newSettings.ScrollEasingType = state.Preferences.ScrollEasingType;
         newSettings.ScrollEasingMode = state.Preferences.ScrollEasingMode;
         newSettings.PlayOrPauseShortcut = new(state.HotKeys.PlayOrPauseShortcut);

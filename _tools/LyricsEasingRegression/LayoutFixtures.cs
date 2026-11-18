@@ -41,18 +41,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
     {
         public LyricScrollMotion ScrollMotion { get; } = new();
         public ScaleFixture ScaleTransition { get; } = new();
-        public Vector2 TopLeftPosition, BottomRightPosition, CenterPosition, PrimaryPosition, SecondaryPosition;
+        public Vector2 TopLeftPosition, BottomRightPosition, CenterPosition, PrimaryPosition;
+        public double LayerSpacing => 0;
+        public LayerFixture PronunciationLayer { get; } = new();
+        public LayerFixture TranslationLayer { get; } = new();
         public CanvasTextLayout? PrimaryTextLayout { get; set; } = new();
-        public CanvasTextLayout? SecondaryTextLayout { get; set; }
-        public double CurrentSecondaryHeight => SecondaryTextLayout?.LayoutBounds.Height ?? 0;
         public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation) { }
-        public void PrepareSecondaryHeightTransition() { }
         public void RecreateTextLayout(ICanvasResourceCreator r, int a, int b, string f,
             double w, double h, CanvasHorizontalAlignment alignment, CanvasTextFormat format)
             => throw new NotSupportedException("GPU font measurement is outside these tests.");
         public void RecreateTextGeometry() => throw new NotSupportedException();
         public void DisposeCaches() => throw new NotSupportedException();
-        public void RecreateRenderChars(int width) => throw new NotSupportedException();
+        public void RecreateRenderChars(int width, bool preserveFloatTransitions) => throw new NotSupportedException();
+    }
+    public sealed class LayerFixture
+    {
+        // These CPU hit-test fixtures contain only a primary text row.
+        public Vector2 Position { get; set; }
+        public CanvasTextLayout? Layout => null;
+        public double Height => 0;
+        public double SlotHeight(double spacing) => 0;
+        public ScaleFixture Reveal { get; } = new();
     }
     public class ScaleFixture { public double Value { get; set; } = 1; }
     public static class VectorFixture

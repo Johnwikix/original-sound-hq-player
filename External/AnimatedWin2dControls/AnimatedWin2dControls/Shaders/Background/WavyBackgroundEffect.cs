@@ -13,6 +13,7 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
     public readonly partial struct WavyBackgroundEffect(
         float time,
@@ -21,7 +22,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color2,
         float3 color3,
         float3 color4,
-        bool enableDithering = true) : ID2D1PixelShader
+        bool enableDithering = true, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         private static float Gradient(float p)
         {
@@ -129,11 +130,12 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float2 scene = D2D.GetScenePosition().XY;
 
-            float waves =
-                Wave1(uv) +
-                Wave2(uv) +
-                Wave3(uv) +
-                Wave4(uv);
+            float wave1 = Wave1(uv);
+            float wave2 = Wave2(uv);
+            float wave3 = Wave3(uv);
+            float wave4 = Wave4(uv);
+            float waves = wave1 + wave2 + wave3 + wave4;
+            float crest = Hlsl.Max(Hlsl.Max(wave1, wave2), Hlsl.Max(wave3, wave4)) * (0.75f / 0.27f);
 
             // 背景：color1/color2/color4 双线性 + PS3 风格"呼吸"复合 warp（强烈档）
             float ratio = dispatchSize.X / dispatchSize.Y;
@@ -159,7 +161,8 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float3 diter = enableDithering ? ScreenSpaceDither(scene, time) : new float3(0.0f, 0.0f, 0.0f);
 
-            return new float4(Hlsl.Saturate(color + diter), 1f);
+            float3 output = hdrWhite > 0f ? PlaybackShaderColor.Background(color, hdrWhite, hdrPeak, crest) : Hlsl.Saturate(color + diter);
+            return new float4(output, 1f);
         }
     }
 }

@@ -76,7 +76,6 @@
                     <ComboBox
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         ItemsSource="{x:Bind VM.TargetFrameRateOptions}"
                         SelectedItem="{x:Bind VM.TargetFrameRate, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
@@ -320,7 +319,6 @@
                     <Slider
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         Maximum="10"
                         Minimum="0"
                         SnapsTo="Ticks"
@@ -350,7 +348,6 @@
                     <Slider
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         Maximum="10"
                         Minimum="0"
                         SnapsTo="Ticks"
@@ -382,7 +379,6 @@
                     <Slider
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         Maximum="150"
                         Minimum="50"
                         SnapsTo="Ticks"
@@ -412,7 +408,6 @@
                     <Slider
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         Maximum="1000"
                         Minimum="400"
                         SnapsTo="Ticks"
@@ -479,13 +474,12 @@
                             Grid.Column="0"
                             MinWidth="0"
                             Margin="0,0,10,0"
-                            IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                             IsOn="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
                         <controls:ColorPickerButton
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            IsEnabled="{x:Bind tool:BindUtils.BothTrue( VM.IsCustomLyricsColorEnabled, VM.EnableAdvancedLyricsEffect), Mode=OneWay}"
+                            IsEnabled="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=OneWay}"
                             SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>
@@ -517,7 +511,6 @@
                     <ComboBox
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         SelectedIndex="{x:Bind VM.ScrollEasingTypeIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="EasingTypeLinear" />
                         <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
@@ -551,7 +544,6 @@
                     <ComboBox
                         Width="250"
                         HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
                         SelectedIndex="{x:Bind VM.ScrollEasingModeIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="EaseModeIn" />
                         <ComboBoxItem x:Uid="EaseModeOut" />
@@ -594,21 +586,10 @@
                         </ComboBox>
                     </Grid>
                 </StackPanel>
-                <StackPanel
-                    Grid.Row="7"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="EnableAdvancedLyricsEffect"
-                        FontSize="14"
-                        FontWeight="SemiBold"
-                        TextWrapping="Wrap" />
-                    <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
-                </StackPanel>
                 <!--  Row 7: 歌曲信息对齐  -->
                 <StackPanel
                     Grid.Row="7"
-                    Grid.Column="2"
+                    Grid.Column="1"
                     Spacing="4">
                     <TextBlock
                         x:Uid="PlayingDetailAlignment"

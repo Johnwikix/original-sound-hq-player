@@ -1,5 +1,6 @@
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Impressionist;
+using AnimatedWin2dControls.Shaders;
 using AnimatedWin2dControls.Shaders.Background;
 using ComputeSharp.D2D1;
 using ComputeSharp.D2D1.Interop;
@@ -106,6 +107,8 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _solveTarget = null;
                 _blurTarget?.Dispose();
                 _blurTarget = null;
+                _hdrFallback?.Dispose();
+                _hdrFallback = null;
                 _upscaledTarget?.Dispose();
                 _upscaledTarget = null;
                 _blurEffect?.Dispose();
@@ -140,14 +143,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             Advance(deltaTime);
         }
 
-        public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
-        {
-            using var scope = CanvasDrawingSessionScope.Borrow(ds);
-            Draw(control, scope.Context);
-        }
-
         /// <summary>Draws through the scoped native session ABI.</summary>
-        public override void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
+        public override void Draw(PlaybackCanvasFrame control, CanvasDrawContext ds)
         {
             if (!Monitor.TryEnter(_gate, 0)) return;
             try
@@ -221,7 +218,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                             solveSession.Context.DrawImage(_solveEffect);
                         }
                     }
-                    catch (Exception ex) { LogPassFailure("pass0-solve", control, ds, ex); return; }
+                    catch (Exception ex) when (!control.Hdr.IsEnabled) { LogPassFailure("pass0-solve", control, ds, ex); return; }
                 }
 
                 // Pass 1 —— 旋转封面层绘制到 1/8 中间目标。
@@ -240,7 +237,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                         rotationSession.Context.DrawImage(_rotationEffect);
                     }
                 }
-                catch (Exception ex) { LogPassFailure("pass1-rotation", control, ds, ex); return; }
+                catch (Exception ex) when (!control.Hdr.IsEnabled) { LogPassFailure("pass1-rotation", control, ds, ex); return; }
 
                 // Pass 2 —— 原生高斯模糊（Soft 边框 ≡ 原版零边框 + 覆盖率归一化）。
                 // EndDraw 边界③（blur 会话 Dispose）。
@@ -254,7 +251,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                         blurSession.Context.DrawImage(_blurEffect!);
                     }
                 }
-                catch (Exception ex) { LogPassFailure("pass2-blur", control, ds, ex); return; }
+                catch (Exception ex) when (!control.Hdr.IsEnabled) { LogPassFailure("pass2-blur", control, ds, ex); return; }
 
                 // Pass 2.5 —— 上采样到全屏位图：合成 pass 的输入全部为普通位图，
                 // 避免效果嵌效果（composite ← ScaleEffect ← ...）的图配置风险。
@@ -267,7 +264,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                         upscaleSession.Context.DrawImage(_scaleEffect!);
                     }
                 }
-                catch (Exception ex) { LogPassFailure("pass2.5-upscale", control, ds, ex); return; }
+                catch (Exception ex) when (!control.Hdr.IsEnabled) { LogPassFailure("pass2.5-upscale", control, ds, ex); return; }
 
                 // Pass 3 —— 材质处理 + pinch 网格 uv 重建 + 抖动，输出全屏。
                 // 网格纹理或求解目标创建彻底失败时跳过合成，直接呈现模糊背景
@@ -282,7 +279,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                             new float2(pixelWidth, pixelHeight),
                             IsDark,
                             IsDark ? DarkLumaStrength : LightLumaStrength,
-                            ditherStrength: 1f);
+                            ditherStrength: 1f, hdrWhite: control.Hdr.White, hdrPeak: control.Hdr.Peak);
 
                         if (Opacity >= 1.0)
                         {
@@ -293,22 +290,33 @@ namespace AnimatedWin2dControls.Renderer.Background
                             using var opacityEffect = new OpacityEffect
                             {
                                 Source = compositeEffect,
-                                Opacity = (float)Opacity
+                                Opacity = (float)Opacity,
+                                BufferPrecision = control.Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null
                             };
                             ds.DrawImage(opacityEffect);
                         }
 
                         ds.Flush();
                     }
-                    catch (Exception ex) { LogPassFailure("pass3-composite", control, ds, ex); return; }
+                    catch (Exception ex) when (!control.Hdr.IsEnabled) { LogPassFailure("pass3-composite", control, ds, ex); return; }
                 }
                 else
                 {
                     try
                     {
-                        ds.DrawImage(_upscaledTarget);
+                        if (control.Hdr.IsEnabled)
+                        {
+                            _hdrFallback ??= new PixelShaderEffect<ScRgbPlaybackEffect>();
+                            _hdrFallback.Sources[0] = _upscaledTarget;
+                            _hdrFallback.ConstantBuffer = new ScRgbPlaybackEffect(control.Hdr.White);
+                            ds.DrawImage(_hdrFallback);
+                        }
+                        else
+                        {
+                            ds.DrawImage(_upscaledTarget);
+                        }
                     }
-                    catch (Exception ex) { LogPassFailure("pass3-fallback-blit", control, ds, ex); return; }
+                    catch (Exception ex) when (!control.Hdr.IsEnabled) { LogPassFailure("pass3-fallback-blit", control, ds, ex); return; }
                 }
             }
             finally { Monitor.Exit(_gate); }
@@ -322,7 +330,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         /// Draw，否则会被游戏循环转成 stowed exception（0xc000027b）直接闪退。
         /// 错误详情仅在 Debug 构建写入日志（Release 零日志开销）。
         /// </summary>
-        private void LogPassFailure(string tag, ICanvasAnimatedControl control, CanvasDrawContext ds, Exception ex)
+        private void LogPassFailure(string tag, PlaybackCanvasFrame control, CanvasDrawContext ds, Exception ex)
         {
             _targetDpi = 0f;
             #if DEBUG
@@ -332,7 +340,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         }
 
         /// <summary>一帧内全部 D2D 资源的 DPI/尺寸/格式与效果图绑定关系快照。</summary>
-        private string DumpGraphState(ICanvasAnimatedControl control, CanvasDrawContext ds)
+        private string DumpGraphState(PlaybackCanvasFrame control, CanvasDrawContext ds)
         {
             try
             {
@@ -421,7 +429,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         // ── 资源装配 ─────────────────────────────────────────────────────
 
         private void EnsureTargets(
-            ICanvasAnimatedControl control,
+            PlaybackCanvasFrame control,
             float widthDip, float heightDip,
             int backdropWidth, int backdropHeight)
         {
@@ -438,6 +446,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             _rotationTarget = null;
             _blurTarget?.Dispose();
             _blurTarget = null;
+            _hdrFallback?.Dispose();
+            _hdrFallback = null;
             _upscaledTarget?.Dispose();
             _upscaledTarget = null;
             _solveTarget?.Dispose();
@@ -457,15 +467,15 @@ namespace AnimatedWin2dControls.Renderer.Background
             try
             {
                 _rotationTarget = new CanvasRenderTarget(
-                    control, backdropWidth, backdropHeight, 96f,
+                    control.Device, backdropWidth, backdropHeight, 96f,
                     DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
                 _blurTarget = new CanvasRenderTarget(
-                    control, backdropWidth, backdropHeight, 96f,
+                    control.Device, backdropWidth, backdropHeight, 96f,
                     DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
 
                 // 上采样目标与主画布同尺寸同 DPI（与 bgCache 一致），作为合成 pass 的输入 0。
                 _upscaledTarget = new CanvasRenderTarget(
-                    control, widthDip, heightDip, dpi,
+                    control.Device, widthDip, heightDip, dpi,
                     DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
             }
             catch (Exception ex)
@@ -478,9 +488,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _blurTarget?.Dispose();
                 _upscaledTarget?.Dispose();
 
-                _rotationTarget = new CanvasRenderTarget(control, backdropWidth, backdropHeight, 96f);
-                _blurTarget = new CanvasRenderTarget(control, backdropWidth, backdropHeight, 96f);
-                _upscaledTarget = new CanvasRenderTarget(control, widthDip, heightDip);
+                _rotationTarget = new CanvasRenderTarget(control.Device, backdropWidth, backdropHeight, 96f);
+                _blurTarget = new CanvasRenderTarget(control.Device, backdropWidth, backdropHeight, 96f);
+                _upscaledTarget = new CanvasRenderTarget(control.Device, widthDip, heightDip, dpi);
             }
 
             _blurEffect = new GaussianBlurEffect
@@ -510,7 +520,7 @@ namespace AnimatedWin2dControls.Renderer.Background
             try
             {
                 _solveTarget = new CanvasRenderTarget(
-                    control,
+                    control.Device,
                     solveWidth * 96f / dpi,
                     solveHeight * 96f / dpi,
                     dpi,
@@ -589,7 +599,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                 new[] { D2D1ExtendMode.Clamp, D2D1ExtendMode.Clamp },
                 MemoryMarshal.AsBytes(data.AsSpan()), new uint[] { (uint)width * 16 });
         }
-        private void EnsureCoverBitmaps(ICanvasAnimatedControl control)
+        private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrFallback;
+
+        private void EnsureCoverBitmaps(PlaybackCanvasFrame control)
         {
             if (_coverBitmaps[0] is not null)
                 return;
@@ -622,10 +634,10 @@ namespace AnimatedWin2dControls.Renderer.Background
         /// ComputeSharp 的 DPI 补偿节点，导致效果图配置错误。本 pass 以归一化 UV
         /// 采样输入，DPI 取值不影响采样语义。
         /// </summary>
-        private static CanvasBitmap CreateCoverBitmap(ICanvasAnimatedControl control, byte[] pixels)
+        private static CanvasBitmap CreateCoverBitmap(PlaybackCanvasFrame control, byte[] pixels)
         {
             return CanvasBitmap.CreateFromBytes(
-                control,
+                control.Device,
                 pixels,
                 ArtworkPixelData.Edge,
                 ArtworkPixelData.Edge,
@@ -634,7 +646,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 CanvasAlphaMode.Premultiplied);
         }
 
-        private void PushPendingArtwork(ICanvasAnimatedControl control)
+        private void PushPendingArtwork(PlaybackCanvasFrame control)
         {
             var pending = _pendingArtwork;
             if (pending is null) return;
@@ -725,6 +737,8 @@ namespace AnimatedWin2dControls.Renderer.Background
         {
             lock (_gate)
             {
+                _hdrFallback?.Dispose();
+                _hdrFallback = null;
             _rotationTarget?.Dispose();
             _rotationTarget = null;
             _solveTarget?.Dispose();

@@ -8,6 +8,7 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
     public readonly partial struct LiquidFlowEffect(
         float time,
@@ -17,7 +18,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color3,
         float3 color4,
         bool enableDithering = true,
-        bool isDark = true) : ID2D1PixelShader
+        bool isDark = true, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         private const int AA = 2;
 
@@ -109,6 +110,8 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             color /= (float)(AA * AA);
 
+            float hdrCrest = Hlsl.SmoothStep(0.74f, 1.22f, Hlsl.Max(color.X, Hlsl.Max(color.Y, color.Z)));
+
             if (isDark)
             {
                 float maxC = Hlsl.Max(color.X, Hlsl.Max(color.Y, color.Z));
@@ -123,7 +126,8 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float ditherOffset = enableDithering ? (Dither(U) - 0.5f) / 255f : 0f;
 
-            return new float4(Hlsl.Saturate(color + ditherOffset), 1f);
+            float3 output = hdrWhite > 0f ? PlaybackShaderColor.Background(color, hdrWhite, hdrPeak, hdrCrest) : Hlsl.Saturate(color + ditherOffset);
+            return new float4(output, 1f);
         }
     }
 }

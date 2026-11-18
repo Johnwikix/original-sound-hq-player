@@ -160,28 +160,28 @@ public sealed partial class AnimatedTextBlock
         InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private static void OnHoverScrollEnabledChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (AnimatedTextBlock)sender;
         control.StopHoverScroll();
-        control._canvas?.Invalidate();
+        control.InvalidateCanvas();
     }
 
     private void OnPointerEntered(object sender, PointerRoutedEventArgs args)
     {
         if (args.Pointer.PointerDeviceType != PointerDeviceType.Mouse) return;
         _isPointerOver = true;
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void OnPointerExited(object sender, PointerRoutedEventArgs args)
     {
         _isPointerOver = false;
         StopHoverScroll();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void StopHoverScroll()
@@ -211,7 +211,7 @@ public sealed partial class AnimatedTextBlock
         var lines = new List<HoverLine>();
         try
         {
-            if (AppendHoverLines(sender, _staticTextLayout, _textFormat, _newText, 0, 1, lines))
+            if (AppendHoverLines(sender, (float)sender.Size.Width, _staticTextLayout, _textFormat, _newText, 0, 1, lines))
             {
                 _hoverLines = lines.ToArray();
                 StartRenderingLoop();
@@ -231,7 +231,8 @@ public sealed partial class AnimatedTextBlock
         return false;
     }
 
-    private bool AppendHoverLines(CanvasControl sender, CanvasTextLayout source, CanvasTextFormat format,
+    private bool AppendHoverLines(ICanvasResourceCreator sender, float viewportWidth, CanvasTextLayout source,
+        CanvasTextFormat format,
         string text, float offsetY, float opacity, List<HoverLine> lines)
     {
         var metrics = source.LineMetrics;
@@ -248,7 +249,7 @@ public sealed partial class AnimatedTextBlock
         {
             if (bottomToTop) y -= metric.Height;
             string lineText = text.Substring(textOffset, metric.CharacterCount - metric.TerminalNewlineCount);
-            var layout = new CanvasTextLayout(sender, lineText, format, (float)sender.Size.Width, metric.Height);
+            var layout = new CanvasTextLayout(sender, lineText, format, viewportWidth, metric.Height);
             try
             {
                 layout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
@@ -256,7 +257,7 @@ public sealed partial class AnimatedTextBlock
                 layout.TrimmingSign = CanvasTrimmingSign.None;
                 layout.VerticalAlignment = CanvasVerticalAlignment.Top;
                 float width = (float)Math.Ceiling(layout.LayoutBounds.Width);
-                float distance = metric.IsTrimmed ? Math.Max(0, width - (float)sender.Size.Width) : 0;
+                float distance = metric.IsTrimmed ? Math.Max(0, width - viewportWidth) : 0;
                 float loopDistance = 0;
                 if (distance > 0)
                 {
@@ -285,7 +286,7 @@ public sealed partial class AnimatedTextBlock
         return scrollable;
     }
 
-    private static float MeasureHoverLoopGap(CanvasControl sender, CanvasTextFormat format, float height)
+    private static float MeasureHoverLoopGap(ICanvasResourceCreator sender, CanvasTextFormat format, float height)
     {
         // Measure one space once per format/paragraph instead of allocating a
         // concatenated string and a character-region array for every line.

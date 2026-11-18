@@ -14,6 +14,7 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
     public readonly partial struct PS3XMBEffect(
         float time,
@@ -22,7 +23,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color2,
         float3 color3,
         float3 color4,
-        bool enableDithering = true) : ID2D1PixelShader
+        bool enableDithering = true, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         private const float THRESHOLD = 0.99f;
         private const float MIN_DIST = 0.04f;
@@ -186,11 +187,15 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             c = Hlsl.Lerp(c, 1f, Hlsl.Clamp(m, 0f, 1f));
 
-            c += GetDust(uv, new float2(3000f, 3000f), mg.Y, time, ires) * 0.3f;
+            float dust = GetDust(uv, new float2(3000f, 3000f), mg.Y, time, ires);
+            c += dust * 0.3f;
+
+            float crest = Hlsl.Max(m * 1.9f, dust);
 
             float ditherOffset = enableDithering ? (Dither(U) - 0.5f) / 255f : 0f;
 
-            return new float4(Hlsl.Saturate(c + ditherOffset), 1f);
+            float3 output = hdrWhite > 0f ? PlaybackShaderColor.Background(c, hdrWhite, hdrPeak, crest) : Hlsl.Saturate(c + ditherOffset);
+            return new float4(output, 1f);
         }
     }
 }

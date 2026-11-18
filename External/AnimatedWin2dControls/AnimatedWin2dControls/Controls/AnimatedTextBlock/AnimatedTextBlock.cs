@@ -244,6 +244,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     /// </summary>
     public void PrepareForShutdown()
     {
+        ReleaseSceneTarget();
         if (_shutdown) return;
         _shutdown = true;
 
@@ -304,7 +305,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     {
         ApplyTextForeground();
         _staticLayoutDirty = true;
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void FontFamilyChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -316,7 +317,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void FontSizeChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -328,7 +329,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void FontStretchChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -340,7 +341,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void FontStyleChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -352,7 +353,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     private void FontWeightChangedCallback(DependencyObject sender, DependencyProperty dp)
@@ -364,7 +365,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
 
     #endregion
@@ -397,7 +398,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (!_isActive) return;
+        if (!_isActive || _scenePresentation) return;
 
         // 全部在 UI 线程，无需 lock
         args.DrawingSession.Clear(Colors.Transparent);
@@ -408,7 +409,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         ApplyTextFormatIfNeeded();
         if (Document != null)
         {
-            DrawDocument(sender, args.DrawingSession);
+            DrawDocument(sender, sender.Size.Width, args.DrawingSession);
             return;
         }
 
@@ -469,7 +470,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void StartRenderingLoop()
     {
-        if (_isClockRegistered || !IsLoaded || !_isActive) return;
+        if (_scenePresentation || _isClockRegistered || !IsLoaded || !_isActive) return;
         SharedAnimationClock.Register(this);
         _isClockRegistered = true;
     }
@@ -508,7 +509,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _formatVersion++;
     }
 
-    private void ApplyTextForeground()
+    private void ApplyTextForeground(ICanvasResourceCreator resourceCreator = null)
     {
         if (Foreground is SolidColorBrush colorBrush)
         {
@@ -518,7 +519,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         }
         else if (Foreground is LinearGradientBrush linearGradientBrush)
         {
-            if (_canvas != null)
+            resourceCreator ??= _sceneDevice ?? (ICanvasResourceCreator)_canvas;
+            if (resourceCreator is not null)
             {
                 var stops = new CanvasGradientStop[linearGradientBrush.GradientStops.Count];
 
@@ -532,7 +534,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
                 }
 
                 _textBrush?.Dispose();
-                _textBrush = new CanvasLinearGradientBrush(_canvas, stops);
+                _textBrush = new CanvasLinearGradientBrush(resourceCreator, stops);
             }
         }
         else
@@ -792,7 +794,9 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         RebuildNewTextLayout(_canvas);
     }
     #endregion
-    public void OnSharedTick(TimeSpan elapsed)
+    public void OnSharedTick(TimeSpan elapsed) => AdvanceAnimation(elapsed);
+
+    private void AdvanceAnimation(TimeSpan elapsed)
     {
         if (!_isActive) return;
 
@@ -802,7 +806,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             if (_hoverLines != null)
             {
                 _hoverElapsed += elapsed.TotalSeconds;
-                _canvas?.Invalidate();
+                InvalidateCanvas();
             }
             return;
         }
@@ -830,7 +834,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         }
 
         // 只有真正需要重绘时才 Invalidate
-        _canvas?.Invalidate();
+        InvalidateCanvas();
     }
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)
     {
@@ -850,19 +854,19 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             case AnimatedTextBlockRedrawState.TextChanged:
                 if (_textEffect != null)
                     StartRenderingLoop();
-                _canvas?.Invalidate(); // 触发一次 Draw 完成初始化
+                InvalidateCanvas(); // 触发一次 Draw 完成初始化
                 break;
 
             case AnimatedTextBlockRedrawState.Idle:
                 TextRenderingHelper.DisposeShapedText(_diffResults);
                 _diffResults = null;
                 StopRenderingLoop();          // 从共享时钟注销，不再收到 tick
-                _canvas?.Invalidate();        // 最后一帧刷新为最终状态
+                InvalidateCanvas();        // 最后一帧刷新为最终状态
                 break;
 
             case AnimatedTextBlockRedrawState.LayoutChanged:
                 StopRenderingLoop();
-                _canvas?.Invalidate();
+                InvalidateCanvas();
                 break;
         }
 

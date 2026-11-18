@@ -1,4 +1,6 @@
 using AnimatedWin2dControls.Interop;
+using AnimatedWin2dControls.Shaders;
+using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -13,6 +15,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public class LyricsLineRenderer
     {
+        internal PlaybackHdrColor Hdr
+        {
+            get => _hdr;
+            set
+            {
+                if (_hdr.IsEnabled && !value.IsEnabled)
+                    ClearSharedResources();
+                _hdr = value;
+            }
+        }
+        private PlaybackHdrColor _hdr;
+        private PlaybackHdrColor _lastHdr;
+        private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrUnplayed;
+
         public bool IsPlaying { get; set; }
         public double CurrentProgressMs { get; set; }
         public RenderLyricsLine? Line { get; set; }
@@ -47,6 +63,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void ClearSharedResources()
         {
+            _hdrUnplayed?.Dispose();
+            _hdrUnplayed = null;
             // 自 3-slice 重构起播放行填充不再持有可复用的共享 CommandList：
             // 全部资源挂在 RenderLyricsLine/RenderLyricsRegion 上，随布局重建，此方法保留仅为 API 兼容。
         }
@@ -78,9 +96,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             var offset = new Vector2(0, (float)Line.LayoutOffsetY);
             var color = Line.UnplayedFillTint?.Color ?? UnplayedFillColor;
             Line.PronunciationLayer.Draw(creator, ds, Line.PronunciationLayer.Position - offset,
-                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
+                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color, Hdr);
             Line.TranslationLayer.Draw(creator, ds, Line.TranslationLayer.Position - offset,
-                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
+                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color, Hdr);
         }
 
         private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
@@ -106,7 +124,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     crop.SourceRectangle = srcRect;
                     blurFx.BlurAmount = (float)blur;
                     opacityFx.Opacity = (float)opacity;
-                    ds.DrawImage(opacityFx, srcRect, srcRect);
+                    if (Hdr.IsEnabled)
+                    {
+                        _hdrUnplayed ??= new PixelShaderEffect<ScRgbPlaybackEffect>();
+                        _hdrUnplayed.Sources[0] = opacityFx;
+                        _hdrUnplayed.ConstantBuffer = new ScRgbPlaybackEffect(Hdr.White);
+                        ds.DrawImage(_hdrUnplayed, srcRect, srcRect);
+                    }
+                    else
+                    {
+                        ds.DrawImage(opacityFx, srcRect, srcRect);
+                    }
                 }
                 return;
             }
@@ -202,11 +230,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 }
                 else
                 {
-                    int endCharIndex = subLineRegion.CharacterIndex + subLineRegion.CharacterCount;
-                    for (int ci = subLineRegion.CharacterIndex; ci < endCharIndex; ci++)
+                    int endCharIndex = Math.Min(primaryChars.Count, subLineRegion.CharacterIndex + subLineRegion.CharacterCount);
+                    if (Hdr.IsEnabled && IsGlowEnabled)
                     {
-                        DrawSingleCharacter(ds, ci, finalOutputImage);
+                        // Finish the halos before drawing the glyphs to keep dark halos off the ink.
+                        for (int ci = subLineRegion.CharacterIndex; ci < endCharIndex; ci++)
+                            DrawCharacterGlow(ds, primaryChars[ci], finalOutputImage);
                     }
+
+                    for (int ci = subLineRegion.CharacterIndex; ci < endCharIndex; ci++)
+                        DrawSingleCharacter(ds, ci, finalOutputImage);
                 }
             }
         }
@@ -257,9 +290,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 region.FillColorUnplayed.ColorMatrix = _unplayedMatrix;
             }
 
-            if (fadeW >= DirtyEpsilonPx && (lineFillChanged || regionDirty))
+            if (lineFillChanged || regionDirty)
             {
-                region.FillColorFade.ColorMatrix = BuildFadeMatrix(fadeW);
+                region.SetHdr(Hdr,
+                    new Vector4(_playedR, _playedG, _playedB, _playedA),
+                    new Vector4(_unplayedR, _unplayedG, _unplayedB, _unplayedA),
+                    Line!.FadeBandWidthMax / Math.Max(fadeW, DirtyEpsilonPx));
+                if (!Hdr.IsEnabled && fadeW >= DirtyEpsilonPx)
+                    region.FillColorFade.ColorMatrix = BuildFadeMatrix(fadeW);
             }
         }
 
@@ -276,6 +314,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             bool changed = !ReferenceEquals(Line, _lastFillLine)
                 || playedAlpha != _lastPlayedAlpha
                 || unplayedAlpha != _lastUnplayedAlpha
+                || Hdr != _lastHdr
                 || PlayedFillColor != _lastPlayedColor
                 || UnplayedFillColor != _lastUnplayedColor;
             if (!changed) return false;
@@ -286,16 +325,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             _lastPlayedColor = PlayedFillColor;
             _lastUnplayedColor = UnplayedFillColor;
 
-            _playedMatrix = BuildSolidMatrix(PlayedFillColor, playedAlpha);
-            _unplayedMatrix = BuildSolidMatrix(UnplayedFillColor, unplayedAlpha);
+            _lastHdr = Hdr;
+            Vector3 playedRgb = Hdr.GetRgb(PlayedFillColor);
+            Vector3 unplayedRgb = Hdr.GetRgb(UnplayedFillColor);
+            _playedMatrix = BuildSolidMatrix(playedRgb, playedAlpha);
+            _unplayedMatrix = BuildSolidMatrix(unplayedRgb, unplayedAlpha);
 
-            _playedR = PlayedFillColor.R / 255f;
-            _playedG = PlayedFillColor.G / 255f;
-            _playedB = PlayedFillColor.B / 255f;
+            (_playedR, _playedG, _playedB) = (playedRgb.X, playedRgb.Y, playedRgb.Z);
             _playedA = playedAlpha;
-            _unplayedR = UnplayedFillColor.R / 255f;
-            _unplayedG = UnplayedFillColor.G / 255f;
-            _unplayedB = UnplayedFillColor.B / 255f;
+            (_unplayedR, _unplayedG, _unplayedB) = (unplayedRgb.X, unplayedRgb.Y, unplayedRgb.Z);
             _unplayedA = unplayedAlpha;
 
             return true;
@@ -307,14 +345,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// 矩阵，输出后再 premultiply，故此处直接给 straight 分量即可与原始
         /// 渐变（straight stops → premultiply）逐像素一致。
         /// </summary>
-        private static Matrix5x4 BuildSolidMatrix(Color color, float alpha)
+        private static Matrix5x4 BuildSolidMatrix(Vector3 color, float alpha)
         {
             return new Matrix5x4
             {
                 M44 = alpha,
-                M51 = color.R / 255f,
-                M52 = color.G / 255f,
-                M53 = color.B / 255f,
+                M51 = color.X,
+                M52 = color.Y,
+                M53 = color.Z,
             };
         }
 
@@ -371,6 +409,48 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             return playedWidth;
         }
 
+        private void DrawCharacterGlow(CanvasDrawContext ds, RenderLyricsChar character, ICanvasImage source)
+        {
+            double radius = character.GlowTransition.Value;
+            if (radius <= 0 || Line is null || Hdr.IsEnabled && character.ProgressPlayed <= 0) return;
+
+            var rect = character.LayoutRect;
+            var sourceRect = new Rect(rect.X + Line.CachedPrimaryPosition.X, rect.Y + Line.CachedPrimaryPosition.Y,
+                rect.Width, rect.Height);
+            var destination = sourceRect.Scale(character.ScaleTransition.Value).AddY(character.FloatTransition.Value);
+            character.Crop.BufferPrecision = Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
+            character.Glow.BufferPrecision = character.Crop.BufferPrecision;
+            character.Crop.Source = source;
+            character.Crop.SourceRectangle = new Rect(sourceRect.X, sourceRect.Y,
+                sourceRect.Width * character.ProgressPlayed, sourceRect.Height);
+            character.Glow.BlurAmount = (float)radius;
+
+            // Reduce the light contribution as the outgoing blur approaches zero radius.
+            float opacity = Line.IsWordEffectsRetiring
+                ? (character.GlowExitStartAmount > 0 ? (float)Math.Clamp(radius / character.GlowExitStartAmount, 0, 1) : 0)
+                : 1;
+            ICanvasImage glow = character.Glow;
+            if (Hdr.IsEnabled)
+            {
+                var halo = character.GetHdrHalo();
+                halo.ConstantBuffer = new PlaybackTextHaloEffect(Hdr.White, Hdr.TextGlowPeak, GetHdrGlowStrength(character));
+                glow = halo;
+                opacity = 1f;
+            }
+
+            ds.DrawImage(glow, destination.Extend(destination.Height), sourceRect.Extend(sourceRect.Height), opacity);
+        }
+
+        private float GetHdrGlowStrength(RenderLyricsChar character)
+        {
+            double radius = character.GlowTransition.Value;
+            float strength = (float)Math.Clamp(radius, 0d, 1d);
+            if (!Line!.IsWordEffectsRetiring)
+                return strength;
+            double start = character.GlowExitStartAmount;
+            return start > 0 ? strength * (float)Math.Clamp(radius / start, 0d, 1d) : 0;
+        }
+
         private void DrawSingleCharacter(CanvasDrawContext ds, int charIndex, ICanvasImage source)
         {
             if (Line?.PrimaryRenderChars == null) return;
@@ -394,32 +474,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (IsStrokeEnabled && Line.UnplayedStrokeTint is { } stroke)
                 ds.DrawImage(stroke, destCharRect, sourceCharRect);
 
-            if (glow > 0)
+            if (!Hdr.IsEnabled && glow > 0)
+                DrawCharacterGlow(ds, renderChar, source);
+
+            if (Hdr.IsEnabled && IsGlowEnabled && Hdr.Peak > Hdr.White && glow > 0 && renderChar.ProgressPlayed > 0)
             {
-                var sourcePlayedCharRect = new Rect(
-                    sourceCharRect.X,
-                    sourceCharRect.Y,
-                    sourceCharRect.Width * renderChar.ProgressPlayed,
-                    sourceCharRect.Height);
-
-                renderChar.Crop.Source = source;
-                renderChar.Crop.SourceRectangle = sourcePlayedCharRect;
-                renderChar.Glow.BlurAmount = (float)glow;
-
-                // 半径趋零时模糊会成为一层普通字形；退场必须同时降低这一层的透明度。
-                // 用退场开始时的实际半径归一化，保证首帧和此前画面连续。
-                float glowOpacity = Line.IsWordEffectsRetiring
-                    ? (renderChar.GlowExitStartAmount > 0 ? (float)Math.Clamp(glow / renderChar.GlowExitStartAmount, 0, 1) : 0)
-                    : 1;
-
-                ds.DrawImage(renderChar.Glow,
-                    destCharRect.Extend(destCharRect.Height),
-                    sourceCharRect.Extend(sourceCharRect.Height), glowOpacity);
+                var litInk = renderChar.GetHdrGlow();
+                if (!ReferenceEquals(litInk.Sources[0], source))
+                    litInk.Sources[0] = source;
+                float strength = GetHdrGlowStrength(renderChar) * (float)renderChar.ProgressPlayed;
+                litInk.ConstantBuffer = new PlaybackTextGlowCoreEffect(Hdr.White, Hdr.TextGlowPeak, strength);
+                source = litInk;
             }
 
             if (Line.IsWordEffectsRetiring && Line.BlurAmountTransition.Value > 0)
             {
                 // 退场仍按字符绘制，复用该字符的原生效果，避免切回整行时突变或逐帧创建资源。
+                renderChar.Crop.BufferPrecision = Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
+                renderChar.Glow.BufferPrecision = renderChar.Crop.BufferPrecision;
                 renderChar.Crop.Source = source;
                 renderChar.Crop.SourceRectangle = sourceCharRect;
                 renderChar.Glow.BlurAmount = (float)Line.BlurAmountTransition.Value;

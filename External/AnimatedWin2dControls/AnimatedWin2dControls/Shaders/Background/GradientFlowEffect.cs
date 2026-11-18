@@ -11,6 +11,7 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
+    [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
     [D2DRequiresScenePosition]
     public readonly partial struct GradientFlowEffect(
         float time,
@@ -19,7 +20,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color2,
         float3 color3,
         float3 color4,
-        bool enableDithering = true) : ID2D1PixelShader
+        bool enableDithering = true, float hdrWhite = 0f, float hdrPeak = 0f) : ID2D1PixelShader
     {
         const float PI = 3.14159265f;
 
@@ -125,7 +126,9 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float3 diter = enableDithering ? ScreenSpaceDither(fragCoord, time) : new float3(0.0f, 0.0f, 0.0f);
 
-            return new float4(Hlsl.Saturate(col + diter), 1.0f);
+            float crest = Hlsl.Max(col.X, Hlsl.Max(col.Y, col.Z)) * 0.6f;
+            float3 output = hdrWhite > 0f ? PlaybackShaderColor.Background(col, hdrWhite, hdrPeak, crest) : Hlsl.Saturate(col + diter);
+            return new float4(output, 1f);
         }
     }
 }

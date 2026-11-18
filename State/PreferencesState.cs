@@ -37,18 +37,19 @@ public sealed class PreferencesState : ObservableObject
 
     public bool UseImageDominantTheme { get => Appearance.UseImageDominantTheme; set => Appearance.UseImageDominantTheme = value; }
     public bool IsFluidBackgroundEnabled { get => Appearance.IsFluidBackgroundEnabled; set => Appearance.IsFluidBackgroundEnabled = value; }
+    public bool PlaybackHdrEnabled { get => Appearance.PlaybackHdrEnabled; set => Appearance.PlaybackHdrEnabled = value; }
+    public double PlaybackHdrReferenceWhiteNits { get => Appearance.PlaybackHdrReferenceWhiteNits; set => Appearance.PlaybackHdrReferenceWhiteNits = value; }
+    public double PlaybackHdrPeakNits { get => Appearance.PlaybackHdrPeakNits; set => Appearance.PlaybackHdrPeakNits = value; }
     public bool IsFogEffectEnabled { get => Appearance.IsFogEffectEnabled; set => Appearance.IsFogEffectEnabled = value; }
     public bool IsSnowEffectEnabled { get => Appearance.IsSnowEffectEnabled; set => Appearance.IsSnowEffectEnabled = value; }
     public bool IsRaindropEffectEnabled { get => Appearance.IsRaindropEffectEnabled; set => Appearance.IsRaindropEffectEnabled = value; }
     public Thickness LyricsMargin { get => Lyrics.LyricsMargin; set => Lyrics.LyricsMargin = value; }
     public bool EnableLightWave { get => Appearance.EnableLightWave; set => Appearance.EnableLightWave = value; }
-    public bool IsWin2dAnimatedText { get => Appearance.IsWin2dAnimatedText; set => Appearance.IsWin2dAnimatedText = value; }
     public int Latency { get => Audio.Latency; set => Audio.Latency = value; }
     public string DefaultPlayListComboBoxTag { get => General.DefaultPlayListComboBoxTag; set => General.DefaultPlayListComboBoxTag = value; }
     public EffectComboBoxItem Win2dTextEffectType { get => Appearance.Win2dTextEffectType; set => Appearance.Win2dTextEffectType = value; }
     public bool IsFolderWatchEnabled { get => General.IsFolderWatchEnabled; set => General.IsFolderWatchEnabled = value; }
     public bool IsMusicInfoVisible { get => Appearance.IsMusicInfoVisible; set => Appearance.IsMusicInfoVisible = value; }
-    public bool EnableAdvancedLyricsEffect { get => Lyrics.EnableAdvancedLyricsEffect; set => Lyrics.EnableAdvancedLyricsEffect = value; }
     public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm { get => Appearance.PaletteAlgorithm; set => Appearance.PaletteAlgorithm = value; }
     public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader { get => Appearance.BackgroundShader; set => Appearance.BackgroundShader = value; }
     public int CoverSize { get => Appearance.CoverSize; set => Appearance.CoverSize = value; }

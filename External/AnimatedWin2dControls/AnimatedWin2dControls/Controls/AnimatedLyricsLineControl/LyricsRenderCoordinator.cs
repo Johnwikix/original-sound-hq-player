@@ -5,6 +5,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         /// <summary>宿主设置的目标画布。用于 Invalidate / Size / 指针捕获 / DPI 换算 / 帧率设置。</summary>
         public CanvasAnimatedControl? Canvas { get; set; }
+        internal CanvasControl? TransparentCanvas { get; set; }
+        private UIElement? InputElement => (UIElement?)TransparentCanvas ?? Canvas;
+        private Size HostSize => Canvas?.Size ?? default;
+
+        private void InvalidateHost()
+        {
+            if (TransparentCanvas is not { } canvas)
+            {
+                Canvas?.Invalidate();
+                return;
+            }
+            if (canvas.DispatcherQueue.HasThreadAccess)
+                canvas.Invalidate();
+            else
+                canvas.DispatcherQueue.TryEnqueue(canvas.Invalidate);
+        }
 
         /// <summary>
         /// 歌词渲染区域（相对画布的矩形）。当 Width/Height &lt;= 0 时退化为整块画布，
@@ -37,8 +54,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private double RegionX => LyricsRegion.Width > 0 ? LyricsRegion.X : 0;
         private double RegionY => LyricsRegion.Height > 0 ? LyricsRegion.Y : 0;
-        private double RegionW => LyricsRegion.Width > 0 ? LyricsRegion.Width : (Canvas?.Size.Width ?? 0);
-        private double RegionH => LyricsRegion.Height > 0 ? LyricsRegion.Height : (Canvas?.Size.Height ?? 0);
+        private double RegionW => LyricsRegion.Width > 0 ? LyricsRegion.Width : HostSize.Width;
+        private double RegionH => LyricsRegion.Height > 0 ? LyricsRegion.Height : HostSize.Height;
 
         /// <summary>宿主样式覆盖：字重（null = 跟随 LyricsSettingsBus，默认 700）。变更后调用 InvalidateStyle()。</summary>
         public int? FontWeightOverride { get; set; }
@@ -47,7 +64,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void InvalidateStyle()
         {
             _layoutDirty = true;
-            Canvas?.Invalidate();
+            InvalidateHost();
         }
 
         /// <summary>判断画布坐标系的点是否落在歌词绘制区域内。
@@ -195,6 +212,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedEdgeFadeHeight = -1;
         }
 
+        internal void ResetDeviceResources()
+        {
+            lock (_renderGate)
+            {
+                DisposeRenderLines();
+                _lineRenderer.ClearSharedResources();
+                _edgeFadeMask.Reset();
+                OnCreateResources();
+            }
+        }
+
         public void PrepareForShutdown()
         {
             lock (_renderGate)
@@ -209,6 +237,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 DisposeRenderLines();
                 _renderLines = [];
                 _lineRenderer.Line = null;
+                _lineRenderer.ClearSharedResources();
                 _edgeFadeMask.Dispose();
                 Canvas = null;
             }
@@ -254,7 +283,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             _cachedLyricsFontSize = value;
             _layoutDirty = true;
-            Canvas?.Invalidate();
+            InvalidateHost();
         }
 
         private void OnUILyricsChangedBus(IList<LyricLine>? value) => OnUILyricsChanged(value);
@@ -302,7 +331,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             _layoutDirty = true;
-            Canvas?.Invalidate();
+            InvalidateHost();
         }
 
         private void OnUILyricsChanged(IList<LyricLine>? newLyrics)
@@ -326,7 +355,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 // A newer snapshot can replace an unconsumed one without disposing Win2D objects.
                 _pendingLines = newLines;
             }
-            Canvas?.Invalidate();
+            InvalidateHost();
         }
 
         // Called only at a render callback boundary while holding _renderGate.
@@ -376,7 +405,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _playedColor = Color.FromArgb(255, 0, 0, 0);
                 _unplayedColor = Color.FromArgb(255, 0, 0, 0);
             }
-            Canvas?.Invalidate();
+            InvalidateHost();
         }
 
         // ── 布局 ──────────────────────────────────────────────────────────────
@@ -386,7 +415,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void EnsureLayout(ICanvasResourceCreator resourceCreator)
         {
-            if (Canvas == null || _renderLines.Count == 0) return;
+            if (_renderLines.Count == 0) return;
             var layoutLines = _renderLines;
 
             double regionW = RegionW;
@@ -767,18 +796,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         /// <summary>Draws production lyric state using the scoped ABI context.</summary>
-        public void OnDraw(ICanvasAnimatedControl sender, CanvasDrawContext ds)
+        public void OnDraw(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr = default,
+            bool consumePendingLyrics = true)
         {
             lock (_renderGate)
             {
                 if (_shutdown) return;
                 // Invalidate may request a draw while the animation is paused, without Update.
-                if (ApplyPendingLyrics()) UpdateCore(sender, TimeSpan.Zero);
-                DrawCore(sender, ds);
+                if (consumePendingLyrics && ApplyPendingLyrics()) UpdateCore(sender, TimeSpan.Zero);
+                DrawCore(sender, ds, hdr);
             }
         }
 
-        private void DrawCore(ICanvasAnimatedControl sender, CanvasDrawContext ds)
+        private void DrawCore(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr)
         {
             if (_renderLines.Count == 0) return;
 
@@ -799,16 +829,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 using (ds.CreateLayer(_edgeFadeMask.Brush))
                 {
-                    DrawLyricsContent(sender, ds, rx, ry, rw, rh);
+                    DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
                 }
             }
             else
             {
-                DrawLyricsContent(sender, ds, rx, ry, rw, rh);
+                DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
             }
         }
 
-        private void DrawLyricsContent(ICanvasAnimatedControl sender, CanvasDrawContext ds, double rx, double ry, double rw, double rh)
+        private void DrawLyricsContent(ICanvasResourceCreator sender, CanvasDrawContext ds, double rx, double ry, double rw, double rh, PlaybackHdrColor hdr)
         {
             var lines = _renderLines;
             if (lines.Count == 0) return;
@@ -852,6 +882,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 ds.Transform *= Matrix3x2.CreateTranslation((float)rx, (float)yOffset);
                 ds.Transform *= Matrix3x2.CreateTranslation(0, (float)(line.LayoutOffsetY * lineScale));
 
+                _lineRenderer.Hdr = hdr;
                 _lineRenderer.IsPlaying = isPlayingLine;
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
@@ -909,7 +940,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void OnSizeChanged()
         {
             _layoutDirty = true;
-            Canvas?.Invalidate();
+            InvalidateHost();
         }
 
         public void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
@@ -925,7 +956,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (_renderLines.Count == 0) return;
             // 同一事件使用一个有作用域的原生快照，避免 PointerPoint/Properties 投影。
-            using var point = PointerPointScope.GetCurrentPoint(e, Canvas);
+            using var point = PointerPointScope.GetCurrentPoint(e, InputElement);
             if (!IsPointerInLyricsRegion(point.Position)) return;
             double delta = point.MouseWheelDelta * WheelScrollPixels * _cachedScrollSensitivity / 120.0;
             _pendingMouseScrollY += delta;
@@ -933,14 +964,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _isUserScrollingChanged = !_userScrolling;
             _userScrolling = true;
             _userScrollCooldownSec = UserScrollCooldown;
-            Canvas?.Invalidate();
+            InvalidateHost();
             e.Handled = true;
         }
 
         public void OnPointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if (Canvas == null) return;
-            using var point = PointerPointScope.GetCurrentPoint(e, Canvas);
+            if (InputElement is null) return;
+            using var point = PointerPointScope.GetCurrentPoint(e, InputElement);
             var pos = point.Position;
             _lastMousePos = pos;
             _hoverDirty = true;
@@ -962,7 +993,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // 兜底：刚跨进画布时 _isMouseInLyricsArea 还没被 OnPointerMoved 刷新过
             // （跨进画布后的第一帧 OnPointerMoved 在 Entered 之后才到）。真正的持续追踪
             // 在 OnPointerMoved 里。
-            if (Canvas is { } canvas)
+            if (InputElement is { } canvas)
             {
                 using var point = PointerPointScope.GetCurrentPoint(e, canvas);
                 _isMouseInLyricsArea = IsPointerInLyricsRegion(point.Position);
@@ -989,12 +1020,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
-            var tapPosition = UsesLineScroll ? e.GetPosition(Canvas) : _lastMousePos;
+            var tapPosition = UsesLineScroll ? e.GetPosition(InputElement) : _lastMousePos;
             if (UsesLineScroll && !IsPointerInLyricsRegion(tapPosition)) return null;
             var regionLocalMouse = new Point(tapPosition.X - RegionX, tapPosition.Y - RegionY);
             int hovered = LyricsLayoutManager.FindMouseHoverLineIndex(
                 _renderLines, true, regionLocalMouse, combinedScroll,
-                RegionH > 0 ? RegionH : (Canvas?.Size.Height ?? 400), playingLineTopOffsetFactor,
+                RegionH > 0 ? RegionH : HostSize.Height, playingLineTopOffsetFactor,
                 UsesLineScroll, _mouseYScrollTransition.Value);
 
             if (hovered >= 0 && hovered < _renderLines.Count)

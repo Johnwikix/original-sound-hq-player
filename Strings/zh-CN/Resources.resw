@@ -1194,8 +1194,8 @@
   <data name="RebootToApply" xml:space="preserve">
     <value>重启应用生效</value>
   </data>
-  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
-    <value>Win2d动画文本块</value>
+  <data name="PlaybackTitleEffect.Text" xml:space="preserve">
+    <value>标题动画</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
     <value>默认效果（较低GPU开销）</value>
@@ -1230,14 +1230,11 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>歌词时间偏移</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>启用高级逐字歌词特效</value>
+  <data name="WordLyricsEffects.Text" xml:space="preserve">
+    <value>逐字歌词效果</value>
   </data>
   <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
     <value>自定义歌词颜色</value>
-  </data>
-  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
-    <value>仅高级歌词生效</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>设置</value>
@@ -2319,7 +2316,7 @@ SHA-256：{5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>主窗口图片背景</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>背景图片</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>选择本地图片作为主窗口背景；清除后恢复原有窗口材质。关闭着色器背景并启用高级逐字歌词时，图片会由歌词画布统一绘制。</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>选择本地图片作为主窗口背景，清除图片后恢复窗口材质。</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>选择图片</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>清除图片</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>模糊程度</value></data>
@@ -2741,4 +2738,13 @@ SHA-256：{5}
 完整详情请查看日志。</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>已复制的文件会保留，但发送记录未能完整更新。</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>目标路径冲突或无法确认文件归属，已跳过以避免覆盖：{0}</value></data>
+  <data name="PlaybackHdr" xml:space="preserve"><value>播放页 HDR</value></data>
+  <data name="PlaybackHdrWhite" xml:space="preserve"><value>参考白点亮度</value></data>
+  <data name="PlaybackHdrPeak" xml:space="preserve"><value>高光峰值亮度</value></data>
+  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR 已关闭</value></data>
+  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>当前显示器使用 SDR</value></data>
+  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>窗口材质 · SDR 前景</value></data>
+  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR 呈现失败 · 已使用 SDR</value></data>
+  <data name="PlaybackHdrReady" xml:space="preserve"><value>播放页 HDR 就绪</value></data>
+  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR 已生效 · 参考白点 {0:0} nit · 峰值 {1:0} nit</value></data>
 </root>

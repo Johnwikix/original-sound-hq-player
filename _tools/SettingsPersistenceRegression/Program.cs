@@ -26,6 +26,22 @@ try
          "AppTheme":"Dark","AppWidth":1450,"DefualtEntry":"song","PlayOrPauseShortcut":["Ctrl","P"]}
         """;
     var defaults = JsonSerializer.Deserialize("{}", SettingsJsonContext.Default.SaveSettings)!;
+    Check(!defaults.PlaybackHdrEnabled && defaults.PlaybackHdrReferenceWhiteNits == 300 && defaults.PlaybackHdrPeakNits == 600,
+        "Missing HDR keys must preserve SDR and the default brightness values.");
+    var legacyHdr = JsonSerializer.Deserialize("""{"PlaybackHdrEnabled":true,"PlaybackHdrPeakNits":420}""", SettingsJsonContext.Default.SaveSettings)!;
+    Check(legacyHdr.PlaybackHdrEnabled && legacyHdr.PlaybackHdrPeakNits == 420 && legacyHdr.PlaybackHdrReferenceWhiteNits == 300, "Legacy peak was lost.");
+    var previousPlaybackSettings = JsonSerializer.Deserialize(
+        """{"IsWin2dAnimatedText":false,"EnableAdvancedLyricsEffect":false,"PlaybackHdrPeakNits":530}""",
+        SettingsJsonContext.Default.SaveSettings)!;
+    using var migratedPlaybackSettings = JsonDocument.Parse(JsonSerializer.Serialize(previousPlaybackSettings, SettingsJsonContext.Default.SaveSettings));
+    Check(previousPlaybackSettings.PlaybackHdrPeakNits == 530
+        && !migratedPlaybackSettings.RootElement.TryGetProperty("IsWin2dAnimatedText", out _)
+        && !migratedPlaybackSettings.RootElement.TryGetProperty("EnableAdvancedLyricsEffect", out _),
+        "Retired playback modes must be ignored on load and omitted on save.");
+    var hdrSettings = new SaveSettings { PlaybackHdrEnabled = true, PlaybackHdrReferenceWhiteNits = 350, PlaybackHdrPeakNits = 950 };
+    var hdrCopy = JsonSerializer.Deserialize(JsonSerializer.Serialize(hdrSettings, SettingsJsonContext.Default.SaveSettings),
+        SettingsJsonContext.Default.SaveSettings)!;
+    Check(hdrCopy.PlaybackHdrEnabled && hdrCopy.PlaybackHdrReferenceWhiteNits == 350 && hdrCopy.PlaybackHdrPeakNits == 950, "HDR settings did not survive restart.");
     var firstStartupPath = Path.Combine(directory, "FirstStartup.json");
     var firstStartup = await AtomicSettingsFile.LoadAsync(firstStartupPath, SettingsJsonContext.Default.SaveSettings,
         SaveSettings.CreateForNewUser, SaveSettings.CreateForNewUser);

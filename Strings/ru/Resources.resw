@@ -1195,8 +1195,8 @@
   <data name="RebootToApply" xml:space="preserve">
     <value>Перезапустите приложение, чтобы изменения вступили в силу.</value>
   </data>
-  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
-    <value>Анимированный текстовый блок Win2D</value>
+  <data name="PlaybackTitleEffect.Text" xml:space="preserve">
+    <value>Анимация названия</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
     <value>По умолчанию(Низкая нагрузка на GPU)</value>
@@ -1231,14 +1231,11 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Смещение времени текста песни</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>���ܧݧ��ڧ�� ��ѧ��ڧ�֧ߧߧ��� ����֧ܧ�� ��� ��ݧ�ӧ֧�ߧ�ާ� ��֧ܧ��� ��֧�ߧ�</value>
+  <data name="WordLyricsEffects.Text" xml:space="preserve">
+    <value>Эффекты пословного отображения текста</value>
   </data>
   <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
     <value>Custom Lyrics Color</value>
-  </data>
-  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
-    <value>For Advanced Lyrics only</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Настройки</value>
@@ -2317,7 +2314,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Фоновое изображение главного окна</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Фоновое изображение</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Выберите локальное изображение для главного окна. Удалите его, чтобы восстановить материал окна. При отключённом фоне шейдера и включённых расширенных караоке-эффектах изображение рисуется на холсте текста.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Выберите локальное изображение для главного окна. Удалите его, чтобы восстановить материал окна.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Выбрать изображение</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Убрать изображение</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Размытие</value></data>
@@ -2739,4 +2736,13 @@ SHA-256: {5}
 Подробности доступны в журнале.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Скопированные файлы сохранены, но записи об их передаче обновлены не полностью.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Конфликт пути назначения или не удалось подтвердить принадлежность файла. Перезапись пропущена: {0}</value></data>
+  <data name="PlaybackHdr" xml:space="preserve"><value>HDR на странице воспроизведения</value></data>
+  <data name="PlaybackHdrWhite" xml:space="preserve"><value>Яркость опорного белого</value></data>
+  <data name="PlaybackHdrPeak" xml:space="preserve"><value>Пиковая яркость бликов</value></data>
+  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR выключен</value></data>
+  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Этот дисплей работает в SDR</value></data>
+  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Материал окна · передний план в SDR</value></data>
+  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR недоступен · используется SDR</value></data>
+  <data name="PlaybackHdrReady" xml:space="preserve"><value>HDR готов для страницы воспроизведения</value></data>
+  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR активен · опорный белый {0:0} нит · пик {1:0} нит</value></data>
 </root>

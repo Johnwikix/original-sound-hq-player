@@ -1,5 +1,8 @@
 using AnimatedWin2dControls.Interop;
+using AnimatedWin2dControls.Shaders;
+using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
@@ -30,6 +33,9 @@ namespace AnimatedWin2dControls.Renderer.Background
         private PendingImage? _pending;
         private CanvasBitmap? _bitmap;
         private GaussianBlurEffect? _blur;
+        private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrImage;
+        private GaussianBlurEffect? _hdrBlur;
+        private CanvasSolidColorBrush? _hdrVeil;
         private bool _resourcesInvalid = true;
         private bool _disposed;
         private bool _decodeEnabled = true;
@@ -87,6 +93,8 @@ namespace AnimatedWin2dControls.Renderer.Background
                 {
                     if (_blur is not null)
                         _blur.BlurAmount = (float)normalizedBlur;
+                    if (_hdrBlur is not null)
+                        _hdrBlur.BlurAmount = (float)normalizedBlur;
                 }
             }
             if (startWorker)
@@ -186,14 +194,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             // The image itself is static; the animated host still drives Draw and lyrics.
         }
 
-        public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
-        {
-            using var scope = CanvasDrawingSessionScope.Borrow(ds);
-            Draw(control, scope.Context);
-        }
-
         /// <summary>Draws through the scoped native session ABI.</summary>
-        public override void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
+        public override void Draw(PlaybackCanvasFrame control, CanvasDrawContext ds)
         {
             // SwapBackgroundRenderer pauses the host before replacement, but Win2D can
             // already have entered this callback. Skip instead of racing Dispose.
@@ -213,19 +215,43 @@ namespace AnimatedWin2dControls.Renderer.Background
                     : Windows.UI.Color.FromArgb(204, 255, 255, 255);
 
                 EnsureBitmap(control);
-                if (_blur is null || _bitmap is null)
+                if (_blur is not null && _bitmap is not null)
                 {
-                    ds.FillRectangle(destination, veil);
-                    return;
+                    var source = GetUniformToFillSource(_bitmap.Size.Width, _bitmap.Size.Height, width, height);
+                    if (control.Hdr.IsEnabled)
+                    {
+                        if (_hdrImage is null)
+                        {
+                            _hdrImage = new PixelShaderEffect<ScRgbPlaybackEffect>();
+                            _hdrImage.Sources[0] = _bitmap;
+                            _hdrBlur = new GaussianBlurEffect
+                            {
+                                Source = _hdrImage,
+                                BlurAmount = _blur.BlurAmount,
+                                BorderMode = EffectBorderMode.Hard,
+                                BufferPrecision = CanvasBufferPrecision.Precision16Float
+                            };
+                        }
+                        _hdrImage.ConstantBuffer = new ScRgbPlaybackEffect(control.Hdr.White);
+                        ds.DrawImage(_hdrBlur!, destination, source);
+                    }
+                    else
+                    {
+                        ds.DrawImage(_blur, destination, source);
+                    }
                 }
 
-                var source = GetUniformToFillSource(_bitmap.Size.Width, _bitmap.Size.Height, width, height);
-                ds.DrawImage(_blur, destination, source);
-
-                // WindowBackgroundImage previously used the page veil above the image.
-                // Keep that visual treatment in the same session instead of relying on a
-                // second composition visual behind a swap chain.
-                ds.FillRectangle(destination, veil);
+                // Match the theme veil used by WindowBackgroundImage.
+                if (control.Hdr.IsEnabled)
+                {
+                    _hdrVeil ??= new CanvasSolidColorBrush(control.Device, veil);
+                    _hdrVeil.ColorHdr = control.Hdr.GetColor(veil);
+                    ds.GetManagedSessionForCompatibility().FillRectangle(destination, _hdrVeil);
+                }
+                else
+                {
+                    ds.FillRectangle(destination, veil);
+                }
             }
             finally
             {
@@ -233,7 +259,7 @@ namespace AnimatedWin2dControls.Renderer.Background
             }
         }
 
-        private void EnsureBitmap(ICanvasAnimatedControl control)
+        private void EnsureBitmap(PlaybackCanvasFrame control)
         {
             PendingImage? pending = null;
             int version;
@@ -251,6 +277,12 @@ namespace AnimatedWin2dControls.Renderer.Background
 
             if (_resourcesInvalid || _loadedVersion != version)
             {
+                _hdrBlur?.Dispose();
+                _hdrBlur = null;
+                _hdrImage?.Dispose();
+                _hdrImage = null;
+                _hdrVeil?.Dispose();
+                _hdrVeil = null;
                 _blur?.Dispose();
                 _blur = null;
                 _bitmap?.Dispose();
@@ -265,7 +297,7 @@ namespace AnimatedWin2dControls.Renderer.Background
             try
             {
                 _bitmap = CanvasBitmap.CreateFromBytes(
-                    control,
+                    control.Device,
                     pending.Pixels,
                     pending.Width,
                     pending.Height,
@@ -283,6 +315,12 @@ namespace AnimatedWin2dControls.Renderer.Background
             {
                 _bitmap?.Dispose();
                 _bitmap = null;
+                _hdrBlur?.Dispose();
+                _hdrBlur = null;
+                _hdrImage?.Dispose();
+                _hdrImage = null;
+                _hdrVeil?.Dispose();
+                _hdrVeil = null;
                 _blur?.Dispose();
                 _blur = null;
             }
@@ -424,6 +462,12 @@ namespace AnimatedWin2dControls.Renderer.Background
 
             lock (_resourceGate)
             {
+                _hdrBlur?.Dispose();
+                _hdrBlur = null;
+                _hdrImage?.Dispose();
+                _hdrImage = null;
+                _hdrVeil?.Dispose();
+                _hdrVeil = null;
                 _blur?.Dispose();
                 _blur = null;
                 _bitmap?.Dispose();

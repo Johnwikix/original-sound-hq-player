@@ -1,4 +1,4 @@
-﻿#nullable enable annotations
+#nullable enable annotations
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Renderer;
 using AnimatedWin2dControls.Interop;
@@ -15,6 +15,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Windows.Foundation;
+using Windows.Graphics.DirectX;
 
 namespace AnimatedWin2dControls.Controls
 {
@@ -23,7 +24,8 @@ namespace AnimatedWin2dControls.Controls
     /// 流体/雪/雾/雨背景栈与高级歌词，根治多交换链合成竞争导致的掉帧。
     /// </summary>
     [TemplatePart(Name = PartCanvasName, Type = typeof(CanvasAnimatedControl))]
-    public sealed class NowPlayingCanvas : Control, IDisposable
+    [TemplatePart(Name = HdrPanelPart, Type = typeof(CanvasSwapChainPanel))]
+    public sealed partial class NowPlayingCanvas : Control, IDisposable
     {
         private const string PartCanvasName = "PART_Canvas";
 
@@ -187,6 +189,8 @@ namespace AnimatedWin2dControls.Controls
         private bool _pausedByVisibility;
         private bool _canvasResourcesReady;
         private bool _rendererResourcesLoaded;
+        private CanvasDevice? _rendererDevice;
+        private CanvasDevice? _sdrDevice;
 
         // 背景半帧率：每 (skip+1) 帧才重绘一次不透明合成缓存，其余帧复用。0=全帧率，1=半帧率。
         private int _backgroundFrameSkip = 1;
@@ -346,20 +350,13 @@ namespace AnimatedWin2dControls.Controls
                 _coordinatorAttached = true;
             }
 
-            if (active)
-            {
-                lock (_cacheGate)
-                {
-                    if (_canvasResourcesReady && !_rendererResourcesLoaded)
-                        LoadActiveResources();
-                    else if (_background is ImageBackgroundRenderer image)
-                        image.SetActive(true);
-                }
-            }
-
             UpdateCanvasPaused();
             if (active)
+            {
+                if ((_sdrFrameEnabled || CanPresentHdr) && _background is ImageBackgroundRenderer image)
+                    image.SetActive(true);
                 _canvas?.Invalidate();
+            }
         }
 
         private void SwapBackgroundRenderer()
@@ -378,8 +375,7 @@ namespace AnimatedWin2dControls.Controls
                 // already-entered Draw callback that holds a local renderer reference.
                 lock (_cacheGate)
                 {
-                    _bgCache?.Dispose();
-                    _bgCache = null;
+                    ReleaseBackgroundCache();
 
                     var oldBg = _background;
                     _background = null;
@@ -401,7 +397,7 @@ namespace AnimatedWin2dControls.Controls
                         ImageBackgroundRenderer => !_imageBackgroundResourcesInitialized,
                         _ => true
                     };
-                    if (needsResources && _canvasResourcesReady && _isActive)
+                    if (needsResources && _rendererResourcesLoaded && _isActive)
                     {
                         newBg.LoadResources();
                         if (newBg is RotatingMeshBackgroundRenderer)
@@ -415,7 +411,7 @@ namespace AnimatedWin2dControls.Controls
             {
                 if (_canvas is not null)
                     _canvas.Paused = wasCanvasPaused
-                        || _pausedByVisibility || _pausedByParent || _pausedByWindow;
+                        || _pausedByVisibility || _pausedByParent || _pausedByWindow || !_sdrAllowed || _hdrOwnsFrame;
             }
         }
 
@@ -444,7 +440,7 @@ namespace AnimatedWin2dControls.Controls
 
         private void LoadActiveResources()
         {
-            if (!_isActive || !_canvasResourcesReady)
+            if (!_isActive)
                 return;
 
             SyncStateFromProperties();
@@ -463,6 +459,12 @@ namespace AnimatedWin2dControls.Controls
                 background.RefreshColors();
             background.SetArtwork(_lastArtwork);
 
+            LoadRendererResources();
+        }
+
+        private void LoadRendererResources()
+        {
+            var background = _background!;
             background.LoadResources();
             if (background is RotatingMeshBackgroundRenderer)
                 _rotatingMeshResourcesInitialized = true;
@@ -474,6 +476,27 @@ namespace AnimatedWin2dControls.Controls
             if (_advanced)
                 _coordinator.OnCreateResources();
             _rendererResourcesLoaded = true;
+        }
+
+        // The SDR game loop and the UI-thread HDR panel have different devices.
+        // Preserve animation and lyric state while invalidating device-bound drawings.
+        private bool PrepareSceneResources(CanvasDevice device)
+        {
+            if (ReferenceEquals(_rendererDevice, device)) return false;
+            if (_rendererDevice is not null)
+                LoadRendererResources();
+
+            ReleaseBackgroundCache();
+            _coordinator.ResetDeviceResources();
+            _rendererDevice = device;
+            return true;
+        }
+
+        private void ReleaseBackgroundCache()
+        {
+            _bgCache?.Dispose();
+            _bgCache = null;
+            _bgCacheHdr = default;
         }
 
         /// <summary>仅在 UI 线程调用：把依赖属性读入普通字段并下推到各渲染模块。</summary>
@@ -513,6 +536,9 @@ namespace AnimatedWin2dControls.Controls
         {
             base.OnApplyTemplate();
             DetachCanvasEvents();
+            DetachHdrPanel();
+            _canvasResourcesReady = false;
+            _sdrDevice = null;
 
             if (_visibilityCallbackToken != 0)
             {
@@ -523,6 +549,7 @@ namespace AnimatedWin2dControls.Controls
             _advanced = EnableAdvancedLyrics;
             SyncStateFromProperties();
             _canvas = GetTemplateChild(PartCanvasName) as CanvasAnimatedControl;
+            _hdrPanel = GetTemplateChild(HdrPanelPart) as CanvasSwapChainPanel;
 
             if (_canvas != null)
             {
@@ -593,17 +620,24 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            // The page is a singleton and can be temporarily hidden by the
-            // navigation overlay. Keep the template and device resources alive;
-            // final shutdown is handled explicitly by PrepareForShutdown().
+            _sdrFrameEnabled = false;
             if (_canvas is not null)
                 _canvas.Paused = true;
+            bool wasPresented = StopHdrPresentation(releaseDevice: true);
             DetachFrameEvents();
+            // Keep the template for reattach. Its GPU resources can be rebuilt on demand.
+            lock (_cacheGate)
+            {
+                if (_rendererResourcesLoaded)
+                    ReleaseSceneResources();
+            }
             if (_coordinatorAttached)
             {
                 _coordinator.Detach();
                 _coordinatorAttached = false;
             }
+            if (wasPresented)
+                HdrPresentationChanged?.Invoke(false, false);
         }
 
         // ── 暂停管理 ──────────────────────────────────────────────────────────
@@ -617,14 +651,41 @@ namespace AnimatedWin2dControls.Controls
         }
         public void SetWindowPaused(bool paused)
         {
+            if (_pausedByWindow == paused) return;
             _pausedByWindow = paused;
-            UpdateCanvasPaused();
+            RetryHdrPresentation();
         }
 
-        private void UpdateCanvasPaused()
+        private void UpdateCanvasPaused(bool replaceHdr = false)
         {
-            if (_canvas is not null)
-                _canvas.Paused = !_isActive || _pausedByVisibility || _pausedByParent || _pausedByWindow;
+            bool canPresentHdr = CanPresentHdr;
+            bool canPresentSdr = CanRenderScene && _sdrAllowed && !canPresentHdr;
+            if (!canPresentSdr)
+                _sdrFrameEnabled = false;
+            // Navigation and feature settings end the HDR session. A minimized window
+            // can resume the same device after its presentation clock has stopped.
+            bool releaseHdr = !_hdrColor.IsEnabled || _hdrFailed || !_isActive || _pausedByParent || _pausedByVisibility;
+            bool stoppedHdr = (replaceHdr || !canPresentHdr) && StopHdrPresentation(releaseHdr);
+            if (canPresentHdr)
+                _hdrClock ??= FrameEventSubscription.SubscribeRendering(RenderHdrFrame);
+
+            if (_canvas is { } canvas)
+            {
+                if (canPresentSdr && _canvasResourcesReady && !_rendererResourcesLoaded)
+                {
+                    lock (_cacheGate)
+                        LoadActiveResources();
+                }
+
+                _sdrFrameEnabled = canPresentSdr;
+                // A paused swap chain retains its last frame. HDR-only image mode needs
+                // the window's image to show through until the new panel has presented.
+                canvas.Opacity = _sdrAllowed ? 1 : 0;
+                canvas.Paused = !canPresentSdr;
+            }
+
+            if (stoppedHdr)
+                HdrPresentationChanged?.Invoke(false, false);
         }
 
         private static void OnVisibilityChanged(DependencyObject d, DependencyProperty dp)
@@ -636,72 +697,56 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 资源 / 热路径 ─────────────────────────────────────────────────────
 
-        private void ReleaseForUnload()
+        // The caller holds _cacheGate so neither presentation can use the retiring resources.
+        private void ReleaseSceneResources()
         {
-            if (_canvas is not null)
-                _canvas.Paused = true;
-            if (_visibilityCallbackToken != 0)
-            {
-                UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
-                _visibilityCallbackToken = 0;
-            }
-
-            var canvas = _canvas;
-            DetachCanvasEvents();
-            canvas?.RemoveFromVisualTree();
-            _canvas = null;
-            _coordinatorAttached = false;
-            _coordinator.ReleaseForUnload();
-
             ReleaseBackgroundResources();
-            _canvasResourcesReady = false;
+            _coordinator.ResetDeviceResources();
         }
 
         private void ReleaseBackgroundResources()
         {
-            lock (_cacheGate)
-            {
-                var background = _background;
-                _background = null;
-                if (background is ImageBackgroundRenderer image)
+            var background = _background;
+            _background = null;
+            if (background is ImageBackgroundRenderer image)
                     image.SetActive(false);
-                background?.Dispose();
+            background?.Dispose();
 
-                if (_rotatingMeshBackground is not null &&
+            if (_rotatingMeshBackground is not null &&
                     !ReferenceEquals(background, _rotatingMeshBackground))
                     _rotatingMeshBackground.Dispose();
-                if (_imageBackground is not null &&
+            if (_imageBackground is not null &&
                     !ReferenceEquals(background, _imageBackground))
                     _imageBackground.Dispose();
 
-                _rotatingMeshBackground = null;
-                _rotatingMeshResourcesInitialized = false;
-                _imageBackground = null;
-                _imageBackgroundResourcesInitialized = false;
-                _rendererResourcesLoaded = false;
-                _fog.Dispose();
-                _snow.Dispose();
-                _raindrop.Dispose();
-                _bgCache?.Dispose();
-                _bgCache = null;
-            }
+            _rotatingMeshBackground = null;
+            _rotatingMeshResourcesInitialized = false;
+            _imageBackground = null;
+            _imageBackgroundResourcesInitialized = false;
+            _rendererResourcesLoaded = false;
+            _fog.Dispose();
+            _snow.Dispose();
+            _raindrop.Dispose();
+            ReleaseBackgroundCache();
+            _rendererDevice = null;
         }
 
         private void OnCanvasCreateResources(CanvasAnimatedControl sender, CanvasCreateResourcesEventArgs args)
         {
             try
             {
+                _sdrDevice = sender.Device;
                 _canvasResourcesReady = true;
+                if (_hdrOwnsFrame || (_hdrDevice is not null && ReferenceEquals(_rendererDevice, _hdrDevice))) return;
+
                 lock (_cacheGate)
                 {
                     _rendererResourcesLoaded = false;
-                    // 设备重建（含设备丢失/恢复）：丢弃合成缓存，由下一帧按当前设备/尺寸重建
-                    _bgCache?.Dispose();
-                    _bgCache = null;
-
+                    _rendererDevice = null;
+                    ReleaseBackgroundCache();
                     _rotatingMeshResourcesInitialized = false;
                     _imageBackgroundResourcesInitialized = false;
-                    if (_isActive)
+                    if (_sdrFrameEnabled)
                         LoadActiveResources();
                 }
             }
@@ -710,124 +755,118 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnCanvasUpdate(TimeSpan elapsed)
         {
-            if (!_isActive) return;
-
-            // 渲染回调内任何异常都不允许逃逸：会经 Win2D 游戏循环 / DispatcherQueue
-            // 转成 stowed exception（0xc000027b）直接闪退。截停 + 记录（限流）。
+            var canvas = _canvas;
+            if (canvas is null || !_sdrFrameEnabled || _hdrOwnsFrame || !Monitor.TryEnter(_cacheGate)) return;
             try
             {
-                if (!Monitor.TryEnter(_cacheGate, 0)) return;
-                try
-                {
-                    var bg = _background;
-                    // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
-                    bg?.Update(elapsed);
-                    _fog.Update(elapsed.TotalSeconds);
-                    _snow.Update(elapsed.TotalSeconds);
-                    _raindrop.Update(elapsed.TotalSeconds);
-                }
-                finally { Monitor.Exit(_cacheGate); }
-
-                if (_advanced)
-                    _coordinator.OnUpdate(_canvas!, elapsed);
+                if (_hdrOwnsFrame || !_sdrFrameEnabled || !_rendererResourcesLoaded || _sdrDevice is not { } device) return;
+                PrepareSceneResources(device);
+                UpdateScene(canvas, elapsed);
             }
             catch (Exception ex)
             {
 #if DEBUG
-                Log.ForContext<NowPlayingCanvas>().Error(ex,
-                    "Update 渲染回调异常（已截停，阻止 stowed exception 闪退）");
+                Log.ForContext<NowPlayingCanvas>().Error(ex, "Playback scene update failed");
 #endif
             }
+            finally { Monitor.Exit(_cacheGate); }
+        }
+
+        private void UpdateScene(ICanvasResourceCreator creator, TimeSpan elapsed)
+        {
+            _background?.Update(elapsed);
+            _fog.Update(elapsed.TotalSeconds);
+            _snow.Update(elapsed.TotalSeconds);
+            _raindrop.Update(elapsed.TotalSeconds);
+            if (_advanced)
+                _coordinator.OnUpdate(creator, elapsed);
         }
 
         private void OnCanvasDraw(CanvasDrawContext ds)
         {
-            var sender = _canvas;
-            if (sender is null) return;
-            if (!_isActive) return;
-
-            // 绘制阶段同步异常截停 + 记录（限流）。注意：主交换链会话的 EndDraw 在
-            // Win2D 内部（本方法返回之后），那一层由 App 的 first-chance 过滤兜底记录。
+            var canvas = _canvas;
+            if (canvas is null || !_sdrFrameEnabled || _hdrOwnsFrame || !Monitor.TryEnter(_cacheGate)) return;
             try
             {
-                DrawBackground(sender, ds);
-
-                if (_advanced)
-                    _coordinator.OnDraw(sender, ds);
+                if (_hdrOwnsFrame || !_sdrFrameEnabled || !_rendererResourcesLoaded) return;
+                var frame = new PlaybackCanvasFrame(canvas);
+                if (PrepareSceneResources(frame.Device))
+                    UpdateScene(frame.Device, TimeSpan.Zero);
+                DrawScene(frame, ds);
             }
             catch (Exception ex)
             {
-                // 自愈：背景缓存标脏，下一帧强制重建（本帧可能半渲染）。
                 _bgCacheWidthDip = -1f;
-
 #if DEBUG
-                Log.ForContext<NowPlayingCanvas>().Error(ex,
-                    "Draw 渲染回调异常（已截停本帧，bgCache 已标脏）controlDpi={Dpi} sizeDip={W}x{H}",
-                    sender.Dpi, sender.Size.Width, sender.Size.Height);
+                Log.ForContext<NowPlayingCanvas>().Error(ex, "Playback scene draw failed");
 #endif
             }
+            finally { Monitor.Exit(_cacheGate); }
         }
 
-        // 背景以 (skip+1) 帧为周期重绘到不透明合成缓存，其余帧复用缓存 blit。
-        // 流体恒为满屏不透明，缓存整面覆盖交换链，故无需清屏；歌词层每帧叠加其上。
-        private void DrawBackground(ICanvasAnimatedControl sender, CanvasDrawContext ds)
+        private void DrawScene(PlaybackCanvasFrame frame, CanvasDrawContext ds)
+        {
+            DrawBackground(frame, ds);
+            if (_advanced)
+                _coordinator.OnDraw(frame.Device, ds, frame.Hdr, consumePendingLyrics: !frame.Hdr.IsEnabled);
+        }
+
+        private void DrawBackground(PlaybackCanvasFrame frame, CanvasDrawContext ds)
         {
             _frameCounter++;
-
-            if (_backgroundFrameSkip <= 0)
+            if (_backgroundFrameSkip <= 0 || _useImageBackground && frame.Hdr.IsEnabled)
             {
-                // The UI thread can replace/dispose the renderer while a draw
-                // callback is already in flight. Share the lifecycle gate with
-                // SwapBackgroundRenderer so the local snapshot stays valid.
-                if (!Monitor.TryEnter(_cacheGate, 0)) return;
-                try
-                {
-                    var bg = _background;
-                    bg?.Draw(sender, ds);
-                    _snow.Draw(sender, ds);
-                    _fog.Draw(sender, ds);
-                    _raindrop.Draw(sender, ds);
-                }
-                finally { Monitor.Exit(_cacheGate); }
+                DrawBackgroundLayers(frame, ds);
                 return;
             }
 
-            float widthDip = (float)sender.Size.Width;
-            float heightDip = (float)sender.Size.Height;
-            if (widthDip <= 0f || heightDip <= 0f) return;
+            float width = (float)frame.Size.Width;
+            float height = (float)frame.Size.Height;
+            if (width <= 0f || height <= 0f) return;
 
-            bool renderBg = _frameCounter % (_backgroundFrameSkip + 1) == 0;
-
-            // 持锁贯穿 check+create+render+DrawImage,杜绝 UI 线程在 DrawImage 前插入 _bgCache.Dispose。
-            // 拿不到锁就跳过本帧(Swap 间隙毫秒级),下一帧会重建。
-            if (!Monitor.TryEnter(_cacheGate, 0)) return;
-            try
+            var format = frame.Hdr.IsEnabled
+                ? DirectXPixelFormat.R16G16B16A16Float
+                : DirectXPixelFormat.B8G8R8A8UIntNormalized;
+            bool render = _frameCounter % (_backgroundFrameSkip + 1) == 0 || _bgCacheHdr != frame.Hdr;
+            if (_bgCache is null || _bgCacheWidthDip != width || _bgCacheHeightDip != height
+                || _bgCacheDpi != frame.Dpi || _bgCache.Format != format)
             {
-                var bg = _background;
-                if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip
-                    || _bgCacheDpi != sender.Dpi)
-                {
-                    _bgCache?.Dispose();
-                    _bgCache = new CanvasRenderTarget(sender, widthDip, heightDip);
-                    _bgCacheWidthDip = widthDip;
-                    _bgCacheHeightDip = heightDip;
-                    _bgCacheDpi = sender.Dpi;
-                    renderBg = true; // 尺寸变化后必须立即重绘缓存
-                }
-
-                if (renderBg)
-                {
-                    using var cacheSession = CanvasDrawingSessionScope.Create(_bgCache!);
-                    var cds = cacheSession.Context;
-                    bg?.Draw(sender, cds);
-                    _snow.Draw(sender, cds);
-                    _fog.Draw(sender, cds);
-                    _raindrop.Draw(sender, cds);
-                }
-
-                ds.DrawImage(_bgCache);
+                _bgCache?.Dispose();
+                _bgCache = new CanvasRenderTarget(frame.Device, width, height, frame.Dpi, format,
+                    CanvasAlphaMode.Premultiplied);
+                _bgCacheWidthDip = width;
+                _bgCacheHeightDip = height;
+                _bgCacheDpi = frame.Dpi;
+                render = true;
             }
-            finally { Monitor.Exit(_cacheGate); }
+
+            if (render)
+            {
+                if (frame.Hdr.IsEnabled)
+                {
+                    using var drawing = _bgCache.CreateDrawingSession();
+                    drawing.Clear(Colors.Transparent);
+                    drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+                    using var session = CanvasDrawingSessionScope.Borrow(drawing);
+                    DrawBackgroundLayers(frame, session.Context);
+                }
+                else
+                {
+                    using var session = CanvasDrawingSessionScope.Create(_bgCache);
+                    DrawBackgroundLayers(frame, session.Context);
+                }
+                _bgCacheHdr = frame.Hdr;
+            }
+
+            ds.DrawImage(_bgCache);
+        }
+
+        private void DrawBackgroundLayers(PlaybackCanvasFrame frame, CanvasDrawContext ds)
+        {
+            _background?.Draw(frame, ds);
+            _snow.Draw(frame, ds);
+            _fog.Draw(frame, ds);
+            _raindrop.Draw(frame, ds);
         }
 
         // ── 输入转发 ──────────────────────────────────────────────────────────
@@ -878,6 +917,10 @@ namespace AnimatedWin2dControls.Controls
 
         public void PrepareForShutdown()
         {
+            _hdrShuttingDown = true;
+            _sdrFrameEnabled = false;
+            DetachHdrPanel();
+            _sceneTitle = null;
             if (_canvas is not null)
                 _canvas.Paused = true;
             if (_visibilityCallbackToken != 0)
@@ -895,7 +938,9 @@ namespace AnimatedWin2dControls.Controls
 
             _coordinatorAttached = false;
             _coordinator.PrepareForShutdown();
-            ReleaseBackgroundResources();
+            lock (_cacheGate)
+                ReleaseBackgroundResources();
+            _sdrDevice = null;
             _canvasResourcesReady = false;
             _lastPalette = null;
             _lastArtwork = null;
@@ -908,6 +953,8 @@ namespace AnimatedWin2dControls.Controls
             ExceptionOccurred = null;
             LyricLineClicked = null;
             RenderError = null;
+            HdrPresentationChanged = null;
+            DrawHdrForeground = null;
             GC.SuppressFinalize(this);
         }
 

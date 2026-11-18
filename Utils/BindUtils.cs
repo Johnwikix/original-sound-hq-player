@@ -279,17 +279,6 @@ namespace WinUIMusicPlayer.Utils
             return isVisible ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        public static bool IsNowPlayingCanvasEnabled(bool isFluidBackgroundEnabled, bool isAdvancedLyricsEnabled, string? imagePath)
-            => isFluidBackgroundEnabled
-                || (isAdvancedLyricsEnabled && IsNotEmptyString(imagePath));
-
-        public static bool IsImageBackgroundMode(bool isFluidBackgroundEnabled, bool isAdvancedLyricsEnabled, string? imagePath)
-            => !isFluidBackgroundEnabled && isAdvancedLyricsEnabled && IsNotEmptyString(imagePath);
-
-        public static bool IsLyricsControlEnabled(bool isFluidBackgroundEnabled, bool isAdvancedLyricsEnabled, string? imagePath)
-            => !isAdvancedLyricsEnabled
-                || (!isFluidBackgroundEnabled && !IsNotEmptyString(imagePath));
-
         public static bool IsFluidShaderSelected(int backgroundShaderIndex)
         {
             return backgroundShaderIndex == 0;

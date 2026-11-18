@@ -77,6 +77,14 @@ namespace WinUIMusicPlayer.Controls
                 new PropertyMetadata(null, OnImageHashChanged));
 
         private readonly CoverLoadState _loadState = new();
+        private string? _presentedHash;
+        private long _transitionStarted;
+
+        internal bool IsCoverSettled(string hash) => _presentedHash == hash &&
+            System.Diagnostics.Stopwatch.GetElapsedTime(_transitionStarted) >= Time.AnimationDuration;
+
+        internal void SetArtworkOpacity(double opacity) => AlbumArtImage.SetArtworkOpacity(opacity);
+        internal Windows.Foundation.Rect GetArtworkBounds(UIElement relativeTo) => AlbumArtImage.GetArtworkBounds(relativeTo);
         private CancellationTokenSource? _cts;
         private DispatcherQueueTimer? _lastSourceClearTimer;
 
@@ -91,6 +99,7 @@ namespace WinUIMusicPlayer.Controls
         {
             StopPendingWork(clearLastSource: true);
             _loadState.Reset();
+            _presentedHash = null;
             ReplaceImageSource(AlbumArtImage, null);
             ReplaceImageSource(LastAlbumArtImage, null);
         }
@@ -151,14 +160,16 @@ namespace WinUIMusicPlayer.Controls
                         {
                             string coverPath = await Task.Run(
                                 () => PlaybackCoverImage.GetOrCreateAsync(rawPath, token), token);
-                            imageSource = await ImageHelper.DecodeFileToBitmapAsync(coverPath, token);
+                            imageSource = await ImageHelper.DecodeFileToBitmapAsync(coverPath, token,
+                                colorManagement: Windows.Graphics.Imaging.ColorManagementMode.ColorManageToSRgb);
                         }
                         catch (OperationCanceledException) { throw; }
                         catch (Exception ex) { _logger.LogWarning(ex, "ImageSwitcher 展示缓存不可用，尝试原图"); }
                         if (imageSource is null)
                         {
                             imageSource = await ImageHelper.DecodeFileToBitmapAsync(
-                                rawPath, token, PlaybackCoverImage.MaxPixelSize);
+                                rawPath, token, PlaybackCoverImage.MaxPixelSize,
+                                Windows.Graphics.Imaging.ColorManagementMode.ColorManageToSRgb);
                         }
                     }
                 }
@@ -188,7 +199,12 @@ namespace WinUIMusicPlayer.Controls
                 // Transfer ownership only after the target control actually holds it.
                 if (IsSourceOwned(imageSource))
                     imageSource = null;
-                if (hasImage && imageSource is null) _loadState.Commit(version, newHash, usesDefault, isDark);
+                if (hasImage && imageSource is null)
+                {
+                    _loadState.Commit(version, newHash, usesDefault, isDark);
+                    _presentedHash = usesDefault ? null : newHash;
+                    _transitionStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+                }
                 else _loadState.Reset();
             }
             catch (OperationCanceledException)

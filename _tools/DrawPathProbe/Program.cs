@@ -86,6 +86,21 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
             window.Activate();
             await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
             _canvas.Paused = true;
+            if (Environment.GetCommandLineArgs().Contains("--playback-hdr"))
+            {
+                var result = MeasurePlaybackHdr();
+                var atDpi144 = MeasureHdrDpi();
+                File.WriteAllText(resultPath, JsonSerializer.Serialize(new
+                {
+                    Status = "PASS",
+                    Evidence = "Off-screen half-float GPU readback",
+                    result.Backgrounds,
+                    result.Lyrics,
+                    result.WarmMotion,
+                    Dpi144 = atDpi144
+                }));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--lifetime"))
             {
                 update.Dispose();

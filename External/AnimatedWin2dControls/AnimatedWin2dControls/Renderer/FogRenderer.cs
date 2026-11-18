@@ -38,11 +38,11 @@ namespace AnimatedWin2dControls.Renderer
         public void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
             using var scope = CanvasDrawingSessionScope.Borrow(ds);
-            Draw(control, scope.Context);
+            Draw(new PlaybackCanvasFrame(control), scope.Context);
         }
 
         /// <summary>Draws using the current native callback context.</summary>
-        public void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
+        public void Draw(PlaybackCanvasFrame control, CanvasDrawContext ds)
         {
             if (!IsEnabled) return;
             if (!Monitor.TryEnter(_gate, 0)) return;
@@ -56,7 +56,7 @@ namespace AnimatedWin2dControls.Renderer
 
                 effect.ConstantBuffer = new FogEffect(
                      _timeAccumulator,
-                     new float2(width, height)
+                     new float2(width, height), control.Hdr.White
                  );
 
                 ds.DrawImage(effect);

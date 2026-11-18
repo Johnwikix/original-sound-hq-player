@@ -51,7 +51,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsHoverScrollEnabled { get => State.Preferences.IsHoverScrollEnabled; set => State.Preferences.IsHoverScrollEnabled = value; }
 
-        public bool IsWin2dAnimatedText { get => State.Preferences.IsWin2dAnimatedText; set => State.Preferences.IsWin2dAnimatedText = value; }
 
         public int DsdGain { get => State.Preferences.DsdGain; set => State.Preferences.DsdGain = value; }
 
@@ -253,7 +252,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public double TargetFrameRate { get => State.Preferences.TargetFrameRate; set => State.Preferences.TargetFrameRate = value; }
 
-        public bool EnableAdvancedLyricsEffect { get => State.Preferences.EnableAdvancedLyricsEffect; set => State.Preferences.EnableAdvancedLyricsEffect = value; }
 
         public EasingType ScrollEasingType { get => State.Preferences.ScrollEasingType; set => State.Preferences.ScrollEasingType = value; }
         public int ScrollEasingTypeIndex

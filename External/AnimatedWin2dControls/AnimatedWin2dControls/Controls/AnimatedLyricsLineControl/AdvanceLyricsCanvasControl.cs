@@ -12,7 +12,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
     /// 独立高级歌词控件：自持一个 <see cref="CanvasAnimatedControl"/>，渲染逻辑委托给
     /// <see cref="LyricsRenderCoordinator"/>（与合成宿主共享同一套逻辑）。
     /// </summary>
-    public sealed class AdvanceLyricsCanvasControl : Control
+    public sealed partial class AdvanceLyricsCanvasControl : Control
     {
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
@@ -79,6 +79,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _visibilityCallbackToken = 0;
             }
 
+            ReleaseTransparentCanvas();
+
             if (_canvas != null)
             {
                 _canvas.Paused = true;
@@ -114,7 +116,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void UpdateCanvasPaused()
         {
             if (_canvas is not null)
-                _canvas.Paused = !_isActive || _pausedByVisibility || _pausedByParent || _pausedByWindow;
+                _canvas.Paused = !CanRender || _useTransparentPresentation;
+            UpdateTransparentClock();
         }
 
         private static void OnActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -141,7 +144,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             UpdateCanvasPaused();
-            if (active)
+            if (active && !_useTransparentPresentation)
                 _canvas?.Invalidate();
         }
 
@@ -154,7 +157,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void AttachFrameEvents()
         {
-            if (_canvas is null) return;
+            if (_canvas is null || _useTransparentPresentation) return;
             _updateSubscription ??= FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
             try { _drawSubscription ??= FrameEventSubscription.SubscribeDraw(_canvas, OnCanvasDraw); }
             catch
@@ -188,6 +191,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // removed from the visual tree when the page is hidden. Keep native
             // resources reusable; PrepareForShutdown owns final cleanup.
             _canvas?.Paused = true;
+            StopTransparentClock();
             DetachFrameEvents();
             if (_coordinatorAttached)
             {
@@ -213,7 +217,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _visibilityCallbackToken = 0;
             }
 
+            ReleaseTransparentCanvas();
             _canvas = GetTemplateChild("PART_Canvas") as CanvasAnimatedControl;
+            _transparentCanvas = GetTemplateChild("PART_TransparentCanvas") as CanvasControl;
+            if (_transparentCanvas is not null)
+            {
+                _transparentCanvas.CreateResources += TransparentCanvas_CreateResources;
+                _transparentCanvas.Draw += TransparentCanvas_Draw;
+                AttachPointerEvents(_transparentCanvas);
+            }
+            ApplyPresentationMode();
 
             if (_canvas != null)
             {
@@ -232,6 +245,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             AttachFrameEvents();
             canvas.CreateResources += OnCanvasCreateResources;
+            AttachPointerEvents(canvas);
+        }
+
+        private void AttachPointerEvents(UIElement canvas)
+        {
             canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
             canvas.PointerMoved += OnCanvasPointerMoved;
             canvas.PointerExited += OnCanvasPointerExited;
@@ -243,6 +261,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             DetachFrameEvents();
             canvas.CreateResources -= OnCanvasCreateResources;
+            DetachPointerEvents(canvas);
+        }
+
+        private void DetachPointerEvents(UIElement canvas)
+        {
             canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
             canvas.PointerMoved -= OnCanvasPointerMoved;
             canvas.PointerExited -= OnCanvasPointerExited;
@@ -255,7 +278,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnCanvasUpdate(TimeSpan elapsedTime)
         {
-            if (_isActive)
+            if (CanRender && !_useTransparentPresentation)
                 _coordinator.OnUpdate(_canvas!, elapsedTime);
         }
 
@@ -263,13 +286,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             var sender = _canvas;
             if (sender is null) return;
-            if (!_isActive) return;
+            if (!CanRender || _useTransparentPresentation) return;
 
             ds.Clear(Microsoft.UI.Colors.Transparent);
             _coordinator.OnDraw(sender, ds);
         }
 
-        private void OnControlSizeChanged(object sender, SizeChangedEventArgs e) => _coordinator.OnSizeChanged();
+        private void OnControlSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            _coordinator.LyricsRegion = new Windows.Foundation.Rect(0, 0, e.NewSize.Width, e.NewSize.Height);
+            _coordinator.OnSizeChanged();
+        }
 
         private void OnCanvasPointerWheelChanged(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerWheelChanged(sender, e);
         private void OnCanvasPointerMoved(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerMoved(sender, e);

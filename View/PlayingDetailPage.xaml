@@ -10,11 +10,10 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:localControls="using:WinUIMusicPlayer.Controls"
     xmlns:helper="using:WinUIMusicPlayer.Helper"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
-    xmlns:lyrics="using:WinUIMusicPlayer.Controls.Lyrics"
+    xmlns:lyrics="using:AnimatedWin2dControls.Controls.AnimatedLyricsLineControl"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
@@ -30,18 +29,17 @@
             BackgroundShaderIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=OneWay}"
             BackgroundImageBlurAmount="{x:Bind ViewModel.AppViewModel.WindowBackgroundBlurAmount, Mode=OneWay}"
             BackgroundImagePath="{x:Bind ViewModel.AppViewModel.WindowBackgroundImagePath, Mode=OneWay}"
-            EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ExceptionOccurred="BackGround_ExceptionOccurred"
             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
             IsFogEnabled="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=OneWay}"
             IsRaindropEnabled="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=OneWay}"
             IsSnowEnabled="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=OneWay}"
-            LyricLineClicked="NowPlaying_LyricLineClicked"
+            LyricLineClicked="LyricsView_LyricInteracted"
             RenderError="LyricsView_ExceptionInteracted"
             ThemeResolved="BackGround_ThemeResolved"
             IsActive="{x:Bind ViewModel.IsBackgroundActive, Mode=OneWay}"
-            UseImageBackground="{x:Bind tool:BindUtils.IsImageBackgroundMode(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect, ViewModel.AppViewModel.WindowBackgroundImagePath), Mode=OneWay}"
+            UseImageBackground="{x:Bind ViewModel.IsImageBackgroundActive, Mode=OneWay}"
             UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
         <Grid
             x:Name="PlayingDetail"
@@ -63,6 +61,7 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                         <uc:ImageSwitcher
+                            x:Name="DetailCoverSwitcher"
                             CornerRadiusAmount="12"
                             ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
                             IsActive="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}"
@@ -76,88 +75,24 @@
                     Grid.Row="2"
                     Grid.Column="1"
                     Margin="20,0,20,0"
-                    RowDefinitions="Auto,Auto,Auto">
+                    RowDefinitions="Auto,Auto">
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTextBlock"
+                        AutomationProperties.Name="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                        AutomationProperties.HelpText="{x:Bind tools:BindUtils.MusicToInfo(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                         FontFamily="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily.FontFamily, Mode=OneWay}"
-                        x:Load="{x:Bind ViewModel.IsAnimatedTextCreated, Mode=OneWay}"
                         Loaded="AnimatedPlayingDetailTextBlock_Loaded"
+                        SizeChanged="AnimatedPlayingDetailTextBlock_SizeChanged"
                         Grid.Row="0"
-                        Grid.RowSpan="2"
                         Margin="0,0,0,1"
                         Document="{x:Bind tools:BindUtils.MusicToAnimatedDocument(ViewModel.AppViewModel.CurrentPlayingMusic, ViewModel.TitleFontSize, ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
-                        IsActive="{x:Bind ViewModel.IsAnimatedTextActive, Mode=OneWay}"
                         IsHoverScrollEnabled="{x:Bind ViewModel.AppViewModel.IsHoverScrollEnabled, Mode=OneWay}"
                         TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
-                    <localControls:AutoScrollView
-                        Margin="0"
-                        Padding="0"
-                        HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
-                        IsPlaying="False"
-                        PointerCanceled="AutoScrollHover_PointerCanceled"
-                        PointerEntered="AutoScrollHover_PointerEntered"
-                        PointerExited="AutoScrollHover_PointerExited"
-                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneWay}">
-                        <TextBlock
-                            x:Name="PlayingDetailTitleTextBlock"
-                            Margin="0"
-                            FontSize="{x:Bind ViewModel.TitleFontSize, Mode=OneWay}"
-                            FontWeight="SemiBold"
-                            IsTextSelectionEnabled="True"
-                            Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                            TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
-                            TextTrimming="CharacterEllipsis"
-                            TextWrapping="NoWrap" />
-                    </localControls:AutoScrollView>
-                    <StackPanel
-                        Grid.Row="1"
-                        Margin="0,0,0,2"
-                        Opacity="0.8"
-                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneWay}">
-                        <localControls:AutoScrollView
-                            Margin="0"
-                            Padding="0"
-                            HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
-                            IsPlaying="False"
-                            PointerCanceled="AutoScrollHover_PointerCanceled"
-                            PointerEntered="AutoScrollHover_PointerEntered"
-                            PointerExited="AutoScrollHover_PointerExited">
-                            <TextBlock
-                                x:Name="PlayingDetailAlbumTextBlock"
-                                Margin="0"
-                                FontSize="{x:Bind ViewModel.ArtistAlbumFontSize, Mode=OneWay}"
-                                FontWeight="Normal"
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                                TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                        </localControls:AutoScrollView>
-                        <localControls:AutoScrollView
-                            Margin="0"
-                            Padding="0"
-                            HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
-                            IsPlaying="False"
-                            PointerCanceled="AutoScrollHover_PointerCanceled"
-                            PointerEntered="AutoScrollHover_PointerEntered"
-                            PointerExited="AutoScrollHover_PointerExited">
-                            <TextBlock
-                                x:Name="PlayingDetailArtistTextBlock"
-                                Margin="0"
-                                FontSize="{x:Bind ViewModel.ArtistAlbumFontSize, Mode=OneWay}"
-                                FontWeight="Normal"
-                                IsTextSelectionEnabled="True"
-                                Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                                TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                        </localControls:AutoScrollView>
-                    </StackPanel>
                     <StackPanel
                         x:Name="PlayingDetailInfoPanel"
-                        Grid.Row="2"
+                        Grid.Row="1"
                         Margin="0,0,0,5"
                         HorizontalAlignment="{x:Bind tools:BindUtils.TextAlignmentToHorizontalAlignmentConverter(ViewModel.AppViewModel.EffectivePlayingDetailAlignment), Mode=OneWay}"
                         VerticalAlignment="Center"
@@ -194,14 +129,15 @@
                 Grid.Column="1"
                 Margin="0,40,0,40"
                 SizeChanged="LyricsRegionHost_SizeChanged">
-                <lyrics:LyricsControl
+                <lyrics:AdvanceLyricsCanvasControl
                     x:Name="LyricsView"
+                    Loaded="PlaybackLyrics_Loaded"
                     x:Load="{x:Bind ViewModel.IsLyricsCreated, Mode=OneWay}"
                     IsActive="{x:Bind ViewModel.IsLyricsActive, Mode=OneWay}"
-                    EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                    ExceptionInteracted="LyricsView_ExceptionInteracted"
-                    LyricInteracted="LyricsView_LyricInteracted"
-                    LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}" />
+                    RenderError="LyricsView_ExceptionInteracted"
+                    LyricLineClicked="LyricsView_LyricInteracted"
+                    Margin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
+                    UseTransparentPresentation="{x:Bind ViewModel.UseAcrylicLyricsPresentation, Mode=OneWay}" />
             </Grid>
         </Grid>
         <StackPanel

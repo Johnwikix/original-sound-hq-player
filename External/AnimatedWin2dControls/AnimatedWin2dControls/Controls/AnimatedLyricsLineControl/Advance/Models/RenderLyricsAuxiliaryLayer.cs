@@ -74,11 +74,16 @@ public sealed class RenderLyricsAuxiliaryLayer
 
     /// <summary>Draws the cached auxiliary track in a native drawing scope.</summary>
     public void Draw(ICanvasResourceCreator creator, CanvasDrawContext ds, Vector2 destination,
-        double opacity, double blur, double strokeWidth, Color color)
+        double opacity, double blur, double strokeWidth, Color color, PlaybackHdrColor hdr = default)
     {
         if (Layout is null || Reveal.Value <= 0 || opacity <= 0) return;
         EnsureCache(creator, strokeWidth);
-        _tint!.Color = color;
+        CanvasBufferPrecision? precision = hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
+        _tint!.ColorHdr = hdr.GetColor(color);
+        _tint.BufferPrecision = precision;
+        _crop!.BufferPrecision = precision;
+        _blur!.BufferPrecision = precision;
+        _opacity!.BufferPrecision = precision;
         var bounds = Layout.LayoutBounds;
         var source = new Rect(bounds.X - 10, bounds.Y - 5, bounds.Width + 20, Height + 10);
         _crop!.SourceRectangle = source;

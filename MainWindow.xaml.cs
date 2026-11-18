@@ -7,6 +7,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Timers;
 using Windows.Graphics;
@@ -43,6 +44,7 @@ namespace WinUIMusicPlayer
         private Controls.NotifyIconControl? _notifyIconControl;
         private ILogger<MainWindow> _logger;
         private readonly object _trimLock = new();
+        private readonly PlaybackHdrDisplay _hdrDisplay;
 
         public MainWindow()
         {
@@ -59,6 +61,10 @@ namespace WinUIMusicPlayer
                 overlapped.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false);
             }
             _logger = App.GetLogger<MainWindow>();
+            _hdrDisplay = new PlaybackHdrDisplay(AppWindow, DispatcherQueue, ViewModel.SetPlaybackHdrDisplay,
+                ex => _logger.LogDebug(ex, "Playback HDR display information unavailable"));
+            ViewModel.PropertyChanged += OnPlaybackHdrPreferenceChanged;
+            _hdrDisplay.SetEnabled(ViewModel.PlaybackHdrEnabled);
             this.Activated += MainWindow_Activated;
             themeStyleHelper = new ThemeStyleHelper(this, AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
@@ -320,6 +326,12 @@ namespace WinUIMusicPlayer
             }
         }
 
+        private void OnPlaybackHdrPreferenceChanged(object? sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(AppViewModel.PlaybackHdrEnabled))
+                _hdrDisplay.SetEnabled(ViewModel.PlaybackHdrEnabled);
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -330,6 +342,8 @@ namespace WinUIMusicPlayer
         {
             if (dispose)
             {
+                ViewModel.PropertyChanged -= OnPlaybackHdrPreferenceChanged;
+                _hdrDisplay.Dispose();
                 WindowBackground.LoadFailed -= OnWindowBackgroundLoadFailed;
                 WindowBackground.Dispose();
                 _notifyIconControl?.Dispose();

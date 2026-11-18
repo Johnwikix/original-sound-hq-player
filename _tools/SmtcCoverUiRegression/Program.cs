@@ -70,6 +70,16 @@ namespace WinUIMusicPlayer
                     !ReferenceEquals(Current(control), largeSource));
                 var portraitSource = Current(control)
                     ?? throw new Exception("纵向封面未发布");
+                await WaitAsync(() => control.IsCoverSettled("portrait"));
+                if (control.IsCoverSettled("large") || control.GetArtworkBounds(host).Height <= 0)
+                    throw new Exception("场景交接使用了旧封面或空布局");
+                var portraitControl = (ShadowImage)control.FindName("AlbumArtImage");
+                var previewPixels = (Image)portraitControl.FindName("ArtworkPixels");
+                control.SetArtworkOpacity(0);
+                if (previewPixels.Opacity != 0 || portraitControl.Opacity == 0 || Current(control) != portraitSource)
+                    throw new Exception("HDR 场景接管像素时丢失了预览布局或阴影");
+                control.SetArtworkOpacity(1);
+                if (previewPixels.Opacity != 1) throw new Exception("SDR 回退没有恢复封面");
                 largeSource = null;
                 control.ImageHash = "small";
                 await WaitAsync(() => IsSoftwareSource(Current(control)) &&
