@@ -12,6 +12,7 @@ public sealed partial class PlayingDetailPage
     private bool _hdrEntranceWindowPaused;
     private TaskCompletionSource<bool>? _hdrEntranceFrame;
     private NowPlayingCanvas? _hdrEntranceCanvas;
+    private Action? _interruptHdrEntranceMotion;
 
     internal bool ShouldPrepareHdrEntrance => ViewModel.UseHdrPresentation;
     internal bool IsHdrEntrancePresented => ShouldPrepareHdrEntrance && NowPlaying?.IsHdrFramePresented == true;
@@ -77,7 +78,58 @@ public sealed partial class PlayingDetailPage
 
     private void RejectHdrEntrance() => _hdrEntranceFrame?.TrySetResult(false);
 
-    private void CancelHdrEntrance() => _hdrEntranceFrame?.TrySetCanceled();
+    private void CancelHdrEntrance()
+    {
+        _hdrEntranceFrame?.TrySetCanceled();
+        _interruptHdrEntranceMotion?.Invoke();
+    }
+
+    internal async Task<bool> RunHdrEntranceMotionAsync(Func<CancellationToken, Task> move, Action hide,
+        CancellationToken cancellationToken)
+    {
+        if (NowPlaying is not { } canvas || !IsHdrEntrancePresented)
+            return false;
+
+        using var motion = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _interruptHdrEntranceMotion = Interrupt;
+        long generation = canvas.BeginHdrEntranceMotion();
+        canvas.HdrPresentationChanged += OnPresentationChanged;
+        ViewModel.PropertyChanged += OnModeChanged;
+        try
+        {
+            await move(motion.Token);
+            return !motion.IsCancellationRequested;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+        finally
+        {
+            if (_interruptHdrEntranceMotion == (Action)Interrupt)
+                _interruptHdrEntranceMotion = null;
+            canvas.EndHdrEntranceMotion(generation);
+            canvas.HdrPresentationChanged -= OnPresentationChanged;
+            ViewModel.PropertyChanged -= OnModeChanged;
+        }
+
+        void Interrupt()
+        {
+            if (motion.IsCancellationRequested) return;
+            hide();
+            motion.Cancel();
+        }
+
+        void OnPresentationChanged(bool active, bool failed)
+        {
+            if (!active) Interrupt();
+        }
+
+        void OnModeChanged(object? sender, PropertyChangedEventArgs args)
+        {
+            if (!ShouldPrepareHdrEntrance) Interrupt();
+        }
+    }
 
     private void UpdateHdrEntranceWindowPaused(bool paused)
     {

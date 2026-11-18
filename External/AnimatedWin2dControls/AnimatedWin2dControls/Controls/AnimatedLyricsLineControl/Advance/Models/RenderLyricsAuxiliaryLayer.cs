@@ -22,6 +22,7 @@ public sealed class RenderLyricsAuxiliaryLayer
     public double SlotHeight(double spacing) => Layout is null ? 0 : (Layout.LayoutBounds.Height + spacing) * Reveal.Value;
 
     private bool _initialized;
+    private bool _useFloatPrecision;
     private CanvasCommandList? _fill;
     private CanvasCommandList? _stroke;
     private TintEffect? _tint;
@@ -78,12 +79,17 @@ public sealed class RenderLyricsAuxiliaryLayer
     {
         if (Layout is null || Reveal.Value <= 0 || opacity <= 0) return;
         EnsureCache(creator, strokeWidth);
-        CanvasBufferPrecision? precision = hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
         _tint!.ColorHdr = hdr.GetColor(color);
-        _tint.BufferPrecision = precision;
-        _crop!.BufferPrecision = precision;
-        _blur!.BufferPrecision = precision;
-        _opacity!.BufferPrecision = precision;
+        // Repeating a nullable precision assignment boxes a WinRT IReference on every draw.
+        if (_useFloatPrecision != hdr.IsEnabled)
+        {
+            CanvasBufferPrecision? precision = hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
+            _tint.BufferPrecision = precision;
+            _crop!.BufferPrecision = precision;
+            _blur!.BufferPrecision = precision;
+            _opacity!.BufferPrecision = precision;
+            _useFloatPrecision = hdr.IsEnabled;
+        }
         var bounds = Layout.LayoutBounds;
         var source = new Rect(bounds.X - 10, bounds.Y - 5, bounds.Width + 20, Height + 10);
         _crop!.SourceRectangle = source;
@@ -121,6 +127,7 @@ public sealed class RenderLyricsAuxiliaryLayer
 
     public void DisposeCache()
     {
+        _useFloatPrecision = false;
         _opacity?.Dispose(); _opacity = null;
         _blur?.Dispose(); _blur = null;
         _crop?.Dispose(); _crop = null;

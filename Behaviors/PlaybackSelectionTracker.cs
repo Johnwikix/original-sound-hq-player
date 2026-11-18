@@ -58,7 +58,11 @@ public sealed class PlaybackSelectionTracker
         _active = false;
         _app.PropertyChanged -= AppChanged;
         _list.Items.VectorChanged -= ItemsChanged;
-        if (_queue) _app.State.Queue.PropertyChanged -= QueueChanged;
+        if (_queue)
+        {
+            _app.State.Queue.PropertyChanged -= QueueChanged;
+            _app.State.Queue.EndReorder(_list);
+        }
     }
 
     private void AppChanged(object? sender, PropertyChangedEventArgs args)
@@ -69,7 +73,9 @@ public sealed class PlaybackSelectionTracker
 
     private void QueueChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == "Version") Synchronize();
+        if (args.PropertyName == nameof(_app.State.Queue.Version)) Synchronize();
+        else if (args.PropertyName == nameof(_app.State.Queue.IsReordering) && !_app.State.Queue.IsReordering)
+            QueueSynchronization();
     }
 
     private void ItemsChanged(IObservableVector<object> sender, IVectorChangedEventArgs args) => QueueSynchronization();

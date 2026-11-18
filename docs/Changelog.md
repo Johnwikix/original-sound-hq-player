@@ -1,3 +1,13 @@
+## 2026-11-19 恢复 HDR 播放页上滑并修正渲染与队列开销
+
+- `NavigationService`、`PlayingDetailPage` 在完整 HDR 首帧就绪后，按原有 300 ms 缓动从底部滑入。合成器在滑入时移动完整首帧，结束后 Win2D 恢复连续绘制，避免录屏时交换链提交卡住窗口。上一页保持可见，播放页的曝光稳定。退场出错后也会复位并解除导航锁。
+- `NowPlayingCanvas`、`AdvanceLyricsCanvasControl` 按设置帧率累计下一帧的时间，修正高刷新率下的少画和多画。
+- `ImageBackgroundRenderer` 在同一图片请求收到新位图时更新 HDR 图像并释放旧 GPU 资源。静态标题和背景复用已有颜色参数。
+- `RenderLyricsAuxiliaryLayer`、`RenderLyricsChar` 只在渲染模式或效果资源改变时设置效果精度，消除带注音、译文的逐字歌词每帧重复创建的 WinRT 对象。
+- `ImageSwitcher`、`PlaybackSceneCover` 复用有效的封面显示缓存，修正只剩缓存时切回 SDR 丢图及竖屏缩放后的封面尺寸。`ImageHelper` 在 XAML 图源接收像素后及时释放解码位图。
+- `PlaybackQueueState`、`PlaybackSelectionTracker` 按实际拖动索引移动队列出现项。重复歌曲保留各自的版本和来源，取消拖动不会重新计算无缝播放计划。
+- `MainPage` 优先将返回操作交给当前播放页。`SettingsCoordinator` 释放已停止的偏好保存定时器，重新启动时恢复自动保存。
+
 ## 2026-11-19 修正 HDR 模糊裁切、封面换图节奏与播放页入场
 
 - `AnimatedTextBlock` 移除 HDR 标题转场上的额外辉光。歌名、专辑和艺人按参考白绘制原版文字动画。

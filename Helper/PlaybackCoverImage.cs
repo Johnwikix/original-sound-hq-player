@@ -75,7 +75,15 @@ internal static class PlaybackCoverImage
         }
     }
 
-    private static bool IsCurrent(string cachePath, string rawPath)
-        => File.Exists(rawPath) && File.Exists(cachePath) && new FileInfo(cachePath).Length > 0 &&
-            File.GetLastWriteTimeUtc(cachePath) >= File.GetLastWriteTimeUtc(rawPath);
+    internal static bool IsCurrent(string cachePath, string rawPath)
+    {
+        try
+        {
+            var cache = new FileInfo(cachePath);
+            return cache.Exists && cache.Length > 0 && File.Exists(rawPath) &&
+                cache.LastWriteTimeUtc >= File.GetLastWriteTimeUtc(rawPath);
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
 }

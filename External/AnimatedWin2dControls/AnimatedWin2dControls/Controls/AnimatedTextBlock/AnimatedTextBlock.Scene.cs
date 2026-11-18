@@ -18,6 +18,8 @@ public sealed partial class AnimatedTextBlock
     private CanvasRenderTarget? _sceneTarget;
     private CanvasDevice? _sceneDevice;
     private Rect _sceneRect;
+    private float _sceneDpi;
+    private float _sceneWhite;
     private PixelShaderEffect<ScRgbPlaybackEffect>? _sceneOutput;
     private bool _preparingStandalone;
     private bool _standaloneFramePending;
@@ -69,7 +71,7 @@ public sealed partial class AnimatedTextBlock
             return false;
 
         bool replace = _sceneTarget is null || !ReferenceEquals(_sceneDevice, frame.Device)
-            || _sceneRect.Width != bounds.Width || _sceneRect.Height != bounds.Height || _sceneTarget.Dpi != frame.Dpi;
+            || _sceneRect.Width != bounds.Width || _sceneRect.Height != bounds.Height || _sceneDpi != frame.Dpi;
         if (replace)
         {
             bool deviceChanged = !ReferenceEquals(_documentDevice, frame.Device);
@@ -78,6 +80,7 @@ public sealed partial class AnimatedTextBlock
             _sceneTarget = new CanvasRenderTarget(frame.Device, (float)bounds.Width, (float)bounds.Height, frame.Dpi);
             _sceneDevice = frame.Device;
             _sceneRect = bounds;
+            _sceneDpi = frame.Dpi;
             _sceneOutput = new PixelShaderEffect<ScRgbPlaybackEffect>();
             _sceneOutput.Sources[0] = _sceneTarget;
             _sceneTargetDirty = true;
@@ -95,9 +98,14 @@ public sealed partial class AnimatedTextBlock
             _sceneTargetDirty = false;
         }
 
-        _sceneOutput!.ConstantBuffer = new ScRgbPlaybackEffect(frame.Hdr.White);
+        var output = _sceneOutput!;
+        if (replace || _sceneWhite != frame.Hdr.White)
+        {
+            _sceneWhite = frame.Hdr.White;
+            output.ConstantBuffer = new ScRgbPlaybackEffect(_sceneWhite);
+        }
         var source = new Rect(0, 0, bounds.Width, bounds.Height);
-        presentation.DrawImage(_sceneOutput, bounds, source);
+        presentation.DrawImage(output, bounds, source);
         return true;
     }
 

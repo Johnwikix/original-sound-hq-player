@@ -8,7 +8,6 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics;
@@ -346,19 +345,15 @@ namespace WinUIMusicPlayer.View
 
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                var pendingCount = 1;
-                void OnOneCompleted()
+                void OnDismissed()
                 {
-                    if (Interlocked.Decrement(ref pendingCount) == 0)
-                    {
-                        _isPageTransitioning = false;
-                        OpenPendingDetails();
-                    }
+                    _isPageTransitioning = false;
+                    OpenPendingDetails();
                 }
                 NavigationViewControl.Visibility = Visibility.Visible;
                 ViewModel.AppViewModel.IsPlayingDetailVisible = false;
                 ViewModel.AppViewModel.IsPointerOverTitleBar = true;
-                _playingNavigation.Dismiss(300, onCompleted: cancellingEntrance ? null : OnOneCompleted);
+                _playingNavigation.Dismiss(300, onCompleted: cancellingEntrance ? null : OnDismissed);
             }
             else
             {
@@ -368,7 +363,7 @@ namespace WinUIMusicPlayer.View
 
         public void HandleBackNavigation()
         {
-            if (_playingNavigation.IsPreparingShow)
+            if (IsPlayingDetailVisible)
             {
                 NavigatebackToMusicBrowsePage();
                 return;
@@ -497,10 +492,10 @@ namespace WinUIMusicPlayer.View
         }
 
         private void CurrentPlayListView_DragItemsStarting(object sender, DragItemsStartingEventArgs args)
-            => ViewModel.AppViewModel.State.Queue.BeginReorder();
+            => ViewModel.AppViewModel.State.Queue.BeginReorder(CurrentPlayListView);
 
         private void CurrentPlayListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
-            => ViewModel.AppViewModel.State.Queue.EndReorder();
+            => ViewModel.AppViewModel.State.Queue.EndReorder(CurrentPlayListView);
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
@@ -548,7 +543,7 @@ namespace WinUIMusicPlayer.View
         private void CurrentPlayListTeachingTip_Closed(TeachingTip sender, TeachingTipClosedEventArgs args)
         {
             // 弹层可能在拖拽未完成时关闭，提交兜底避免队列一直冻结在重排中。
-            ViewModel.AppViewModel.State.Queue.EndReorder();
+            ViewModel.AppViewModel.State.Queue.EndReorder(CurrentPlayListView);
             _queueCentering.Cancel();
         }
 

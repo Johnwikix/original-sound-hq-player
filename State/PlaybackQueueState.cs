@@ -18,14 +18,17 @@ public sealed class PlaybackQueueState : ObservableObject
     private long _nextId;
     private long _currentEntryId;
     private bool _mutating;
-    private bool _reorderActive;
+    private NotifyCollectionChangedEventArgs? _pendingDragEdit;
+    private object? _dragOwner;
+    private bool _dragMoved;
+    private bool _dragNeedsRebuild;
     private BulkObservableCollection<Music>? _reorderPlaying;
     private readonly Dictionary<long, int> _requestedVersions = [];
     private readonly Dictionary<long, int> _sourceScopes = [];
     private readonly Dictionary<long, int> _playlistEntries = [];
     public long CurrentEntryId => _currentEntryId;
-    /// <summary>拖拽排序进行中；此时集合顺序尚未提交为遍历顺序。</summary>
-    public bool IsReordering => _reorderActive;
+    /// <summary>True while the current queue view is completing a drag.</summary>
+    public bool IsReordering => _reorderPlaying is not null;
     /// <summary>Published after a complete order mutation, once per bulk operation.</summary>
     public long Version { get; private set; }
 
@@ -124,40 +127,116 @@ public sealed class PlaybackQueueState : ObservableObject
         _order = Mode == PlayMode.RandomLoop ? order.Select(id => byId[id]).ToList() : new(_entries);
         PublishOrder();
     }
-    /// <summary>
-    /// 冻结拖拽期间的兼容路径。ListView 排序以 Remove+Insert 改写绑定集合，
-    /// 逐条解释会重建出现项并丢弃其固定版本与来源；结束后按最终顺序一次性重排。
-    /// </summary>
-    public void BeginReorder()
+    /// <summary>WinUI reports a single-selection drag as a Move or a pair of indexed edits.</summary>
+    public void BeginReorder(object? owner = null)
     {
-        if (_reorderActive) return;
-        _reorderActive = true;
+        if (IsReordering) return;
+        _dragOwner = owner;
         _reorderPlaying = Playing;
+        _reorderPlaying.CollectionChanged += OnDragCollectionChanged;
+        OnPropertyChanged(nameof(IsReordering));
     }
 
-    /// <summary>
-    /// 提交拖拽结果。随机遍历只调整可见遍历顺序，规范顺序保持不变；
-    /// 同一歌曲的多个出现项按出现顺序复用身份（ListView 不暴露拖拽的源/目标索引）。
-    /// </summary>
-    public void EndReorder()
+    private void OnDragCollectionChanged(object? sender, NotifyCollectionChangedEventArgs change)
     {
-        if (!_reorderActive) return;
-        _reorderActive = false;
-        var playing = _reorderPlaying;
+        if (_mutating || _dragNeedsRebuild || !ReferenceEquals(sender, Playing)) return;
+        int from = change.OldStartingIndex;
+        int to = change.NewStartingIndex;
+        if (change.Action != NotifyCollectionChangedAction.Move)
+        {
+            if (_pendingDragEdit is null && (change.Action == NotifyCollectionChangedAction.Remove && change.OldItems?.Count == 1
+                || change.Action == NotifyCollectionChangedAction.Add && change.NewItems?.Count == 1))
+            {
+                _pendingDragEdit = change;
+                return;
+            }
+            var first = _pendingDragEdit;
+            _pendingDragEdit = null;
+            if (first?.Action == NotifyCollectionChangedAction.Remove && change.Action == NotifyCollectionChangedAction.Add
+                && change.NewItems?.Count == 1 && ReferenceEquals(first.OldItems![0], change.NewItems[0]))
+            {
+                from = first.OldStartingIndex;
+            }
+            else if (first?.Action == NotifyCollectionChangedAction.Add && change.Action == NotifyCollectionChangedAction.Remove
+                && change.OldItems?.Count == 1 && ReferenceEquals(first.NewItems![0], change.OldItems[0]))
+            {
+                to = first.NewStartingIndex;
+                // WinUI inserted a second reference before removing the dragged occurrence.
+                if (from > to) from--;
+                else if (from < to) to--;
+            }
+            else
+            {
+                _dragNeedsRebuild = true;
+                return;
+            }
+        }
+        if (_pendingDragEdit is not null || (uint)from >= _order.Count || (uint)to >= _order.Count
+            || _order.Count != Playing.Count || !ReferenceEquals(_order[from].Music, Playing[to]))
+        {
+            _dragNeedsRebuild = true;
+            return;
+        }
+        if (from == to) return;
+        MoveEntry(_order, from, to);
+        if (ReferenceEquals(Sequential, Playing)) MoveEntry(_entries, from, to);
+        _dragMoved = true;
+    }
+
+    private static void MoveEntry(List<Entry> entries, int from, int to)
+    {
+        var entry = entries[from];
+        entries.RemoveAt(from);
+        entries.Insert(to, entry);
+    }
+
+    public void EndReorder(object? owner = null)
+    {
+        if (_reorderPlaying is not { } source || owner is not null && !ReferenceEquals(owner, _dragOwner)) return;
+        _dragOwner = null;
+        source.CollectionChanged -= OnDragCollectionChanged;
+        bool rebuild = _dragNeedsRebuild || _pendingDragEdit is not null;
+        if (!_dragNeedsRebuild && ReferenceEquals(source, Playing) && _pendingDragEdit is { } pending)
+        {
+            // An actual deletion/insertion (e.g. a drop outside the list) keeps the
+            // identities of the other copies, even when all refer to the same Music.
+            if (pending.Action == NotifyCollectionChangedAction.Remove && (uint)pending.OldStartingIndex < _order.Count)
+                _order.RemoveAt(pending.OldStartingIndex);
+            else if (pending.Action == NotifyCollectionChangedAction.Add && (uint)pending.NewStartingIndex <= _order.Count)
+                _order.Insert(pending.NewStartingIndex, new(++_nextId, source[pending.NewStartingIndex]));
+        }
+        bool moved = _dragMoved;
         _reorderPlaying = null;
-        // 期间队列被整体替换时，替换路径已按新集合重建，不能再套用旧拖拽结果。
-        if (!ReferenceEquals(playing, Playing)) return;
-        if (ReferenceEquals(Playing, Sequential))
+        _pendingDragEdit = null;
+        _dragNeedsRebuild = false;
+        _dragMoved = false;
+        if (!ReferenceEquals(source, Playing))
         {
-            _entries = RebuildEntries(Sequential, _entries);
-            _order = new(_entries);
+            OnPropertyChanged(nameof(IsReordering));
+            return;
         }
-        else
+        if (rebuild)
         {
-            _order = RebuildEntries(Playing, _entries);
+            // A reset or an unpaired edit can also change membership while the popup is open.
+            _order = RebuildEntries(source, _order);
+            if (ReferenceEquals(source, Sequential))
+            {
+                _entries = new(_order);
+            }
+            else
+            {
+                var remaining = new HashSet<long>(_order.Select(entry => entry.Id));
+                _entries.RemoveAll(entry => !remaining.Remove(entry.Id));
+                foreach (var entry in _order) if (remaining.Contains(entry.Id)) _entries.Add(entry);
+                Sequential.CollectionChanged -= SequentialChanged;
+                Sequential = new(_entries.Select(entry => entry.Music));
+                Sequential.CollectionChanged += SequentialChanged;
+                OnPropertyChanged(nameof(Sequential));
+            }
+            PruneEntryOptions();
         }
-        PruneEntryOptions();
-        CommitOrderChange();
+        if (moved || rebuild) CommitOrderChange();
+        OnPropertyChanged(nameof(IsReordering));
     }
 
     /// <summary>按出现顺序把现有条目映射到给定顺序；未匹配的项创建新条目。</summary>
@@ -209,7 +288,7 @@ public sealed class PlaybackQueueState : ObservableObject
     private void SequentialChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (_mutating) return;
-        if (_reorderActive) return;
+        if (ReferenceEquals(sender, _reorderPlaying)) return;
         if (e.Action == NotifyCollectionChangedAction.Remove && e.OldStartingIndex >= 0)
             _entries.RemoveRange(e.OldStartingIndex, e.OldItems!.Count);
         else if (e.Action == NotifyCollectionChangedAction.Move && e.OldItems?.Count == 1)
@@ -236,7 +315,9 @@ public sealed class PlaybackQueueState : ObservableObject
     }
     private void PublishOrder()
     {
+        var previous = Playing;
         Playing = Mode == PlayMode.RandomLoop ? new(_order.Select(entry => entry.Music)) : Sequential;
+        if (!ReferenceEquals(previous, Playing)) EndReorder();
         OnPropertyChanged(nameof(Playing));
         CommitOrderChange();
     }
@@ -257,7 +338,9 @@ public sealed class PlaybackQueueState : ObservableObject
         get => _mode;
         set
         {
-            if (!SetProperty(ref _mode, value)) return;
+            if (_mode == value) return;
+            EndReorder();
+            SetProperty(ref _mode, value);
             RebuildOrder();
         }
     }

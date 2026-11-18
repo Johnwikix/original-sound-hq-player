@@ -12,6 +12,8 @@ namespace PlaybackHdrProbe;
 
 internal static class CoverPresenterChecks
 {
+    internal const string JpegFixture = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAAIABgDAREAAhEBAxEB/8QAFgAAAwAAAAAAAAAAAAAAAAAABwkK/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/EABUBAQEAAAAAAAAAAAAAAAAAAAgA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AF6SzAFzIMYOgN3//2Q==";
+    private const string PqFixture = "iVBORw0KGgoAAAANSUhEUgAAAAQAAAABEAYAAACprNOOAAAABGNJQ1AJEAABTSMj/gAAABtJREFUeJxjYACD//+nOILg//+bHEAQRjcwAADXFw6msE0u5gAAAABJRU5ErkJggg==";
     private static readonly Rect Slot = new(48, 24, 96, 96);
 
     internal static async Task RunAsync()
@@ -32,7 +34,7 @@ internal static class CoverPresenterChecks
             throw new InvalidOperationException("The packaged artwork does not match the active theme.");
 
         string raw = Path.Combine(Path.GetTempPath(), $"playback-art-{Guid.NewGuid():N}");
-        string preview = raw + ".preview.png";
+        string preview = PlaybackCoverImage.GetCachePath(raw);
         try
         {
             if (await PlaybackSceneCover.ReadAsync(raw, true, default) is not null)
@@ -43,17 +45,34 @@ internal static class CoverPresenterChecks
 
             File.Copy(Path.Combine(AppContext.BaseDirectory, "Assets", "default_cover_white.png"), preview);
             await File.WriteAllBytesAsync(raw, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-            var fallback = await PlaybackSceneCover.ReadAsync(raw, true, default)
-                ?? await PlaybackSceneCover.ReadAsync(preview, true, default);
+            var fallback = await PlaybackSceneCover.ReadPlaybackAsync(raw, default);
             if (fallback is null || !fallback.Pixels.AsSpan().SequenceEqual(light.Pixels))
                 throw new InvalidOperationException("An unreadable PNG blocked the SDR preview fallback.");
 
             File.Delete(preview);
-            fallback = await PlaybackSceneCover.ReadAsync(raw, true, default)
-                ?? await PlaybackSceneCover.ReadAsync(preview, true, default)
+            fallback = await PlaybackSceneCover.ReadPlaybackAsync(raw, default)
                 ?? await PlaybackSceneCover.ReadDefaultAsync(true, default);
             if (fallback is null || !fallback.Pixels.AsSpan().SequenceEqual(dark.Pixels))
                 throw new InvalidOperationException("Absent SDR preview blocked the theme fallback.");
+
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Assets", "default_cover_black.png"), raw, true);
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Assets", "default_cover_white.png"), preview);
+            var cachedAt = DateTime.UtcNow.AddHours(-1);
+            File.SetLastWriteTimeUtc(preview, cachedAt);
+            File.SetLastWriteTimeUtc(raw, cachedAt.AddMinutes(-1));
+            var warm = await PlaybackSceneCover.ReadPlaybackAsync(raw, default);
+            if (warm is null || !warm.Pixels.AsSpan().SequenceEqual(light.Pixels))
+                throw new InvalidOperationException("Warm cover decoded the full-sized SDR original instead of using the display cache.");
+            File.SetLastWriteTimeUtc(raw, cachedAt.AddMinutes(1));
+            var stale = await PlaybackSceneCover.ReadPlaybackAsync(raw, default);
+            if (stale is null || !stale.Pixels.AsSpan().SequenceEqual(dark.Pixels))
+                throw new InvalidOperationException("An outdated display cache hid a newer original.");
+
+            await File.WriteAllBytesAsync(raw, Convert.FromBase64String(PqFixture));
+            File.SetLastWriteTimeUtc(raw, cachedAt.AddMinutes(-1));
+            var pq = await PlaybackSceneCover.ReadPlaybackAsync(raw, default);
+            if (pq is null || pq.Format != DirectXPixelFormat.R16G16B16A16Float || Math.Abs(pq.PeakNits - 600) > 1)
+                throw new InvalidOperationException("A fresh SDR cache replaced the native PQ cover.");
 
             try
             {
@@ -68,7 +87,7 @@ internal static class CoverPresenterChecks
             File.Delete(preview);
         }
 
-        Console.WriteLine("PASS packaged light/dark covers, missing/unsupported/corrupt raw artwork, SDR preview, themed default and cancellation");
+        Console.WriteLine("PASS themed covers, missing or corrupt raw artwork, fresh and stale SDR caches, native PQ priority and cancellation");
     }
 
     private static void CheckTransitions()

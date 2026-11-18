@@ -4,6 +4,7 @@ using Microsoft.Graphics.Display;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Foundation;
 using Windows.Graphics;
 using WinUIMusicPlayer;
@@ -37,6 +38,8 @@ public sealed partial class ProbeApp
         const string backgroundPng = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFUlEQVR4nGNgYNAgEY1qGNUwbDUAAB6jKAFBrRkwAAAAAElFTkSuQmCC";
         string coverPath = Path.Combine(Path.GetTempPath(), $"detail-cover-{Guid.NewGuid():N}.png");
         string backgroundPath = Path.Combine(Path.GetTempPath(), $"detail-background-{Guid.NewGuid():N}.png");
+        string cachedOnly = Path.Combine(Path.GetTempPath(), $"detail-cached-cover-{Guid.NewGuid():N}.png");
+        string displayCache = PlaybackCoverImage.GetCachePath(cachedOnly);
         App.MainWindow = window;
         nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         double white = Math.Min(200, peak);
@@ -55,12 +58,17 @@ public sealed partial class ProbeApp
             if (imageHdr.Zip(shaderHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f) ||
                 imageHdr.Zip(portraitImageHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f))
                 throw new InvalidOperationException("Changing layout or background changed the HDR album-cover pixels.");
-            Console.WriteLine("PASS playback detail cover on image and shader backgrounds, first layout in both orientations, and XAML fallback");
+            File.Copy(coverPath, displayCache);
+            await CheckEntryAsync(false, false, cachedOnly);
+            await CheckPortraitResizeAsync();
+            await CheckReleasedCoverBitmapsAsync(window, hwnd);
+            Console.WriteLine("PASS detail cover on image and shader backgrounds, first layout in both orientations, cached-only XAML fallback and portrait resizing");
         }
         finally
         {
             File.Delete(coverPath);
             File.Delete(backgroundPath);
+            File.Delete(displayCache);
         }
 
         void Position(int width, int height)
@@ -70,14 +78,15 @@ public sealed partial class ProbeApp
                 work.Y + (work.Height - height) / 2, width, height));
         }
 
-        async Task<float[]> CheckEntryAsync(bool shader, bool portrait)
+        async Task<float[]> CheckEntryAsync(bool shader, bool portrait, string? artworkPath = null)
         {
-            string label = $"{(shader ? "shader" : "custom image")}, {(portrait ? "portrait" : "landscape")}";
+            string label = $"{(shader ? "shader" : "custom image")}, {(portrait ? "portrait" : "landscape")}{(artworkPath is null ? "" : " cached-only")}";
+            artworkPath ??= coverPath;
             var vm = new AppViewModel
             {
                 IsFluidBackgroundEnabled = shader,
                 WindowBackgroundImagePath = shader ? null : backgroundPath,
-                LyricPageBackgroundHash = coverPath,
+                LyricPageBackgroundHash = artworkPath,
                 PlaybackHdrEnabled = true,
                 PlaybackHdrWhiteNits = white,
                 PlaybackHdrEffectivePeakNits = peak,
@@ -117,7 +126,7 @@ public sealed partial class ProbeApp
 
                 vm.PlaybackHdrEnabled = false;
                 await WaitUntilAsync(() => !vm.PlaybackHdrActive && panel.SwapChain is null && page.Cover.Opacity == 1 &&
-                    page.Cover.IsCoverSettled(coverPath), $"XAML preview after turning off HDR: {label}");
+                    page.Cover.IsCoverSettled(artworkPath), $"XAML preview after turning off HDR: {label}");
                 Rect sdrArt = page.Cover.GetArtworkBounds(page);
                 AssertStable(art, sdrArt, $"{label}, HDR to XAML");
                 await Task.Delay(130);
@@ -145,6 +154,28 @@ public sealed partial class ProbeApp
             }
         }
 
+        async Task CheckPortraitResizeAsync()
+        {
+            // The Canvas measures an explicit page viewport even when its bottom is outside the test window.
+            // This reaches the portrait text/cover breakpoint on both short and tall test displays.
+            var vm = new AppViewModel { LyricPageBackgroundHash = coverPath };
+            using var page = new PlayingDetailPage(vm) { Width = 1000, Height = 1320 };
+            var host = new Canvas();
+            host.Children.Add(page);
+            window.Content = host;
+            try
+            {
+                await WaitUntilAsync(() => vm.IsPortraitLayout && Math.Abs(page.Cover.ActualWidth - 220) < 1,
+                    "initial portrait slot below the 1024 DIP breakpoint");
+                page.Width = 1080;
+                await WaitUntilAsync(() => Math.Abs(page.ActualWidth - 1080) < 1, "portrait viewport resized");
+                if (!vm.IsPortraitLayout || Math.Abs(page.Cover.ActualWidth - 240) >= 1)
+                    throw new InvalidOperationException($"Portrait cover width after crossing 1024 DIP was {page.Cover.ActualWidth:F1}, expected 240.");
+                Console.WriteLine("PASS portrait layout crosses the 1024 DIP breakpoint with cover slot changing from 220 to 240 DIP");
+            }
+            finally { window.Content = new Grid(); }
+        }
+
         float[] SampleArt(Rect art, string label)
         {
             double scale = GetDpiForWindow(hwnd) / 96d;
@@ -154,6 +185,54 @@ public sealed partial class ProbeApp
             Marshal.ThrowExceptionForHR(SampleFrame(hwnd, true, points, points.Length, pixels));
             Console.WriteLine($"{label}, {GetDpiForWindow(hwnd)} DPI, {art.X:F1}/{art.Y:F1} {art.Width:F1}x{art.Height:F1}, scRGB {string.Join(", ", pixels.Select(p => p.ToString("F3")))}");
             return pixels;
+        }
+    }
+
+    private static async Task CheckReleasedCoverBitmapsAsync(Window window, nint hwnd)
+    {
+        byte[] jpeg = Convert.FromBase64String(CoverPresenterChecks.JpegFixture);
+        string path = Path.Combine(Path.GetTempPath(), $"detail-jpeg-{Guid.NewGuid():N}.jpg");
+        try
+        {
+            await File.WriteAllBytesAsync(path, jpeg);
+            using var fromFile = await ImageHelper.DecodeFileToBitmapAsync(path, default) as SoftwareBitmapSource
+                ?? throw new InvalidOperationException("The JPEG file did not decode into a XAML source.");
+            using var fromBytes = await ImageHelper.DecodeToBitmapAsync(jpeg) as SoftwareBitmapSource
+                ?? throw new InvalidOperationException("The JPEG bytes did not decode into a XAML source.");
+            using var placeholder = await ImageHelper.DecodeApplicationAssetAsync("default_cover_black.png", default) as SoftwareBitmapSource
+                ?? throw new InvalidOperationException("The packaged placeholder did not decode into a XAML source.");
+            var root = new Canvas { Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Black) };
+            Add(fromFile, 20, 20, 180, 60);
+            Add(fromBytes, 20, 90, 180, 60);
+            Add(placeholder, 220, 20, 120, 120);
+            window.Content = root;
+            await WaitUntilAsync(() => root.IsLoaded && root.ActualWidth > 340, "XAML artwork copy layout");
+            await Task.Delay(130);
+            double scale = root.XamlRoot.RasterizationScale;
+            PointInt32[] points = [Sample(50, 50), Sample(110, 50), Sample(170, 50),
+                Sample(50, 120), Sample(110, 120), Sample(170, 120), Sample(240, 40)];
+            var pixels = new float[points.Length * 3];
+            Marshal.ThrowExceptionForHR(SampleFrame(hwnd, true, points, points.Length, pixels));
+            if (!pixels.Take(9).Zip(pixels.Skip(9).Take(9)).All(pair => Math.Abs(pair.First - pair.Second) < .025f) ||
+                pixels[0] < .10f || pixels[6] < pixels[0] * 2 || pixels[3] <= pixels[4] * 1.32f ||
+                pixels[18] / pixels[6] is < .006f or > .020f || Math.Abs(pixels[18] - pixels[19]) > .01f)
+                throw new InvalidOperationException($"SoftwareBitmapSource did not retain the JPEG and placeholder pixels: {string.Join(", ", pixels)}.");
+            Console.WriteLine($"PASS XAML rendered file/byte JPEG and themed PNG after input bitmaps were disposed, JPEG white {pixels[6]:F3}, PNG background {pixels[18]:F3} scRGB");
+
+            void Add(SoftwareBitmapSource source, int left, int top, int width, int height)
+            {
+                var image = new Image { Source = source, Width = width, Height = height };
+                Canvas.SetLeft(image, left);
+                Canvas.SetTop(image, top);
+                root.Children.Add(image);
+            }
+
+            PointInt32 Sample(int x, int y) => new((int)(x * scale), (int)(y * scale));
+        }
+        finally
+        {
+            window.Content = new Grid();
+            File.Delete(path);
         }
     }
 

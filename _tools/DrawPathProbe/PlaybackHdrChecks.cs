@@ -149,6 +149,48 @@ internal sealed partial class ProbeApplication
         return (backgrounds, new { Readback = lyrics, Sweep = spatial, HaloClipping = haloClipping, Hover = hover }, warmMotion);
     }
 
+    private void MeasureHdrSubmission()
+    {
+        using var target = CreateFloatTarget(_canvas.Device, 1100, 700);
+        var frame = new PlaybackCanvasFrame(target.Device, target.Size, target.Dpi, Hdr);
+        using BaseBackgroundRenderer fluid = new FluidBackgroundRenderer();
+        using BaseBackgroundRenderer mesh = new RotatingMeshBackgroundRenderer();
+        fluid.LoadResources();
+        mesh.LoadResources();
+        Measure("hdr-fluid-offscreen-submit", () => DrawFrame(fluid), iterations: 120, warmup: 30);
+        Measure("hdr-mesh-offscreen-submit", () => DrawFrame(mesh), iterations: 120, warmup: 30);
+
+        long position = 15400;
+        ConfigureLyrics(true);
+        IsPlayingBus.Publish(true);
+        TimeProgressBus.SetClock(() => position);
+        try
+        {
+            for (int i = 0; i < 45; i++) _lyrics.OnUpdate(target, Delta);
+            Measure("hdr-lyrics-update-and-offscreen-submit", () =>
+            {
+                position += 4;
+                _lyrics.OnUpdate(target, Delta);
+                using var drawing = target.CreateDrawingSession();
+                drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+                drawing.Clear(Colors.Transparent);
+                using var scope = CanvasDrawingSessionScope.Borrow(drawing);
+                _lyrics.OnDraw(target, scope.Context, Hdr, consumePendingLyrics: false);
+            }, iterations: 120, warmup: 30);
+        }
+        finally { TimeProgressBus.SetClock(null); }
+
+        void DrawFrame(BaseBackgroundRenderer renderer)
+        {
+            renderer.Update(Delta);
+            using var drawing = target.CreateDrawingSession();
+            drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+            drawing.Clear(Colors.Transparent);
+            using var scope = CanvasDrawingSessionScope.Borrow(drawing);
+            renderer.Draw(frame, scope.Context);
+        }
+    }
+
     private static IEnumerable<BaseBackgroundRenderer> CreateBackgrounds()
     {
         yield return new FluidBackgroundRenderer();

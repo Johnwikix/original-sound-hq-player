@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.Constants;
@@ -137,17 +138,16 @@ namespace WinUIMusicPlayer.Controls
 
         private async Task UpdateSourceAsync()
         {
-            if (!IsActive) return;
+            if (!IsActive || !IsLoaded) return;
 
             string? newHash = ImageHash;
             bool hasData = newHash is { Length: > 0 };
             bool isDark = IsDark;
 
             _cts?.Cancel();
-            _cts?.Dispose();
             _cts = null;
             if (!_loadState.Begin(newHash, isDark, out int version)) return;
-            var cts = new CancellationTokenSource();
+            using var cts = new CancellationTokenSource();
             _cts = cts;
             var token = cts.Token;
 
@@ -155,27 +155,7 @@ namespace WinUIMusicPlayer.Controls
             try
             {
                 if (hasData)
-                {
-                    string rawPath = ToolUtils.FindRawCachePath(newHash!);
-                    if (File.Exists(rawPath))
-                    {
-                        try
-                        {
-                            string coverPath = await Task.Run(
-                                () => PlaybackCoverImage.GetOrCreateAsync(rawPath, token), token);
-                            imageSource = await ImageHelper.DecodeFileToBitmapAsync(coverPath, token,
-                                colorManagement: Windows.Graphics.Imaging.ColorManagementMode.ColorManageToSRgb);
-                        }
-                        catch (OperationCanceledException) { throw; }
-                        catch (Exception ex) { _logger.LogWarning(ex, "ImageSwitcher 展示缓存不可用，尝试原图"); }
-                        if (imageSource is null)
-                        {
-                            imageSource = await ImageHelper.DecodeFileToBitmapAsync(
-                                rawPath, token, PlaybackCoverImage.MaxPixelSize,
-                                Windows.Graphics.Imaging.ColorManagementMode.ColorManageToSRgb);
-                        }
-                    }
-                }
+                    imageSource = await Task.Run(() => LoadArtworkAsync(newHash!, token), token);
 
                 token.ThrowIfCancellationRequested();
 
@@ -206,15 +186,43 @@ namespace WinUIMusicPlayer.Controls
                 }
                 else _loadState.Reset();
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
             }
+            catch (Exception ex) { _logger.LogWarning(ex, "ImageSwitcher 无法更新封面"); }
             finally
             {
+                if (ReferenceEquals(_cts, cts)) _cts = null;
                 if (!IsSourceOwned(imageSource))
                     DisposeImageSource(imageSource);
             }
         }
+
+        private static async Task<ImageSource?> LoadArtworkAsync(string hash, CancellationToken token)
+        {
+            string rawPath = ToolUtils.FindRawCachePath(hash);
+            string? triedPath = null;
+            if (File.Exists(rawPath))
+            {
+                try
+                {
+                    triedPath = await PlaybackCoverImage.GetOrCreateAsync(rawPath, token).ConfigureAwait(false);
+                    if (await DecodePreviewAsync(triedPath, token).ConfigureAwait(false) is { } image)
+                        return image;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { _logger.LogWarning(ex, "ImageSwitcher 展示缓存不可用，尝试原图"); }
+                if (triedPath != rawPath && await DecodePreviewAsync(rawPath, token).ConfigureAwait(false) is { } original)
+                    return original;
+            }
+
+            string cachePath = PlaybackCoverImage.GetCachePath(rawPath);
+            if (triedPath == cachePath || !File.Exists(cachePath)) return null;
+            return await DecodePreviewAsync(cachePath, token).ConfigureAwait(false);
+        }
+
+        private static Task<ImageSource?> DecodePreviewAsync(string path, CancellationToken token) =>
+            ImageHelper.DecodeFileToBitmapAsync(path, token, PlaybackCoverImage.MaxPixelSize, ColorManagementMode.ColorManageToSRgb);
 
         private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
@@ -316,7 +324,6 @@ namespace WinUIMusicPlayer.Controls
         private void StopPendingWork(bool clearLastSource)
         {
             _cts?.Cancel();
-            _cts?.Dispose();
             _cts = null;
             StopLastSourceClearTimer();
             if (clearLastSource)

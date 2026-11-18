@@ -90,6 +90,8 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
             {
                 var result = MeasurePlaybackHdr();
                 var atDpi144 = MeasureHdrDpi();
+                var frameCadence = MeasurePresentationCadence();
+                MeasureHdrSubmission();
                 File.WriteAllText(resultPath, JsonSerializer.Serialize(new
                 {
                     Status = "PASS",
@@ -97,7 +99,9 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
                     result.Backgrounds,
                     result.Lyrics,
                     result.WarmMotion,
-                    Dpi144 = atDpi144
+                    Dpi144 = atDpi144,
+                    FrameCadence = frameCadence,
+                    ManagedSubmission = _measurements
                 }));
                 return;
             }

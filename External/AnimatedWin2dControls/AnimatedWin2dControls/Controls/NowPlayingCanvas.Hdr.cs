@@ -27,7 +27,7 @@ public sealed partial class NowPlayingCanvas
     private PlaybackHdrColor _hdrColor;
     private PlaybackHdrColor _bgCacheHdr;
     private ulong _hdrDisplayId;
-    private long _lastHdrTick;
+    private PresentationFrameClock _hdrFrameClock;
     private bool _sdrAllowed = true;
     private volatile bool _sdrFrameEnabled;
     private FrameEventSubscription? _hdrClock;
@@ -38,6 +38,8 @@ public sealed partial class NowPlayingCanvas
     private bool _sdrFrameObserved;
     private bool _releaseHdrAfterHandoff;
     private bool _navigationTransitionActive;
+    private bool _hdrEntranceAnimating;
+    private long _hdrEntranceMotionGeneration;
     private volatile bool _hdrOwnsFrame;
     private bool _hdrPresented;
     private bool _hdrFailed;
@@ -98,6 +100,19 @@ public sealed partial class NowPlayingCanvas
         return _sdrHandoffCompletion?.Task ?? Task.CompletedTask;
     }
 
+    /// <summary>Keeps the completed HDR frame during the page's compositor animation.</summary>
+    public long BeginHdrEntranceMotion()
+    {
+        _hdrEntranceAnimating = true;
+        return ++_hdrEntranceMotionGeneration;
+    }
+
+    public void EndHdrEntranceMotion(long generation)
+    {
+        if (_hdrEntranceMotionGeneration == generation)
+            _hdrEntranceAnimating = false;
+    }
+
     public void RetryHdrPresentation()
     {
         _hdrFailed = false;
@@ -131,13 +146,10 @@ public sealed partial class NowPlayingCanvas
             return;
 
         bool replace = _hdrSwapChain is null || _hdrTargetSize != size || _hdrTargetDpi != dpi;
-        long now = Stopwatch.GetTimestamp();
-        TimeSpan elapsed = _lastHdrTick == 0 ? TimeSpan.Zero : Stopwatch.GetElapsedTime(_lastHdrTick, now);
-        double minInterval = 1d / _coordinator.TargetFrameRate;
-        if (!replace && elapsed.TotalSeconds < minInterval - 0.002)
-            return;
-
-        if (!TryTakeHdrFrame())
+        // Let a new size or DPI submit a complete replacement while the
+        // compositor moves the existing frame.
+        if ((!replace && _hdrPresented && _hdrEntranceAnimating) || !TryTakeHdrFrame() ||
+            !_hdrFrameClock.TryAdvance(Stopwatch.GetTimestamp(), _coordinator.TargetFrameRate, replace, out var elapsed))
             return;
 
         CanvasSwapChain? replacement = null;
@@ -185,7 +197,6 @@ public sealed partial class NowPlayingCanvas
                 previous?.Dispose();
             }
 
-            _lastHdrTick = now;
             _hdrDeviceLostRetried = false;
             bool firstFrame = !_hdrPresented;
             if (firstFrame)
@@ -305,7 +316,8 @@ public sealed partial class NowPlayingCanvas
         CancelSdrHandoff();
         _hdrClock?.Dispose();
         _hdrClock = null;
-        _lastHdrTick = 0;
+        _hdrFrameClock = default;
+        _hdrEntranceAnimating = false;
         if (_hdrSwapChain is not null)
         {
             if (_hdrPanel is { } panel)

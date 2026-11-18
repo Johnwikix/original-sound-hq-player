@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
+using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.View;
 
@@ -336,26 +337,41 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 frame.Unloaded += CancelOnUnload;
                 try
                 {
-                    bool hdr;
-                    do
+                    while (await page.PrepareHdrEntranceAsync(preparation.Token) && page.ShouldPrepareHdrEntrance)
                     {
-                        hdr = await page.PrepareHdrEntranceAsync(preparation.Token);
                         preparation.Token.ThrowIfCancellationRequested();
-                    }
-                    while (hdr && page.ShouldPrepareHdrEntrance && !page.IsHdrEntrancePresented);
+                        if (!page.IsHdrEntrancePresented) continue;
 
-                    if (!hdr || !page.ShouldPrepareHdrEntrance)
-                    {
-                        await page.PrepareSdrEntranceAsync().WaitAsync(preparation.Token);
+                        if (animeTime > 0 && new UISettings().AnimationsEnabled)
+                        {
+                            try
+                            {
+                                bool completed = await page.RunHdrEntranceMotionAsync(
+                                    token => SlideHdrIntoViewAsync(frame, animeTime, token),
+                                    () => frame.Opacity = 0, preparation.Token);
+                                if (!completed) continue;
+                            }
+                            catch (Exception ex) when (ex is not OperationCanceledException)
+                            {
+                                _logger.LogWarning(ex, "HDR 播放页滑入动画失败");
+                                if (!page.IsHdrEntrancePresented) continue;
+                            }
+                        }
+
                         preparation.Token.ThrowIfCancellationRequested();
                         _cancelPendingHdrEntrance = null;
-                        StartAnimationWhenArranged();
+                        // Keep the previous page visible beneath the slide until
+                        // the opaque HDR frame fills the viewport.
+                        onRevealing?.Invoke();
+                        FinishShow();
                         return;
                     }
 
+                    preparation.Token.ThrowIfCancellationRequested();
+                    await page.PrepareSdrEntranceAsync().WaitAsync(preparation.Token);
+                    preparation.Token.ThrowIfCancellationRequested();
                     _cancelPendingHdrEntrance = null;
-                    onRevealing?.Invoke();
-                    FinishShow();
+                    StartAnimationWhenArranged();
                 }
                 catch (OperationCanceledException)
                 {
@@ -378,15 +394,25 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 {
                     if (_cancelPendingHdrEntrance != (Action)CancelPreparedShow) return;
                     _cancelPendingHdrEntrance = null;
-                    preparation.Cancel();
-                    frame.Visibility = Visibility.Collapsed;
-                    frame.Opacity = 1;
-                    frame.IsHitTestVisible = wasHitTestVisible;
-                    frame.ClearValue(UIElement.RenderTransformProperty);
-                    page.PauseCanvasRendering();
-                    _ = page.SetCanvasNavigationTransitionAsync(false);
-                    Interlocked.Exchange(ref _isAnimating, 0);
-                    onCompleted?.Invoke();
+                    try
+                    {
+                        preparation.Cancel();
+                        frame.Visibility = Visibility.Collapsed;
+                        frame.Opacity = 1;
+                        frame.IsHitTestVisible = wasHitTestVisible;
+                        frame.ClearValue(UIElement.RenderTransformProperty);
+                        page.PauseCanvasRendering();
+                        _ = page.SetCanvasNavigationTransitionAsync(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "取消播放页入场失败");
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref _isAnimating, 0);
+                    }
+                    NotifyCompleted(onCompleted, nameof(Show));
                 }
 
                 void CancelOnUnload(object sender, RoutedEventArgs args) => CancelPreparedShow();
@@ -461,6 +487,42 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
         }
 
+        private async Task SlideHdrIntoViewAsync(Frame frame, int duration, CancellationToken cancellationToken)
+        {
+            double height = SafeHeight(frame);
+            var translate = new TranslateTransform { Y = height };
+            var slide = new DoubleAnimation
+            {
+                From = height,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(duration),
+                EasingFunction = _easingOutFunction
+            };
+            Storyboard.SetTarget(slide, translate);
+            Storyboard.SetTargetProperty(slide, nameof(TranslateTransform.Y));
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(slide);
+            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            storyboard.Completed += OnCompleted;
+            try
+            {
+                frame.RenderTransform = translate;
+                storyboard.Begin();
+                // Opacity must stay at 1 as HDR content becomes visible.
+                frame.Opacity = 1;
+                await done.Task.WaitAsync(cancellationToken);
+            }
+            finally
+            {
+                storyboard.Completed -= OnCompleted;
+                if (ReferenceEquals(frame.RenderTransform, translate))
+                    frame.ClearValue(UIElement.RenderTransformProperty);
+                storyboard.Stop();
+            }
+
+            void OnCompleted(object? sender, object args) => done.TrySetResult();
+        }
+
         // ────────────────────────────────────────────────────────────
         //  Dismiss（overlay 滑出）
         // ────────────────────────────────────────────────────────────
@@ -469,56 +531,102 @@ namespace WinUIMusicPlayer.Services.NavigationService
         {
             if (ContentFrame is not { } frame || frame.Visibility == Visibility.Collapsed) return;
 
-            var playingPage = frame.Content as PlayingDetailPage;
             if (_cancelPendingHdrEntrance is { } cancel)
             {
                 cancel();
-                onCompleted?.Invoke();
+                NotifyCompleted(onCompleted, nameof(Dismiss));
                 return;
             }
 
             if (Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0) return;
+
+            var playingPage = frame.Content as PlayingDetailPage;
+            Storyboard? storyboard = null;
             try
             {
                 if (playingPage is not null)
                     await playingPage.SetCanvasNavigationTransitionAsync(true);
-                var height = SafeHeight(ContentFrame);
 
                 var translate = new TranslateTransform();
-                ContentFrame.RenderTransform = translate;
-
-                var slideAnim = new DoubleAnimation { From = 0, To = height, Duration = TimeSpan.FromMilliseconds(animeTime), EasingFunction = _easingOutFunction };
-                var opacityAnim = new DoubleAnimation { From = 1, To = 0, Duration = TimeSpan.FromMilliseconds(animeTime) };
-
-                Storyboard.SetTarget(slideAnim, translate); Storyboard.SetTargetProperty(slideAnim, "Y");
-                Storyboard.SetTarget(opacityAnim, ContentFrame); Storyboard.SetTargetProperty(opacityAnim, "Opacity");
-
-                var sb = new Storyboard();
-                sb.Children.Add(slideAnim);
-                sb.Children.Add(opacityAnim);
-
-                EventHandler<object> onAnimCompleted = null;
-                onAnimCompleted = (s, e) =>
+                frame.RenderTransform = translate;
+                var slide = new DoubleAnimation
                 {
-                    sb.Completed -= onAnimCompleted;
-                    ContentFrame.Visibility = Visibility.Collapsed;
-                    playingPage?.PauseCanvasRendering();
-                    ContentFrame.Opacity = 1;
-                    ContentFrame.RenderTransform = null;
-                    ContentFrame.ClearValue(UIElement.RenderTransformProperty);
-                    _ = playingPage?.SetCanvasNavigationTransitionAsync(false);
-                    Interlocked.Exchange(ref _isAnimating, 0);
-                    onCompleted?.Invoke();
+                    From = 0,
+                    To = SafeHeight(frame),
+                    Duration = TimeSpan.FromMilliseconds(animeTime),
+                    EasingFunction = _easingOutFunction
                 };
-                sb.Completed += onAnimCompleted;
-                sb.Begin();
+                var opacity = new DoubleAnimation { From = 1, To = 0, Duration = TimeSpan.FromMilliseconds(animeTime) };
+                Storyboard.SetTarget(slide, translate);
+                Storyboard.SetTargetProperty(slide, nameof(TranslateTransform.Y));
+                Storyboard.SetTarget(opacity, frame);
+                Storyboard.SetTargetProperty(opacity, nameof(UIElement.Opacity));
+                storyboard = new Storyboard();
+                storyboard.Children.Add(slide);
+                storyboard.Children.Add(opacity);
+                await RunDismissAnimationAsync(frame, storyboard);
             }
             catch (Exception ex)
             {
-                _ = playingPage?.SetCanvasNavigationTransitionAsync(false);
-                _logger.LogError(ex, $"Dismiss 滑出错误: {ex.Message}");
+                _logger.LogError(ex, "Dismiss 滑出错误");
+            }
+
+            try
+            {
+                frame.Visibility = Visibility.Collapsed;
+                frame.Opacity = 1;
+                frame.ClearValue(UIElement.RenderTransformProperty);
+                storyboard?.Stop();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Dismiss 归位失败");
+            }
+
+            try
+            {
+                if (playingPage is not null)
+                {
+                    playingPage.PauseCanvasRendering();
+                    await playingPage.SetCanvasNavigationTransitionAsync(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Dismiss 播放页清理失败");
+            }
+            finally
+            {
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
+
+            NotifyCompleted(onCompleted, nameof(Dismiss));
+        }
+
+        private static async Task RunDismissAnimationAsync(Frame frame, Storyboard storyboard)
+        {
+            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            storyboard.Completed += OnCompleted;
+            frame.Unloaded += OnUnloaded;
+            try
+            {
+                storyboard.Begin();
+                await done.Task;
+            }
+            finally
+            {
+                storyboard.Completed -= OnCompleted;
+                frame.Unloaded -= OnUnloaded;
+            }
+
+            void OnCompleted(object? sender, object args) => done.TrySetResult();
+            void OnUnloaded(object sender, RoutedEventArgs args) => done.TrySetResult();
+        }
+
+        private void NotifyCompleted(Action? callback, string operation)
+        {
+            try { callback?.Invoke(); }
+            catch (Exception ex) { _logger.LogError(ex, "{Operation} 完成回调失败", operation); }
         }
 
         // ────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ using System;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
@@ -32,10 +33,14 @@ namespace AnimatedWin2dControls.Renderer.Background
         private int _loadedVersion = -1;
         private PendingImage? _pending;
         private CanvasBitmap? _bitmap;
+        private Size _bitmapSize;
         private GaussianBlurEffect? _blur;
         private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrImage;
         private GaussianBlurEffect? _hdrBlur;
         private CanvasSolidColorBrush? _hdrVeil;
+        private float _hdrImageWhite;
+        private float _hdrVeilWhite;
+        private bool _hdrVeilDark;
         private bool _resourcesInvalid = true;
         private bool _disposed;
         private bool _decodeEnabled = true;
@@ -217,13 +222,14 @@ namespace AnimatedWin2dControls.Renderer.Background
                 EnsureBitmap(control);
                 if (_blur is not null && _bitmap is not null)
                 {
-                    var source = GetUniformToFillSource(_bitmap.Size.Width, _bitmap.Size.Height, width, height);
+                    var source = GetUniformToFillSource(_bitmapSize.Width, _bitmapSize.Height, width, height);
                     if (control.Hdr.IsEnabled)
                     {
                         if (_hdrImage is null)
                         {
                             _hdrImage = new PixelShaderEffect<ScRgbPlaybackEffect>();
                             _hdrImage.Sources[0] = _bitmap;
+                            _hdrImageWhite = 0;
                             _hdrBlur = new GaussianBlurEffect
                             {
                                 Source = _hdrImage,
@@ -232,7 +238,11 @@ namespace AnimatedWin2dControls.Renderer.Background
                                 BufferPrecision = CanvasBufferPrecision.Precision16Float
                             };
                         }
-                        _hdrImage.ConstantBuffer = new ScRgbPlaybackEffect(control.Hdr.White);
+                        if (_hdrImageWhite != control.Hdr.White)
+                        {
+                            _hdrImageWhite = control.Hdr.White;
+                            _hdrImage.ConstantBuffer = new ScRgbPlaybackEffect(_hdrImageWhite);
+                        }
                         ds.DrawImage(_hdrBlur!, destination, source);
                     }
                     else
@@ -244,8 +254,16 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // Match the theme veil used by WindowBackgroundImage.
                 if (control.Hdr.IsEnabled)
                 {
-                    _hdrVeil ??= new CanvasSolidColorBrush(control.Device, veil);
-                    _hdrVeil.ColorHdr = control.Hdr.GetColor(veil);
+                    if (_hdrVeil is null || _hdrVeilWhite != control.Hdr.White || _hdrVeilDark != IsDark)
+                    {
+                        var tint = control.Hdr.GetColor(veil);
+                        if (_hdrVeil is null)
+                            _hdrVeil = CanvasSolidColorBrush.CreateHdr(control.Device, tint);
+                        else
+                            _hdrVeil.ColorHdr = tint;
+                        _hdrVeilWhite = control.Hdr.White;
+                        _hdrVeilDark = IsDark;
+                    }
                     ds.GetManagedSessionForCompatibility().FillRectangle(destination, _hdrVeil);
                 }
                 else
@@ -275,18 +293,11 @@ namespace AnimatedWin2dControls.Renderer.Background
                 }
             }
 
-            if (_resourcesInvalid || _loadedVersion != version)
+            if (_resourcesInvalid || _loadedVersion != version || pending is not null)
             {
-                _hdrBlur?.Dispose();
-                _hdrBlur = null;
-                _hdrImage?.Dispose();
-                _hdrImage = null;
-                _hdrVeil?.Dispose();
-                _hdrVeil = null;
-                _blur?.Dispose();
-                _blur = null;
-                _bitmap?.Dispose();
-                _bitmap = null;
+                // A device reload can race a decoded result that was already queued. Adopt
+                // the newest upload and sever the HDR graph's reference to the old bitmap.
+                ReleaseBitmapResources();
                 _loadedVersion = version;
                 _resourcesInvalid = false;
             }
@@ -304,6 +315,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                     DirectXPixelFormat.B8G8R8A8UIntNormalized,
                     control.Dpi,
                     CanvasAlphaMode.Premultiplied);
+                _bitmapSize = _bitmap.Size;
                 _blur = new GaussianBlurEffect
                 {
                     Source = _bitmap,
@@ -313,17 +325,23 @@ namespace AnimatedWin2dControls.Renderer.Background
             }
             catch
             {
-                _bitmap?.Dispose();
-                _bitmap = null;
-                _hdrBlur?.Dispose();
-                _hdrBlur = null;
-                _hdrImage?.Dispose();
-                _hdrImage = null;
-                _hdrVeil?.Dispose();
-                _hdrVeil = null;
-                _blur?.Dispose();
-                _blur = null;
+                ReleaseBitmapResources();
             }
+        }
+
+        // The caller holds _resourceGate so a draw cannot see a partially retired graph.
+        private void ReleaseBitmapResources()
+        {
+            _hdrBlur?.Dispose();
+            _hdrBlur = null;
+            _hdrImage?.Dispose();
+            _hdrImage = null;
+            _hdrVeil?.Dispose();
+            _hdrVeil = null;
+            _blur?.Dispose();
+            _blur = null;
+            _bitmap?.Dispose();
+            _bitmap = null;
         }
 
         private async Task DecodeLoopAsync(CancellationToken lifetimeToken)
@@ -461,18 +479,7 @@ namespace AnimatedWin2dControls.Renderer.Background
             }
 
             lock (_resourceGate)
-            {
-                _hdrBlur?.Dispose();
-                _hdrBlur = null;
-                _hdrImage?.Dispose();
-                _hdrImage = null;
-                _hdrVeil?.Dispose();
-                _hdrVeil = null;
-                _blur?.Dispose();
-                _blur = null;
-                _bitmap?.Dispose();
-                _bitmap = null;
-            }
+                ReleaseBitmapResources();
 
             // The worker is cancellation-aware. Dispose the synchronization objects
             // only after it leaves WinRT, otherwise a late callback can touch a

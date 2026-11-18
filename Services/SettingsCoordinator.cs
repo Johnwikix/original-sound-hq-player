@@ -596,10 +596,18 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     {
         if (!_started) return;
         _started = false;
-        _hdrSaveTimer?.Stop();
-        if (_hdrSaveTimer is not null) _hdrSaveTimer.Tick -= SaveHdrPreference;
-        _desktopStyleTimer?.Stop();
-        if (_desktopStyleTimer is not null) _desktopStyleTimer.Tick -= CommitDesktopStyle;
+        if (_hdrSaveTimer is { } hdrTimer)
+        {
+            hdrTimer.Stop();
+            hdrTimer.Tick -= SaveHdrPreference;
+            _hdrSaveTimer = null;
+        }
+        if (_desktopStyleTimer is { } styleTimer)
+        {
+            styleTimer.Stop();
+            styleTimer.Tick -= CommitDesktopStyle;
+            _desktopStyleTimer = null;
+        }
         state.Preferences.PropertyChanged -= OnPreferencesChanged;
     }
 }

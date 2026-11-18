@@ -26,9 +26,6 @@ namespace WinUIMusicPlayer.Helper
             string path, CancellationToken token, uint maxPixelSize = 0,
             ColorManagementMode colorManagement = ColorManagementMode.DoNotColorManage)
         {
-            // BitmapImage has no deterministic disposal API; keep the decoded
-            // native frame behind SoftwareBitmapSource so ownership is explicit.
-            SoftwareBitmap? bitmap = null;
             try
             {
                 token.ThrowIfCancellationRequested();
@@ -43,16 +40,14 @@ namespace WinUIMusicPlayer.Helper
                     decoder.PixelWidth,
                     decoder.PixelHeight,
                     maxPixelSize);
-                bitmap = await decoder.GetSoftwareBitmapAsync(
+                using var bitmap = await decoder.GetSoftwareBitmapAsync(
                     BitmapPixelFormat.Bgra8,
                     BitmapAlphaMode.Premultiplied,
                     transform,
                     ExifOrientationMode.RespectExifOrientation,
                     colorManagement);
                 token.ThrowIfCancellationRequested();
-                var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
-                bitmap = null;
-                return result;
+                return await CreateSoftwareBitmapSourceAsync(bitmap, token);
             }
             catch (OperationCanceledException)
             {
@@ -63,10 +58,6 @@ namespace WinUIMusicPlayer.Helper
                 _logger.LogError(ex, "DecodeFileToBitmapAsync 失败");
                 return null;
             }
-            finally
-            {
-                bitmap?.Dispose();
-            }
         }
 
         internal static async Task<ImageSource?> DecodeToBitmapAsync(
@@ -74,7 +65,6 @@ namespace WinUIMusicPlayer.Helper
         {
             if (bytes is not { Length: > 0 }) return null;
 
-            SoftwareBitmap? bitmap = null;
             try
             {
                 using var memStream = new MemoryStream(bytes, writable: false);
@@ -87,16 +77,14 @@ namespace WinUIMusicPlayer.Helper
                     decoder.PixelWidth,
                     decoder.PixelHeight,
                     decodePixelWidth > 0 ? (uint)decodePixelWidth : 0);
-                bitmap = await decoder.GetSoftwareBitmapAsync(
+                using var bitmap = await decoder.GetSoftwareBitmapAsync(
                     BitmapPixelFormat.Bgra8,
                     BitmapAlphaMode.Premultiplied,
                     transform,
                     ExifOrientationMode.RespectExifOrientation,
                     ColorManagementMode.DoNotColorManage);
                 token.ThrowIfCancellationRequested();
-                var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
-                bitmap = null;
-                return result;
+                return await CreateSoftwareBitmapSourceAsync(bitmap, token);
             }
             catch (OperationCanceledException)
             {
@@ -106,10 +94,6 @@ namespace WinUIMusicPlayer.Helper
             {
                 _logger.LogError(ex, "DecodeToBitmapAsync 失败");
                 return null;
-            }
-            finally
-            {
-                bitmap?.Dispose();
             }
         }
 
@@ -137,9 +121,7 @@ namespace WinUIMusicPlayer.Helper
                     bitmap = await DecodeAssetBitmapAsync(stream);
                 }
                 token.ThrowIfCancellationRequested();
-                var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
-                bitmap = null;
-                return result;
+                return await CreateSoftwareBitmapSourceAsync(bitmap, token);
             }
             catch (OperationCanceledException)
             {
@@ -224,6 +206,7 @@ namespace WinUIMusicPlayer.Helper
                 {
                     token.ThrowIfCancellationRequested();
                     source = new SoftwareBitmapSource();
+                    // Keep the input alive until WinUI finishes transferring the pixels to its image source.
                     await source.SetBitmapAsync(bitmap);
                     result = source;
                     source = null;

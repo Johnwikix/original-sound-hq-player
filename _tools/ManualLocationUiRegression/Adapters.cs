@@ -136,14 +136,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
             return Queue.IndexOf(SelectedPlaybackMusic);
         }
+        public AppViewModel()
+        {
+            Queue.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(Queue.Sequential)) OnPropertyChanged(nameof(SequentialPlayingList));
+                if (e.PropertyName == nameof(Queue.Playing)) OnPropertyChanged(nameof(CurrentPlayingList));
+            };
+        }
         public BulkObservableCollection<Music> SequentialPlayingList
         {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value)) OnPropertyChanged(nameof(CurrentPlayingList));
-            }
-        } = [];
+            get => Queue.Sequential;
+            set => Queue.Replace(value);
+        }
         public List<Music> SongsSource { get; } = [];
         public void SetBrowseQueue(BulkObservableCollection<Music> songs, bool exactFiles = false, int? sourceScope = null)
         {

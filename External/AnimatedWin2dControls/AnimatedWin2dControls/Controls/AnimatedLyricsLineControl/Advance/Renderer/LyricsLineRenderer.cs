@@ -420,8 +420,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             var sourceRect = new Rect(rect.X + Line.CachedPrimaryPosition.X, rect.Y + Line.CachedPrimaryPosition.Y,
                 rect.Width, rect.Height);
             var destination = sourceRect.Scale(character.ScaleTransition.Value).AddY(character.FloatTransition.Value);
-            character.Crop.BufferPrecision = _hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
-            character.Glow.BufferPrecision = character.Crop.BufferPrecision;
+            character.SetEffectPrecision(_hdr.IsEnabled);
             character.Crop.Source = source;
             character.Crop.SourceRectangle = new Rect(sourceRect.X, sourceRect.Y,
                 sourceRect.Width * character.ProgressPlayed, sourceRect.Height);
@@ -496,8 +495,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (defocus)
             {
                 // 普通退场散焦沿用纸白字形，额外亮度只留在单独绘制的余辉。
-                renderChar.Crop.BufferPrecision = _hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
-                renderChar.Glow.BufferPrecision = renderChar.Crop.BufferPrecision;
+                renderChar.SetEffectPrecision(_hdr.IsEnabled);
                 renderChar.Crop.Source = source;
                 renderChar.Crop.SourceRectangle = sourceCharRect;
                 renderChar.Glow.BlurAmount = (float)blur;

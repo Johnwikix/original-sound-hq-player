@@ -158,6 +158,52 @@ static async Task RunAsync()
     Check(randomReorder.CaptureEntryIds().SequenceEqual(randomCanonical), "Random drag must not rewrite the canonical queue.");
     Console.WriteLine("PASS: random drag reorders only the traversal order.");
 
+    foreach (bool shuffle in new[] { false, true })
+    {
+        var repeated = new PlaybackQueueState();
+        repeated.Replace([reorderA, reorderA, reorderB], playlistEntries: [31, 32, 33], requestedVersions: [11, 12, 13]);
+        var ids = repeated.CaptureEntryIds();
+        if (shuffle)
+        {
+            repeated.Mode = PlayMode.RandomLoop;
+            repeated.RestoreEntries(ids, [ids[1], ids[0], ids[2]], repeated.CaptureMusicIds(), ids[0],
+                [11, 12, 13], playlistEntries: [31, 32, 33]);
+        }
+        long dragged = repeated.EntryIdAt(0);
+        long neighbour = repeated.EntryIdAt(1);
+        repeated.SelectEntry(dragged, reorderA);
+        var dragOwner = new object();
+        repeated.BeginReorder(dragOwner);
+        repeated.EndReorder(new object());
+        Check(repeated.IsReordering, "Closing another queue view ended the active drag.");
+        repeated.Playing.RemoveAt(0);
+        repeated.Playing.Insert(1, reorderA);
+        repeated.EndReorder();
+        Check(repeated.EntryIdAt(1) == dragged && repeated.EntryIdAt(0) == neighbour
+            && repeated.IndexOf(reorderA) == 1 && repeated.RequestedVersion(dragged) == (shuffle ? 12 : 11),
+            "Dragging identical song references must move the selected occurrence with its pinned version.");
+        long version = repeated.Version;
+        repeated.BeginReorder();
+        repeated.EndReorder();
+        Check(repeated.Version == version, "A cancelled drag must not invalidate gapless or save a new queue.");
+        Check(!shuffle || repeated.CaptureEntryIds().SequenceEqual(ids), "Random reorder changed the canonical queue.");
+        repeated.BeginReorder();
+        repeated.Playing.Move(1, 0);
+        repeated.EndReorder();
+        Check(repeated.EntryIdAt(0) == dragged, "A native Move must preserve the occurrence identity.");
+        repeated.BeginReorder();
+        repeated.Playing.Insert(2, reorderA);
+        repeated.Playing.RemoveAt(0);
+        repeated.EndReorder();
+        Check(repeated.EntryIdAt(1) == dragged, "Insert-first reorder must account for the shifted removal index.");
+        repeated.BeginReorder();
+        repeated.Playing.RemoveAt(0);
+        repeated.EndReorder();
+        Check(repeated.EntryIdAt(0) == dragged && repeated.PlaylistEntry(neighbour) == 0,
+            "An unpaired removal must prune only the removed occurrence.");
+    }
+    Console.WriteLine("PASS: duplicate drag preserves occurrence identity in sequential and shuffled playback.");
+
     int writes = 0, value = 0, saved = 0;
     var firstWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

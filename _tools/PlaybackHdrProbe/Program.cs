@@ -325,7 +325,7 @@ public sealed partial class ProbeApp : Application
     private static async Task CheckTitleAsync(Grid root, Window window, AnimatedWin2dControls.Controls.NowPlayingCanvas host, double whiteNits)
     {
         static AnimatedTextDocument MakeTitle(string suffix) => new(
-            new AnimatedTextParagraph("████" + suffix, 40, Microsoft.UI.Text.FontWeights.Bold, 56));
+            new AnimatedTextParagraph("鈻堚枅鈻堚枅" + suffix, 40, Microsoft.UI.Text.FontWeights.Bold, 56));
         var title = new AnimatedTextBlock
         {
             Width = 180, Height = 60, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,
@@ -446,8 +446,7 @@ public sealed partial class ProbeApp : Application
             CheckPixels(DrawCover(ordinary, 80, 4000), [0, .199f, .827f, 1.374f, .690f, 0]);
             CheckCoverRamp();
             // Three 8x8 JPEG tiles: neutral gray, warm peach and white. Raw music caches can have any extension.
-            const string jpeg = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAAIABgDAREAAhEBAxEB/8QAFgAAAwAAAAAAAAAAAAAAAAAABwkK/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/EABUBAQEAAAAAAAAAAAAAAAAAAAgA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AF6SzAFzIMYOgN3//2Q==";
-            await File.WriteAllBytesAsync(path, Convert.FromBase64String(jpeg));
+            await File.WriteAllBytesAsync(path, Convert.FromBase64String(CoverPresenterChecks.JpegFixture));
             var jpegCover = await PlaybackSceneCover.ReadAsync(path, true, default) ?? throw new Exception("Missing JPEG scene artwork");
             var jpegPixels = DrawCover(jpegCover, 200, 600);
             var warm = MemoryMarshal.Cast<byte, Half>(jpegPixels).Slice(12 * 4, 3);

@@ -1,6 +1,7 @@
 #nullable enable
 using AnimatedWin2dControls.Shaders;
 using ComputeSharp.D2D1.WinUI;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using System;
 using Windows.Foundation;
@@ -18,6 +19,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// <summary>Captures the outgoing glow radius so its opacity can fade from the current image state.</summary>
         public double GlowExitStartAmount { get; internal set; }
 
+        private bool _useFloatPrecision;
         private CropEffect? _crop;
         private GaussianBlurEffect? _glow;
         private PixelShaderEffect<PlaybackTextGlowCoreEffect>? _hdrHalo;
@@ -28,6 +30,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         /// <summary>Gets the cached glow effect when glow or retirement blur is actually drawn.</summary>
         public GaussianBlurEffect Glow => _glow ??= new GaussianBlurEffect { Source = Crop, BorderMode = EffectBorderMode.Soft };
+
+        internal void SetEffectPrecision(bool useFloatPrecision)
+        {
+            if (_useFloatPrecision == useFloatPrecision) return;
+            CanvasBufferPrecision? precision = useFloatPrecision ? CanvasBufferPrecision.Precision16Float : null;
+            Crop.BufferPrecision = precision;
+            Glow.BufferPrecision = precision;
+            _useFloatPrecision = useFloatPrecision;
+        }
 
         internal PixelShaderEffect<PlaybackTextGlowCoreEffect> GetHdrHalo()
         {
@@ -68,6 +79,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             var crop = _crop;
             _hdrGlow = null;
             _hdrHalo = null;
+            _useFloatPrecision = false;
             _glow = null;
             _crop = null;
             try { hdrGlow?.Dispose(); }

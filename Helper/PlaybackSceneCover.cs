@@ -18,26 +18,44 @@ internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, 
         return ReadAsync(Path.Combine(AppContext.BaseDirectory, "Assets", name), includeSdr: true, token);
     }
 
-    internal static async Task<PlaybackSceneCover?> ReadAsync(string path, bool includeSdr, CancellationToken token)
+    internal static Task<PlaybackSceneCover?> ReadPlaybackAsync(string rawPath, CancellationToken token) =>
+        ReadCoreAsync(rawPath, true, PlaybackCoverImage.GetCachePath(rawPath), token);
+
+    internal static Task<PlaybackSceneCover?> ReadAsync(string path, bool includeSdr, CancellationToken token) =>
+        ReadCoreAsync(path, includeSdr, null, token);
+
+    private static async Task<PlaybackSceneCover?> ReadCoreAsync(string path, bool includeSdr, string? cachePath,
+        CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        bool triedCache = false;
         try
         {
             using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-            return await DecodeAsync(input, includeSdr, token).ConfigureAwait(false);
+            bool isPq = HasSupportedColorEncoding(input);
+            if (!includeSdr && !isPq) return null;
+            // A valid display cache is already sized and color-managed. The raw PQ source
+            // keeps its highlight information and only uses this cache if decoding fails.
+            if (!isPq && cachePath is not null && PlaybackCoverImage.IsCurrent(cachePath, path))
+            {
+                triedCache = true;
+                if (await ReadAsync(cachePath, true, token).ConfigureAwait(false) is { } cached)
+                    return cached;
+            }
+            if (await DecodeAsync(input, isPq, token).ConfigureAwait(false) is { } artwork)
+                return artwork;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException ||
             ((uint)ex.HResult & 0xffffff00u) == 0x88982f00u) // WIC cannot decode this image.
         {
             token.ThrowIfCancellationRequested();
-            return null;
         }
+        return cachePath is not null && !triedCache
+            ? await ReadAsync(cachePath, true, token).ConfigureAwait(false) : null;
     }
 
-    private static async Task<PlaybackSceneCover?> DecodeAsync(Stream input, bool includeSdr, CancellationToken token)
+    private static async Task<PlaybackSceneCover?> DecodeAsync(Stream input, bool isPq, CancellationToken token)
     {
-        bool isPq = HasSupportedColorEncoding(input);
-        if (!includeSdr && !isPq) return null;
         input.Position = 0;
         using var stream = input.AsRandomAccessStream();
         var decoder = await BitmapDecoder.CreateAsync(stream).AsTask(token).ConfigureAwait(false);

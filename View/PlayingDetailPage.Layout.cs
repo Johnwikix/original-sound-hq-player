@@ -58,7 +58,11 @@ public sealed partial class PlayingDetailPage
     private void ApplyAspectRatioLayout(bool portrait, double topHeight)
     {
         if (portrait)
+        {
             LeftControlPanel.Height = topHeight;
+            if (_isPortraitLayout)
+                LeftControlPanel.ColumnDefinitions[0].Width = new GridLength(topHeight, GridUnitType.Pixel);
+        }
         ViewModel.AppViewModel.IsPortraitLayout = portrait;
         if (_isPortraitLayout == portrait) return;
         _isPortraitLayout = portrait;

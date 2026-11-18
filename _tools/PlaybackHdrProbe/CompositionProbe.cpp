@@ -151,7 +151,8 @@ extern "C" __declspec(dllexport) void ChangeBackdrop(HWND behind) {
 }
 
 static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int count, float* rgb,
-    INT64* times = nullptr, int maximumFrames = 1, int* frames = nullptr) {
+    INT64* times = nullptr, int maximumFrames = 1, int* frames = nullptr,
+    HANDLE ready = nullptr, HANDLE completed = nullptr) {
     if (count <= 0 || count > 1024 || maximumFrames <= 0) return E_INVALIDARG;
     ComPtr<IDXGIFactory1> factory;
     CHECK(CreateDXGIFactory1(IID_PPV_ARGS(&factory)));
@@ -249,7 +250,7 @@ static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int co
             static_cast<UINT>(point.x + 1), static_cast<UINT>(point.y + 1), 1};
     }
     int captured = 0;
-    ULONGLONG stop = GetTickCount64() + 650;
+    ULONGLONG stop = GetTickCount64() + (completed ? 10000 : 650);
     while (frame && captured < maximumFrames) {
         for (int i = 0; i < count; ++i)
             ctx->CopySubresourceRegion(sample.Get(), 0, i, 0, 0, capture.Get(), 0, &boxes[i]);
@@ -262,13 +263,18 @@ static HRESULT ReadFrame(HWND host, bool windowOnly, const POINT* points, int co
         if (times) times[captured] = frame.SystemRelativeTime().count();
         rgb += count * 3;
         ++captured;
+        if (ready && captured == 1) SetEvent(ready);
         frame.Close();
         frame = nullptr;
         capture.Reset();
         access = nullptr;
-        if (captured == maximumFrames) break;
+        if (captured == maximumFrames || (completed && WaitForSingleObject(completed, 0) == WAIT_OBJECT_0)) break;
         while (!frame && GetTickCount64() < stop) {
-            Sleep(2);
+            if (completed) {
+                if (WaitForSingleObject(completed, 2) == WAIT_OBJECT_0) break;
+            } else {
+                Sleep(2);
+            }
             frame = pool.TryGetNextFrame();
         }
         if (frame) {
@@ -293,6 +299,12 @@ extern "C" __declspec(dllexport) HRESULT SampleMotionFrames(HWND host, const POI
     catch (...) { return winrt::to_hresult(); }
 }
 
+
+extern "C" __declspec(dllexport) HRESULT SampleNavigationFrames(HWND host, const POINT* points, int count, float* rgb,
+    INT64* times, int maximumFrames, int* frames, HANDLE ready, HANDLE completed) noexcept {
+    try { return ReadFrame(host, true, points, count, rgb, times, maximumFrames, frames, ready, completed); }
+    catch (...) { return winrt::to_hresult(); }
+}
 
 extern "C" __declspec(dllexport) HRESULT QueryPlaybackProcessVideoMemory(
     UINT64* local, UINT64* nonLocal, UINT* adapters) {

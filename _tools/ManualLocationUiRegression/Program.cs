@@ -434,6 +434,17 @@ internal sealed partial class TestWindow : Window
         double duplicateError = Math.Abs(queueRow.TransformToVisual(queueScroller).TransformPoint(new Point()).Y + queueRow.ActualHeight / 2 - queueScroller.ViewportHeight / 2);
         Check(duplicateError < 1.5, "second occurrence of the same queue object is centered");
         _measurements.Add(new { Label = "duplicate queue entry 950", ErrorDip = duplicateError });
+        long selectedOccurrence = _app.Queue.EntryIdAt(950);
+        _app.Queue.BeginReorder(queueList);
+        _app.CurrentPlayingList.RemoveAt(950);
+        _app.CurrentPlayingList.Insert(20, repeated);
+        _app.Queue.EndReorder(queueList);
+        await Wait(() => queueList.SelectedIndex == 20);
+        Check(_app.Queue.EntryIdAt(20) == selectedOccurrence, "the selected occurrence follows a drag across its duplicate");
+        _app.Queue.BeginReorder(queueList);
+        _app.CurrentPlayingList.Move(20, 950);
+        _app.Queue.EndReorder(queueList);
+        await Wait(() => queueList.SelectedIndex == 950);
         _root.Children.Remove(queueList);
         var originalPage = AppData.CurrentPage;
         var originalSequence = _app.SequentialPlayingList;

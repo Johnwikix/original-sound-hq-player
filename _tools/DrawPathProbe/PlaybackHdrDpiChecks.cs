@@ -98,7 +98,16 @@ internal sealed partial class ProbeApplication
             if (Math.Abs(floatPeak - 2.5f) > 0.015f || Math.Abs(defaultPeak - floatPeak) > 0.015f)
                 throw new InvalidOperationException($"Scaled blurred HDR image lost reference white at 144 DPI ({defaultPeak}, {floatPeak}).");
 
-            return new { DefaultPrecision = defaultPeak, FloatPrecision = floatPeak };
+            // A second decode can finish after the first pending result has already restored a device.
+            byte[] black = new byte[white.Length];
+            for (int i = 3; i < black.Length; i += 4) black[i] = 255;
+            pendingField.SetValue(renderer, Activator.CreateInstance(pendingType, black, size, size, 0));
+            DrawBackground(renderer, target, true);
+            float replacedPeak = Center();
+            if (Math.Abs(replacedPeak - 2f) > .015f)
+                throw new InvalidOperationException($"The HDR effect retained the previous upload after a same-source refresh ({replacedPeak}).");
+
+            return new { DefaultPrecision = defaultPeak, FloatPrecision = floatPeak, ReplacedPeak = replacedPeak };
 
             float Center()
             {

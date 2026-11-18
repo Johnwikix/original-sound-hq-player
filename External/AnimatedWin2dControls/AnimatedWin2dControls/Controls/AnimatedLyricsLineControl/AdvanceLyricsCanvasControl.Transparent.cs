@@ -4,7 +4,6 @@ using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
 
@@ -24,7 +23,8 @@ public sealed partial class AdvanceLyricsCanvasControl
 
     private CanvasControl? _transparentCanvas;
     private volatile bool _useTransparentPresentation;
-    private bool _transparentClockRegistered;
+    private FrameEventSubscription? _transparentClock;
+    private PresentationFrameClock _transparentFrameClock;
     private long _lastTransparentDraw;
 
     private bool CanRender => !_shutdown && _isActive && !_pausedByVisibility && !_pausedByParent && !_pausedByWindow;
@@ -62,26 +62,24 @@ public sealed partial class AdvanceLyricsCanvasControl
             return;
         }
 
-        if (!_transparentClockRegistered)
+        if (_transparentClock is null)
         {
             _lastTransparentDraw = 0;
-            CompositionTarget.Rendering += InvalidateTransparentCanvas;
-            _transparentClockRegistered = true;
+            _transparentFrameClock = default;
+            _transparentClock = FrameEventSubscription.SubscribeRendering(InvalidateTransparentCanvas);
             _transparentCanvas.Invalidate();
         }
     }
 
     private void StopTransparentClock()
     {
-        if (!_transparentClockRegistered) return;
-        CompositionTarget.Rendering -= InvalidateTransparentCanvas;
-        _transparentClockRegistered = false;
+        _transparentClock?.Dispose();
+        _transparentClock = null;
     }
 
-    private void InvalidateTransparentCanvas(object? sender, object args)
+    private void InvalidateTransparentCanvas()
     {
-        if (_lastTransparentDraw == 0 || Stopwatch.GetElapsedTime(_lastTransparentDraw).TotalSeconds
-            >= 1d / _coordinator.TargetFrameRate - 0.002)
+        if (_transparentFrameClock.TryAdvance(Stopwatch.GetTimestamp(), _coordinator.TargetFrameRate, false, out _))
             _transparentCanvas?.Invalidate();
     }
 

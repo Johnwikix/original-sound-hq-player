@@ -133,9 +133,7 @@ public sealed partial class PlayingDetailPage
                 if (hash is not null)
                 {
                     string rawPath = ToolUtils.FindRawCachePath(hash);
-                    var cover = await PlaybackSceneCover.ReadAsync(rawPath, true, token);
-                    if (cover is null)
-                        cover = await PlaybackSceneCover.ReadAsync(PlaybackCoverImage.GetCachePath(rawPath), true, token);
+                    var cover = await PlaybackSceneCover.ReadPlaybackAsync(rawPath, token);
                     if (cover is not null) return (cover, false);
                 }
                 return (await PlaybackSceneCover.ReadDefaultAsync(isDark, token), true);
