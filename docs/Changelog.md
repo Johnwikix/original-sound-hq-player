@@ -1,3 +1,8 @@
+## 2026-11-18 当前播放队列条目取消点击进入详情
+
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：TeachingTip 队列条目回退为纯文本，恢复整行单击选中与双击切歌；此前铺满整行的透明 `Button` 会被双击处理器判定为按钮命中而直接返回，只剩条目边距可触发播放。
+- `View/MainPage.xaml.cs`、`View/PlayingDetailPage.xaml.cs`：移除 `QueueTitle_Click`，点击队列标题不再关闭当前弹层并跳转通用歌曲详情。
+
 ## 2026-11-16 修复统计页专辑和艺术家封面缺失
 
 - `StatsViewModel`：历史歌曲 ID 失效时从完整曲库选取同专辑或同艺术家的现存歌曲；曲库加载、替换及离页重进时刷新封面引用，保留立即查询与历史统计口径。

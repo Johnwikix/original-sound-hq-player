@@ -363,14 +363,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void QueueTitle_Click(object sender, RoutedEventArgs args)
-        {
-            if (sender is not Button { Tag: Music music } button) return;
-            int index = ListViewInteraction.IndexFromSource(button, CurrentPlayListView);
-            long entry = index >= 0 ? ViewModel.AppViewModel.State.Queue.EntryIdAt(index) : 0;
-            ShowMusicDetails(new MusicDetailsRequest(music, null, entry));
-        }
-
         public void HandleBackNavigation()
         {
             if (_detailsPresenter.IsOpen)

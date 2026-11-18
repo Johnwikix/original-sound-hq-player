@@ -60,14 +60,6 @@ namespace WinUIMusicPlayer.View
 
         public void CloseQueuePopup() => CurrentPlayListTeachingTipPlayingDetail.IsOpen = false;
 
-        private void QueueTitle_Click(object sender, RoutedEventArgs args)
-        {
-            if (sender is not Button { Tag: Music music } button) return;
-            int index = ListViewInteraction.IndexFromSource(button, CurrentPlayListViewPlayingDetail);
-            long entry = index >= 0 ? ViewModel.AppViewModel.State.Queue.EntryIdAt(index) : 0;
-            App.Services.GetRequiredService<MainPage>().ShowMusicDetails(new MusicDetailsRequest(music, null, entry));
-        }
-
         private bool _isLoaded;
         private bool _disposed;
         public bool IsLoaded => _isLoaded;
