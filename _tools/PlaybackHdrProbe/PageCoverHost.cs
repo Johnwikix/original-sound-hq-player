@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.ViewModel
     public sealed class AppViewModel : ObservableObject
     {
         public string? LyricPageBackgroundHash { get; set => SetProperty(ref field, value); }
-        public int BackgroundShaderIndex => 0;
+        public int BackgroundShaderIndex { get; init; }
         public double WindowBackgroundBlurAmount => 0;
         public bool IsDarkMode => true;
         public bool IsPlayingDetailVisible { get => field; set => SetProperty(ref field, value); } = true;

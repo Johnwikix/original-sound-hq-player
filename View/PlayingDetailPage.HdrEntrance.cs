@@ -49,6 +49,9 @@ public sealed partial class PlayingDetailPage
             previous.HdrPresentationChanged -= OnHdrEntranceFrame;
         _hdrEntranceCanvas = canvas;
         canvas.HdrPresentationChanged += OnHdrEntranceFrame;
+        // x:Load 首次触发 Loaded 时模板可能还没展开，先创建面板再判断能否呈现 HDR。
+        if (!canvas.HasHdrPresentationSurface)
+            canvas.ApplyTemplate();
         if (!canvas.HasHdrPresentationSurface || canvas.HasHdrPresentationFailed)
             RejectHdrEntrance();
         else if (canvas.IsHdrFramePresented)

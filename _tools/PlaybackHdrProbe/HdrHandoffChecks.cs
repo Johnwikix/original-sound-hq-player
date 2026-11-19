@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using AnimatedWin2dControls.Impressionist;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -31,7 +32,7 @@ public sealed partial class ProbeApp
     private static async Task CheckPlaybackNavigationEntranceAsync(Window window, Grid root, ulong displayId,
         double white, double peak)
     {
-        const int frameLimit = 96;
+        const int frameLimit = 256;
         bool animationsEnabled = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
         root.Background = new SolidColorBrush(Colors.Black);
         var previousPage = new Border { Background = new SolidColorBrush(Colors.Blue) };
@@ -42,6 +43,7 @@ public sealed partial class ProbeApp
         var model = new AppViewModel
         {
             IsFluidBackgroundEnabled = true,
+            BackgroundShaderIndex = 2,
             PlaybackHdrEnabled = true,
             PlaybackHdrDisplayId = displayId,
             PlaybackHdrWhiteNits = white,
@@ -70,9 +72,19 @@ public sealed partial class ProbeApp
                 if (active)
                     hdrReadyAt = Stopwatch.GetTimestamp();
             };
-            canvas.ApplyTemplate();
-            var sdr = FindChild<CanvasAnimatedControl>(canvas, "PART_Canvas") ?? throw new Exception("Missing navigation SDR canvas.");
-            sdr.Draw += (_, e) => e.DrawingSession.Clear(Colors.Red);
+            // A uniform artwork makes the moving mesh's real background measurable throughout the slide.
+            var rgba = new byte[ArtworkPixelData.Edge * ArtworkPixelData.Edge * 4];
+            Array.Fill(rgba, (byte)255);
+            canvas.SetArtwork(new ArtworkPixelData(rgba));
+            Console.WriteLine($"Cold canvas Loaded, HDR panel available={canvas.HasHdrPresentationSurface}");
+            // x:Load can raise Loaded before the canvas template has created its panels.
+            canvas.LayoutUpdated += AttachSdrMarker;
+            void AttachSdrMarker(object? sender, object args)
+            {
+                if (FindChild<CanvasAnimatedControl>(canvas, "PART_Canvas") is not { } sdr) return;
+                canvas.LayoutUpdated -= AttachSdrMarker;
+                sdr.Draw += (_, e) => e.DrawingSession.Clear(Colors.Red);
+            }
         };
         using var services = new ServiceCollection().AddSingleton(page).BuildServiceProvider();
         var navigation = new NavigationService(services, NullLogger<NavigationService>.Instance);
@@ -97,7 +109,7 @@ public sealed partial class ProbeApp
         ShowWindow(hwnd, 5);
         await WaitUntilAsync(() => root.ActualWidth > 0, "navigation fixture arrangement");
         var scale = GetDpiForWindow(hwnd) / 96d;
-        var points = new[] { At(42), At(112), At(220) };
+        var points = new[] { At(42), At(112), At(220), new PointInt32((int)((root.ActualWidth - 12) * scale), (int)(112 * scale)) };
         PointInt32 At(int y) => new((int)(280 * scale), (int)(y * scale));
         try
         {
@@ -354,6 +366,8 @@ public sealed partial class ProbeApp
             Console.WriteLine($"{label} action to completion={elapsed:F0} ms, motion completion={slideMilliseconds:F0} ms, "
                 + $"ready to completion={revealMilliseconds:F0} ms, max UI timer gap={maxUiGapMilliseconds:F0} ms, "
                 + $"max WM_NULL response={maxResponse:F0} ms, timeouts={timedOut}");
+            if (prematureReveal)
+                throw new InvalidOperationException($"{label} revealed the playback page before its HDR frame and cover were ready.");
             if (timedOut > 0 || maxUiGapMilliseconds >= 500 || (requireResponsive ? elapsed : slideMilliseconds) >= 1500)
                 throw new InvalidOperationException($"{label} exceeded the UI responsiveness limits.");
         }
@@ -405,10 +419,16 @@ public sealed partial class ProbeApp
             int[] firstHdr = [-1, -1, -1];
             int mixed = 0, offColor = 0, regressions = 0;
             float minHdr = float.PositiveInfinity, maxHdr = 0;
+            if (count < 2 || pixels[2] < .2f)
+                throw new InvalidOperationException("WGC could not see the previous page. The HDR test window must be visible on an unlocked desktop.");
+            int backgroundPoint = firstHdr.Length;
+            float background = pixels[((count - 1) * points.Length + backgroundPoint) * 3];
+            Console.WriteLine($"{label} sampled {count} frames, stable rotating mesh background {background:F3} scRGB");
+            if (background < .2f) throw new InvalidOperationException("The real rotating mesh background was missing.");
             for (int i = 0; i < count; ++i)
             {
                 int hdrPoints = 0;
-                for (int j = 0; j < points.Length; ++j)
+                for (int j = 0; j < firstHdr.Length; ++j)
                 {
                     int p = (i * points.Length + j) * 3;
                     var (r, g, b) = (pixels[p], pixels[p + 1], pixels[p + 2]);
@@ -429,14 +449,23 @@ public sealed partial class ProbeApp
                             Console.WriteLine($"Unexpected frame={i}, point={j}, rgb=({r:F3},{g:F3},{b:F3})");
                     }
                 }
-                if (hdrPoints > 0 && hdrPoints < points.Length)
+                // Sample the real shader at the same height as the middle reference strip.
+                int offset = (i * points.Length + backgroundPoint) * 3;
+                bool exposed = firstHdr[1] >= 0;
+                bool expected = exposed
+                    ? Math.Abs(pixels[offset] - background) < .08f && Math.Abs(pixels[offset + 1] - background) < .08f
+                        && Math.Abs(pixels[offset + 2] - background) < .08f
+                    : pixels[offset] < .12f && pixels[offset + 2] > .2f;
+                if (!expected)
+                    throw new InvalidOperationException($"Frame {i} exposed an unexpected background {pixels[offset]:F3}, {pixels[offset + 1]:F3}, {pixels[offset + 2]:F3}.");
+                if (hdrPoints > 0 && hdrPoints < firstHdr.Length)
                     mixed++;
             }
             bool shouldSlide = expectMotion && animationsEnabled;
             double pixelTravel = firstHdr.All(i => i >= 0)
                 ? TimeSpan.FromTicks(times[firstHdr[0]] - times[firstHdr[2]]).TotalMilliseconds : 0;
             Console.WriteLine($"{label} WGC frames={count}, HDR top/middle/bottom={string.Join('/', firstHdr)}, mixed={mixed}, HDR green={minHdr:F3}-{maxHdr:F3}, off-color={offColor}, regressions={regressions}, row travel={pixelTravel:F0} ms");
-            if (firstHdr.Any(i => i <= 0) || offColor > 0 || regressions > 0 || prematureReveal)
+            if (firstHdr.Any(i => i <= 0) || offColor > 0 || regressions > 0)
                 throw new InvalidOperationException("The playback entrance exposed an incomplete or dim HDR scene.");
             if (shouldSlide ? mixed < 2 || firstHdr[2] >= firstHdr[1] || firstHdr[1] >= firstHdr[0]
                 : mixed != 0 || firstHdr[0] != firstHdr[2])
@@ -464,10 +493,14 @@ public sealed partial class ProbeApp
         double white = Math.Min(200, peak);
         int width = 640, height = 420;
         var work = output.WorkArea;
+        if (window.AppWindow.Presenter is OverlappedPresenter presenter)
+            presenter.IsAlwaysOnTop = true;
         window.AppWindow.MoveAndResize(new RectInt32(work.X + (work.Width - width) / 2,
             work.Y + (work.Height - height) / 2, width, height));
 
-        await CheckPlaybackNavigationEntranceAsync(window, root, output.DisplayId.Value, white, peak);
+        var bounds = output.OuterBounds;
+        Console.WriteLine($"HDR output {bounds.Width}x{bounds.Height} at {bounds.X},{bounds.Y}, effective peak {peak:F0} nit");
+        await CheckPlaybackNavigationEntranceAsync(window, root, output.DisplayId.Value, Math.Min(500, peak), peak);
         if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TIMING_WITHOUT_CAPTURE") == "1") return;
 
         root.Background = new SolidColorBrush(Colors.Black);
