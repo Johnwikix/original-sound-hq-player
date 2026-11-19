@@ -30,23 +30,16 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
     private PlaybackHdrColor _brushHdr;
     private CanvasRenderTarget? _surface;
     private Size _surfaceSize;
-    private Transform3DEffect? _tilt;
     private GaussianBlurEffect? _glow;
-    private Vector2 _tiltAngles;
-    private float _breathing;
 
     public void Update(PlaybackSpectrumFrame frame, long nowMs, TimeSpan elapsed, PlaybackSpectrumOptions options)
     {
         _signal.Update(frame, nowMs, elapsed, options);
-        float target = options.Breathing ? _signal.Bass * options.BreathingIntensity * .01f : 0;
-        float rate = target > _breathing ? .2f : .05f;
-        _breathing += (target - _breathing) * rate;
-        if (!options.Breathing) _breathing = 0;
-        if (!options.Glow && !options.Parallax && _surface is not null) ReleaseEffects();
+        if (!options.Glow && _surface is not null) ReleaseGlowResources();
     }
 
     public void Draw(PlaybackCanvasFrame canvas, CanvasDrawContext session, PlaybackSpectrumOptions options,
-        Rect artwork, float radius, PaletteResult? palette, bool dark, Vector2? pointer)
+        Rect artwork, float radius, PaletteResult? palette, bool dark)
     {
         if (!_signal.HasEnergy || canvas.Size.Width < 1 || canvas.Size.Height < 1) return;
         if (!ReferenceEquals(_device, canvas.Device))
@@ -68,25 +61,15 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
 
         using var builder = new CanvasPathBuilder(canvas.Device);
         float height = (float)canvas.Size.Height;
-        float extent = height * .10f * (1 + _breathing);
-        Vector2 pivot;
+        float extent = height * .10f * _signal.BreathingScale;
         if (options.Placement == SpectrumPlacement.AroundArtwork)
-        {
             AddRing(builder, artwork, radius, extent, options.Style);
-            pivot = new((float)(artwork.X + artwork.Width * .5), (float)(artwork.Y + artwork.Height * .5));
-        }
         else
-        {
-            bool bottom = options.Placement == SpectrumPlacement.Bottom;
-            AddEdge(builder, (float)canvas.Size.Width, height, bottom, extent, options.Style);
-            pivot = new((float)canvas.Size.Width * .5f, bottom ? height : 0);
-        }
+            AddEdge(builder, (float)canvas.Size.Width, height, options.Placement == SpectrumPlacement.Bottom, extent, options.Style);
 
         using var geometry = CanvasGeometry.CreatePath(builder);
-        if (options.Glow || options.Parallax)
-            DrawEffects(canvas, session, geometry, options, pivot, pointer);
-        else
-            session.FillGeometry(geometry, _brush);
+        if (options.Glow) DrawGlow(canvas, session, geometry);
+        session.FillGeometry(geometry, _brush);
     }
 
     private void AddEdge(CanvasPathBuilder builder, float width, float height, bool bottom, float extent, SpectrumStyle style)
@@ -227,15 +210,14 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
         }
     }
 
-    private void DrawEffects(PlaybackCanvasFrame frame, CanvasDrawContext session, CanvasGeometry geometry,
-        PlaybackSpectrumOptions options, Vector2 pivot, Vector2? pointer)
+    private void DrawGlow(PlaybackCanvasFrame frame, CanvasDrawContext session, CanvasGeometry geometry)
     {
         var format = frame.Hdr.IsEnabled ? DirectXPixelFormat.R16G16B16A16Float : DirectXPixelFormat.B8G8R8A8UIntNormalized;
-        // 辉光与视差共用一张半分辨率纹理，只在尺寸、DPI、设备或颜色格式变化时重建。
+        // 半分辨率纹理只用于辉光，频谱轮廓直接画在主会话。
         float dpi = frame.Dpi * .5f;
         if (_surface is null || _surfaceSize != frame.Size || _surface.Dpi != dpi || _surface.Format != format)
         {
-            ReleaseEffects();
+            ReleaseGlowResources();
             _surface = new CanvasRenderTarget(frame.Device, (float)frame.Size.Width, (float)frame.Size.Height,
                 dpi, format, CanvasAlphaMode.Premultiplied);
             _surfaceSize = frame.Size;
@@ -248,41 +230,15 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
             layer.FillGeometry(geometry, _brush!);
         }
 
-        ICanvasImage image = _surface;
-        if (options.Parallax)
+        _glow ??= new GaussianBlurEffect
         {
-            var size = new Vector2((float)frame.Size.Width, (float)frame.Size.Height);
-            var target = pointer is { } position
-                ? Vector2.Clamp(position / size * 2 - Vector2.One, -Vector2.One, Vector2.One) * .12f
-                : Vector2.Zero;
-            _tiltAngles = Vector2.Lerp(_tiltAngles, target, .15f);
-            _tilt ??= new Transform3DEffect { Source = _surface };
-            var center = new Vector3(pivot, 0);
-            var perspective = Matrix4x4.Identity;
-            perspective.M34 = -1f / MathF.Max(size.X, size.Y);
-            _tilt.TransformMatrix = Matrix4x4.CreateTranslation(-center)
-                * Matrix4x4.CreateRotationX(-_tiltAngles.Y) * Matrix4x4.CreateRotationY(_tiltAngles.X)
-                * perspective * Matrix4x4.CreateTranslation(center);
-            _tilt.BufferPrecision = frame.Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
-            image = _tilt;
-        }
-        else _tiltAngles = Vector2.Zero;
-
-        if (options.Glow)
-        {
-            _glow ??= new GaussianBlurEffect { BlurAmount = 16, BorderMode = EffectBorderMode.Soft };
-            if (!ReferenceEquals(_glowSource, image))
-            {
-                _glow.Source = image;
-                _glowSource = image;
-                _glow.BufferPrecision = frame.Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
-            }
-            session.DrawImage(_glow);
-        }
-        session.DrawImage(image);
+            Source = _surface,
+            BlurAmount = 16,
+            BorderMode = EffectBorderMode.Soft,
+            BufferPrecision = frame.Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null
+        };
+        session.DrawImage(_glow);
     }
-
-    private ICanvasImage? _glowSource;
 
     private static Color ResolveColor(PlaybackSpectrumOptions options, PaletteResult? palette, bool dark)
     {
@@ -300,13 +256,10 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
         return Color.FromArgb((byte)(options.Opacity * 255 / 100), (byte)rgb.X, (byte)rgb.Y, (byte)rgb.Z);
     }
 
-    private void ReleaseEffects()
+    private void ReleaseGlowResources()
     {
         _glow?.Dispose();
         _glow = null;
-        _glowSource = null;
-        _tilt?.Dispose();
-        _tilt = null;
         _surface?.Dispose();
         _surface = null;
         _surfaceSize = default;
@@ -314,7 +267,7 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
 
     public void ReleaseDeviceResources()
     {
-        ReleaseEffects();
+        ReleaseGlowResources();
         _brush?.Dispose();
         _brush = null;
         _device = null;

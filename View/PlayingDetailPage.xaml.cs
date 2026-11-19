@@ -239,15 +239,6 @@ namespace WinUIMusicPlayer.View
             ScheduleLyricsRegionUpdate();
         }
 
-        private void SpectrumPointerMoved(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)
-        {
-            if (NowPlaying is { } canvas && canvas.SpectrumOptions is { Enabled: true, Parallax: true })
-                canvas.SetSpectrumPointer(args.GetCurrentPoint(canvas).Position);
-        }
-
-        private void SpectrumPointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs args)
-            => NowPlaying?.SetSpectrumPointer(null);
-
         private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
         {
             var canvas = (NowPlayingCanvas)sender;

@@ -18,14 +18,13 @@ public readonly record struct PlaybackSpectrumOptions
     public SpectrumStyle Style { get; init; }
     public SpectrumColorMode ColorMode { get; init; } = SpectrumColorMode.AdaptiveGray;
     public uint CustomArgb { get; init; } = 0xffffffff;
-    public int Opacity { get; init; } = 100;
+    public int Opacity { get; init; } = 50;
     public int Count { get; init; } = 32;
     public int Sensitivity { get; init; } = 100;
     public int DelayMs { get; init; }
     public bool Breathing { get; init; }
     public int BreathingIntensity { get; init; } = 80;
-    public bool Glow { get; init; }
-    public bool Parallax { get; init; }
+    public bool Glow { get; init; } = true;
 
     public PlaybackSpectrumOptions Normalize() => this with
     {

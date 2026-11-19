@@ -21,7 +21,7 @@
     xmlns:uc="using:WinUIMusicPlayer.Controls"
     mc:Ignorable="d">
 
-    <Grid PointerMoved="SpectrumPointerMoved" PointerExited="SpectrumPointerExited">
+    <Grid>
         <awc:NowPlayingCanvas
             x:Name="NowPlaying"
             x:Load="{x:Bind ViewModel.IsBackgroundCreated, Mode=OneWay}"

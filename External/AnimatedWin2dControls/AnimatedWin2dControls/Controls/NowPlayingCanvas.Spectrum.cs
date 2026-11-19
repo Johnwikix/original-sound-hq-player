@@ -1,7 +1,5 @@
 #nullable enable
 using System;
-using System.Numerics;
-using System.Threading;
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Renderer;
 using Windows.Foundation;
@@ -14,8 +12,6 @@ public sealed partial class NowPlayingCanvas
     private IPlaybackSpectrumSource? _spectrumSource;
     private IPlaybackSpectrumSource? _activeSpectrumSource;
     private PlaybackSpectrumRenderer? _spectrum;
-    private const long NoSpectrumPointer = long.MaxValue;
-    private long _spectrumPointerBits = NoSpectrumPointer;
 
     public PlaybackSpectrumOptions SpectrumOptions
     {
@@ -41,16 +37,6 @@ public sealed partial class NowPlayingCanvas
         }
     }
 
-    /// <summary>Updates the pointer position in canvas DIPs for the spectrum's optional tilt.</summary>
-    public void SetSpectrumPointer(Point? position)
-    {
-        if (!_spectrumOptions.Parallax) return;
-        long bits = position is { } point
-            ? (long)BitConverter.SingleToInt32Bits((float)point.X) << 32 | (uint)BitConverter.SingleToInt32Bits((float)point.Y)
-            : NoSpectrumPointer;
-        Volatile.Write(ref _spectrumPointerBits, bits);
-    }
-
     private void SyncSpectrumSource()
     {
         if (_spectrumSource is null && _activeSpectrumSource is null) return;
@@ -67,7 +53,6 @@ public sealed partial class NowPlayingCanvas
             _activeSpectrumSource = source;
             _spectrum?.Dispose();
             _spectrum = null;
-            Volatile.Write(ref _spectrumPointerBits, NoSpectrumPointer);
             source?.SetActive(true);
         }
     }
@@ -75,7 +60,7 @@ public sealed partial class NowPlayingCanvas
     private void UpdateSpectrum(TimeSpan elapsed)
     {
         if (_activeSpectrumSource is not { } source) return;
-        source.TryRead(out var latest);
+        if (!source.TryRead(out var latest)) latest = default;
         (_spectrum ??= new()).Update(latest, Environment.TickCount64, elapsed, _spectrumOptions);
     }
 
@@ -88,9 +73,6 @@ public sealed partial class NowPlayingCanvas
         {
             if (_sceneCover?.TryGetArtworkBounds(out artwork, out radius) != true) return;
         }
-        long bits = Volatile.Read(ref _spectrumPointerBits);
-        Vector2? pointer = bits == NoSpectrumPointer ? null
-            : new Vector2(BitConverter.Int32BitsToSingle((int)(bits >> 32)), BitConverter.Int32BitsToSingle((int)bits));
-        spectrum.Draw(frame, session, _spectrumOptions, artwork, radius, _lastPalette, _isDark, pointer);
+        spectrum.Draw(frame, session, _spectrumOptions, artwork, radius, _lastPalette, _isDark);
     }
 }

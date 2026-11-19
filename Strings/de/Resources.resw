@@ -937,9 +937,6 @@
   <data name="PlaybackSpectrumGlow" xml:space="preserve">
     <value>Leuchten</value>
   </data>
-  <data name="PlaybackSpectrumParallax" xml:space="preserve">
-    <value>Parallaxenneigung</value>
-  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>Shader-Hintergrund</value>
   </data>

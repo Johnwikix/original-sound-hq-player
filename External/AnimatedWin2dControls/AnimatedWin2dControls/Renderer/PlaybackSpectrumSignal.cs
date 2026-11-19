@@ -10,11 +10,17 @@ internal sealed class PlaybackSpectrumSignal
     private const int SnapshotTimeoutMs = 150;
     private const int HistoryIntervalMs = 16;
     private const int HistoryCapacity = PlaybackSpectrumOptions.MaximumDelayMs / HistoryIntervalMs + 3;
+    private const float SmoothingAt60Hz = .90f;
+    private const float SilentLevel = .001f;
+    private const float BreathingRange = .05f;
+
+    private readonly record struct Band(float FirstBin, float LastBin, float RightWeight);
 
     // 每个启用的画布持有一组缓冲区。逐帧复用，延迟历史只引用已有的不可变 IPC 数据。
     private readonly float[] _levels = new float[PlaybackSpectrumOptions.MaximumCount];
     private readonly float[] _target = new float[PlaybackSpectrumOptions.MaximumCount];
-    private readonly float[] _binPositions = new float[PlaybackSpectrumOptions.MaximumCount];
+    private readonly float[] _temporal = new float[PlaybackSpectrumOptions.MaximumCount];
+    private readonly Band[] _bands = new Band[PlaybackSpectrumOptions.MaximumCount];
     private Queue<PlaybackSpectrumFrame>? _history;
     private PlaybackSpectrumFrame _selected;
     private long _epoch = -1;
@@ -26,9 +32,10 @@ internal sealed class PlaybackSpectrumSignal
     private int _count;
     private int _sensitivity;
     private float _targetBass;
+    private float _bass;
 
     public ReadOnlySpan<float> Levels => _levels.AsSpan(0, _count);
-    public float Bass { get; private set; }
+    public float BreathingScale { get; private set; } = 1;
     public bool HasEnergy { get; private set; }
 
     public void Update(PlaybackSpectrumFrame latest, long nowMs, TimeSpan elapsed, PlaybackSpectrumOptions options)
@@ -58,6 +65,7 @@ internal sealed class PlaybackSpectrumSignal
                 latest.ReceivedAtMs - _lastQueuedAt >= HistoryIntervalMs)
             {
                 _history ??= new Queue<PlaybackSpectrumFrame>(HistoryCapacity);
+                if (_history.Count == HistoryCapacity) _history.Dequeue();
                 _history.Enqueue(latest);
                 _lastQueuedAt = latest.ReceivedAtMs;
             }
@@ -67,7 +75,7 @@ internal sealed class PlaybackSpectrumSignal
 
         if (_count != options.Count)
         {
-            Array.Clear(_levels);
+            Array.Clear(_temporal);
             _sampleRate = 0;
         }
         int count = options.Count;
@@ -87,18 +95,31 @@ internal sealed class PlaybackSpectrumSignal
             _mappedSequence = 0;
         }
 
+        // 以极光之环 60 Hz 时的保留系数为基准，按实际帧间隔更新。
         float frames = Math.Clamp((float)elapsed.TotalSeconds * 60f, 0f, 6f);
-        float attack = 1 - MathF.Pow(0.58f, frames);
-        float release = 1 - MathF.Pow(0.80f, frames);
+        float follow = 1 - MathF.Pow(SmoothingAt60Hz, frames);
+        for (int i = 0; i < count; i++)
+        {
+            float level = float.Lerp(_temporal[i], _target[i], follow);
+            _temporal[i] = _target[i] == 0 && level < SilentLevel ? 0 : level;
+        }
+
+        // 时间平滑与频段加权各读一组缓冲区，环绕封面时首尾也是相邻频段。
+        bool wrap = options.Placement == SpectrumPlacement.AroundArtwork;
         HasEnergy = false;
         for (int i = 0; i < count; i++)
         {
-            float delta = _target[i] - _levels[i];
-            float level = _levels[i] + delta * (delta > 0 ? attack : release);
-            _levels[i] = level > 0.001f ? level : 0;
-            HasEnergy |= _levels[i] != 0;
+            int previous = i == 0 ? (wrap ? count - 1 : 0) : i - 1;
+            int next = i + 1 == count ? (wrap ? 0 : count - 1) : i + 1;
+            float level = (_temporal[previous] + _temporal[next]) * .25f + _temporal[i] * .5f;
+            _levels[i] = level;
+            HasEnergy |= level >= SilentLevel;
         }
-        Bass += (_targetBass - Bass) * (_targetBass > Bass ? attack : release);
+
+        _bass = float.Lerp(_bass, _targetBass, follow);
+        BreathingScale = options.Breathing
+            ? 1 + _bass * BreathingRange * (options.BreathingIntensity * .01f)
+            : 1;
     }
 
     private void ClearFrames()
@@ -108,9 +129,9 @@ internal sealed class PlaybackSpectrumSignal
         _selected = default;
         _mappedSequence = 0;
         _targetBass = 0;
-        Bass = 0;
+        _bass = 0;
         Array.Clear(_target);
-        Array.Clear(_levels);
+        Array.Clear(_temporal);
     }
 
     private void MapFrame(PlaybackSpectrumFrame frame)
@@ -119,36 +140,70 @@ internal sealed class PlaybackSpectrumSignal
         var right = frame.Right.Span;
         int lastBin = Math.Min(left.Length, right.Length) - 1;
         if (_sampleRate != frame.SampleRate || _fftSize != frame.FftSize)
-        {
-            _sampleRate = frame.SampleRate;
-            _fftSize = frame.FftSize;
-            float upperHz = Math.Min(20000, _sampleRate * .5f);
-            for (int i = 0; i < _count; i++)
-            {
-                // 镜像排列 L/R，低频位于中间。对数频率分布让低频保留足够的图形空间。
-                float distance = MathF.Abs((i + .5f) * 2 / _count - 1);
-                float hz = 20 * MathF.Pow(upperHz / 20, distance);
-                _binPositions[i] = hz * _fftSize / _sampleRate;
-            }
-        }
+            ConfigureBands(frame.SampleRate, frame.FftSize);
 
         float sensitivity = _sensitivity * .01f;
         for (int i = 0; i < _count; i++)
         {
-            float bin = Math.Clamp(_binPositions[i], 1f, lastBin);
-            int first = (int)bin;
-            int next = Math.Min(first + 1, lastBin);
-            var channel = i * 2 < _count ? left : right;
-            float magnitude = _count == 1
-                ? (left[first] + right[first]) * .5f
-                : channel[first] + (channel[next] - channel[first]) * (bin - first);
+            Band band = _bands[i];
+            float first = Math.Clamp(band.FirstBin, 1, lastBin);
+            float last = Math.Clamp(band.LastBin, first, lastBin);
+            float leftPeak = band.RightWeight < 1 ? Peak(left, first, last) : 0;
+            float rightPeak = band.RightWeight > 0 ? Peak(right, first, last) : 0;
+            float magnitude = float.Lerp(leftPeak, rightPeak, band.RightWeight);
             _target[i] = Math.Clamp(MathF.Sqrt(magnitude * 3f) * sensitivity, 0, 3);
         }
 
-        int bassBins = Math.Clamp(160 * _fftSize / _sampleRate, 1, lastBin);
-        double power = 0;
+        // 沿用极光之环的低频平均能量。双声道 IPC 只传幅度，使用左右幅度的均值。
+        int bassBins = Math.Min(250 * _fftSize / _sampleRate, lastBin);
+        float bassSum = 0;
         for (int i = 1; i <= bassBins; i++)
-            power += (double)left[i] * left[i] + (double)right[i] * right[i];
-        _targetBass = (float)Math.Min(1, 4 * Math.Sqrt(power * .5));
+            bassSum += MathF.Min(1, (left[i] + right[i]) * 8f);
+        _targetBass = bassBins == 0 ? 0 : bassSum / bassBins;
+    }
+
+    private void ConfigureBands(int sampleRate, int fftSize)
+    {
+        _sampleRate = sampleRate;
+        _fftSize = fftSize;
+        float upperHz = MathF.Min(16000, sampleRate * .45f);
+        float lowerHz = MathF.Min(40, upperHz);
+        float ratio = upperHz / lowerHz;
+        float firstBin = lowerHz * fftSize / sampleRate;
+        if (_count == 1)
+        {
+            _bands[0] = new(firstBin, upperHz * fftSize / sampleRate, .5f);
+            return;
+        }
+
+        int leftCount = (_count + 1) / 2;
+        for (int i = 0; i < _count; i++)
+        {
+            bool isLeft = i < leftCount;
+            int sideCount = isLeft ? leftCount : _count - leftCount;
+            int frequencyIndex = isLeft ? leftCount - 1 - i : i - leftCount;
+            float low = firstBin * MathF.Pow(ratio, frequencyIndex / (float)sideCount);
+            float high = firstBin * MathF.Pow(ratio, (frequencyIndex + 1f) / sideCount);
+
+            // 两端的声道接缝向双声道平均值过渡，中间保留各自的声道。
+            float distance = MathF.Min(frequencyIndex + .5f, sideCount - frequencyIndex - .5f);
+            float blend = Math.Clamp(distance / MathF.Max(4f, sideCount * .12f), 0, 1);
+            blend *= blend * (3 - 2 * blend);
+            _bands[i] = new(low, high, .5f + (isLeft ? -.5f : .5f) * blend);
+        }
+    }
+
+    private static float Peak(ReadOnlySpan<float> bins, float first, float last)
+    {
+        float peak = MathF.Max(Sample(bins, first), Sample(bins, last));
+        for (int i = (int)first + 1; i <= (int)last; i++)
+            peak = MathF.Max(peak, bins[i]);
+        return peak;
+    }
+
+    private static float Sample(ReadOnlySpan<float> bins, float position)
+    {
+        int index = (int)position;
+        return float.Lerp(bins[index], bins[Math.Min(index + 1, bins.Length - 1)], position - index);
     }
 }

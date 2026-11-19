@@ -42,7 +42,6 @@ public sealed class PlaybackSpectrumPreferencesState : ObservableObject
     public bool Breathing { get => _options.Breathing; set => Update(_options with { Breathing = value }); }
     public int BreathingIntensity { get => _options.BreathingIntensity; set => Update(_options with { BreathingIntensity = value }); }
     public bool Glow { get => _options.Glow; set => Update(_options with { Glow = value }); }
-    public bool Parallax { get => _options.Parallax; set => Update(_options with { Parallax = value }); }
 
     private void Update(PlaybackSpectrumOptions value, [CallerMemberName] string? propertyName = null)
     {

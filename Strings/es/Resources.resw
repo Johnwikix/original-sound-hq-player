@@ -937,9 +937,6 @@
   <data name="PlaybackSpectrumGlow" xml:space="preserve">
     <value>Resplandor</value>
   </data>
-  <data name="PlaybackSpectrumParallax" xml:space="preserve">
-    <value>Inclinación por paralaje</value>
-  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>Fondo de Sombreado</value>
   </data>

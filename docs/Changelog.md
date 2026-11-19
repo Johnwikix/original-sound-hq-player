@@ -1,3 +1,13 @@
+## 2026-11-19 平滑播放页频谱和呼吸
+
+- `PlaybackSpectrumSignal` 参考「极光之环」，按频段取峰，对左右声道的接缝、时间和相邻频段做平滑。
+- `PlaybackSpectrumRenderer` 以平均低频能量驱动小幅频谱呼吸，辉光分开绘制并保留全分辨率的频谱轮廓。
+- `CoverBackgroundSettingsControl` 和播放页移除频谱视差倾斜及其指针输入。
+
+## 2026-11-19 调整播放页频谱默认外观
+
+- `PlaybackSpectrumOptions` 将默认不透明度设为 50%，默认开启辉光。新建配置及缺少对应字段的旧配置采用新默认值。
+
 ## 2026-11-19 播放页着色器画布增加频谱
 
 - `NowPlayingCanvas` 在着色器和歌词之间绘制频谱，支持 SDR/HDR、顶部、底部和环绕封面。

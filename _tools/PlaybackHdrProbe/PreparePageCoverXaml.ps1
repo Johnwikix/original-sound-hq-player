@@ -14,8 +14,6 @@ function Find-Node([string]$name) {
 
 $background = Find-Node 'NowPlaying'
 $layout = Find-Node 'PlayingDetail'
-$root.SetAttributeValue('PointerMoved', $null)
-$root.SetAttributeValue('PointerExited', $null)
 $left = Find-Node 'LeftControlPanel'
 $cover = Find-Node 'CoverContainer'
 $title = Find-Node 'AnimatedTextBlock'

@@ -937,9 +937,6 @@
   <data name="PlaybackSpectrumGlow" xml:space="preserve">
     <value>Свечение</value>
   </data>
-  <data name="PlaybackSpectrumParallax" xml:space="preserve">
-    <value>Наклон с параллаксом</value>
-  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>Фон шейдера</value>
   </data>

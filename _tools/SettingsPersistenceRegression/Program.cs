@@ -80,10 +80,23 @@ try
         "Custom background path and blur must survive restart.");
     Check(!defaults.PlaybackSpectrum.Enabled && defaults.PlaybackSpectrum.Count == 32
         && defaults.PlaybackSpectrum.Placement == AnimatedWin2dControls.Controls.SpectrumPlacement.Bottom
-        && defaults.PlaybackSpectrum.Sensitivity == 100, "Older settings must use the spectrum defaults.");
+        && defaults.PlaybackSpectrum.Sensitivity == 100 && defaults.PlaybackSpectrum.Opacity == 50
+        && defaults.PlaybackSpectrum.Glow, "Older settings must use the spectrum defaults.");
+    var partialSpectrum = JsonSerializer.Deserialize("""{"PlaybackSpectrum":{"Enabled":true,"Parallax":true}}""",
+        SettingsJsonContext.Default.SaveSettings)!;
+    Check(partialSpectrum.PlaybackSpectrum.Enabled && partialSpectrum.PlaybackSpectrum.Opacity == 50
+        && partialSpectrum.PlaybackSpectrum.Glow,
+        "Settings with the retired parallax option must preserve the toggle and load current defaults.");
+    using var migratedSpectrum = JsonDocument.Parse(JsonSerializer.Serialize(partialSpectrum, SettingsJsonContext.Default.SaveSettings));
+    Check(!migratedSpectrum.RootElement.GetProperty("PlaybackSpectrum").TryGetProperty("Parallax", out _),
+        "The retired parallax field must be omitted after saving.");
     var spectrum = new SaveSettings
     {
-        PlaybackSpectrum = new() { Enabled = true, Count = 128, DelayMs = 220, CustomArgb = 0xff287654, Parallax = true }
+        PlaybackSpectrum = new()
+        {
+            Enabled = true, Count = 128, DelayMs = 220, CustomArgb = 0xff287654,
+            Opacity = 100, Glow = false
+        }
     };
     var restoredSpectrum = JsonSerializer.Deserialize(JsonSerializer.Serialize(spectrum, SettingsJsonContext.Default.SaveSettings),
         SettingsJsonContext.Default.SaveSettings)!;

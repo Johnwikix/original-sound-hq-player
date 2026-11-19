@@ -249,10 +249,6 @@
                             IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
                             <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Glow, Mode=TwoWay}" />
                         </controls:SettingsCard>
-                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumParallax')}"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
-                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Parallax, Mode=TwoWay}" />
-                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
