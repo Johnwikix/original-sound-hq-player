@@ -12,20 +12,23 @@ namespace WinUIMusicPlayer.Helper;
 /// <summary>Original artwork for the playback scene. Both pixel formats are premultiplied.</summary>
 internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, DirectXPixelFormat Format, float PeakNits)
 {
-    internal static Task<PlaybackSceneCover?> ReadDefaultAsync(bool isDark, CancellationToken token)
+    internal static Task<PlaybackSceneCover?> ReadDefaultAsync(bool isDark, CancellationToken token,
+        uint maxPixelSize = PlaybackCoverImage.MaxPixelSize)
     {
         string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
-        return ReadAsync(Path.Combine(AppContext.BaseDirectory, "Assets", name), includeSdr: true, token);
+        return ReadAsync(Path.Combine(AppContext.BaseDirectory, "Assets", name), includeSdr: true, token, maxPixelSize);
     }
 
-    internal static Task<PlaybackSceneCover?> ReadPlaybackAsync(string rawPath, CancellationToken token) =>
-        ReadCoreAsync(rawPath, true, PlaybackCoverImage.GetCachePath(rawPath), token);
+    internal static Task<PlaybackSceneCover?> ReadPlaybackAsync(string rawPath, CancellationToken token,
+        uint maxPixelSize = PlaybackCoverImage.MaxPixelSize) =>
+        ReadCoreAsync(rawPath, true, PlaybackCoverImage.GetCachePath(rawPath), token, maxPixelSize);
 
-    internal static Task<PlaybackSceneCover?> ReadAsync(string path, bool includeSdr, CancellationToken token) =>
-        ReadCoreAsync(path, includeSdr, null, token);
+    internal static Task<PlaybackSceneCover?> ReadAsync(string path, bool includeSdr, CancellationToken token,
+        uint maxPixelSize = PlaybackCoverImage.MaxPixelSize) =>
+        ReadCoreAsync(path, includeSdr, null, token, maxPixelSize);
 
     private static async Task<PlaybackSceneCover?> ReadCoreAsync(string path, bool includeSdr, string? cachePath,
-        CancellationToken token)
+        CancellationToken token, uint maxPixelSize)
     {
         token.ThrowIfCancellationRequested();
         bool triedCache = false;
@@ -39,10 +42,10 @@ internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, 
             if (!isPq && cachePath is not null && PlaybackCoverImage.IsCurrent(cachePath, path))
             {
                 triedCache = true;
-                if (await ReadAsync(cachePath, true, token).ConfigureAwait(false) is { } cached)
+                if (await ReadAsync(cachePath, true, token, maxPixelSize).ConfigureAwait(false) is { } cached)
                     return cached;
             }
-            if (await DecodeAsync(input, isPq, token).ConfigureAwait(false) is { } artwork)
+            if (await DecodeAsync(input, isPq, token, maxPixelSize).ConfigureAwait(false) is { } artwork)
                 return artwork;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException ||
@@ -51,10 +54,10 @@ internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, 
             token.ThrowIfCancellationRequested();
         }
         return cachePath is not null && !triedCache
-            ? await ReadAsync(cachePath, true, token).ConfigureAwait(false) : null;
+            ? await ReadAsync(cachePath, true, token, maxPixelSize).ConfigureAwait(false) : null;
     }
 
-    private static async Task<PlaybackSceneCover?> DecodeAsync(Stream input, bool isPq, CancellationToken token)
+    private static async Task<PlaybackSceneCover?> DecodeAsync(Stream input, bool isPq, CancellationToken token, uint maxPixelSize)
     {
         input.Position = 0;
         using var stream = input.AsRandomAccessStream();
@@ -62,10 +65,9 @@ internal sealed record PlaybackSceneCover(byte[] Pixels, int Width, int Height, 
         uint width = decoder.PixelWidth, height = decoder.PixelHeight;
         // Bound the native decoder's working set as well as the final texture.
         if (width == 0 || height == 0 || (ulong)width * height > 64_000_000) return null;
-        double scale = Math.Min(1d, (double)PlaybackCoverImage.MaxPixelSize / Math.Max(width, height));
-        uint w = Math.Max(1, (uint)Math.Round(width * scale));
-        uint h = Math.Max(1, (uint)Math.Round(height * scale));
-        var transform = new BitmapTransform { ScaledWidth = w, ScaledHeight = h, InterpolationMode = BitmapInterpolationMode.Fant };
+        var transform = ImageHelper.CreateLongestSideTransform(width, height, maxPixelSize);
+        uint w = transform.ScaledWidth == 0 ? width : transform.ScaledWidth;
+        uint h = transform.ScaledHeight == 0 ? height : transform.ScaledHeight;
         var data = await decoder.GetPixelDataAsync(isPq ? BitmapPixelFormat.Rgba16 : BitmapPixelFormat.Bgra8,
             isPq ? BitmapAlphaMode.Straight : BitmapAlphaMode.Premultiplied, transform, ExifOrientationMode.RespectExifOrientation,
             isPq ? ColorManagementMode.DoNotColorManage : ColorManagementMode.ColorManageToSRgb)

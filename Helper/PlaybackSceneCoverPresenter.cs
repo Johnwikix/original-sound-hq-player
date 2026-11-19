@@ -13,7 +13,7 @@ namespace WinUIMusicPlayer.Helper;
 /// <summary>Draws the current artwork and, during a track change, at most one outgoing texture.</summary>
 internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = null) : IPlaybackSceneCover, IDisposable
 {
-    private sealed record ArtworkRequest(PlaybackSceneCover Artwork, ImageSwitchType Transition, bool Animate);
+    private sealed record ArtworkRequest(PlaybackSceneCover Artwork, ImageSwitchType Transition, bool Animate, object Track);
     private sealed record CoverLayout(Rect Slot, int Radius, int Shadow);
 
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
@@ -28,10 +28,12 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
     private long _transitionStarted;
 
     // The UI publishes immutable inputs. NowPlayingCanvas serializes drawing and resource release.
-    internal void SetArtwork(PlaybackSceneCover artwork, ImageSwitchType transition, bool animate)
+    internal PlaybackSceneCover? RequestedArtwork => _requested?.Artwork;
+
+    internal void SetArtwork(PlaybackSceneCover artwork, ImageSwitchType transition, bool animate, object? track = null)
     {
         if (ReferenceEquals(_requested?.Artwork, artwork)) return;
-        _requested = new(artwork, transition, animate);
+        _requested = new(artwork, transition, animate, track ?? artwork);
     }
 
     internal void SetLayout(Rect slot, int radius, int shadow)
@@ -88,16 +90,24 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
         if (!ReferenceEquals(_active, request))
         {
             _failedSdrRequest = null;
-            ReleasePrevious();
-            if (request.Animate && _active is { } active)
+            // Replacing the current track's resolution leaves a running transition intact.
+            if (ReferenceEquals(_active?.Track, request.Track))
             {
-                _outgoingArtwork = active.Artwork;
-                _previous = _current;
-                _transitionStarted = _time.GetTimestamp();
+                _current?.Dispose();
             }
             else
             {
-                _current?.Dispose();
+                ReleasePrevious();
+                if (request.Animate && _active is { } active)
+                {
+                    _outgoingArtwork = active.Artwork;
+                    _previous = _current;
+                    _transitionStarted = _time.GetTimestamp();
+                }
+                else
+                {
+                    _current?.Dispose();
+                }
             }
             _current = null;
             _active = request;

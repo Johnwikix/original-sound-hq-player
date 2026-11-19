@@ -104,6 +104,7 @@ namespace WinUIMusicPlayer.View
         internal ImageSwitcher Cover => DetailCoverSwitcher;
         internal NowPlayingCanvas? BackgroundCanvas => NowPlaying;
         internal Rect CoverSlot => _sceneCoverSlot;
+        internal int SceneCoverPixelWidth => _sceneCoverPresenter.RequestedArtwork?.Width ?? 0;
         internal Action<NowPlayingCanvas>? ConfigureBackgroundCanvas { get; set; }
 
         public void PauseCanvasRendering() => NowPlaying?.PauseRendering();

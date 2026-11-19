@@ -14,11 +14,16 @@ namespace WinUIMusicPlayer.View;
 
 public sealed partial class PlayingDetailPage
 {
+    private const uint CoverDecodeStep = 128;
     private NowPlayingCanvas? _sceneCoverCanvas;
     private string? _sceneCoverHash;
     private CancellationTokenSource? _sceneCoverRequest;
     private readonly PlaybackSceneCoverPresenter _sceneCoverPresenter = new();
     private Rect _sceneCoverSlot;
+    private uint _sceneCoverLayoutLimit;
+    private uint _sceneCoverRequestedLimit;
+    private object? _sceneCoverTrack;
+    private object? _sceneCoverDecodedTrack;
     private bool _coverRequested;
     private bool _coverReady;
     private bool _useDarkDefaultCover;
@@ -39,6 +44,7 @@ public sealed partial class PlayingDetailPage
         _coverAttached = true;
         DetailCoverSwitcher.LayoutUpdated += OnSceneCoverLayoutUpdated;
         ViewModel.AppViewModel.PropertyChanged += OnSceneCoverChanged;
+        UpdateSceneCoverBounds();
         RefreshSceneCover();
     }
 
@@ -109,20 +115,34 @@ public sealed partial class PlayingDetailPage
             return;
         }
 
-        string? hash = string.IsNullOrWhiteSpace(vm.LyricPageBackgroundHash) ? null : vm.LyricPageBackgroundHash;
-        if (_coverRequested && _sceneCoverHash == hash
-            && (_useDarkDefaultCover == vm.IsDarkMode || (_coverReady && !_showingDefaultCover && _sceneCoverRequest is null)))
+        uint limit = _sceneCoverLayoutLimit;
+        if (limit == 0) return;
+
+        string? hash = GetSceneCoverHash();
+        bool sameTrack = _coverRequested && _sceneCoverHash == hash
+            && (_useDarkDefaultCover == vm.IsDarkMode || (_coverReady && !_showingDefaultCover && _sceneCoverRequest is null));
+        // Upgrade when needed, but keep the current size through small layout oscillations.
+        if (sameTrack && limit <= _sceneCoverRequestedLimit && limit * 2 > _sceneCoverRequestedLimit)
             return;
 
         _sceneCoverRequest?.Cancel();
         _coverRequested = true;
         _sceneCoverHash = hash;
         _useDarkDefaultCover = vm.IsDarkMode;
+        _sceneCoverRequestedLimit = limit;
+        if (!sameTrack)
+            _sceneCoverTrack = new object();
         _sceneCoverRequest = new CancellationTokenSource();
-        _ = LoadSceneCoverAsync(hash, _useDarkDefaultCover, _sceneCoverRequest);
+        _ = LoadSceneCoverAsync(hash, _useDarkDefaultCover, limit, _sceneCoverTrack!, _sceneCoverRequest);
     }
 
-    private async Task LoadSceneCoverAsync(string? hash, bool isDark, CancellationTokenSource request)
+    private string? GetSceneCoverHash()
+    {
+        var hash = ViewModel.AppViewModel.LyricPageBackgroundHash;
+        return string.IsNullOrWhiteSpace(hash) ? null : hash;
+    }
+
+    private async Task LoadSceneCoverAsync(string? hash, bool isDark, uint limit, object track, CancellationTokenSource request)
     {
         try
         {
@@ -132,30 +152,37 @@ public sealed partial class PlayingDetailPage
                 if (hash is not null)
                 {
                     string rawPath = ToolUtils.FindRawCachePath(hash);
-                    var cover = await PlaybackSceneCover.ReadPlaybackAsync(rawPath, token);
+                    var cover = await PlaybackSceneCover.ReadPlaybackAsync(rawPath, token, limit);
                     if (cover is not null) return (cover, false);
                 }
-                return (await PlaybackSceneCover.ReadDefaultAsync(isDark, token), true);
+                return (await PlaybackSceneCover.ReadDefaultAsync(isDark, token, limit), true);
             }, token);
             if (request.IsCancellationRequested || !ReferenceEquals(request, _sceneCoverRequest)) return;
+            bool resizing = ReferenceEquals(_sceneCoverDecodedTrack, track);
+            if (useDefault && resizing && !_showingDefaultCover) return;
             if (art is null)
             {
-                ReportCoverUnavailable();
+                if (!resizing) ReportCoverUnavailable();
                 return;
             }
             bool animate = _coverPreviewHidden && !_showingDefaultCover && !useDefault && IsCoverMotionEnabled;
-            _sceneCoverPresenter.SetArtwork(art, DetailCoverSwitcher.SwitchType, animate);
+            _sceneCoverPresenter.SetArtwork(art, DetailCoverSwitcher.SwitchType, animate, track);
+            _sceneCoverDecodedTrack = track;
             _showingDefaultCover = useDefault;
-            _coverReady = true;
-            UpdateSceneCoverBounds();
-            _sceneCoverCanvas?.SetSceneCover(_sceneCoverPresenter);
-            UpdateHdrPresentation();
+            if (!_coverReady)
+            {
+                _coverReady = true;
+                _sceneCoverPresenter.SetLayout(_sceneCoverSlot, DetailCoverSwitcher.CornerRadiusAmount, DetailCoverSwitcher.ShadowAmount);
+                _sceneCoverCanvas?.SetSceneCover(_sceneCoverPresenter);
+                UpdateHdrPresentation();
+            }
         }
         catch (OperationCanceledException) when (request.IsCancellationRequested) { }
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Unable to prepare the playback scene cover");
-            if (!request.IsCancellationRequested && ReferenceEquals(request, _sceneCoverRequest))
+            if (!request.IsCancellationRequested && ReferenceEquals(request, _sceneCoverRequest) &&
+                !ReferenceEquals(_sceneCoverDecodedTrack, track))
                 ReportCoverUnavailable();
         }
         finally
@@ -170,7 +197,7 @@ public sealed partial class PlayingDetailPage
         _coverReady = false;
         _sceneCoverCanvas?.SetSceneCover(null);
         _sceneCoverPresenter.Clear();
-        _sceneCoverSlot = default;
+        _sceneCoverDecodedTrack = null;
         UpdateHdrPresentation();
         if (ViewModel.UseHdrPresentation)
             ViewModel.AppViewModel.ReportPlaybackHdrPresentation(false, true);
@@ -181,8 +208,8 @@ public sealed partial class PlayingDetailPage
 
     private void UpdateSceneCoverBounds()
     {
-        if (!_coverRequested || _sceneCoverCanvas is not { IsLoaded: true } canvas || !_coverAttached
-            || !DetailCoverSwitcher.IsLoaded) return;
+        if (_sceneCoverCanvas is not { IsLoaded: true } canvas || !_coverAttached || !DetailCoverSwitcher.IsLoaded)
+            return;
         bool wasReady = CanPresentHdrCover;
         var slot = DetailCoverSwitcher.TransformToVisual(canvas).TransformBounds(
             new Rect(0, 0, DetailCoverSwitcher.ActualWidth, DetailCoverSwitcher.ActualHeight));
@@ -192,24 +219,50 @@ public sealed partial class PlayingDetailPage
             _sceneCoverPresenter.SetLayout(slot, DetailCoverSwitcher.CornerRadiusAmount, DetailCoverSwitcher.ShadowAmount);
         }
         if (wasReady != CanPresentHdrCover) UpdateHdrPresentation();
+
+        uint limit = GetSceneCoverDecodeLimit(slot, canvas.XamlRoot?.RasterizationScale ?? 1);
+        if (_sceneCoverLayoutLimit != limit)
+        {
+            _sceneCoverLayoutLimit = limit;
+            RefreshSceneCover();
+        }
+    }
+
+    private static uint GetSceneCoverDecodeLimit(Rect slot, double scale)
+    {
+        if (slot.Width <= 0 || slot.Height <= 0) return 0;
+        double pixels = Math.Max(slot.Width, slot.Height) * scale;
+        return (uint)Math.Min(PlaybackCoverImage.MaxPixelSize, Math.Ceiling(pixels / CoverDecodeStep) * CoverDecodeStep);
+    }
+
+    private void PrepareSceneCoverFallback()
+    {
+        if (_coverAttached && _coverPreviewHidden && ViewModel.AppViewModel.IsPlayingDetailVisible &&
+            _sceneCoverHash == GetSceneCoverHash() && ReferenceEquals(_sceneCoverTrack, _sceneCoverDecodedTrack) &&
+            (!_showingDefaultCover || _useDarkDefaultCover == ViewModel.AppViewModel.IsDarkMode))
+            DetailCoverSwitcher.PrepareSceneFallback(_sceneCoverPresenter.RequestedArtwork);
     }
 
     private void CommitCoverFrame(bool drawn)
     {
         if (_coverPreviewHidden == drawn) return;
+        if (!drawn) PrepareSceneCoverFallback();
         _coverPreviewHidden = drawn;
         DetailCoverSwitcher.SetScenePreviewSuppressed(drawn);
     }
 
     private void ClearSceneCover()
     {
+        PrepareSceneCoverFallback();
         _sceneCoverRequest?.Cancel();
         _sceneCoverRequest = null;
         _coverRequested = false;
         _coverReady = false;
         _showingDefaultCover = false;
         _sceneCoverHash = null;
-        _sceneCoverSlot = default;
+        _sceneCoverTrack = null;
+        _sceneCoverDecodedTrack = null;
+        _sceneCoverRequestedLimit = 0;
         _sceneCoverCanvas?.SetSceneCover(null);
         _sceneCoverPresenter.Clear();
     }
@@ -228,6 +281,8 @@ public sealed partial class PlayingDetailPage
         canvas.SceneCoverPresented -= CommitCoverFrame;
         canvas.SetSceneCover(null);
         _sceneCoverCanvas = null;
+        _sceneCoverSlot = default;
+        _sceneCoverLayoutLimit = 0;
         CommitCoverFrame(drawn: false);
     }
 }

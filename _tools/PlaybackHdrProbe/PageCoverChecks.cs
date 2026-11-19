@@ -31,7 +31,9 @@ public sealed partial class ProbeApp
             peak = Math.Min(600, color.MaxLuminanceInNits);
             break;
         }
-        if (output is null) throw new InvalidOperationException("The detail cover check requires an HDR output.");
+        bool hdrOutput = output is not null;
+        output ??= DisplayArea.GetFromWindowId(window.AppWindow.Id, DisplayAreaFallback.Primary);
+        if (!hdrOutput) peak = 600;
 
         // Neutral 32x20 SDR artwork with a white left half and 160/255 gray right half.
         const string coverPng = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAUCAIAAABj86gYAAAAIUlEQVR4nGP4TyJYQCJgGLVg1IJRC0YtGLVg1IJRC4gBAIOZFJvNh2SfAAAAAElFTkSuQmCC";
@@ -50,20 +52,28 @@ public sealed partial class ProbeApp
             Position(830, 530);
             window.Activate();
             ShowWindow(hwnd, 5);
-            var imageHdr = await CheckEntryAsync(false, false);
-            Position(530, 790);
-            var portraitImageHdr = await CheckEntryAsync(false, true);
-            Position(830, 530);
-            var shaderHdr = await CheckEntryAsync(true, false);
+            if (hdrOutput)
+            {
+                var imageHdr = await CheckEntryAsync(false, false);
+                Position(530, 790);
+                var portraitImageHdr = await CheckEntryAsync(false, true);
+                Position(830, 530);
+                var shaderHdr = await CheckEntryAsync(true, false);
+                if (imageHdr.Zip(shaderHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f) ||
+                    imageHdr.Zip(portraitImageHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f))
+                    throw new InvalidOperationException("Changing layout or background changed the HDR album-cover pixels.");
+                File.Copy(coverPath, displayCache);
+                await CheckEntryAsync(false, false, cachedOnly);
+            }
+            else
+            {
+                Console.WriteLine("Skipping display-level HDR pixel checks on the SDR output.");
+            }
             await CheckShaderSdrEntryAsync();
-            if (imageHdr.Zip(shaderHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f) ||
-                imageHdr.Zip(portraitImageHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f))
-                throw new InvalidOperationException("Changing layout or background changed the HDR album-cover pixels.");
-            File.Copy(coverPath, displayCache);
-            await CheckEntryAsync(false, false, cachedOnly);
+            await CheckSceneCoverResolutionAsync();
             await CheckPortraitResizeAsync();
             await CheckReleasedCoverBitmapsAsync(window, hwnd);
-            Console.WriteLine("PASS detail cover on image and shader backgrounds, first layout in both orientations, cached-only XAML fallback and portrait resizing");
+            Console.WriteLine("PASS shader cover takeover, XAML fallback and viewport resizing.");
         }
         finally
         {
@@ -172,13 +182,19 @@ public sealed partial class ProbeApp
             {
                 IsFluidBackgroundEnabled = true,
                 WindowBackgroundImagePath = backgroundPath,
-                LyricPageBackgroundHash = coverPath
+                LyricPageBackgroundHash = coverPath,
+                PlaybackHdrWhiteNits = white,
+                PlaybackHdrEffectivePeakNits = peak,
+                PlaybackHdrDisplayId = output.DisplayId.Value
             };
             using var page = new PlayingDetailPage(vm);
             window.Content = page;
             try
             {
                 await WaitUntilAsync(() => page.Cover.Opacity == 0, "cold SDR shader scene cover");
+                var preview = FindChild<WinUIMusicPlayer.Controls.ShadowImage>(page.Cover, "AlbumArtImage");
+                if (preview is null || preview.Source is not null)
+                    throw new InvalidOperationException("The hidden XAML cover retained its source after scene takeover.");
                 var canvas = page.BackgroundCanvas ?? throw new InvalidOperationException("Missing SDR shader canvas.");
                 var panel = FindChild<CanvasSwapChainPanel>(canvas, "PART_HdrPanel");
                 if (panel?.SwapChain is not null || vm.PlaybackHdrActive)
@@ -193,6 +209,47 @@ public sealed partial class ProbeApp
                 AssertStable(art, page.Cover.GetArtworkBounds(page), "SDR shader to XAML");
                 vm.IsFluidBackgroundEnabled = true;
                 await WaitUntilAsync(() => !canvas.UseImageBackground && page.Cover.Opacity == 0, "SDR shader reclaims its cover");
+
+                if (!hdrOutput)
+                {
+                    // Exercise the FP16/SDR host handoff even when physical HDR pixels cannot be sampled.
+                    vm.PlaybackHdrEnabled = true;
+                    await WaitUntilAsync(() => vm.PlaybackHdrActive && panel?.SwapChain is not null && page.Cover.Opacity == 0,
+                        "FP16 shader scene cover on an SDR display");
+                    vm.PlaybackHdrEnabled = false;
+                    await WaitUntilAsync(() => !vm.PlaybackHdrActive && panel?.SwapChain is null && page.Cover.Opacity == 0,
+                        "shader cover returns to its SDR canvas");
+                    Console.WriteLine("PASS FP16 to SDR shader cover handoff on the SDR display.");
+                }
+            }
+            finally { window.Content = new Grid(); }
+        }
+
+        async Task CheckSceneCoverResolutionAsync()
+        {
+            var vm = new AppViewModel
+            {
+                IsFluidBackgroundEnabled = true,
+                LyricPageBackgroundHash = Path.Combine(AppContext.BaseDirectory, "Assets", "default_cover_white.png")
+            };
+            using var page = new PlayingDetailPage(vm) { Width = 1000, Height = 1320 };
+            var host = new Canvas();
+            host.Children.Add(page);
+            window.Content = host;
+            try
+            {
+                double dpiScale = GetDpiForWindow(hwnd) / 96d;
+                int small = (int)Math.Min(746, Math.Ceiling(220 * dpiScale / 128) * 128);
+                await WaitUntilAsync(() => page.Cover.Opacity == 0 && page.SceneCoverPixelWidth == small,
+                    "cover decode follows the small portrait slot");
+                page.Width = 2400;
+                page.Height = 1450;
+                int large = Math.Min(746, small * 2);
+                await WaitUntilAsync(() => page.SceneCoverPixelWidth >= large, "cover reloads after enlarging the viewport");
+                page.Width = 1000;
+                page.Height = 1320;
+                await WaitUntilAsync(() => page.SceneCoverPixelWidth == small, "cover releases the larger resolution after shrinking");
+                Console.WriteLine($"PASS playback cover resolution grows and shrinks with the viewport at {dpiScale:F2}x DPI.");
             }
             finally { window.Content = new Grid(); }
         }

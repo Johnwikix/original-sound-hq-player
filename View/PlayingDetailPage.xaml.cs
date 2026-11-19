@@ -123,6 +123,7 @@ namespace WinUIMusicPlayer.View
             if (_hdrRasterizationScale != sender.RasterizationScale)
             {
                 _hdrRasterizationScale = sender.RasterizationScale;
+                UpdateSceneCoverBounds();
                 NowPlaying?.RetryHdrPresentation();
             }
             ScheduleLyricsRegionUpdate();

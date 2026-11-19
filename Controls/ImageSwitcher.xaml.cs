@@ -3,10 +3,13 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.DirectX;
 using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
@@ -143,9 +146,38 @@ namespace WinUIMusicPlayer.Controls
             _scenePreviewSuppressed = suppressed;
             Opacity = suppressed ? 0 : 1;
             if (suppressed)
-                StopPendingWork(clearLastSource: true);
+            {
+                StopPendingWork(clearLastSource: false);
+                _loadState.Reset();
+                _presentedHash = null;
+                SetSourceImmediately(null);
+            }
             else
+            {
                 _ = UpdateSourceAsync();
+            }
+        }
+
+        internal void PrepareSceneFallback(PlaybackSceneCover? cover)
+        {
+            if (!_scenePreviewSuppressed || !IsActive || !IsLoaded || AlbumArtImage.Source is not null ||
+                cover?.Format != DirectXPixelFormat.B8G8R8A8UIntNormalized)
+                return;
+
+            try
+            {
+                // The scene already decoded these premultiplied pixels. Show them while
+                // the normal XAML loader resolves the current cover and its cache.
+                var preview = new WriteableBitmap(cover.Width, cover.Height);
+                using (var pixels = preview.PixelBuffer.AsStream())
+                    pixels.Write(cover.Pixels);
+                preview.Invalidate();
+                SetSourceImmediately(preview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Unable to prepare the playback cover fallback");
+            }
         }
 
         private async Task UpdateSourceAsync()

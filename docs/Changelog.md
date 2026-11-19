@@ -1,3 +1,8 @@
+## 2026-11-19 降低播放页封面内存占用
+
+- `PlayingDetailPage`、`PlaybackSceneCover` 按封面布局和屏幕缩放分档解码。调整窗口大小时升级或缩小封面资源，并保留正在进行的换曲过渡。
+- `ImageSwitcher` 在 Win2D 接管后释放隐藏的 XAML 图源，退出场景时用已解码的普通封面过渡到 XAML。
+
 ## 2026-11-19 统一着色器播放页的 SDR 和 HDR 封面合成
 
 - `PlayingDetailPage`、`NowPlayingCanvas` 在着色器背景开启时将封面与背景画进同一帧，切换 SDR/HDR 时沿用封面布局和换曲动画。

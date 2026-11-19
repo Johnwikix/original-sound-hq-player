@@ -63,6 +63,10 @@ internal static class CoverPresenterChecks
             var warm = await PlaybackSceneCover.ReadPlaybackAsync(raw, default);
             if (warm is null || !warm.Pixels.AsSpan().SequenceEqual(light.Pixels))
                 throw new InvalidOperationException("Warm cover decoded the full-sized SDR original instead of using the display cache.");
+            var small = await PlaybackSceneCover.ReadPlaybackAsync(raw, default, 256);
+            if (small is not { Width: 256, Height: 256 } || small.Pixels.Length != 256 * 256 * 4 ||
+                small.Pixels[0] != light.Pixels[0])
+                throw new InvalidOperationException("The playback decode limit was not applied to the display cache.");
             File.SetLastWriteTimeUtc(raw, cachedAt.AddMinutes(1));
             var stale = await PlaybackSceneCover.ReadPlaybackAsync(raw, default);
             if (stale is null || !stale.Pixels.AsSpan().SequenceEqual(dark.Pixels))
