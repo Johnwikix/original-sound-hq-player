@@ -15,6 +15,7 @@ public sealed class AppearancePreferencesState : ObservableObject
     public string ThemeType { get; set => SetProperty(ref field, value); } = "Default";
     public bool UseImageDominantTheme { get; set => SetProperty(ref field, value); } = false;
     public bool IsFluidBackgroundEnabled { get; set => SetProperty(ref field, value); }
+    public PlaybackSpectrumPreferencesState PlaybackSpectrum { get; } = new();
     public bool PlaybackHdrEnabled { get; set => SetProperty(ref field, value); }
     private double _hdrReferenceWhite = 300;
     private double _hdrPeak = 600;

@@ -876,6 +876,69 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>是否要移除文件夹</value>
   </data>
+  <data name="PlaybackSpectrum" xml:space="preserve">
+    <value>频谱叠加层</value>
+  </data>
+  <data name="PlaybackSpectrumDescription" xml:space="preserve">
+    <value>仅在启用着色器背景时生效。</value>
+  </data>
+  <data name="PlaybackSpectrumColor" xml:space="preserve">
+    <value>颜色</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveColor" xml:space="preserve">
+    <value>自适应彩色</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveGray" xml:space="preserve">
+    <value>自适应灰度</value>
+  </data>
+  <data name="PlaybackSpectrumCustom" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="PlaybackSpectrumOpacity" xml:space="preserve">
+    <value>不透明度（%）</value>
+  </data>
+  <data name="PlaybackSpectrumPosition" xml:space="preserve">
+    <value>位置</value>
+  </data>
+  <data name="PlaybackSpectrumTop" xml:space="preserve">
+    <value>顶部</value>
+  </data>
+  <data name="PlaybackSpectrumBottom" xml:space="preserve">
+    <value>底部</value>
+  </data>
+  <data name="PlaybackSpectrumAroundArtwork" xml:space="preserve">
+    <value>环绕封面</value>
+  </data>
+  <data name="PlaybackSpectrumStyle" xml:space="preserve">
+    <value>样式</value>
+  </data>
+  <data name="PlaybackSpectrumCurve" xml:space="preserve">
+    <value>曲线</value>
+  </data>
+  <data name="PlaybackSpectrumBars" xml:space="preserve">
+    <value>柱条</value>
+  </data>
+  <data name="PlaybackSpectrumCount" xml:space="preserve">
+    <value>频段数量</value>
+  </data>
+  <data name="PlaybackSpectrumSensitivity" xml:space="preserve">
+    <value>灵敏度（%）</value>
+  </data>
+  <data name="PlaybackSpectrumDelay" xml:space="preserve">
+    <value>延迟（毫秒）</value>
+  </data>
+  <data name="PlaybackSpectrumBreathing" xml:space="preserve">
+    <value>频谱呼吸（%）</value>
+  </data>
+  <data name="PlaybackSpectrumBreathingIntensity" xml:space="preserve">
+    <value>呼吸强度（%）</value>
+  </data>
+  <data name="PlaybackSpectrumGlow" xml:space="preserve">
+    <value>辉光</value>
+  </data>
+  <data name="PlaybackSpectrumParallax" xml:space="preserve">
+    <value>视差倾斜</value>
+  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>着色器背景</value>
   </data>

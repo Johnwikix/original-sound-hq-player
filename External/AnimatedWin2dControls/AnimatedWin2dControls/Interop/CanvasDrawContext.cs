@@ -116,6 +116,22 @@ public readonly unsafe ref struct CanvasDrawContext
         GC.KeepAlive(brush);
     }
 
+    /// <summary>Fills geometry using a brush in the session's color space.</summary>
+    public void FillGeometry(CanvasGeometry geometry, ICanvasBrush brush)
+    {
+        var shape = ABI.Microsoft.Graphics.Canvas.Geometry.CanvasGeometry.CreateMarshaler2(geometry);
+        try
+        {
+            using var color = new CanvasInterfaceReference<ICanvasBrush>(brush);
+            // ICanvasDrawingSession::FillGeometryAtOriginWithBrush in the Win2D 1.4.0 headers.
+            ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, nint, nint, int>)Method(140))(
+                _session, shape.GetAbi(), color.GetAbi()));
+            GC.KeepAlive(brush);
+        }
+        finally { shape.Dispose(); }
+        GC.KeepAlive(geometry);
+    }
+
     /// <summary>Creates a scoped native opacity layer.</summary>
     public CanvasActiveLayerScope CreateLayer(float opacity)
     {

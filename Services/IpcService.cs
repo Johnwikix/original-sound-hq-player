@@ -24,8 +24,8 @@ namespace WinUIMusicPlayer.Services
         private readonly object _seekPublishGate = new();
         private DspStateSnapshot? _dspSnapshot;
         private FftSnapshot? _fftSnapshot;
-        // Placeholder request state for the future spectrum effect. It is not user-facing.
-        private int _fftRequested;
+        private long _fftReceivedAtMs;
+        private int _fftConsumers;
 
         /// <summary>连接内最新完整 DSP 状态；不可变快照可跨线程读取。</summary>
         public DspStateSnapshot? CurrentDspState => Volatile.Read(ref _dspSnapshot);
@@ -35,7 +35,14 @@ namespace WinUIMusicPlayer.Services
         /// <summary>Latest FFT snapshot. Subscribers run on the state-pipe reader thread.</summary>
         public FftSnapshot? CurrentFftSnapshot => Volatile.Read(ref _fftSnapshot);
         public event Action<FftSnapshot>? FftDataChanged;
-        public bool FftRequested => Volatile.Read(ref _fftRequested) != 0;
+        public bool FftRequested => Volatile.Read(ref _fftConsumers) != 0;
+
+        internal FftSnapshot? ReadFftSnapshot(out long receivedAtMs)
+        {
+            var snapshot = CurrentFftSnapshot;
+            receivedAtMs = Volatile.Read(ref _fftReceivedAtMs);
+            return snapshot;
+        }
 
         private readonly Dictionary<int, string> _wasapiEndpoints = new();
         private readonly Dictionary<int, string> _asioEndpoints = new();
@@ -106,15 +113,9 @@ namespace WinUIMusicPlayer.Services
                     state.FftDataChanged += OnFftData;
                     state.NotificationReceived += OnNotification;
                     Volatile.Write(ref _connected, 1);
-                    // A taskbar visualizer may already be active when the audio
-                    // process is restarted. Replay the in-memory feature request
-                    // after reconnect so it does not silently lose its FFT stream.
-                    if (Volatile.Read(ref _fftRequested) != 0)
-                    {
-                        byte[] fftBuffer = new byte[BinarySerializer.FftEnabledSize];
-                        BinarySerializer.WriteFftEnabled(fftBuffer, enabled: true);
-                        commands.Publish(CommandId.SetFftEnabled, fftBuffer, coalesce: true);
-                    }
+                    // Visualizers may request FFT before connection.
+                    if (FftRequested)
+                        PublishFftRequest(enabled: true);
                     state.Start();
                     commands = null;
                     state = null;
@@ -204,10 +205,13 @@ namespace WinUIMusicPlayer.Services
 
         private void OnFftData(FftSnapshot snapshot)
         {
-            if (Volatile.Read(ref _disposed) != 0 || Volatile.Read(ref _faulted) != 0
-                || Volatile.Read(ref _fftRequested) == 0
-                || snapshot.Sequence <= (CurrentFftSnapshot?.Sequence ?? 0)) return;
-            Volatile.Write(ref _fftSnapshot, snapshot);
+            lock (_lifecycleGate)
+            {
+                if (_disposed != 0 || Volatile.Read(ref _faulted) != 0 || !FftRequested
+                    || snapshot.Sequence <= (CurrentFftSnapshot?.Sequence ?? 0)) return;
+                Volatile.Write(ref _fftReceivedAtMs, Environment.TickCount64);
+                Volatile.Write(ref _fftSnapshot, snapshot);
+            }
             if (FftDataChanged is not { } handlers) return;
             foreach (Action<FftSnapshot> handler in handlers.GetInvocationList())
             {
@@ -397,15 +401,27 @@ namespace WinUIMusicPlayer.Services
             PublishLiveCorrection();
         }
 
-        /// <summary>Feature hook for a future visualizer; changing it never rebuilds audio output.</summary>
-        public void SetFftEnabled(bool enabled)
+        internal void SetFftEnabled(FftConsumer consumer, bool enabled)
         {
-            Volatile.Write(ref _fftRequested, enabled ? 1 : 0);
-            if (!enabled)
+            lock (_lifecycleGate)
             {
-                Volatile.Write(ref _fftSnapshot, null);
-                _stateClient?.ClearFftSnapshot();
+                if (_disposed != 0) return;
+                bool wasRequested = FftRequested;
+                int consumers = enabled ? _fftConsumers | (int)consumer : _fftConsumers & ~(int)consumer;
+                Volatile.Write(ref _fftConsumers, consumers);
+                bool requested = consumers != 0;
+                if (wasRequested == requested) return;
+                if (!requested)
+                {
+                    Volatile.Write(ref _fftSnapshot, null);
+                    _stateClient?.ClearFftSnapshot();
+                }
+                if (_connected != 0) PublishFftRequest(requested);
             }
+        }
+
+        private void PublishFftRequest(bool enabled)
+        {
             Span<byte> buffer = stackalloc byte[BinarySerializer.FftEnabledSize];
             BinarySerializer.WriteFftEnabled(buffer, enabled);
             Publish(CommandId.SetFftEnabled, buffer);

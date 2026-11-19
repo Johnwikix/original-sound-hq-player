@@ -78,7 +78,17 @@ try
     var imageRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(imageSettings, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
     Check(imageRoundTrip.WindowBackgroundImagePath == imageSettings.WindowBackgroundImagePath && imageRoundTrip.WindowBackgroundBlurAmount == 37,
         "Custom background path and blur must survive restart.");
-    Console.WriteLine("PASS: background compatibility defaults and image/blur persistence.");
+    Check(!defaults.PlaybackSpectrum.Enabled && defaults.PlaybackSpectrum.Count == 32
+        && defaults.PlaybackSpectrum.Placement == AnimatedWin2dControls.Controls.SpectrumPlacement.Bottom
+        && defaults.PlaybackSpectrum.Sensitivity == 100, "Older settings must use the spectrum defaults.");
+    var spectrum = new SaveSettings
+    {
+        PlaybackSpectrum = new() { Enabled = true, Count = 128, DelayMs = 220, CustomArgb = 0xff287654, Parallax = true }
+    };
+    var restoredSpectrum = JsonSerializer.Deserialize(JsonSerializer.Serialize(spectrum, SettingsJsonContext.Default.SaveSettings),
+        SettingsJsonContext.Default.SaveSettings)!;
+    Check(restoredSpectrum.PlaybackSpectrum == spectrum.PlaybackSpectrum, "Spectrum settings did not survive restart.");
+    Console.WriteLine("PASS: background compatibility defaults and image/blur/spectrum persistence.");
     var general = JsonSerializer.Deserialize(legacyJson, SettingsJsonContext.Default.SaveSettings)!;
     var legacy = general.ReadLegacyAudioPreferences();
     Check(legacy.OutputMode == "WasapiExclusiveEvent" && legacy.Latency == 137 && legacy.BassOutputDeviceId == 9

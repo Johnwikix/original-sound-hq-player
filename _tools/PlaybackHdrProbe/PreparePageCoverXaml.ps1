@@ -14,6 +14,8 @@ function Find-Node([string]$name) {
 
 $background = Find-Node 'NowPlaying'
 $layout = Find-Node 'PlayingDetail'
+$root.SetAttributeValue('PointerMoved', $null)
+$root.SetAttributeValue('PointerExited', $null)
 $left = Find-Node 'LeftControlPanel'
 $cover = Find-Node 'CoverContainer'
 $title = Find-Node 'AnimatedTextBlock'
@@ -33,7 +35,7 @@ foreach ($node in @($left.Elements())) {
 $title.RemoveNodes()
 $lyrics.RemoveNodes()
 $lyrics.SetAttributeValue('SizeChanged', $null)
-foreach ($attribute in @('EnableLightWave', 'ExceptionOccurred', 'IsFogEnabled', 'IsRaindropEnabled',
+foreach ($attribute in @('SpectrumOptions', 'SpectrumSource', 'EnableLightWave', 'ExceptionOccurred', 'IsFogEnabled', 'IsRaindropEnabled',
     'IsSnowEnabled', 'LyricLineClicked', 'RenderError', 'ThemeResolved', 'UseImageDominantTheme')) {
     $background.SetAttributeValue($attribute, $null)
 }

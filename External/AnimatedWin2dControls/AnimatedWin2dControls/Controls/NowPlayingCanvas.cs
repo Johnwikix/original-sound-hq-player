@@ -273,6 +273,7 @@ namespace AnimatedWin2dControls.Controls
             if (wasImageBackground != ctrl._useImageBackground)
             {
                 ctrl.SwapBackgroundRenderer();
+                ctrl.SyncSpectrumSource();
             }
             else if (ctrl._background is ImageBackgroundRenderer image)
             {
@@ -625,6 +626,7 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
+            SetActiveSpectrumSource(null);
             _sdrFrameEnabled = false;
             if (_canvas is not null)
                 _canvas.Paused = true;
@@ -665,6 +667,7 @@ namespace AnimatedWin2dControls.Controls
 
         private void UpdateCanvasPaused(bool replaceHdr = false)
         {
+            SyncSpectrumSource();
             bool canPresentHdr = CanPresentHdr;
             bool canPresentSdr = CanRenderScene && _sdrAllowed && !canPresentHdr;
             if (!canPresentSdr)
@@ -721,6 +724,7 @@ namespace AnimatedWin2dControls.Controls
         // The caller holds _cacheGate so neither presentation can use the retiring resources.
         private void ReleaseSceneResources()
         {
+            _spectrum?.ReleaseDeviceResources();
             ReleaseBackgroundResources();
             _coordinator.ResetDeviceResources();
         }
@@ -796,6 +800,7 @@ namespace AnimatedWin2dControls.Controls
         private void UpdateScene(ICanvasResourceCreator creator, TimeSpan elapsed)
         {
             _background?.Update(elapsed);
+            UpdateSpectrum(elapsed);
             _fog.Update(elapsed.TotalSeconds);
             _snow.Update(elapsed.TotalSeconds);
             _raindrop.Update(elapsed.TotalSeconds);
@@ -831,6 +836,8 @@ namespace AnimatedWin2dControls.Controls
         private void DrawScene(PlaybackCanvasFrame frame, CanvasDrawContext ds)
         {
             DrawBackground(frame, ds);
+            // 频谱按画布帧率更新，背景的半帧率缓存不保存音频图层。
+            DrawSpectrum(frame, ds);
             if (_advanced)
                 _coordinator.OnDraw(frame.Device, ds, frame.Hdr, consumePendingLyrics: !frame.Hdr.IsEnabled);
         }
@@ -942,6 +949,7 @@ namespace AnimatedWin2dControls.Controls
         public void PrepareForShutdown()
         {
             _hdrShuttingDown = true;
+            SpectrumSource = null;
             _sdrFrameEnabled = false;
             DetachHdrPanel();
             _sceneTitle = null;

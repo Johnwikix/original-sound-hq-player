@@ -21,11 +21,13 @@
     xmlns:uc="using:WinUIMusicPlayer.Controls"
     mc:Ignorable="d">
 
-    <Grid>
+    <Grid PointerMoved="SpectrumPointerMoved" PointerExited="SpectrumPointerExited">
         <awc:NowPlayingCanvas
             x:Name="NowPlaying"
             x:Load="{x:Bind ViewModel.IsBackgroundCreated, Mode=OneWay}"
             Loaded="NowPlaying_Loaded"
+            SpectrumOptions="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Options, Mode=OneWay}"
+            SpectrumSource="{x:Bind ViewModel.GetSpectrumSource(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
             BackgroundShaderIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=OneWay}"
             BackgroundImageBlurAmount="{x:Bind ViewModel.AppViewModel.WindowBackgroundBlurAmount, Mode=OneWay}"
             BackgroundImagePath="{x:Bind ViewModel.AppViewModel.WindowBackgroundImagePath, Mode=OneWay}"

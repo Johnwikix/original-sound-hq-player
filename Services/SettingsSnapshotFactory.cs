@@ -35,6 +35,7 @@ public sealed partial class SettingsSnapshotFactory(AppState state)
         newSettings.CoverSize = state.Preferences.CoverSize;
         newSettings.Win2dTextEffectType = state.Preferences.Win2dTextEffectType.Value;
         newSettings.IsFluidBackgroundEnabled = state.Preferences.IsFluidBackgroundEnabled;
+        newSettings.PlaybackSpectrum = state.Preferences.Appearance.PlaybackSpectrum.Options;
         newSettings.PlaybackHdrEnabled = state.Preferences.PlaybackHdrEnabled;
         newSettings.PlaybackHdrReferenceWhiteNits = state.Preferences.PlaybackHdrReferenceWhiteNits;
         newSettings.PlaybackHdrPeakNits = state.Preferences.PlaybackHdrPeakNits;

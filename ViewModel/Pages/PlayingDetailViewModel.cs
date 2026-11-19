@@ -1,9 +1,11 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using AnimatedWin2dControls.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using System;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using ZLinq;
@@ -20,13 +22,20 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         public double ArtistAlbumFontSize { get => field; set => SetProperty(ref field, value); } = 22;
         public double InfoFontSize { get; set => SetProperty(ref field, value); } = 12;
         private ILogger<PlayingDetailViewModel> _logger;
-        public PlayingDetailViewModel(AppViewModel appViewModel, ILogger<PlayingDetailViewModel> logger, PlaybackCommands playback)
+        private readonly PlaybackSpectrumSource _spectrumSource;
+
+        public PlayingDetailViewModel(AppViewModel appViewModel, ILogger<PlayingDetailViewModel> logger,
+            PlaybackCommands playback, BassPlayerCommandService player)
         {
+            _spectrumSource = new(player);
             Playback = playback;
             AppViewModel = appViewModel;
             _logger = logger;
             AppViewModel.UpdateCover();
         }
+
+        public IPlaybackSpectrumSource? GetSpectrumSource(Music? track)
+            => track is { IsRemote: false } ? _spectrumSource : null;
 
         [RelayCommand]
         public void OnPlayButtonChanged()

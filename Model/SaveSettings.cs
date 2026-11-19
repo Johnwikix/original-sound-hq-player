@@ -71,6 +71,7 @@ namespace WinUIMusicPlayer.Model
         public int CoverSize { get; set; } = 150;
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;
         public bool IsFluidBackgroundEnabled { get; set; } = true;
+        public AnimatedWin2dControls.Controls.PlaybackSpectrumOptions PlaybackSpectrum { get; set; } = new();
         public bool PlaybackHdrEnabled { get; set; }
         public double PlaybackHdrReferenceWhiteNits { get; set; } = 300;
         public double PlaybackHdrPeakNits { get; set; } = 600;

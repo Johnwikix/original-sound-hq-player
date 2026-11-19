@@ -1,3 +1,9 @@
+## 2026-11-19 播放页着色器画布增加频谱
+
+- `NowPlayingCanvas` 在着色器和歌词之间绘制频谱，支持 SDR/HDR、顶部、底部和环绕封面。
+- `CoverBackgroundSettingsControl` 在「封面和背景」提供频谱设置，默认关闭，仅在启用着色器背景时生效。
+- `IpcService` 让播放页频谱和任务栏频谱共用音频进程的 FFT，分别管理请求。
+
 ## 2026-11-19 修复 HDR 副屏首次打开播放页时的闪烁
 
 - `PlayingDetailPage.HdrEntrance.cs` 在首次入场时展开延迟加载的画布模板，再检查 HDR 面板。上一页持续显示到 HDR 首帧就绪，随后播放页按原动画上滑。

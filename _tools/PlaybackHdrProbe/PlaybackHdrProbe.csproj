@@ -32,7 +32,7 @@
     <Content Include="../../Assets/default_cover_*.png" Link="Assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Helper/PlaybackCoverImage.cs" />
     <Compile Include="../../Helper/CustomAcrylicSystemBackdrop.cs" />
-    <Compile Include="../../State/AppearancePreferencesState.cs" />
+    <Compile Include="../../State/AppearancePreferencesState.cs;../../State/PlaybackSpectrumPreferencesState.cs" />
     <Compile Include="../../Model/EffectComboBoxItem.cs" />
     <Compile Include="../../Model/FontInfo.cs" />
     <Compile Include="../../View/PlayingDetailPage.HdrCover.cs;../../View/PlayingDetailPage.HdrEntrance.cs;../../View/PlayingDetailPage.Layout.cs" />

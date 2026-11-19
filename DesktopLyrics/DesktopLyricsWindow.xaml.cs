@@ -308,7 +308,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 AppViewModel.CurrentPlayingMusic is { IsRemote: false };
             if (_taskbarFftRequested == enabled) return;
             _taskbarFftRequested = enabled;
-            PlayerService.SetFftEnabled(enabled);
+            PlayerService.SetFftEnabled(FftConsumer.Taskbar, enabled);
             if (!enabled)
             {
                 _taskbarSpectrumReference = 0;
@@ -1208,7 +1208,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_taskbarFftRequested)
             {
                 _taskbarFftRequested = false;
-                PlayerService.SetFftEnabled(false);
+                PlayerService.SetFftEnabled(FftConsumer.Taskbar, enabled: false);
             }
             _taskbarSpectrumTimer?.Stop();
             _taskbarSpectrumTimer = null;

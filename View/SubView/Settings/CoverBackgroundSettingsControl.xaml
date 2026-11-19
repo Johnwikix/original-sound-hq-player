@@ -181,6 +181,81 @@
                     </Grid>
                 </controls:SettingsCard>
 
+                <controls:SettingsExpander
+                    Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrum')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumDescription')}"
+                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
+                    <ToggleSwitch
+                        MinWidth="0"
+                        AutomationProperties.AutomationId="PlaybackSpectrumToggle"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrum')}"
+                        IsOn="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=TwoWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumColor')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <ComboBox Width="200" SelectedIndex="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.ColorMode, Mode=TwoWay}">
+                                    <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumAdaptiveColor')}" />
+                                    <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumAdaptiveGray')}" />
+                                    <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumCustom')}" />
+                                </ComboBox>
+                                <controls:ColorPickerButton
+                                    SelectedColor="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.CustomColor, Mode=TwoWay}"
+                                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.PlaybackSpectrum.IsCustomColor), Mode=OneWay}" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumOpacity')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <NumberBox Width="200" Minimum="0" Maximum="100" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Opacity, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumPosition')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <ComboBox Width="200" SelectedIndex="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Placement, Mode=TwoWay}">
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumTop')}" />
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumBottom')}" />
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumAroundArtwork')}" />
+                            </ComboBox>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumStyle')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <ComboBox Width="200" SelectedIndex="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Style, Mode=TwoWay}">
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumCurve')}" />
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumBars')}" />
+                            </ComboBox>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumCount')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <NumberBox Width="200" Minimum="1" Maximum="1024" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Count, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumSensitivity')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <NumberBox Width="200" Minimum="50" Maximum="500" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Sensitivity, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumDelay')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <NumberBox Width="200" Minimum="0" Maximum="2000" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.DelayMs, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumBreathing')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                <ToggleSwitch MinWidth="0" VerticalAlignment="Center" IsOn="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Breathing, Mode=TwoWay}" />
+                                <NumberBox Grid.Column="1" Width="140" VerticalAlignment="Center"
+                                    Minimum="0" Maximum="200" SmallChange="1" SpinButtonPlacementMode="Inline"
+                                    AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumBreathingIntensity')}"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Breathing, Mode=OneWay}" Value="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.BreathingIntensity, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumGlow')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Glow, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackSpectrumParallax')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Enabled, Mode=OneWay}">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.PlaybackSpectrum.Parallax, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
                 <controls:SettingsCard IsEnabled="{x:Bind tool:BindUtils.IsLightWaveEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.BackgroundShaderIndex), Mode=OneWay}">
                     <controls:SettingsCard.Header>
                         <TextBlock

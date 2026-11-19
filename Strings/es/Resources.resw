@@ -877,6 +877,69 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>¿Eliminar la carpeta?</value>
   </data>
+  <data name="PlaybackSpectrum" xml:space="preserve">
+    <value>Superposición de espectro</value>
+  </data>
+  <data name="PlaybackSpectrumDescription" xml:space="preserve">
+    <value>Solo se aplica cuando el fondo de sombreado está activado.</value>
+  </data>
+  <data name="PlaybackSpectrumColor" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveColor" xml:space="preserve">
+    <value>Color adaptativo</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveGray" xml:space="preserve">
+    <value>Grises adaptativos</value>
+  </data>
+  <data name="PlaybackSpectrumCustom" xml:space="preserve">
+    <value>Personalizado</value>
+  </data>
+  <data name="PlaybackSpectrumOpacity" xml:space="preserve">
+    <value>Opacidad (%)</value>
+  </data>
+  <data name="PlaybackSpectrumPosition" xml:space="preserve">
+    <value>Posición</value>
+  </data>
+  <data name="PlaybackSpectrumTop" xml:space="preserve">
+    <value>Arriba</value>
+  </data>
+  <data name="PlaybackSpectrumBottom" xml:space="preserve">
+    <value>Abajo</value>
+  </data>
+  <data name="PlaybackSpectrumAroundArtwork" xml:space="preserve">
+    <value>Alrededor de la portada</value>
+  </data>
+  <data name="PlaybackSpectrumStyle" xml:space="preserve">
+    <value>Estilo</value>
+  </data>
+  <data name="PlaybackSpectrumCurve" xml:space="preserve">
+    <value>Curva</value>
+  </data>
+  <data name="PlaybackSpectrumBars" xml:space="preserve">
+    <value>Barras</value>
+  </data>
+  <data name="PlaybackSpectrumCount" xml:space="preserve">
+    <value>Número de bandas</value>
+  </data>
+  <data name="PlaybackSpectrumSensitivity" xml:space="preserve">
+    <value>Sensibilidad (%)</value>
+  </data>
+  <data name="PlaybackSpectrumDelay" xml:space="preserve">
+    <value>Retardo (ms)</value>
+  </data>
+  <data name="PlaybackSpectrumBreathing" xml:space="preserve">
+    <value>Pulsación del espectro (%)</value>
+  </data>
+  <data name="PlaybackSpectrumBreathingIntensity" xml:space="preserve">
+    <value>Intensidad de pulsación (%)</value>
+  </data>
+  <data name="PlaybackSpectrumGlow" xml:space="preserve">
+    <value>Resplandor</value>
+  </data>
+  <data name="PlaybackSpectrumParallax" xml:space="preserve">
+    <value>Inclinación por paralaje</value>
+  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>Fondo de Sombreado</value>
   </data>

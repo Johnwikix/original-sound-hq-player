@@ -5,6 +5,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.UI.Dispatching;
 using System;
 using System.Threading;
+using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls;
 
@@ -13,6 +14,14 @@ public interface IPlaybackSceneCover
 {
     /// <summary>Returns whether the current frame contains the cover.</summary>
     bool Draw(PlaybackCanvasFrame frame, CanvasDrawContext session);
+
+    /// <summary>Supplies the fitted artwork bounds and corner radius to the spectrum layer.</summary>
+    bool TryGetArtworkBounds(out Rect bounds, out float radius)
+    {
+        bounds = default;
+        radius = 0;
+        return false;
+    }
 
     /// <summary>Releases the matching device resources, or all resources when device is null.</summary>
     void ReleaseDeviceResources(CanvasDevice? device);

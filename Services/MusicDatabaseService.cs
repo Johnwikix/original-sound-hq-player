@@ -1137,6 +1137,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsFluidBackgroundEnabled = settings.IsFluidBackgroundEnabled;
                 AppViewModel.PlaybackHdrReferenceWhiteNits = settings.PlaybackHdrReferenceWhiteNits;
                 AppViewModel.PlaybackHdrPeakNits = settings.PlaybackHdrPeakNits;
+                AppViewModel.PlaybackSpectrum.Options = settings.PlaybackSpectrum;
                 AppViewModel.PlaybackHdrEnabled = settings.PlaybackHdrEnabled;
                 AppViewModel.BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)settings.BackgroundShader;
                 AppViewModel.IsFogEffectEnabled = settings.IsFogEffectEnabled;

@@ -45,6 +45,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
         if (_started) return;
         _started = true;
         state.Preferences.PropertyChanged += OnPreferencesChanged;
+        state.Preferences.Appearance.PlaybackSpectrum.PropertyChanged += OnSpectrumChanged;
+    }
+
+    private void OnSpectrumChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(state.Preferences.Appearance.PlaybackSpectrum.Options) && state.Lifecycle.IsReady)
+            _ = database.SaveSettingAsync();
     }
 
     private void OnPreferencesChanged(object? sender, PropertyChangedEventArgs e)
@@ -609,5 +616,6 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
             _desktopStyleTimer = null;
         }
         state.Preferences.PropertyChanged -= OnPreferencesChanged;
+        state.Preferences.Appearance.PlaybackSpectrum.PropertyChanged -= OnSpectrumChanged;
     }
 }

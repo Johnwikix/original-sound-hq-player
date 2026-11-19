@@ -877,6 +877,69 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Удалить папку?</value>
   </data>
+  <data name="PlaybackSpectrum" xml:space="preserve">
+    <value>Слой спектра</value>
+  </data>
+  <data name="PlaybackSpectrumDescription" xml:space="preserve">
+    <value>Действует только при включённом шейдерном фоне.</value>
+  </data>
+  <data name="PlaybackSpectrumColor" xml:space="preserve">
+    <value>Цвет</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveColor" xml:space="preserve">
+    <value>Адаптивный цвет</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveGray" xml:space="preserve">
+    <value>Адаптивные оттенки серого</value>
+  </data>
+  <data name="PlaybackSpectrumCustom" xml:space="preserve">
+    <value>Пользовательский</value>
+  </data>
+  <data name="PlaybackSpectrumOpacity" xml:space="preserve">
+    <value>Непрозрачность (%)</value>
+  </data>
+  <data name="PlaybackSpectrumPosition" xml:space="preserve">
+    <value>Положение</value>
+  </data>
+  <data name="PlaybackSpectrumTop" xml:space="preserve">
+    <value>Сверху</value>
+  </data>
+  <data name="PlaybackSpectrumBottom" xml:space="preserve">
+    <value>Снизу</value>
+  </data>
+  <data name="PlaybackSpectrumAroundArtwork" xml:space="preserve">
+    <value>Вокруг обложки</value>
+  </data>
+  <data name="PlaybackSpectrumStyle" xml:space="preserve">
+    <value>Стиль</value>
+  </data>
+  <data name="PlaybackSpectrumCurve" xml:space="preserve">
+    <value>Кривая</value>
+  </data>
+  <data name="PlaybackSpectrumBars" xml:space="preserve">
+    <value>Столбцы</value>
+  </data>
+  <data name="PlaybackSpectrumCount" xml:space="preserve">
+    <value>Количество полос</value>
+  </data>
+  <data name="PlaybackSpectrumSensitivity" xml:space="preserve">
+    <value>Чувствительность (%)</value>
+  </data>
+  <data name="PlaybackSpectrumDelay" xml:space="preserve">
+    <value>Задержка (мс)</value>
+  </data>
+  <data name="PlaybackSpectrumBreathing" xml:space="preserve">
+    <value>Пульсация спектра (%)</value>
+  </data>
+  <data name="PlaybackSpectrumBreathingIntensity" xml:space="preserve">
+    <value>Интенсивность пульсации (%)</value>
+  </data>
+  <data name="PlaybackSpectrumGlow" xml:space="preserve">
+    <value>Свечение</value>
+  </data>
+  <data name="PlaybackSpectrumParallax" xml:space="preserve">
+    <value>Наклон с параллаксом</value>
+  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>Фон шейдера</value>
   </data>

@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/PlaybackSpectrumOptions.cs" />
     <Compile Include="../../Model/SaveSettings.cs" />
     <Compile Include="../../Model/SaveSettings.Audio.cs" />
     <Compile Include="../../Helper/SettingsJsonContext.cs" />

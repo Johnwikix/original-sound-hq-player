@@ -63,6 +63,17 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
         }
     }
 
+    bool IPlaybackSceneCover.TryGetArtworkBounds(out Rect bounds, out float radius)
+    {
+        bounds = default;
+        radius = 0;
+        if (_layout is not { } layout || _requested is not { } request || layout.Slot.Width <= 0 || layout.Slot.Height <= 0)
+            return false;
+        bounds = FitArtwork(layout.Slot, new Size(request.Artwork.Width, request.Artwork.Height));
+        radius = GetArtworkRadius(bounds, layout.Radius);
+        return true;
+    }
+
     void IPlaybackSceneCover.ReleaseDeviceResources(CanvasDevice? device)
     {
         if (device is null || ReferenceEquals(_device, device)) ReleaseGpu();
@@ -190,10 +201,13 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
     {
         if (opacity <= 0) return;
         var bounds = FitArtwork(slot, drawing.ImageSize);
-        float radius = (float)(Math.Min(bounds.Width, bounds.Height) * Math.Clamp(radiusAmount, 0, 100) / 200);
+        float radius = GetArtworkRadius(bounds, radiusAmount);
         if (shadowAmount > 0) DrawShadow(session, bounds, radius, shadowAmount, opacity);
         drawing.Draw(session, bounds, radius, color, opacity);
     }
+
+    private static float GetArtworkRadius(Rect bounds, int radiusAmount)
+        => (float)(Math.Min(bounds.Width, bounds.Height) * Math.Clamp(radiusAmount, 0, 100) / 200);
 
     private static Rect FitArtwork(Rect slot, Size source)
     {

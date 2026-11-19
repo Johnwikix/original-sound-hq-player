@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class AppViewModel
     {
         public bool IsRealDevceChange { get => State.Output.IsRealDeviceChange; set => State.Output.IsRealDeviceChange = value; }
+        public WinUIMusicPlayer.State.PlaybackSpectrumPreferencesState PlaybackSpectrum => State.Preferences.Appearance.PlaybackSpectrum;
         public bool EnableLightWave { get => State.Preferences.EnableLightWave; set => State.Preferences.EnableLightWave = value; }
         public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm { get => State.Preferences.PaletteAlgorithm; set => State.Preferences.PaletteAlgorithm = value; }
         public int PaletteAlgorithmIndex

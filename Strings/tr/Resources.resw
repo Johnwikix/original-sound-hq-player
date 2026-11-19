@@ -877,6 +877,69 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Klasörü kaldırmak istiyor musunuz</value>
   </data>
+  <data name="PlaybackSpectrum" xml:space="preserve">
+    <value>Spektrum katmanı</value>
+  </data>
+  <data name="PlaybackSpectrumDescription" xml:space="preserve">
+    <value>Yalnızca gölgelendirici arka plan etkinleştirildiğinde çalışır.</value>
+  </data>
+  <data name="PlaybackSpectrumColor" xml:space="preserve">
+    <value>Renk</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveColor" xml:space="preserve">
+    <value>Uyarlanabilir renk</value>
+  </data>
+  <data name="PlaybackSpectrumAdaptiveGray" xml:space="preserve">
+    <value>Uyarlanabilir gri tonlama</value>
+  </data>
+  <data name="PlaybackSpectrumCustom" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="PlaybackSpectrumOpacity" xml:space="preserve">
+    <value>Opaklık (%)</value>
+  </data>
+  <data name="PlaybackSpectrumPosition" xml:space="preserve">
+    <value>Konum</value>
+  </data>
+  <data name="PlaybackSpectrumTop" xml:space="preserve">
+    <value>Üst</value>
+  </data>
+  <data name="PlaybackSpectrumBottom" xml:space="preserve">
+    <value>Alt</value>
+  </data>
+  <data name="PlaybackSpectrumAroundArtwork" xml:space="preserve">
+    <value>Kapak çevresinde</value>
+  </data>
+  <data name="PlaybackSpectrumStyle" xml:space="preserve">
+    <value>Stil</value>
+  </data>
+  <data name="PlaybackSpectrumCurve" xml:space="preserve">
+    <value>Eğri</value>
+  </data>
+  <data name="PlaybackSpectrumBars" xml:space="preserve">
+    <value>Çubuklar</value>
+  </data>
+  <data name="PlaybackSpectrumCount" xml:space="preserve">
+    <value>Bant sayısı</value>
+  </data>
+  <data name="PlaybackSpectrumSensitivity" xml:space="preserve">
+    <value>Hassasiyet (%)</value>
+  </data>
+  <data name="PlaybackSpectrumDelay" xml:space="preserve">
+    <value>Gecikme (ms)</value>
+  </data>
+  <data name="PlaybackSpectrumBreathing" xml:space="preserve">
+    <value>Spektrum titreşimi (%)</value>
+  </data>
+  <data name="PlaybackSpectrumBreathingIntensity" xml:space="preserve">
+    <value>Titreşim yoğunluğu (%)</value>
+  </data>
+  <data name="PlaybackSpectrumGlow" xml:space="preserve">
+    <value>Parlama</value>
+  </data>
+  <data name="PlaybackSpectrumParallax" xml:space="preserve">
+    <value>Paralaks eğimi</value>
+  </data>
   <data name="ShaderBackground.Text" xml:space="preserve">
     <value>Gölgeleyici arka plan</value>
   </data>
