@@ -15,4 +15,13 @@
 		<type fullname="WinUIMusicPlayer.Model.UsbDeviceMusic" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.MusicLyrics" preserve="all"/>
 	</assembly>
+	<!-- PlaybackHdrProbe subscribes to these existing events against the published controls assembly. -->
+	<assembly fullname="AnimatedWin2dControls">
+		<type fullname="AnimatedWin2dControls.Controls.NowPlayingCanvas">
+			<method name="add_DrawHdrForeground" />
+			<method name="remove_DrawHdrForeground" />
+			<method name="add_HdrFramePresented" />
+			<method name="remove_HdrFramePresented" />
+		</type>
+	</assembly>
 </linker>

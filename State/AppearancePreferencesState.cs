@@ -13,7 +13,6 @@ namespace WinUIMusicPlayer.State;
 public sealed class AppearancePreferencesState : ObservableObject
 {
     public string ThemeType { get; set => SetProperty(ref field, value); } = "Default";
-    public bool IsHoverScrollEnabled { get; set => SetProperty(ref field, value); } = false;
     public bool UseImageDominantTheme { get; set => SetProperty(ref field, value); } = false;
     public bool IsFluidBackgroundEnabled { get; set => SetProperty(ref field, value); }
     public bool PlaybackHdrEnabled { get; set => SetProperty(ref field, value); }

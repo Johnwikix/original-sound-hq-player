@@ -1,6 +1,7 @@
 #nullable enable
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Geometry;
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -141,7 +142,22 @@ public readonly unsafe ref struct CanvasDrawContext
         return new(layer);
     }
 
-    // WinRT Rect 的 ABI 是四个 float；这里从公开的 double 属性显式转换。
+    /// <summary>Creates a scoped native opacity layer clipped by a geometry.</summary>
+    public CanvasActiveLayerScope CreateLayer(float opacity, CanvasGeometry geometry)
+    {
+        var clip = ABI.Microsoft.Graphics.Canvas.Geometry.CanvasGeometry.CreateMarshaler2(geometry);
+        try
+        {
+            nint layer = 0;
+            ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, float, nint, nint*, int>)Method(179))(
+                _session, opacity, clip.GetAbi(), &layer));
+            GC.KeepAlive(geometry);
+            return new(layer);
+        }
+        finally { clip.Dispose(); }
+    }
+
+    // WinRT Rect 的 ABI 是四个 float；这里从公开的 double 属性显式转换.
     [StructLayout(LayoutKind.Sequential)]
     private readonly struct RectAbi(Rect value)
     {

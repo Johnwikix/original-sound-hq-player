@@ -30,7 +30,7 @@ public sealed partial class PlayingDetailPage
             if (NowPlaying is { IsLoaded: true } canvas)
                 ObserveHdrEntrance(canvas);
             _ = SetCanvasNavigationTransitionAsync(false);
-            if (!ShouldPrepareHdrEntrance || (_coverRequested && !_coverReady && _hdrCoverRequest is null))
+            if (!ShouldPrepareHdrEntrance || (_coverRequested && !_coverReady && _sceneCoverRequest is null))
                 RejectHdrEntrance();
             return await frame.Task.WaitAsync(cancellationToken);
         }
@@ -150,7 +150,7 @@ public sealed partial class PlayingDetailPage
         if (!active)
         {
             UpdateSceneRegions();
-            UpdateHdrCoverBounds();
+            UpdateSceneCoverBounds();
         }
         return NowPlaying?.SetHdrNavigationTransitionAsync(active) ?? Task.CompletedTask;
     }

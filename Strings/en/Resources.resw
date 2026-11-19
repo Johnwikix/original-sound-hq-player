@@ -1931,12 +1931,6 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Unable to play file</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>The selected music file could not be parsed or opened: {0}</value></data>
-  <data name="AnimatedTextHoverScroll" xml:space="preserve">
-    <value>Win2D animated text hover scroll</value>
-  </data>
-  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
-    <value>Hover to read the full title, album and artist after the text transition finishes.</value>
-  </data>
   <data name="AtmosNotificationTitle" xml:space="preserve">
     <value>Atmos HDMI passthrough</value>
   </data>

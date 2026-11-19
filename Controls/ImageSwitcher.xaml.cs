@@ -79,6 +79,7 @@ namespace WinUIMusicPlayer.Controls
 
         private readonly CoverLoadState _loadState = new();
         private string? _presentedHash;
+        private bool _scenePreviewSuppressed;
 
         internal bool IsCoverSettled(string hash) => _presentedHash == hash && LastAlbumArtImage.Source is null;
 
@@ -136,9 +137,20 @@ namespace WinUIMusicPlayer.Controls
             }
         }
 
+        internal void SetScenePreviewSuppressed(bool suppressed)
+        {
+            if (_scenePreviewSuppressed == suppressed) return;
+            _scenePreviewSuppressed = suppressed;
+            Opacity = suppressed ? 0 : 1;
+            if (suppressed)
+                StopPendingWork(clearLastSource: true);
+            else
+                _ = UpdateSourceAsync();
+        }
+
         private async Task UpdateSourceAsync()
         {
-            if (!IsActive || !IsLoaded) return;
+            if (!IsActive || !IsLoaded || _scenePreviewSuppressed) return;
 
             string? newHash = ImageHash;
             bool hasData = newHash is { Length: > 0 };

@@ -25,7 +25,6 @@ public sealed class PreferencesState : ObservableObject
         Audio.PropertyChanged += ForwardChange;
         General.PropertyChanged += ForwardChange;
     }
-    public bool IsHoverScrollEnabled { get => Appearance.IsHoverScrollEnabled; set => Appearance.IsHoverScrollEnabled = value; }
     public string DefaultEntryComboBoxTag { get => General.DefaultEntryComboBoxTag; set => General.DefaultEntryComboBoxTag = value; }
     public string ThemeType { get => Appearance.ThemeType; set => Appearance.ThemeType = value; }
     public string WindowBackgroundImagePath { get => Appearance.WindowBackgroundImagePath; set => Appearance.WindowBackgroundImagePath = value; }

@@ -8,7 +8,7 @@ namespace AnimatedWin2dControls.Shaders;
 [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
 [D2DOutputBuffer(D2D1BufferPrecision.Float16, D2D1ChannelDepth.Four)]
 [D2DGeneratedPixelShaderDescriptor]
-public readonly partial struct HdrCoverToneMap(float inputPeak, float outputPeak, float sdrWhite = 0f) : ID2D1PixelShader
+public readonly partial struct HdrCoverToneMap(float inputPeak, float outputPeak, float sdrWhite = 0f, int outputSdr = 0) : ID2D1PixelShader
 {
     public float4 Execute()
     {
@@ -43,6 +43,15 @@ public readonly partial struct HdrCoverToneMap(float inputPeak, float outputPeak
                 result = new float4(pixel.XYZ * (mapped * pixel.W / luminance), pixel.W);
             }
         }
+        if (outputSdr != 0)
+        {
+            // SDR targets expect gamma-encoded, premultiplied sRGB.
+            float3 linear = Hlsl.Saturate(result.XYZ / Hlsl.Max(result.W, 0.000001f));
+            return new float4(new float3(Encode(linear.X), Encode(linear.Y), Encode(linear.Z)) * result.W, result.W);
+        }
         return result;
     }
+
+    private static float Encode(float channel) =>
+        channel <= 0.0031308f ? channel * 12.92f : 1.055f * Hlsl.Pow(channel, 1f / 2.4f) - 0.055f;
 }

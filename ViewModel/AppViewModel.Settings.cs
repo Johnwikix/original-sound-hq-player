@@ -49,9 +49,6 @@ namespace WinUIMusicPlayer.ViewModel
             (int)AnimatedWin2dControls.BackgroundShaderMode.ChromaticResonance; // 枚举尾成员=最大合法索引
         public int CoverSize { get => State.Preferences.CoverSize; set => State.Preferences.CoverSize = value; }
 
-        public bool IsHoverScrollEnabled { get => State.Preferences.IsHoverScrollEnabled; set => State.Preferences.IsHoverScrollEnabled = value; }
-
-
         public int DsdGain { get => State.Preferences.DsdGain; set => State.Preferences.DsdGain = value; }
 
         public bool IsAutoLyricsEnabled { get => State.Preferences.IsAutoLyricsEnabled; set => State.Preferences.IsAutoLyricsEnabled = value; }

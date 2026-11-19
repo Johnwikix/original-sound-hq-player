@@ -150,14 +150,22 @@ internal static class CoverPresenterChecks
         Draw(target, presenter);
         presenter.SetArtwork(green, ImageSwitchType.Crossfade, animate: true);
         CheckPixel(Draw(target, presenter), 96, 72, new(3, 0, 0), "rapid switch superseded outgoing cover");
-        presenter.SetArtwork(blue, ImageSwitchType.Crossfade, animate: true);
+        presenter.SetArtwork(blue, ImageSwitchType.Crossfade, animate: false);
         presenter.ReleaseGpu();
         presenter.ReleaseGpu();
         CheckPixel(Draw(target, presenter), 96, 72, new(0, 0, 5), "released presenter redraws latest artwork without animation");
         presenter.SetArtwork(green, ImageSwitchType.ScaleInOut, animate: true);
         using var secondDevice = new CanvasDevice();
         using var otherTarget = CreateTarget(secondDevice);
-        CheckPixel(Draw(otherTarget, presenter), 96, 72, new(0, 4, 0), "device switch uploads settled cover");
+        CheckPixel(Draw(otherTarget, presenter), 96, 72, new(0, 0, 5), "device switch retains outgoing cover");
+        clock.Advance(Time.AnimationDuration / 2);
+        var beforeSwitch = Draw(otherTarget, presenter);
+        var afterSwitch = Draw(target, presenter);
+        if (!beforeSwitch.AsSpan().SequenceEqual(afterSwitch))
+            throw new InvalidOperationException("Moving a running cover transition to another device changed the frame.");
+        clock.Advance(Time.AnimationDuration / 2);
+        CheckPixel(Draw(target, presenter), 96, 72, new(0, 4, 0), "device switch settles on the new cover");
+        CheckSdrCover(firstDevice);
         presenter.SetArtwork(red, ImageSwitchType.Crossfade, animate: false);
         CheckPixel(Draw(otherTarget, presenter), 96, 72, new(3, 0, 0), "disabled animation");
 
@@ -172,6 +180,23 @@ internal static class CoverPresenterChecks
         if (presenter.Draw(session, Slot, 12, 16, 200, 600))
             throw new InvalidOperationException("A cleared presenter drew an obsolete cover.");
         Console.WriteLine($"PASS rapid replacement, HDR GPU release/re-entry, new device, immediate mode, clear, and shadow falloff ({near:F4}, {far:F4}, 1.0000)");
+    }
+
+    private static void CheckSdrCover(CanvasDevice device)
+    {
+        using var target = new CanvasRenderTarget(device, 192, 144, 96);
+        using var presenter = new PlaybackSceneCoverPresenter();
+        presenter.SetArtwork(MakeCover(20, 10, new(.25f)), ImageSwitchType.Crossfade, animate: false);
+        using (var session = target.CreateDrawingSession())
+        {
+            if (!presenter.Draw(session, Slot, 12, 0, 0, 0))
+                throw new InvalidOperationException("The native HDR artwork did not draw into SDR.");
+        }
+        byte[] pixel = target.GetPixelBytes(95, 70, 1, 1);
+        // 0.25 linear is approximately 137/255 in sRGB.
+        if (pixel.Take(3).Any(channel => Math.Abs(channel - 137) > 2) || pixel[3] != 255)
+            throw new InvalidOperationException($"SDR native-cover conversion produced {string.Join(", ", pixel)}.");
+        Console.WriteLine("PASS native HDR cover is gamma-encoded for an SDR target.");
     }
 
     private static CanvasRenderTarget CreateTarget(CanvasDevice device) =>

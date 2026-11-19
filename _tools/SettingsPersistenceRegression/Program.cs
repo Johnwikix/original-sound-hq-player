@@ -31,11 +31,12 @@ try
     var legacyHdr = JsonSerializer.Deserialize("""{"PlaybackHdrEnabled":true,"PlaybackHdrPeakNits":420}""", SettingsJsonContext.Default.SaveSettings)!;
     Check(legacyHdr.PlaybackHdrEnabled && legacyHdr.PlaybackHdrPeakNits == 420 && legacyHdr.PlaybackHdrReferenceWhiteNits == 300, "Legacy peak was lost.");
     var previousPlaybackSettings = JsonSerializer.Deserialize(
-        """{"IsWin2dAnimatedText":false,"EnableAdvancedLyricsEffect":false,"PlaybackHdrPeakNits":530,"GlowAmount":7.5,"PlaybackHdrGlowBoostPercent":75,"PlaybackHdrHaloStrengthPercent":225}""",
+        """{"IsWin2dAnimatedText":false,"IsHoverScrollEnabled":false,"EnableAdvancedLyricsEffect":false,"PlaybackHdrPeakNits":530,"GlowAmount":7.5,"PlaybackHdrGlowBoostPercent":75,"PlaybackHdrHaloStrengthPercent":225}""",
         SettingsJsonContext.Default.SaveSettings)!;
     using var migratedPlaybackSettings = JsonDocument.Parse(JsonSerializer.Serialize(previousPlaybackSettings, SettingsJsonContext.Default.SaveSettings));
     Check(previousPlaybackSettings.PlaybackHdrPeakNits == 530 && previousPlaybackSettings.GlowAmount == 7.5
         && !migratedPlaybackSettings.RootElement.TryGetProperty("IsWin2dAnimatedText", out _)
+        && !migratedPlaybackSettings.RootElement.TryGetProperty("IsHoverScrollEnabled", out _)
         && !migratedPlaybackSettings.RootElement.TryGetProperty("EnableAdvancedLyricsEffect", out _)
         && !migratedPlaybackSettings.RootElement.TryGetProperty("PlaybackHdrGlowBoostPercent", out _)
         && !migratedPlaybackSettings.RootElement.TryGetProperty("PlaybackHdrHaloStrengthPercent", out _),
@@ -78,11 +79,6 @@ try
     Check(imageRoundTrip.WindowBackgroundImagePath == imageSettings.WindowBackgroundImagePath && imageRoundTrip.WindowBackgroundBlurAmount == 37,
         "Custom background path and blur must survive restart.");
     Console.WriteLine("PASS: background compatibility defaults and image/blur persistence.");
-    Check(!defaults.IsHoverScrollEnabled, "Settings without hover-scroll key must default to hover-scroll disabled.");
-    defaults.IsHoverScrollEnabled = true;
-    var hoverRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(defaults, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
-    Check(hoverRoundTrip.IsHoverScrollEnabled, "Enabled hover-scroll must survive saving and restarting.");
-    Console.WriteLine("PASS: hover-scroll defaults to disabled and enabled setting round-trips.");
     var general = JsonSerializer.Deserialize(legacyJson, SettingsJsonContext.Default.SaveSettings)!;
     var legacy = general.ReadLegacyAudioPreferences();
     Check(legacy.OutputMode == "WasapiExclusiveEvent" && legacy.Latency == 137 && legacy.BassOutputDeviceId == 9

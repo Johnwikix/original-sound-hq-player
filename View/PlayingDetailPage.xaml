@@ -82,7 +82,7 @@
                         Grid.Row="0"
                         Margin="0,0,0,1"
                         Document="{x:Bind tools:BindUtils.MusicToAnimatedDocument(ViewModel.AppViewModel.CurrentPlayingMusic, ViewModel.TitleFontSize, ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
-                        IsHoverScrollEnabled="{x:Bind ViewModel.AppViewModel.IsHoverScrollEnabled, Mode=OneWay}"
+                        IsHoverScrollEnabled="True"
                         TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />

@@ -54,7 +54,7 @@
                         <TextBlock x:Uid="PlaybackTitleEffect" />
                     </controls:SettingsCard.Header>
                     <ComboBox
-                        Width="200"
+                        Width="300"
                         HorizontalAlignment="Stretch"
                         ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
                         SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
@@ -64,15 +64,6 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </controls:SettingsCard>
-
-                <controls:SettingsCard
-                    Header="{x:Bind tool:ToolUtils.GetString('AnimatedTextHoverScroll'), Mode=OneWay}"
-                    Description="{x:Bind tool:ToolUtils.GetString('AnimatedTextHoverScrollDescription'), Mode=OneWay}">
-                    <ToggleSwitch
-                        MinWidth="0"
-                        VerticalAlignment="Center"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsHoverScrollEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

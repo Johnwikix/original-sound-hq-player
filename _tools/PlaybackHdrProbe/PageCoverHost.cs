@@ -40,12 +40,12 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public sealed class AppViewModel : ObservableObject
     {
-        public string? LyricPageBackgroundHash { get; init; }
+        public string? LyricPageBackgroundHash { get; set => SetProperty(ref field, value); }
         public int BackgroundShaderIndex => 0;
         public double WindowBackgroundBlurAmount => 0;
         public bool IsDarkMode => true;
         public bool IsPlayingDetailVisible { get => field; set => SetProperty(ref field, value); } = true;
-        public bool IsFluidBackgroundEnabled { get; init; }
+        public bool IsFluidBackgroundEnabled { get; set => SetProperty(ref field, value); }
         public string? WindowBackgroundImagePath { get; set => SetProperty(ref field, value); }
         public bool PlaybackHdrEnabled { get; set => SetProperty(ref field, value); }
         public bool PlaybackHdrDisplayAvailable => true;
@@ -90,7 +90,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = new PlayingDetailViewModel(appViewModel);
             InitializeComponent();
-            InitializeHdrCover();
+            InitializeSceneCover();
             Loaded += (_, _) =>
             {
                 _isLoaded = true;
@@ -103,7 +103,7 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         internal ImageSwitcher Cover => DetailCoverSwitcher;
         internal NowPlayingCanvas? BackgroundCanvas => NowPlaying;
-        internal Rect CoverSlot => _hdrCoverSlot;
+        internal Rect CoverSlot => _sceneCoverSlot;
         internal Action<NowPlayingCanvas>? ConfigureBackgroundCanvas { get; set; }
 
         public void PauseCanvasRendering() => NowPlaying?.PauseRendering();
@@ -113,7 +113,7 @@ namespace WinUIMusicPlayer.View
         {
             var canvas = (NowPlayingCanvas)sender;
             ConfigureBackgroundCanvas?.Invoke(canvas);
-            AttachHdrCoverCanvas(canvas);
+            AttachSceneCoverCanvas(canvas);
             ObserveHdrEntrance(canvas);
             _ = canvas.SetHdrNavigationTransitionAsync(_canvasNavigationTransition);
             canvas.HdrPresentationChanged += PlaybackHdrPresentationChanged;
@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.View
             CancelHdrEntrance();
             ViewModel.AppViewModel.PropertyChanged -= RefreshPresentation;
             ViewModel.PropertyChanged -= UpdatePresentation;
-            DisposeHdrCover();
+            DisposeSceneCover();
             if (NowPlaying is not { } canvas) return;
             canvas.HdrPresentationChanged -= PlaybackHdrPresentationChanged;
             canvas.Dispose();

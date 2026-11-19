@@ -100,7 +100,6 @@ namespace WinUIMusicPlayer.Model
         public bool UseImageDominantTheme { get; set; } = false;
         public bool EnableLightWave { get; set; } = true;
         public int PaletteAlgorithm { get; set; } = 0;
-        public bool IsHoverScrollEnabled { get; set; } = false;
         public double CharFloatAmount { get; set; } = 5.0;
         public double CharScaleAmount { get; set; } = 110.0;
         public double GlowAmount { get; set; } = 5.0;

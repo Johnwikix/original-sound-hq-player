@@ -55,6 +55,7 @@ public sealed partial class ProbeApp
             var portraitImageHdr = await CheckEntryAsync(false, true);
             Position(830, 530);
             var shaderHdr = await CheckEntryAsync(true, false);
+            await CheckShaderSdrEntryAsync();
             if (imageHdr.Zip(shaderHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f) ||
                 imageHdr.Zip(portraitImageHdr).Any(pair => Math.Abs(pair.First - pair.Second) > .08f))
                 throw new InvalidOperationException("Changing layout or background changed the HDR album-cover pixels.");
@@ -94,9 +95,11 @@ public sealed partial class ProbeApp
             };
             using var page = new PlayingDetailPage(vm);
             (Rect Slot, bool Portrait)? first = null;
+            int previewReveals = 0;
             long observer = page.Cover.RegisterPropertyChangedCallback(UIElement.OpacityProperty, (_, _) =>
             {
                 if (page.Cover.Opacity == 0) first ??= (page.CoverSlot, vm.IsPortraitLayout);
+                else if (first.HasValue) previewReveals++;
             });
             window.Content = page;
             try
@@ -125,15 +128,24 @@ public sealed partial class ProbeApp
                 AssertStable(initial.Slot, page.CoverSlot, label);
 
                 vm.PlaybackHdrEnabled = false;
-                await WaitUntilAsync(() => !vm.PlaybackHdrActive && panel.SwapChain is null && page.Cover.Opacity == 1 &&
-                    page.Cover.IsCoverSettled(artworkPath), $"XAML preview after turning off HDR: {label}");
-                Rect sdrArt = page.Cover.GetArtworkBounds(page);
-                AssertStable(art, sdrArt, $"{label}, HDR to XAML");
+                await WaitUntilAsync(() => !vm.PlaybackHdrActive && panel.SwapChain is null &&
+                    (shader ? page.Cover.Opacity == 0 : page.Cover.Opacity == 1 && page.Cover.IsCoverSettled(artworkPath)),
+                    $"SDR cover after turning off HDR: {label}");
+                Rect sdrArt = shader ? Fit(page.CoverSlot) : page.Cover.GetArtworkBounds(page);
+                AssertStable(art, sdrArt, $"{label}, HDR to SDR");
                 await Task.Delay(130);
                 var sdrPixels = SampleArt(sdrArt, $"{label} SDR after disabling HDR");
                 AssertSdrArtwork(sdrPixels, label);
 
-                if (!shader && !portrait)
+                if (shader)
+                {
+                    vm.PlaybackHdrEnabled = true;
+                    await WaitUntilAsync(() => vm.PlaybackHdrActive && panel.SwapChain is not null, "shader HDR re-enabled");
+                    if (previewReveals != 0 || page.Cover.Opacity != 0)
+                        throw new InvalidOperationException("Switching shader output between SDR and HDR revealed the XAML cover.");
+                    CheckSamples(SampleArt(art, "shader HDR after SDR"), expectedWhite, expectedGray, label);
+                }
+                else if (!portrait)
                 {
                     vm.PlaybackHdrEnabled = true;
                     await WaitUntilAsync(() => vm.PlaybackHdrActive && page.Cover.Opacity == 0, "HDR re-enabled");
@@ -152,6 +164,37 @@ public sealed partial class ProbeApp
                 window.SystemBackdrop = null;
                 window.Content = new Grid();
             }
+        }
+
+        async Task CheckShaderSdrEntryAsync()
+        {
+            var vm = new AppViewModel
+            {
+                IsFluidBackgroundEnabled = true,
+                WindowBackgroundImagePath = backgroundPath,
+                LyricPageBackgroundHash = coverPath
+            };
+            using var page = new PlayingDetailPage(vm);
+            window.Content = page;
+            try
+            {
+                await WaitUntilAsync(() => page.Cover.Opacity == 0, "cold SDR shader scene cover");
+                var canvas = page.BackgroundCanvas ?? throw new InvalidOperationException("Missing SDR shader canvas.");
+                var panel = FindChild<CanvasSwapChainPanel>(canvas, "PART_HdrPanel");
+                if (panel?.SwapChain is not null || vm.PlaybackHdrActive)
+                    throw new InvalidOperationException("SDR shader cover unexpectedly used the HDR swap chain.");
+
+                Rect art = Fit(page.CoverSlot);
+                await Task.Delay(130);
+                AssertSdrArtwork(SampleArt(art, "cold SDR shader scene"), "cold SDR");
+                vm.IsFluidBackgroundEnabled = false;
+                await WaitUntilAsync(() => canvas.UseImageBackground && page.Cover.Opacity == 1 &&
+                    page.Cover.IsCoverSettled(coverPath), "SDR custom image restores the XAML cover");
+                AssertStable(art, page.Cover.GetArtworkBounds(page), "SDR shader to XAML");
+                vm.IsFluidBackgroundEnabled = true;
+                await WaitUntilAsync(() => !canvas.UseImageBackground && page.Cover.Opacity == 0, "SDR shader reclaims its cover");
+            }
+            finally { window.Content = new Grid(); }
         }
 
         async Task CheckPortraitResizeAsync()

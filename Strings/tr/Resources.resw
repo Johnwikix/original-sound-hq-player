@@ -1931,12 +1931,6 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Dosya oynatılamıyor</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Seçilen müzik dosyası ayrıştırılamadı veya açılamadı: {0}</value></data>
-  <data name="AnimatedTextHoverScroll" xml:space="preserve">
-    <value>Win2D animasyonlu metin üzerine gelince kaydırma</value>
-  </data>
-  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
-    <value>Metin geçişi bittikten sonra tam başlığı, albümü ve sanatçıyı okumak için üzerine gelin.</value>
-  </data>
   <data name="AtmosNotificationTitle" xml:space="preserve">
     <value>Atmos HDMI passthrough</value>
   </data>

@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View
             ViewModel = viewModel;
             QueueViewModel = App.Services.GetRequiredService<MainViewModel>();
             this.InitializeComponent();
-            InitializeHdrCover();
+            InitializeSceneCover();
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             DataContext = this;
             _queueCentering = new ListViewCentering(CurrentPlayListViewPlayingDetail);
@@ -241,7 +241,7 @@ namespace WinUIMusicPlayer.View
         private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
         {
             var canvas = (NowPlayingCanvas)sender;
-            AttachHdrCoverCanvas(canvas);
+            AttachSceneCoverCanvas(canvas);
             ObserveHdrEntrance(canvas);
             _ = canvas.SetHdrNavigationTransitionAsync(_canvasNavigationTransition);
             canvas.HdrPresentationChanged -= PlaybackHdrPresentationChanged;
@@ -431,7 +431,7 @@ namespace WinUIMusicPlayer.View
                 // 页面先于队列弹层关闭时也要提交拖拽，避免队列冻结在重排中。
                 ViewModel?.AppViewModel?.State.Queue.EndReorder(CurrentPlayListViewPlayingDetail);
                 DetachPresentationEvents();
-                DisposeHdrCover();
+                DisposeSceneCover();
                 LyricsView?.LyricLineClicked -= LyricsView_LyricInteracted;
                 LyricsView?.RenderError -= LyricsView_ExceptionInteracted;
                 LyricsView?.PrepareForShutdown();

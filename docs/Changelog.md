@@ -1,3 +1,13 @@
+## 2026-11-19 统一着色器播放页的 SDR 和 HDR 封面合成
+
+- `PlayingDetailPage`、`NowPlayingCanvas` 在着色器背景开启时将封面与背景画进同一帧，切换 SDR/HDR 时沿用封面布局和换曲动画。
+- `PlaybackSceneCoverPresenter` 按绘制设备管理纹理，并为原生 HDR 封面提供 SDR 色调映射。场景画出封面后隐藏 XAML 预览并暂停其解码。
+
+## 2026-11-19 默认启用播放页标题悬停滚动
+
+- `CoverBackgroundSettingsControl` 移除 Win2D 动画文本悬停滚动开关。标题动画下拉框宽度统一为 300，与本页其他输入框对齐。
+- `PlayingDetailPage` 对截断的歌名、专辑和艺人启用悬停滚动。升级后旧配置中的关闭值不再生效。
+
 ## 2026-11-19 恢复 HDR 播放页上滑并修正渲染与队列开销
 
 - `NavigationService`、`PlayingDetailPage` 在完整 HDR 首帧就绪后，按原有 300 ms 缓动从底部滑入。合成器在滑入时移动完整首帧，结束后 Win2D 恢复连续绘制，避免录屏时交换链提交卡住窗口。上一页保持可见，播放页的曝光稳定。退场出错后也会复位并解除导航锁。

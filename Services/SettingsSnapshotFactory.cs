@@ -63,7 +63,6 @@ public sealed partial class SettingsSnapshotFactory(AppState state)
         newSettings.UseImageDominantTheme = state.Preferences.UseImageDominantTheme;
         newSettings.EnableLightWave = state.Preferences.EnableLightWave;
         newSettings.PaletteAlgorithm = (int)state.Preferences.PaletteAlgorithm;
-        newSettings.IsHoverScrollEnabled = state.Preferences.IsHoverScrollEnabled;
         newSettings.CharFloatAmount = state.Preferences.CharFloatAmount;
         newSettings.CharScaleAmount = state.Preferences.CharScaleAmount;
         newSettings.GlowAmount = state.Preferences.GlowAmount;

@@ -1,5 +1,7 @@
 using System;
 using System.Numerics;
+using AnimatedWin2dControls.Controls;
+using AnimatedWin2dControls.Interop;
 using Microsoft.Graphics.Canvas;
 using Microsoft.UI;
 using Windows.Foundation;
@@ -9,37 +11,87 @@ using WinUIMusicPlayer.Controls;
 namespace WinUIMusicPlayer.Helper;
 
 /// <summary>Draws the current artwork and, during a track change, at most one outgoing texture.</summary>
-internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = null) : IDisposable
+internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = null) : IPlaybackSceneCover, IDisposable
 {
+    private sealed record ArtworkRequest(PlaybackSceneCover Artwork, ImageSwitchType Transition, bool Animate);
+    private sealed record CoverLayout(Rect Slot, int Radius, int Shadow);
+
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
-    private PlaybackSceneCover? _artwork;
-    private PlaybackSceneCover? _uploadedArtwork;
+    private volatile ArtworkRequest? _requested;
+    private volatile CoverLayout? _layout;
+    private ArtworkRequest? _active;
+    private PlaybackSceneCover? _outgoingArtwork;
     private PlaybackSceneCoverDrawing? _current;
     private PlaybackSceneCoverDrawing? _previous;
-    private ImageSwitchType _transition;
-    private bool _animateNext;
+    private CanvasDevice? _device;
+    private ArtworkRequest? _failedSdrRequest;
     private long _transitionStarted;
 
+    // The UI publishes immutable inputs. NowPlayingCanvas serializes drawing and resource release.
     internal void SetArtwork(PlaybackSceneCover artwork, ImageSwitchType transition, bool animate)
     {
-        if (ReferenceEquals(_artwork, artwork)) return;
-        _artwork = artwork;
-        _transition = transition;
-        _animateNext = animate;
+        if (ReferenceEquals(_requested?.Artwork, artwork)) return;
+        _requested = new(artwork, transition, animate);
+    }
+
+    internal void SetLayout(Rect slot, int radius, int shadow)
+    {
+        if (_layout is { } layout && layout.Slot == slot && layout.Radius == radius && layout.Shadow == shadow) return;
+        _layout = new(slot, radius, shadow);
+    }
+
+    bool IPlaybackSceneCover.Draw(PlaybackCanvasFrame frame, CanvasDrawContext session)
+    {
+        if (_layout is not { } layout || _requested is not { } request) return false;
+        if (!frame.Hdr.IsEnabled && ReferenceEquals(_device, frame.Device) && ReferenceEquals(_failedSdrRequest, request))
+            return false;
+        try
+        {
+            return Draw(session, frame.Device, layout.Slot, layout.Radius, layout.Shadow, frame.Hdr, request);
+        }
+        catch (Exception ex) when (!frame.Hdr.IsEnabled && !frame.Device.IsDeviceLost(ex.HResult))
+        {
+            System.Diagnostics.Trace.TraceWarning("Unable to draw the SDR playback cover: {0}", ex);
+            ReleaseGpu();
+            _active = null;
+            _outgoingArtwork = null;
+            _device = frame.Device;
+            _failedSdrRequest = request;
+            return false;
+        }
+    }
+
+    void IPlaybackSceneCover.ReleaseDeviceResources(CanvasDevice? device)
+    {
+        if (device is null || ReferenceEquals(_device, device)) ReleaseGpu();
     }
 
     internal bool Draw(CanvasDrawingSession session, Rect slot, int cornerRadiusAmount, int shadowAmount,
         float whiteNits, float peakNits)
     {
-        if (_artwork is not { } artwork || slot.Width <= 0 || slot.Height <= 0) return false;
-        if (_current is not null && !ReferenceEquals(_current.Device, session.Device)) ReleaseGpu();
+        if (_requested is not { } request) return false;
+        using var scope = CanvasDrawingSessionScope.Borrow(session);
+        return Draw(scope.Context, session.Device, slot, cornerRadiusAmount, shadowAmount,
+            new PlaybackHdrColor(whiteNits / 80f, peakNits / 80f), request);
+    }
 
-        if (_current is null || !ReferenceEquals(_uploadedArtwork, artwork))
+    private bool Draw(CanvasDrawContext session, CanvasDevice device, Rect slot, int radius, int shadow,
+        PlaybackHdrColor color, ArtworkRequest request)
+    {
+        if (slot.Width <= 0 || slot.Height <= 0) return false;
+        if (!ReferenceEquals(_device, device))
         {
-            var replacement = new PlaybackSceneCoverDrawing(artwork, session.Device);
+            ReleaseGpu();
+            _device = device;
+        }
+
+        if (!ReferenceEquals(_active, request))
+        {
+            _failedSdrRequest = null;
             ReleasePrevious();
-            if (_animateNext && _current is not null)
+            if (request.Animate && _active is { } active)
             {
+                _outgoingArtwork = active.Artwork;
                 _previous = _current;
                 _transitionStarted = _time.GetTimestamp();
             }
@@ -47,24 +99,25 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
             {
                 _current?.Dispose();
             }
-            _current = replacement;
-            _uploadedArtwork = artwork;
-            _animateNext = false;
+            _current = null;
+            _active = request;
         }
 
-        if (_previous is { } previous)
+        var current = _current ??= new PlaybackSceneCoverDrawing(request.Artwork, device);
+        if (_outgoingArtwork is { } outgoing)
         {
             TimeSpan elapsed = _time.GetElapsedTime(_transitionStarted);
             if (elapsed < Time.AnimationDuration)
             {
+                var previous = _previous ??= new PlaybackSceneCoverDrawing(outgoing, device);
                 float progress = EaseTransition((float)(elapsed / Time.AnimationDuration));
-                DrawTransition(session, slot, previous, _current, cornerRadiusAmount, shadowAmount, whiteNits, peakNits, progress);
+                DrawTransition(session, slot, previous, current, radius, shadow, color, request.Transition, progress);
                 return true;
             }
             ReleasePrevious();
         }
 
-        DrawArtwork(session, _current, slot, cornerRadiusAmount, shadowAmount, whiteNits, peakNits, 1);
+        DrawArtwork(session, current, slot, radius, shadow, color, 1);
         return true;
     }
 
@@ -89,32 +142,32 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
         return parameter * parameter * (3 - 2 * parameter);
     }
 
-    private void DrawTransition(CanvasDrawingSession session, Rect slot, PlaybackSceneCoverDrawing previous,
-        PlaybackSceneCoverDrawing current, int radius, int shadow, float whiteNits, float peakNits, float progress)
+    private static void DrawTransition(CanvasDrawContext session, Rect slot, PlaybackSceneCoverDrawing previous,
+        PlaybackSceneCoverDrawing current, int radius, int shadow, PlaybackHdrColor color, ImageSwitchType transition, float progress)
     {
         float outgoingOpacity = 1 - progress;
         var original = session.Transform;
         try
         {
-            if (_transition == ImageSwitchType.Slide)
+            if (transition == ImageSwitchType.Slide)
             {
                 // Match the slide direction and travel distance of the XAML artwork.
                 session.Transform = Matrix3x2.CreateTranslation((float)-slot.Width * progress, 0) * original;
-                DrawArtwork(session, previous, slot, radius, shadow, whiteNits, peakNits, outgoingOpacity);
+                DrawArtwork(session, previous, slot, radius, shadow, color, outgoingOpacity);
                 session.Transform = Matrix3x2.CreateTranslation((float)-slot.Width * outgoingOpacity, 0) * original;
             }
-            else if (_transition == ImageSwitchType.ScaleInOut)
+            else if (transition == ImageSwitchType.ScaleInOut)
             {
                 var center = new Vector2((float)(slot.X + slot.Width * .5), (float)(slot.Y + slot.Height * .5));
                 session.Transform = Matrix3x2.CreateScale(1 - .2f * progress, center) * original;
-                DrawArtwork(session, previous, slot, radius, shadow, whiteNits, peakNits, outgoingOpacity);
+                DrawArtwork(session, previous, slot, radius, shadow, color, outgoingOpacity);
                 session.Transform = Matrix3x2.CreateScale(1 - .15f * outgoingOpacity, center) * original;
             }
             else
             {
-                DrawArtwork(session, previous, slot, radius, shadow, whiteNits, peakNits, outgoingOpacity);
+                DrawArtwork(session, previous, slot, radius, shadow, color, outgoingOpacity);
             }
-            DrawArtwork(session, current, slot, radius, shadow, whiteNits, peakNits, progress);
+            DrawArtwork(session, current, slot, radius, shadow, color, progress);
         }
         finally
         {
@@ -122,14 +175,14 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
         }
     }
 
-    private static void DrawArtwork(CanvasDrawingSession session, PlaybackSceneCoverDrawing drawing, Rect slot,
-        int radiusAmount, int shadowAmount, float whiteNits, float peakNits, float opacity)
+    private static void DrawArtwork(CanvasDrawContext session, PlaybackSceneCoverDrawing drawing, Rect slot,
+        int radiusAmount, int shadowAmount, PlaybackHdrColor color, float opacity)
     {
         if (opacity <= 0) return;
         var bounds = FitArtwork(slot, drawing.ImageSize);
         float radius = (float)(Math.Min(bounds.Width, bounds.Height) * Math.Clamp(radiusAmount, 0, 100) / 200);
         if (shadowAmount > 0) DrawShadow(session, bounds, radius, shadowAmount, opacity);
-        drawing.Draw(session, bounds, radius, whiteNits, peakNits, opacity);
+        drawing.Draw(session, bounds, radius, color, opacity);
     }
 
     private static Rect FitArtwork(Rect slot, Size source)
@@ -140,7 +193,7 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
         return new Rect(slot.X + (slot.Width - width) * .5, slot.Y + (slot.Height - height) * .5, width, height);
     }
 
-    private static void DrawShadow(CanvasDrawingSession session, Rect bounds, float radius, float depth, float opacity)
+    private static void DrawShadow(CanvasDrawContext session, Rect bounds, float radius, float depth, float opacity)
     {
         // Concentric rounded fills give the shadow a short falloff without a separate render target.
         const int steps = 8;
@@ -161,23 +214,31 @@ internal sealed class PlaybackSceneCoverPresenter(TimeProvider? timeProvider = n
 
     internal void ReleaseGpu()
     {
-        ReleasePrevious();
-        _current?.Dispose();
+        var previous = _previous;
+        var current = _current;
+        _previous = null;
         _current = null;
-        _uploadedArtwork = null;
-        _animateNext = false;
+        _device = null;
+        _failedSdrRequest = null;
+        try { previous?.Dispose(); }
+        finally { current?.Dispose(); }
     }
 
     private void ReleasePrevious()
     {
-        _previous?.Dispose();
+        var previous = _previous;
         _previous = null;
+        _outgoingArtwork = null;
+        previous?.Dispose();
     }
 
     internal void Clear()
     {
+        _requested = null;
+        _active = null;
+        _outgoingArtwork = null;
+        _layout = null;
         ReleaseGpu();
-        _artwork = null;
     }
 
     public void Dispose() => Clear();

@@ -223,6 +223,7 @@ namespace AnimatedWin2dControls.Controls
 
         public NowPlayingCanvas()
         {
+            _coverDispatcher = DispatcherQueue;
             DefaultStyleKey = typeof(NowPlayingCanvas);
             Loaded += OnControlLoaded;
             Unloaded += OnControlUnloaded;
@@ -535,8 +536,12 @@ namespace AnimatedWin2dControls.Controls
         protected override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
+            _sdrFrameEnabled = false;
             DetachCanvasEvents();
             DetachHdrPanel();
+            ResetSdrCover();
+            lock (_cacheGate)
+                _sceneCover?.ReleaseDeviceResources(null);
             _canvasResourcesReady = false;
             _sdrDevice = null;
 
@@ -625,9 +630,11 @@ namespace AnimatedWin2dControls.Controls
                 _canvas.Paused = true;
             bool wasPresented = StopHdrPresentation(releaseDevice: true);
             DetachFrameEvents();
+            ResetSdrCover();
             // Keep the template for reattach. Its GPU resources can be rebuilt on demand.
             lock (_cacheGate)
             {
+                _sceneCover?.ReleaseDeviceResources(null);
                 if (_rendererResourcesLoaded)
                     ReleaseSceneResources();
             }
@@ -661,7 +668,10 @@ namespace AnimatedWin2dControls.Controls
             bool canPresentHdr = CanPresentHdr;
             bool canPresentSdr = CanRenderScene && _sdrAllowed && !canPresentHdr;
             if (!canPresentSdr)
+            {
+                _sdrCoverVisible = false;
                 _sdrFrameEnabled = false;
+            }
             // Navigation and feature settings end the HDR session. A minimized window
             // can resume the same device after its presentation clock has stopped.
             bool releaseHdr = !_hdrColor.IsEnabled || _hdrFailed || !_isActive || _pausedByParent || _pausedByVisibility;
@@ -690,6 +700,10 @@ namespace AnimatedWin2dControls.Controls
                 canvas.Opacity = _sdrAllowed && !_hdrPresented ? 1 : 0;
                 canvas.Paused = !canPresentSdr;
             }
+
+            _sdrCoverVisible = canPresentSdr && _canvas is not null;
+            if (!_hdrPresented)
+                CommitSceneCover(_isActive && !_pausedByVisibility && _sdrAllowed && _sdrCoverPresented);
 
             if (stoppedHdr)
                 HdrPresentationChanged?.Invoke(false, false);
@@ -800,10 +814,11 @@ namespace AnimatedWin2dControls.Controls
                 if (PrepareSceneResources(frame.Device))
                     UpdateScene(frame.Device, TimeSpan.Zero);
                 DrawScene(frame, ds);
+                ReportSdrCoverDraw(DrawSceneCover(frame, ds));
                 if (!_sdrFrameSubmitted)
                     _sdrFrameSubmitted = true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (_sdrDevice?.IsDeviceLost(ex.HResult) != true)
             {
                 _bgCacheWidthDip = -1f;
 #if DEBUG
@@ -944,6 +959,8 @@ namespace AnimatedWin2dControls.Controls
             // reference cycle when this host is actually unloaded.
             canvas?.RemoveFromVisualTree();
             _canvas = null;
+            ResetSdrCover();
+            SetSceneCover(null);
 
             _coordinatorAttached = false;
             _coordinator.PrepareForShutdown();
@@ -965,6 +982,7 @@ namespace AnimatedWin2dControls.Controls
             HdrPresentationChanged = null;
             HdrFramePresented = null;
             DrawHdrForeground = null;
+            SceneCoverPresented = null;
             GC.SuppressFinalize(this);
         }
 

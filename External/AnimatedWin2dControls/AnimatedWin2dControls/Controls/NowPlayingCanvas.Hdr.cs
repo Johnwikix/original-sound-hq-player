@@ -166,7 +166,7 @@ public sealed partial class NowPlayingCanvas
             var swapChain = replacement ?? _hdrSwapChain!;
             var frame = new PlaybackCanvasFrame(device, swapChain.Size, dpi, _hdrColor);
             var title = _sceneTitle;
-            bool drewTitle;
+            bool drewTitle, drewCover;
             using (var session = swapChain.CreateDrawingSession(Colors.Black))
             {
                 // Direct2D may rasterize scaled effects into intermediate surfaces.
@@ -179,7 +179,7 @@ public sealed partial class NowPlayingCanvas
                 }
 
                 elapsed = elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed;
-                DrawHdrScene(frame, session, elapsed);
+                drewCover = DrawHdrScene(frame, session, elapsed);
 
                 DrawHdrForeground?.Invoke(session, frame.Hdr.Peak * 80f);
                 drewTitle = title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed) == true;
@@ -208,6 +208,7 @@ public sealed partial class NowPlayingCanvas
             }
             if (ReferenceEquals(title, _sceneTitle))
                 title?.SetScenePresentation(drewTitle);
+            CommitSceneCover(drewCover);
             HdrFramePresented?.Invoke();
             if (firstFrame)
                 HdrPresentationChanged?.Invoke(true, false);
@@ -242,7 +243,7 @@ public sealed partial class NowPlayingCanvas
         return true;
     }
 
-    private void DrawHdrScene(PlaybackCanvasFrame frame, CanvasDrawingSession session, TimeSpan elapsed)
+    private bool DrawHdrScene(PlaybackCanvasFrame frame, CanvasDrawingSession session, TimeSpan elapsed)
     {
         lock (_cacheGate)
         {
@@ -252,6 +253,7 @@ public sealed partial class NowPlayingCanvas
             UpdateScene(frame.Device, elapsed);
             using var scope = CanvasDrawingSessionScope.Borrow(session);
             DrawScene(frame, scope.Context);
+            return DrawSceneCover(frame, scope.Context);
         }
     }
 
@@ -261,6 +263,8 @@ public sealed partial class NowPlayingCanvas
         if (_sdrHandoffClock is not null)
             return;
 
+        _sdrCoverVisible = false;
+        StopSdrCoverObservation();
         // Leave the last complete HDR image attached while the SDR game loop
         // builds a current frame behind it. This includes current lyric time.
         _hdrClock?.Dispose();
@@ -294,9 +298,15 @@ public sealed partial class NowPlayingCanvas
             return;
         }
 
+        if (_sdrFrameObserved)
+            _sdrCoverPresented = _sdrCoverDrawn;
         bool stopped = StopHdrPresentation(_releaseHdrAfterHandoff);
         if (_canvas is { } canvas)
+        {
             canvas.Opacity = 1;
+            _sdrCoverVisible = _sdrFrameEnabled;
+        }
+        CommitSceneCover(_sdrCoverPresented);
         if (stopped)
             HdrPresentationChanged?.Invoke(false, false);
     }
@@ -360,8 +370,19 @@ public sealed partial class NowPlayingCanvas
         _hdrDevice = null;
         try
         {
-            clear?.Dispose();
-            device?.Trim();
+            try
+            {
+                if (device is not null)
+                {
+                    lock (_cacheGate)
+                        _sceneCover?.ReleaseDeviceResources(device);
+                }
+            }
+            finally
+            {
+                clear?.Dispose();
+                device?.Trim();
+            }
         }
         catch (Exception ex) { RaiseException(ex); }
         finally { device?.Dispose(); }

@@ -1197,7 +1197,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
                 AppViewModel.PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)settings.PaletteAlgorithm;
-                AppViewModel.IsHoverScrollEnabled = settings.IsHoverScrollEnabled;
                 AppViewModel.Win2dTextEffectType = AppViewModel.TextEffectItems.AsValueEnumerable().FirstOrDefault(t => t.Value == settings.Win2dTextEffectType) ?? AppViewModel.TextEffectItems[0];
                 AppViewModel.CharFloatAmount = settings.CharFloatAmount;
                 AppViewModel.CharScaleAmount = settings.CharScaleAmount;

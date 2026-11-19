@@ -1931,12 +1931,6 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>ファイルを再生できません</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>選択した音楽ファイルを解析または開けませんでした：{0}</value></data>
-  <data name="AnimatedTextHoverScroll" xml:space="preserve">
-    <value>Win2D アニメーションテキストのホバースクロール</value>
-  </data>
-  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
-    <value>文字の切り替えアニメーション後、マウスを重ねると曲名・アルバム・アーティストの全文を表示します。</value>
-  </data>
   <data name="AtmosNotificationTitle" xml:space="preserve">
     <value>Atmos HDMI パススルー</value>
   </data>
