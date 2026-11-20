@@ -47,6 +47,8 @@ public sealed partial class NowPlayingCanvas
     private bool _hdrShuttingDown;
     private SceneTitle? _sceneTitle;
     private Rect _sceneTitleRegion;
+    private HdrTitleLayer? _hdrTitleLayer;
+    private bool _hdrTitleLayerUnsupported;
 
     public event Action<bool, bool>? HdrPresentationChanged;
 
@@ -148,7 +150,8 @@ public sealed partial class NowPlayingCanvas
         bool replace = _hdrSwapChain is null || _hdrTargetSize != size || _hdrTargetDpi != dpi;
         // Let a new size or DPI submit a complete replacement while the
         // compositor moves the existing frame.
-        if ((!replace && _hdrPresented && _hdrEntranceAnimating) || !TryTakeHdrFrame() ||
+        bool holdScene = !replace && _hdrPresented && _hdrEntranceAnimating;
+        if ((holdScene && _hdrTitleLayer is null) || !TryTakeHdrFrame() ||
             !_hdrFrameClock.TryAdvance(Stopwatch.GetTimestamp(), _coordinator.TargetFrameRate, replace, out var elapsed))
             return;
 
@@ -159,13 +162,23 @@ public sealed partial class NowPlayingCanvas
             // Its Present holds the Direct2D device lock after the managed callback returns.
             // Keep HDR rendering on its own device so the UI thread never needs that lock.
             var device = _hdrDevice ??= new CanvasDevice();
+            var title = _sceneTitle;
+            elapsed = elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed;
+            if (holdScene)
+            {
+                bool drewTitleLayer = DrawHdrTitleLayer(new PlaybackCanvasFrame(device, size, dpi, _hdrColor), title, elapsed);
+                _hdrTitleLayer?.SetVisible(drewTitleLayer);
+                title?.SetScenePresentation(drewTitleLayer);
+                return;
+            }
+
             if (replace)
                 replacement = new CanvasSwapChain(device, (float)size.Width, (float)size.Height, dpi,
                     DirectXPixelFormat.R16G16B16A16Float, 2, CanvasAlphaMode.Ignore);
 
             var swapChain = replacement ?? _hdrSwapChain!;
             var frame = new PlaybackCanvasFrame(device, swapChain.Size, dpi, _hdrColor);
-            var title = _sceneTitle;
+            bool drewLayer = DrawHdrTitleLayer(frame, title, elapsed);
             bool drewTitle, drewCover;
             using (var session = swapChain.CreateDrawingSession(Colors.Black))
             {
@@ -178,11 +191,10 @@ public sealed partial class NowPlayingCanvas
                     session.FillRectangle(new Rect(0, 0, frame.Size.Width, frame.Size.Height), _hdrClear);
                 }
 
-                elapsed = elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed;
                 drewCover = DrawHdrScene(frame, session, elapsed);
 
                 DrawHdrForeground?.Invoke(session, frame.Hdr.Peak * 80f);
-                drewTitle = title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed) == true;
+                drewTitle = drewLayer || title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed) == true;
             }
 
             swapChain.Present(0);
@@ -207,7 +219,10 @@ public sealed partial class NowPlayingCanvas
                 panel.Visibility = Visibility.Visible;
             }
             if (ReferenceEquals(title, _sceneTitle))
+            {
+                _hdrTitleLayer?.SetVisible(drewLayer);
                 title?.SetScenePresentation(drewTitle);
+            }
             CommitSceneCover(drewCover);
             HdrFramePresented?.Invoke();
             if (firstFrame)
@@ -229,6 +244,26 @@ public sealed partial class NowPlayingCanvas
         finally
         {
             replacement?.Dispose();
+        }
+    }
+
+    private bool DrawHdrTitleLayer(PlaybackCanvasFrame frame, SceneTitle? title, TimeSpan elapsed)
+    {
+        if (_hdrTitleLayerUnsupported || title?.CanDrawInScene(frame, _sceneTitleRegion) != true)
+            return false;
+
+        try
+        {
+            _hdrTitleLayer ??= new HdrTitleLayer(this, frame);
+            return _hdrTitleLayer.Draw(title, frame, _sceneTitleRegion, elapsed);
+        }
+        catch (ArgumentException)
+        {
+            // The compositor can reject FP16 surfaces on some outputs. Retain the in-scene title there.
+            _hdrTitleLayerUnsupported = true;
+            _hdrTitleLayer?.Dispose();
+            _hdrTitleLayer = null;
+            return false;
         }
     }
 
@@ -328,6 +363,9 @@ public sealed partial class NowPlayingCanvas
         _hdrClock = null;
         _hdrFrameClock = default;
         _hdrEntranceAnimating = false;
+        _hdrTitleLayer?.Dispose();
+        _hdrTitleLayer = null;
+        _hdrTitleLayerUnsupported = false;
         if (_hdrSwapChain is not null)
         {
             if (_hdrPanel is { } panel)

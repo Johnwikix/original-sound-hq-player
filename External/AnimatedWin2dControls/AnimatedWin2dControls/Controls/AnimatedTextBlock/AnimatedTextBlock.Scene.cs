@@ -25,6 +25,10 @@ public sealed partial class AnimatedTextBlock
     private bool _standaloneFramePending;
 
     internal bool IsStandaloneFramePending => _standaloneFramePending;
+    internal bool NeedsSceneFrame => _sceneTargetDirty || _documentLayoutDirty || IsAnimating || _hoverLines is not null;
+
+    internal bool CanDrawInScene(PlaybackCanvasFrame frame, Rect bounds) => IsLoaded && _isActive && Document is not null
+        && bounds.Width * frame.Dpi >= 96 && bounds.Height * frame.Dpi >= 96;
 
     internal void PrepareStandalonePresentation()
     {
@@ -67,7 +71,7 @@ public sealed partial class AnimatedTextBlock
 
     internal bool DrawInScene(CanvasDrawingSession presentation, PlaybackCanvasFrame frame, Rect bounds, TimeSpan elapsed)
     {
-        if (!IsLoaded || !_isActive || Document is null || bounds.Width * frame.Dpi < 96 || bounds.Height * frame.Dpi < 96)
+        if (!CanDrawInScene(frame, bounds))
             return false;
 
         bool replace = _sceneTarget is null || !ReferenceEquals(_sceneDevice, frame.Device)
@@ -89,7 +93,7 @@ public sealed partial class AnimatedTextBlock
         }
 
         AdvanceAnimation(elapsed);
-        if (_sceneTargetDirty || _documentLayoutDirty || _currentState != AnimatedTextBlockRedrawState.Idle || _hoverLines is not null)
+        if (NeedsSceneFrame)
         {
             using var tile = _sceneTarget!.CreateDrawingSession();
             tile.Clear(Colors.Transparent);

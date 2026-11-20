@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Impressionist;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
@@ -75,7 +76,7 @@ public sealed partial class ProbeApp
             // A uniform artwork makes the moving mesh's real background measurable throughout the slide.
             var rgba = new byte[ArtworkPixelData.Edge * ArtworkPixelData.Edge * 4];
             Array.Fill(rgba, (byte)255);
-            canvas.SetArtwork(new ArtworkPixelData(rgba));
+            canvas.SetBackdrop(null, new ArtworkPixelData(rgba));
             Console.WriteLine($"Cold canvas Loaded, HDR panel available={canvas.HasHdrPresentationSurface}");
             // x:Load can raise Loaded before the canvas template has created its panels.
             canvas.LayoutUpdated += AttachSdrMarker;
@@ -113,6 +114,12 @@ public sealed partial class ProbeApp
         PointInt32 At(int y) => new((int)(280 * scale), (int)(y * scale));
         try
         {
+            if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TITLE_ENTRANCE_ONLY") == "1")
+            {
+                await CheckTitleDuringSlideAsync();
+                return;
+            }
+
             if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TIMING_WITHOUT_CAPTURE") == "1")
             {
                 await MeasureNavigationAsync("Cold HDR navigation without capture", Show, requireResponsive: true);
@@ -249,6 +256,7 @@ public sealed partial class ProbeApp
                 throw new InvalidOperationException("Navigation did not notify exactly once after dismissal errors.");
             await CheckFirstVisibleFrameAsync("HDR navigation after a throwing exit callback", () => ShowWithDuration(0),
                 expectMotion: false);
+            if (animationsEnabled) await CheckTitleDuringSlideAsync();
         }
         finally
         {
@@ -275,6 +283,97 @@ public sealed partial class ProbeApp
         }
 
         void Show() => ShowWithDuration(300);
+
+        async Task CheckTitleDuringSlideAsync()
+        {
+            if (!animationsEnabled) throw new InvalidOperationException("The title entrance check requires system animations.");
+            if (frame.Visibility == Visibility.Visible) await DismissAsync();
+
+            var effect = new TextFadeEffect();
+            var progressProperty = typeof(TextFadeEffect).GetProperty("Progress",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            float Progress() => (float)progressProperty.GetValue(effect)!;
+            static AnimatedTextDocument MakeTitle(string song) => new(
+                new AnimatedTextParagraph(song, 28, Microsoft.UI.Text.FontWeights.Bold, 48));
+            var title = new AnimatedTextBlock
+            {
+                Width = 180, Height = 48, Margin = new Thickness(12, 80, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+                Foreground = new SolidColorBrush(Colors.White), Document = MakeTitle("Previous song"), TextEffect = effect
+            };
+            root.Children.Add(title);
+            NowPlayingCanvas? canvas = null;
+            float startedAt = -1, lastSubmitted = -1;
+            int titleFrames = 0, sceneDrawsAtStart = -1, sceneDrawsDuringSlide = -1;
+            try
+            {
+                ShowWithDuration(0);
+                await WaitUntilAsync(() => title.IsLoaded && model.PlaybackHdrActive && !navigation.IsPreparingShow,
+                    "previous song in HDR playback");
+                canvas = page.BackgroundCanvas!;
+                canvas.SetHdrTitle(title, new Rect(12, 80, 180, 48));
+                await WaitUntilAsync(() => !title.IsAnimating && FindChild<CanvasControl>(title, "AnimatedCanvas")?.Opacity == 0,
+                    "previous title settled in the HDR scene");
+                await DismissAsync();
+                title.IsActive = false;
+                title.Document = MakeTitle("New song selected in library");
+                long start = frame.RegisterPropertyChangedCallback(UIElement.OpacityProperty, (_, _) =>
+                {
+                    if (navigation.IsPreparingShow && frame.Opacity == 1 && frame.RenderTransform is TranslateTransform)
+                    {
+                        startedAt = Progress();
+                        lastSubmitted = startedAt;
+                        sceneDrawsAtStart = hdrDraws;
+                    }
+                });
+                CompositionTarget.Rendering += OnRendering;
+                try
+                {
+                    title.IsActive = true;
+                    if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TITLE_ENTRANCE_ONLY") == "1")
+                    {
+                        Show();
+                        await WaitUntilAsync(() => !navigation.IsPreparingShow && model.PlaybackHdrActive, "new song HDR entrance");
+                    }
+                    else
+                    {
+                        await CheckFirstVisibleFrameAsync("HDR navigation with animated title", Show);
+                    }
+                }
+                finally
+                {
+                    CompositionTarget.Rendering -= OnRendering;
+                    frame.UnregisterPropertyChangedCallback(UIElement.OpacityProperty, start);
+                }
+                if (startedAt < 0 || titleFrames < 2 || lastSubmitted <= startedAt || lastSubmitted >= 1)
+                    throw new InvalidOperationException($"Title did not animate during the HDR slide (start {startedAt:F3}, last {lastSubmitted:F3}, frames {titleFrames}).");
+                if (sceneDrawsDuringSlide != sceneDrawsAtStart)
+                    throw new InvalidOperationException("Title animation caused the HDR background to redraw during the slide.");
+                await WaitUntilAsync(() => !title.IsAnimating, "new title settled after re-entry");
+                Console.WriteLine($"PASS HDR title advances during navigation ({startedAt:F3} to {lastSubmitted:F3}, {titleFrames} title frames, held background)");
+                await DismissAsync();
+            }
+            finally
+            {
+                canvas?.SetHdrTitle(null, default);
+                title.PrepareForShutdown();
+                root.Children.Remove(title);
+            }
+
+            void OnRendering(object? sender, object args)
+            {
+                if (navigation.IsPreparingShow && frame.Opacity == 1 && frame.RenderTransform is TranslateTransform)
+                {
+                    sceneDrawsDuringSlide = hdrDraws;
+                    float progress = Progress();
+                    if (progress > lastSubmitted)
+                    {
+                        lastSubmitted = progress;
+                        titleFrames++;
+                    }
+                }
+            }
+        }
 
         void ShowWithDuration(int duration)
         {
@@ -501,7 +600,8 @@ public sealed partial class ProbeApp
         var bounds = output.OuterBounds;
         Console.WriteLine($"HDR output {bounds.Width}x{bounds.Height} at {bounds.X},{bounds.Y}, effective peak {peak:F0} nit");
         await CheckPlaybackNavigationEntranceAsync(window, root, output.DisplayId.Value, Math.Min(500, peak), peak);
-        if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TIMING_WITHOUT_CAPTURE") == "1") return;
+        if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TIMING_WITHOUT_CAPTURE") == "1" ||
+            Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TITLE_ENTRANCE_ONLY") == "1") return;
 
         root.Background = new SolidColorBrush(Colors.Black);
         var overlay = new Grid();
