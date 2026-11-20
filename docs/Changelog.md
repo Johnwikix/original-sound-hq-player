@@ -1,3 +1,9 @@
+## 2026-11-20 缩短交叉淡化并减少切歌时的预载开销
+
+- `DspSettings`、`PlaybackTransitionsViewModel` 将交叉淡化设为默认 2 秒，可选 1–5 秒。旧配置保留范围内的时长，原来的 6–12 秒按 5 秒载入。
+- `Session`、`PlaybackEngine` 在分配 PCM 环形缓冲和启动解码线程前检查过渡格式，播放结束或失败时释放未接手的预载曲目。
+- `PlaybackCoordinator`、`IpcService` 在手动切歌后只用播放代次和令牌查询交接进度。旧预载的取消回执延迟时保留当前选曲意图，连续点选后取消也会校准当前曲目。
+
 ## 2026-11-20 手动下一首支持曲间过渡
 
 - `BassPlayerCommandService`、`PlaybackCoordinator` 让播放按钮、媒体键和快捷键的「下一首」共用当前队列顺序和过渡设置。

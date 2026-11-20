@@ -13,6 +13,7 @@ namespace WinUIMusicPlayer.Services
 {
     public partial class IpcService : IDisposable
     {
+        private static readonly byte[] CancelQueuedNextPayload = new GaplessRequest(0, 0, "").Write();
         private readonly object _lifecycleGate = new();
         private readonly CancellationTokenSource _connectionStop = new();
         private Task? _initializationTask;
@@ -610,25 +611,50 @@ namespace WinUIMusicPlayer.Services
                 && System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(reply.AsSpan(8)) == request.Epoch;
         }
 
-        /// <summary>请求从当前位置过渡到指定队列曲目。使用相同令牌重试时，播放端返回该次过渡的状态。</summary>
-        public async Task<TransitionNowStatus> TransitionNowAsync(GaplessRequest request, CancellationToken token = default)
+        /// <summary>请求从当前位置过渡到指定队列曲目。</summary>
+        public Task<TransitionNowStatus> TransitionNowAsync(GaplessRequest request, CancellationToken token = default)
+            => SendTransitionNowAsync(request.Write(), token);
+
+        /// <summary>查询已经提交的手动过渡。轮询只发送原始播放代次和令牌。</summary>
+        public Task<TransitionNowStatus> PollTransitionNowAsync(long epoch, long transitionToken, CancellationToken token)
         {
-            byte[] reply = new byte[1];
-            var (type, length) = await SendWithResponseAsync(CommandId.TransitionNow, request.Write(), reply, token: token);
-            if (type != MessageTypeId.Success || length != 1 || reply[0] > (byte)TransitionNowStatus.Unavailable)
-                throw new InvalidOperationException("Manual track transition was not confirmed.");
-            return (TransitionNowStatus)reply[0];
+            Span<byte> identity = stackalloc byte[TransitionNowQuery.Size];
+            TransitionNowQuery.Write(identity, epoch, transitionToken);
+            return SendTransitionNowAsync(identity, token);
+        }
+
+        private Task<TransitionNowStatus> SendTransitionNowAsync(ReadOnlySpan<byte> request, CancellationToken token)
+        {
+            var transport = _transport;
+            if (transport is null) return Task.FromException<TransitionNowStatus>(new InvalidOperationException("Audio command pipe is unavailable."));
+            byte[] reply = ArrayPool<byte>.Shared.Rent(1);
+            // RequestAsync copies the request synchronously and stops writing to the response when it completes.
+            try { return ReadTransitionNowAsync(transport.RequestAsync(CommandId.TransitionNow, request, reply, token: token), reply); }
+            catch { ArrayPool<byte>.Shared.Return(reply); throw; }
+        }
+
+        private static async Task<TransitionNowStatus> ReadTransitionNowAsync(Task<(MessageTypeId Type, int Length)> pending, byte[] reply)
+        {
+            try
+            {
+                var (type, length) = await pending.ConfigureAwait(false);
+                if (type != MessageTypeId.Success || length != 1 || reply[0] > (byte)TransitionNowStatus.Unavailable)
+                    throw new InvalidOperationException("Manual track transition was not confirmed.");
+                return (TransitionNowStatus)reply[0];
+            }
+            finally { ArrayPool<byte>.Shared.Return(reply); }
         }
 
         /// <summary>Cancellation may race a render boundary. Return the committed identity so the UI
         /// can still show a track that was already audible before cancellation reached the engine.</summary>
-        public async Task<long> CancelQueuedNextAsync()
+        public async Task<(long Token, long Epoch)> CancelQueuedNextAsync()
         {
             byte[] reply = new byte[16];
-            var (type, length) = await SendWithResponseAsync(CommandId.QueueNext, new GaplessRequest(0, 0, "").Write(), reply);
+            var (type, length) = await SendWithResponseAsync(CommandId.QueueNext, CancelQueuedNextPayload, reply);
             if (type != MessageTypeId.Success || length != reply.Length)
                 throw new InvalidOperationException("Next-track cancellation was not confirmed.");
-            return System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(reply);
+            return (System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(reply),
+                System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(reply.AsSpan(8)));
         }
 
         public void MusicEnd()

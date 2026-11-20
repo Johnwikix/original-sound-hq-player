@@ -251,6 +251,7 @@ namespace WinUIMusicPlayer.Services
         public BassPlayerIpc.Shared.ProgressSnapshot? Progress;
         public List<BassPlayerIpc.Shared.GaplessRequest> Queued { get; } = [];
         public List<BassPlayerIpc.Shared.GaplessRequest> Manual { get; } = [];
+        public List<(long Epoch, long Token)> ManualPolls { get; } = [];
         public event Action<BassPlayerIpc.Shared.MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
         public event Action? DspStateChanged;
         public BassPlayerIpc.Shared.DspStateSnapshot? CurrentDspState { get; private set; }
@@ -271,19 +272,26 @@ namespace WinUIMusicPlayer.Services
             await Task.Yield();
             return true;
         }
-        public async Task<long> CancelQueuedNextAsync()
+        public async Task<(long Token, long Epoch)> CancelQueuedNextAsync()
         {
             Queued.Add(new(0, 0, ""));
-            if (CancelReply != null) return await CancelReply();
+            if (CancelReply != null) return (await CancelReply(), Progress?.Epoch ?? 0);
             long token = Progress?.GaplessToken ?? 0;
             await Task.Yield();
-            return token;
+            return (token, Progress?.Epoch ?? 0);
         }
         public Task<BassPlayerIpc.Shared.TransitionNowStatus> TransitionNowAsync(BassPlayerIpc.Shared.GaplessRequest request, CancellationToken token = default)
         {
             Manual.Add(request);
-            return ManualReply?.Invoke(request).WaitAsync(token) ?? Task.FromResult(BassPlayerIpc.Shared.TransitionNowStatus.Unavailable);
+            return ManualStatusAsync(request, token);
         }
+        public Task<BassPlayerIpc.Shared.TransitionNowStatus> PollTransitionNowAsync(long epoch, long transitionToken, CancellationToken token)
+        {
+            ManualPolls.Add((epoch, transitionToken));
+            return ManualStatusAsync(Manual.Last(request => request.Epoch == epoch && request.Token == transitionToken), token);
+        }
+        private Task<BassPlayerIpc.Shared.TransitionNowStatus> ManualStatusAsync(BassPlayerIpc.Shared.GaplessRequest request, CancellationToken token)
+            => ManualReply?.Invoke(request).WaitAsync(token) ?? Task.FromResult(BassPlayerIpc.Shared.TransitionNowStatus.Unavailable);
         public void Transition(long token, long epoch, long positionMs = 0)
         {
             byte[] bytes = new byte[positionMs > 0 ? 24 : 16];

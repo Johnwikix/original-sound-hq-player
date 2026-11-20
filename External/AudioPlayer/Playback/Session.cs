@@ -143,7 +143,8 @@ internal sealed class Session : IRenderSource, IDisposable
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
         SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null,
-        PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000, bool measureTransitionIntro = false)
+        PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000, bool measureTransitionIntro = false,
+        Session? requiredPcmFormat = null)
     {
         Session? pending = null;
         IDisposable? input = null;
@@ -160,6 +161,9 @@ internal sealed class Session : IRenderSource, IDisposable
                     if (!dec.CanSeek) playbackRate = 1;
                     int rate = dec.SampleRate;
                     int channels = dec.Channels;
+                    if (requiredPcmFormat != null && (rate != requiredPcmFormat.SampleRate || channels != requiredPcmFormat.Channels
+                        || dec.ChannelMask != requiredPcmFormat.ChannelMask)) { dec.Dispose(); return null; }
+                    cancellationToken.ThrowIfCancellationRequested();
                     int ringFrames = source?.Kind == PlaybackSourceKind.Http
                         ? checked((int)Math.Min((long)rate * source.Buffer.CapacityMs / 1000, 64 * 1024 * 1024 / (sizeof(double) * channels)))
                         : RingCapacity(rate, latencyMs);

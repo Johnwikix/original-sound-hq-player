@@ -7,8 +7,8 @@ namespace BassPlayerIpc.Shared;
 public sealed record DspSettings
 {
     public const int MinCrossfadeSeconds = 1;
-    public const int MaxCrossfadeSeconds = 12;
-    public const int DefaultCrossfadeSeconds = 5;
+    public const int MaxCrossfadeSeconds = 5;
+    public const int DefaultCrossfadeSeconds = 2;
 
     /// <summary>获取或设置 DSP 总开关；默认开启以保留旧版音效偏好。</summary>
     public bool IsEnabled { get; init; } = true;

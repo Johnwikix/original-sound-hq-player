@@ -1177,7 +1177,7 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 lock (_streamLock)
                 {
-                    if (ReferenceEquals(session, _session)) StopAndNotifyLocked();
+                    if (ReferenceEquals(session, _session)) StopAndNotifyLocked(session);
                 }
                 return;
             }
@@ -1263,7 +1263,9 @@ public sealed partial class PlaybackEngine : IDisposable
                     if (Volatile.Read(ref _disposed) == 0 && IsPlaying && ReferenceEquals(session, _session)
                         && ReferenceEquals(output, _output) && session.IsDrained && output is { IsDrained: true })
                     {
-                        output?.Pause();
+                        CancelGapless();
+                        if (!ReferenceEquals(session, _session)) return; // 渲染仍可能在最后一次检查之后完成交接。
+                        output.Pause();
                         IsPlaying = false;
                         // 网络会话通过带 SessionId 的 status 结束，避免旧无身份通知重复切歌。
                         if (_currentStream == Guid.Empty) _ipc.PlayBackEnded();
@@ -1351,8 +1353,10 @@ public sealed partial class PlaybackEngine : IDisposable
     }
 
     /// <summary>停机并如实上报（持锁）：静默恢复穷尽/快速失败抖动后的最终让位。</summary>
-    private void StopAndNotifyLocked()
+    private void StopAndNotifyLocked(Session? failedSession = null)
     {
+        CancelGapless();
+        if (failedSession != null && !ReferenceEquals(failedSession, _session)) return;
         CompleteSurroundStart(false);
         CompleteAtmosStart(false);
         try { _output?.Pause(); } catch { }

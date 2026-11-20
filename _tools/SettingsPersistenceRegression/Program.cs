@@ -116,7 +116,7 @@ try
     var playbackStore = new AudioSettingsStore(playbackPath);
     var oldTransitions = await playbackStore.LoadAsync(new());
     Check(!oldTransitions.Dsp.GaplessPlayback && oldTransitions.Dsp.TransitionStyle == TrackTransitionStyle.Gapless
-        && oldTransitions.Dsp.CrossfadeSeconds == 5 && oldTransitions.IsFadeEnabled,
+        && oldTransitions.Dsp.CrossfadeSeconds == 2 && oldTransitions.IsFadeEnabled,
         "Old settings did not retain Normal and manual fades with an independent default duration.");
 
     var playbackPreferences = new AudioPreferences
@@ -124,7 +124,7 @@ try
         SpectralEnhancement = SpectralEnhancementMode.LossyAndLowRateLossless,
         Dsp = new()
         {
-            GaplessPlayback = false, TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 9,
+            GaplessPlayback = false, TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 4,
             PlaybackRate = 1.25, CompressorEnabled = true, CompressorThresholdDb = -22,
             CompressorRatio = 3.5, CompressorMakeupDb = 8
         }
@@ -132,15 +132,23 @@ try
     await playbackStore.SaveAsync(playbackPreferences);
     Check(await new AudioSettingsStore(playbackPath).LoadAsync(new()) == playbackPreferences,
         "Playback effects and retained transition duration did not survive restarting the store.");
-    Check(legacy.Dsp is { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 5,
+    Check(legacy.Dsp is { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 2,
         PlaybackRate: 1, CompressorEnabled: false }, "Old settings changed the automatic transition or playback effects.");
     Check(legacy.SpectralEnhancement == SpectralEnhancementMode.Off, "Legacy audio enabled enhancement.");
+    for (int savedDuration = 5; savedDuration <= 12; savedDuration++)
+    {
+        await File.WriteAllTextAsync(playbackPath,
+            $$$"""{"SchemaVersion":1,"Revision":2,"Preferences":{"Dsp":{"TransitionStyle":2,"CrossfadeSeconds":{{{savedDuration}}} },"IsFadeEnabled":true}}""");
+        var clamped = await new AudioSettingsStore(playbackPath).LoadAsync(new());
+        Check(clamped.Dsp is { TransitionStyle: TrackTransitionStyle.Smart, CrossfadeSeconds: 5 } && clamped.IsFadeEnabled,
+            $"Old duration {savedDuration} did not restore as five seconds with mode and manual fade intact.");
+    }
     await File.WriteAllTextAsync(playbackPath, """{"SchemaVersion":1,"Revision":2,"Preferences":{"Dsp":{"TransitionStyle":999,"CrossfadeSeconds":999},"IsFadeEnabled":true}}""");
     var malformedTransition = await new AudioSettingsStore(playbackPath).LoadAsync(new());
-    Check(malformedTransition.Dsp is { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 12 }
+    Check(malformedTransition.Dsp is { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 5 }
         && malformedTransition.IsFadeEnabled, "Out-of-range transitions reset unrelated audio preferences.");
     TestTransitionProtocol(playbackPreferences.Dsp);
-    Console.WriteLine("PASS: independent manual fades, automatic mode and duration survive restart; legacy DSP and preview packets decode.");
+    Console.WriteLine("PASS: independent manual fades, automatic mode and duration survive restart; older durations clamp and legacy DSP and preview packets decode.");
 
     string path = Path.Combine(directory, "AudioSettings.json");
     var store = new AudioSettingsStore(path);
@@ -256,7 +264,7 @@ static void TestTransitionProtocol(DspSettings settings)
         Check(DspProtocol.ReadSettings(settingsPayload) == current, "Transition preference changed crossing IPC.");
     }
     settingsPayload[0] = 7;
-    var legacySettings = settings with { TransitionStyle = TrackTransitionStyle.Gapless, CrossfadeSeconds = 5 };
+    var legacySettings = settings with { TransitionStyle = TrackTransitionStyle.Gapless, CrossfadeSeconds = 2 };
     Check(DspProtocol.ReadSettings(settingsPayload.AsSpan(0, legacyDspSize)) == legacySettings,
         "v7 must preserve the old toggle and DSP settings with legacy transition defaults.");
     settingsPayload[0] = 6;
@@ -264,15 +272,20 @@ static void TestTransitionProtocol(DspSettings settings)
         "v6 must preserve the old toggle and DSP settings with legacy transition defaults.");
     settingsPayload[0] = 5;
     Check(DspProtocol.ReadSettings(settingsPayload.AsSpan(0, 1596)) is
-        { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 5 },
+        { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 2 },
         "Settings predating the gapless toggle must use the default transition.");
+
+    DspProtocol.WriteSettings(settingsPayload, settings);
+    settingsPayload[^1] = 12;
+    Check(DspProtocol.ReadSettings(settingsPayload) == (settings with { CrossfadeSeconds = 5 }),
+        "Older v8 packets must clamp the duration while preserving other settings.");
 
     DspProtocol.WriteSettings(settingsPayload, settings with { TransitionStyle = (TrackTransitionStyle)258, CrossfadeSeconds = -1 });
     Check(DspProtocol.ReadSettings(settingsPayload) is { TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 1 },
         "Invalid sender settings must normalize before conversion to bytes.");
     settingsPayload[^2] = byte.MaxValue;
     settingsPayload[^1] = byte.MaxValue;
-    Check(DspProtocol.ReadSettings(settingsPayload) is { TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 12 },
+    Check(DspProtocol.ReadSettings(settingsPayload) is { TransitionStyle: TrackTransitionStyle.Gapless, CrossfadeSeconds: 5 },
         "Invalid received settings must use a supported style and duration.");
 
     var preview = new DspPreview(7, 123, "output-a", false, settings);

@@ -694,7 +694,7 @@ internal static class Regression
             await CheckReplacementAsync(() => second.Album = "Actual album", true, "missing album artist falls back to known track artist");
             await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Crossfade }, true,
                 "crossfade preference replaces an already confirmed Smart plan for the same track");
-            await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 9 }, true,
+            await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 4 }, true,
                 "crossfade duration replaces an already confirmed plan for the same track");
 
             var crossfade = AppSettings.Dsp;
@@ -707,7 +707,7 @@ internal static class Regression
 
             var progress = test.Ipc.Progress;
             test.Ipc.Progress = null;
-            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 8 };
+            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 5 };
             await WaitAsync(() => test.Ipc.Queued.Last().Path.Length == 0);
             test.Ipc.Progress = progress;
             await WaitAsync(() => test.Ipc.Queued.Last().Path == second.Path);
@@ -767,6 +767,12 @@ internal static class Regression
                 await WaitAsync(() => warm.Ipc.Manual.Count > 0);
                 Check(warm.Ipc.Manual[0] == automatic && automatic.PreserveAlbumBoundary, "manual Smart Next reuses the existing album target's decoder identity");
                 Check(warm.Ipc.Queued.All(request => request.Path.Length > 0), "reusing the natural plan does not send cancellation");
+                await WaitAsync(() => warm.Ipc.ManualPolls.Count >= 2);
+                Check(warm.Ipc.Manual.Count == 1 && warm.Ipc.ManualPolls.All(poll => poll == (automatic.Epoch, automatic.Token)),
+                    "manual overlap sends one path and uses compact status requests for the same token");
+                int wireBytes = automatic.Write().Length;
+                Console.WriteLine($"Manual status sample: {warm.Ipc.Manual.Count} path request and {warm.Ipc.ManualPolls.Count} compact polls; " +
+                    $"{wireBytes + warm.Ipc.ManualPolls.Count * TransitionNowQuery.Size} payload bytes vs {wireBytes * (1 + warm.Ipc.ManualPolls.Count)} with full path retries");
                 int presentations = 0;
                 warm.Coordinator.PlaybackConfirmed += (music, _) => { if (music == second) presentations++; };
                 warm.Ipc.Progress = new(2, 201, 400, 100000, 0, true, 0, 1, automatic.Token);
@@ -803,6 +809,39 @@ internal static class Regression
                 await fallback.Coordinator.PlayNextAsync();
                 Check(fallback.Player.Played.SequenceEqual([first, second]) && fallback.Ipc.Manual.Count == 1
                     && fallback.Ipc.Queued.Any(request => request.Path.Length == 0), "unsupported manual transition falls back through the ordered cancellation barrier");
+            }
+
+            using (var slowBarrier = await StartAsync())
+            {
+                var cancel = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+                slowBarrier.Ipc.CancelReply = () => cancel.Task;
+                Task selection = slowBarrier.Coordinator.PlayNextAsync();
+                await WaitAsync(() => slowBarrier.Ipc.Queued.Last().Path.Length == 0);
+                await Task.Delay(4200);
+                Check(!selection.IsCompleted && slowBarrier.State.State.Playback.PendingSelection?.Music == second && slowBarrier.Player.Played.Count == 1,
+                    "a slow ordered cancel leaves the user's Next pending past the old four-second timeout");
+                cancel.SetResult(0);
+                await selection;
+                Check(slowBarrier.Player.Played.SequenceEqual([first, second]), "an uncommitted slow cancellation resumes the same Next exactly once");
+            }
+
+            using (var superseded = await StartAsync())
+            {
+                var cancel = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+                superseded.Ipc.CancelReply = () => cancel.Task;
+                superseded.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Started);
+                Task older = superseded.Coordinator.PlayNextAsync();
+                await WaitAsync(() => superseded.Ipc.Manual.Count > 0);
+                var audible = superseded.Ipc.Manual[0];
+                Task latest = superseded.Coordinator.PlayNextAsync();
+                await WaitAsync(() => superseded.Ipc.Queued.Last().Path.Length == 0);
+                superseded.State.CurrentPlayingList.Remove(third);
+                superseded.Ipc.Progress = new(2, 201, 1400, 100000, 0, true, 0, 1, audible.Token);
+                cancel.SetResult(audible.Token);
+                await Task.WhenAll(older, latest);
+                await WaitAsync(() => superseded.State.CurrentPlayingMusic == second);
+                Check(superseded.State.State.Playback.PendingSelection == null && superseded.Player.Played.Count == 1,
+                    "the confirmed audible handoff survives removing the newest pending Next without replay");
             }
 
             using (var statusFirst = await StartAsync())
@@ -861,7 +900,7 @@ internal static class Regression
                 Task selection = adjusting.Coordinator.PlayNextAsync();
                 await WaitAsync(() => adjusting.Ipc.Manual.Count > 0);
                 var pending = adjusting.Ipc.Manual[0];
-                AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 7 };
+                AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 4 };
                 await Task.Yield();
                 Check(adjusting.State.State.Playback.PendingSelection?.Music == second, "editing crossfade duration keeps an explicit Next pending");
                 adjusting.Ipc.Transition(pending.Token, 201, 1200);

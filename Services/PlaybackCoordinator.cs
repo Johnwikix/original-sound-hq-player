@@ -126,6 +126,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             {
                 FinishManualNext(version);
                 SetPending(null);
+                ReconcileSupersededManualHandoff();
                 bool failedExact = _intentExact && _activeSelectionVersion != version;
                 if (_activeSelectionVersion != version && _activeIntent is { } active && ReferenceEquals(state.CurrentPlayingMusic, active.Music))
                 {
@@ -151,6 +152,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         _deferredFailure = null;
         _presentation?.Cancel();
         SetPending(null);
+        ReconcileSupersededManualHandoff();
     }
 
     private void SetPending(PlaybackSelection? selection)
@@ -342,6 +344,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
         {
             if (_disposed || !state.CanStartPlayback || token.IsCancellationRequested) return;
+            _supersededManualHandoff = null;
             state.State.Queue.SelectEntry(entryId, music);
             _activeIntent = (music, entryId, exact, mayAdvance, false);
             _activeSelectionVersion = _selectionVersion;

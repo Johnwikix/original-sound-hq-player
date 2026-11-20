@@ -52,7 +52,8 @@ public sealed partial class PlaybackEngine
 
     private void AdoptGapless()
     {
-        if (_gaplessSource is not { } source) return;
+        // Current is published by the renderer. Only a changed session needs the token/ownership barrier.
+        if (_gaplessSource is not { } source || source.Current == _session) return;
         var rendered = source.Snapshot();
         if (rendered.Current == _session || rendered.CompletedToken == 0) return;
         var old = _session;
@@ -94,7 +95,7 @@ public sealed partial class PlaybackEngine
             if (request == _gaplessPreloader?.Request) return true;
             if (_manualTransitionPending) return false; // 自动预载不可抢占用户的手动下一首。
             CancelGapless();
-            if (!IsPlaying || _dspSettings?.GaplessPlayback != true
+            if (request.Epoch != _session?.TimelineEpoch || !IsPlaying || _dspSettings?.GaplessPlayback != true
                 || _session is not { Kind: RenderKind.Pcm } || _gaplessSource == null
                 || ExperimentalAtmosPassthrough || _currentStream != Guid.Empty
                 || !Path.IsPathFullyQualified(request.Path)) return false;
@@ -110,52 +111,71 @@ public sealed partial class PlaybackEngine
         lock (_streamLock)
         {
             AdoptGapless();
-            if (HasCommittedTransition(request)) return TransitionNowStatus.Committed;
-
-            bool sameManual = SameTransition(_lastManualTransition, request);
-            if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping || !IsPlaying || Volatile.Read(ref _fadeBusy) != 0
-                || _output is not { IsFailed: false } || _currentStream != Guid.Empty || ExperimentalAtmosPassthrough
-                || _session is not { Kind: RenderKind.Pcm, DecodeFailure: null } current || request.Epoch != current.TimelineEpoch
-                || _gaplessSource is not { } source || request.Token <= 0 || !Path.IsPathFullyQualified(request.Path)
-                || _dspSettings is not { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart } settings)
-                return sameManual && _manualTransitionPending ? CancelManualTransition(request) : TransitionNowStatus.Unavailable;
-
-            // Tokens increase within the host. A late poll must never resurrect a replaced or cancelled attempt.
-            if (_lastManualTransition is { } last && last.Epoch == request.Epoch && last.Token >= request.Token)
-            {
-                if (!_manualTransitionPending || !sameManual) return TransitionNowStatus.Unavailable;
-            }
-            else
-            {
-                var plan = _gaplessPreloader?.Request;
-                if (plan?.Token == request.Token && !SameTransition(plan, request)) return TransitionNowStatus.Unavailable;
-                if (!SameTransition(plan, request) || _gaplessPreloader!.State == GaplessPreparationState.Failed)
-                {
-                    CancelGapless();
-                    if (HasCommittedTransition(request)) return TransitionNowStatus.Committed;
-                    if (_session != current || current.TimelineEpoch != request.Epoch) return TransitionNowStatus.Unavailable;
-                    _gaplessPreloader ??= new(_streamLock, OpenGaplessSession, PublishGaplessSession);
-                    _gaplessPreloader.SetPlan(request);
-                }
-                _lastManualTransition = request;
-                _manualTransitionPending = true;
-            }
-
-            var preloader = _gaplessPreloader!;
-            switch (preloader.State)
-            {
-                case GaplessPreparationState.Waiting:
-                    StartGaplessPreparation(preloader, preloader.Request!, current, source);
-                    return TransitionNowStatus.Preparing;
-                case GaplessPreparationState.Preparing:
-                    return TransitionNowStatus.Preparing;
-                case GaplessPreparationState.Ready:
-                    var status = source.RequestTransitionNow(request.Epoch, request.Token, settings.TransitionStyle, settings.CrossfadeSeconds);
-                    if (status != TransitionNowStatus.Unavailable) return status;
-                    break;
-            }
-            return CancelManualTransition(request);
+            return TryTransitionNowLocked(request);
         }
+    }
+
+    public TransitionNowStatus GetTransitionNowStatus(long originEpoch, long token)
+    {
+        if (originEpoch <= 0 || token <= 0) return TransitionNowStatus.Unavailable;
+        lock (_streamLock)
+        {
+            AdoptGapless();
+            if (_committedGaplessRequest is { } committed && committed.Epoch == originEpoch && committed.Token == token
+                && HasCommittedTransition(committed)) return TransitionNowStatus.Committed;
+            if (_manualTransitionPending && _lastManualTransition is { } active && active.Epoch == originEpoch && active.Token == token)
+                return TryTransitionNowLocked(active);
+            return TransitionNowStatus.Unavailable;
+        }
+    }
+
+    private TransitionNowStatus TryTransitionNowLocked(GaplessRequest request)
+    {
+        if (HasCommittedTransition(request)) return TransitionNowStatus.Committed;
+
+        bool sameManual = SameTransition(_lastManualTransition, request);
+        if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping || !IsPlaying || Volatile.Read(ref _fadeBusy) != 0
+            || _output is not { IsFailed: false } || _currentStream != Guid.Empty || ExperimentalAtmosPassthrough
+            || _session is not { Kind: RenderKind.Pcm, DecodeFailure: null } current || request.Epoch != current.TimelineEpoch
+            || _gaplessSource is not { } source || request.Token <= 0 || !sameManual && !Path.IsPathFullyQualified(request.Path)
+            || _dspSettings is not { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart } settings)
+            return sameManual && _manualTransitionPending ? CancelManualTransition(request) : TransitionNowStatus.Unavailable;
+
+        // Tokens increase within the host. A late poll must never resurrect a replaced or cancelled attempt.
+        if (_lastManualTransition is { } last && last.Epoch == request.Epoch && last.Token >= request.Token)
+        {
+            if (!_manualTransitionPending || !sameManual) return TransitionNowStatus.Unavailable;
+        }
+        else
+        {
+            var plan = _gaplessPreloader?.Request;
+            if (plan?.Token == request.Token && !SameTransition(plan, request)) return TransitionNowStatus.Unavailable;
+            if (!SameTransition(plan, request) || _gaplessPreloader!.State == GaplessPreparationState.Failed)
+            {
+                CancelGapless();
+                if (HasCommittedTransition(request)) return TransitionNowStatus.Committed;
+                if (_session != current || current.TimelineEpoch != request.Epoch) return TransitionNowStatus.Unavailable;
+                _gaplessPreloader ??= new(_streamLock, OpenGaplessSession, PublishGaplessSession);
+                _gaplessPreloader.SetPlan(request);
+            }
+            _lastManualTransition = request;
+            _manualTransitionPending = true;
+        }
+
+        var preloader = _gaplessPreloader!;
+        switch (preloader.State)
+        {
+            case GaplessPreparationState.Waiting:
+                StartGaplessPreparation(preloader, preloader.Request!, current, source);
+                return TransitionNowStatus.Preparing;
+            case GaplessPreparationState.Preparing:
+                return TransitionNowStatus.Preparing;
+            case GaplessPreparationState.Ready:
+                var status = source.RequestTransitionNow(request.Epoch, request.Token, settings.TransitionStyle, settings.CrossfadeSeconds);
+                if (status != TransitionNowStatus.Unavailable) return status;
+                break;
+        }
+        return CancelManualTransition(request);
     }
 
     private static bool SameTransition(GaplessRequest? plan, GaplessRequest request) =>
@@ -210,7 +230,8 @@ public sealed partial class PlaybackEngine
             experimentalSurround51: preparation.Surround, cancellationToken: token,
             playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
             enhancementDeviceRate: preparation.EnhancementDeviceRate, resampleMode: preparation.ResampleMode,
-            resampleTargetRate: preparation.ResampleTargetRate, measureTransitionIntro: preparation.MeasureTransitionIntro);
+            resampleTargetRate: preparation.ResampleTargetRate, measureTransitionIntro: preparation.MeasureTransitionIntro,
+            requiredPcmFormat: preparation.Current);
     }
 
     // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。

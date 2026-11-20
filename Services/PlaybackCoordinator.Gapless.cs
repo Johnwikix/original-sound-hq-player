@@ -16,10 +16,12 @@ public sealed partial class PlaybackCoordinator
     // SelectionVersion rejects an old user intent; Epoch rejects an old engine timeline;
     // Token identifies this exact plan, including duplicate queue entries.
     private sealed record NextPlan(long Token, long SelectionVersion, Music From, Music Next,
-        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeSeconds, bool PreserveAlbumBoundary);
+        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeSeconds, bool PreserveAlbumBoundary, bool Manual = false);
     private NextPlan? _nextPlan;
     private NextPlan? _cancellingPlan;
+    private TaskCompletionSource? _gaplessCancellationSettled;
     private (long Epoch, long PositionMs) _cancellingTransition;
+    private (NextPlan Plan, long Epoch, long PositionMs)? _supersededManualHandoff;
     private IpcService? _gaplessIpc;
     private DispatcherQueueTimer? _gaplessTimer;
     private long _nextToken, _lastAcceptedToken, _retryAfter, _outputGeneration;
@@ -31,7 +33,7 @@ public sealed partial class PlaybackCoordinator
     private long _candidateQueueVersion = -1, _candidateCurrentEntry, _candidateEntry;
     private PlayMode _candidateMode;
     private Music? _candidateFrom, _candidateNext;
-    private long _manualNextVersion, _manualCancellationVersion;
+    private long _manualNextVersion;
 
     internal bool IsManualNextPending => _manualNextVersion != 0 && _manualNextVersion == _selectionVersion;
 
@@ -42,19 +44,20 @@ public sealed partial class PlaybackCoordinator
     {
         bool replacingManual = _manualNextVersion != 0;
         _manualNextVersion = 0;
-        _manualCancellationVersion = 0;
         var settings = AppSettings.Dsp;
         if (!requested || !AllowsManualNext(settings) || !state.IsPlaying || state.CurrentPlayingMusic is not { IsRemote: false })
         {
             CancelGaplessPlan();
+            UpdateGaplessTimer();
             return;
         }
 
         _manualNextVersion = version;
+        UpdateGaplessTimer();
         if (!replacingManual && _nextPlan is { } prepared && prepared.EntryId == entryId)
         {
             // Keep the natural decoder and token when Next targets the same queue occurrence.
-            _nextPlan = prepared with { SelectionVersion = version };
+            _nextPlan = prepared with { SelectionVersion = version, Manual = true };
             return;
         }
         CancelGaplessPlan();
@@ -65,21 +68,21 @@ public sealed partial class PlaybackCoordinator
         if (_manualNextVersion != version) return;
         _manualNextVersion = 0;
         CancelGaplessPlan();
+        UpdateGaplessTimer();
     }
 
     // Pause, stop and seek invalidate the pending click, while an already audible handoff still owns the track.
     internal bool CancelManualNext()
     {
         if (_disposed || !IsManualNextPending) return false;
-        var active = _nextPlan ?? _cancellingPlan;
-        bool adoptIfCommitted = active?.SelectionVersion == _manualNextVersion;
         _playingVersion = ++_selectionVersion;
         _manualNextVersion = 0;
-        _manualCancellationVersion = adoptIfCommitted ? _selectionVersion : 0;
         _deferredFailure = null;
         CancelGaplessPlan();
         _presentation?.Cancel();
         SetPending(null);
+        ReconcileSupersededManualHandoff();
+        UpdateGaplessTimer();
         return true;
     }
 
@@ -107,15 +110,18 @@ public sealed partial class PlaybackCoordinator
         token.ThrowIfCancellationRequested();
         if (plan is null)
         {
-            plan = new(++_nextToken, _selectionVersion, current, next, entryId, progress.Epoch, next.Path,
-                settings.TransitionStyle, settings.CrossfadeSeconds, PreserveAlbumBoundary(current, next));
+            long epoch = Math.Max(progress.Epoch, _supersededManualHandoff?.Epoch ?? 0);
+            plan = new(++_nextToken, _selectionVersion, current, next, entryId, epoch, next.Path,
+                settings.TransitionStyle, settings.CrossfadeSeconds, PreserveAlbumBoundary(current, next), Manual: true);
             _nextPlan = plan;
         }
 
         var request = new GaplessRequest(plan.Epoch, plan.Token, plan.Path, plan.PreserveAlbumBoundary);
         using var requestLifetime = CancellationTokenSource.CreateLinkedTokenSource(token);
+        using var statusTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
         long outputGeneration = _outputGeneration;
         long deadline = Environment.TickCount64 + 1500;
+        bool submitted = false;
         bool started = false;
         while (Environment.TickCount64 < deadline && state.IsPlaying)
         {
@@ -134,7 +140,13 @@ public sealed partial class PlaybackCoordinator
             if (outputGeneration != _outputGeneration || (!started && !AllowsManualNext(AppSettings.Dsp))) break;
             TransitionNowStatus status;
             requestLifetime.CancelAfter((int)Math.Clamp(deadline - Environment.TickCount64, 1, 1000));
-            try { status = await ipc.TransitionNowAsync(request, requestLifetime.Token); }
+            try
+            {
+                status = submitted
+                    ? await ipc.PollTransitionNowAsync(plan.Epoch, plan.Token, requestLifetime.Token)
+                    : await ipc.TransitionNowAsync(request, requestLifetime.Token);
+                submitted = true;
+            }
             catch (OperationCanceledException) when (!token.IsCancellationRequested) { break; }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -152,10 +164,12 @@ public sealed partial class PlaybackCoordinator
             if (status == TransitionNowStatus.Started && !started)
             {
                 started = true;
+                // Completion uses GaplessTransition or progress. Poll less often once the mix is audible.
+                statusTimer.Period = TimeSpan.FromMilliseconds(500);
                 int seconds = Math.Max(settings.CrossfadeSeconds, AppSettings.Dsp.CrossfadeSeconds);
                 deadline = Environment.TickCount64 + Math.Clamp(seconds, DspSettings.MinCrossfadeSeconds, DspSettings.MaxCrossfadeSeconds) * 1000L + 2000;
             }
-            await Task.Delay(started ? 250 : 100, token);
+            await statusTimer.WaitForNextTickAsync(token);
         }
 
         // The cancel reply is the ordering barrier. A transition that committed before it wins over fallback Play.
@@ -183,12 +197,15 @@ public sealed partial class PlaybackCoordinator
 
     private async Task<bool> WaitForGaplessCancellationAsync(CancellationToken token)
     {
-        long deadline = Environment.TickCount64 + 4000;
-        while (_cancellingPlan != null && state.CanStartPlayback && Environment.TickCount64 < deadline)
-            await Task.Delay(50, token);
+        token.ThrowIfCancellationRequested();
+        if (_cancellingPlan != null && state.CanStartPlayback)
+        {
+            var settled = _gaplessCancellationSettled ??= new(TaskCreationOptions.RunContinuationsAsynchronously);
+            await settled.Task.WaitAsync(token);
+        }
         token.ThrowIfCancellationRequested();
         // Without a confirmed barrier, the decoder may have already taken over. Avoid issuing another Play.
-        return _cancellingPlan == null && state.CanStartPlayback;
+        return !_disposed && _cancellingPlan == null && state.CanStartPlayback;
     }
 
     internal void StartGapless()
@@ -215,7 +232,7 @@ public sealed partial class PlaybackCoordinator
     private void UpdateGaplessTimer()
     {
         if (!_disposed && state.CanStartPlayback && (_cancellingPlan != null
-            || AppSettings.Dsp.GaplessPlayback && state.IsPlaying && state.CurrentPlayingMusic is { IsRemote: false }
+            || !IsManualNextPending && AppSettings.Dsp.GaplessPlayback && state.IsPlaying && state.CurrentPlayingMusic is { IsRemote: false }
                 && state.CurrentPlayMode != PlayMode.RepeatOff))
             _gaplessTimer?.Start();
         else _gaplessTimer?.Stop();
@@ -233,14 +250,18 @@ public sealed partial class PlaybackCoordinator
     }
 
     private void GaplessOutputChanged()
-        => App.MainWindow.DispatcherQueue.TryEnqueue(RefreshGaplessOutput);
+    {
+        long generation = ipc.CurrentDspState?.State.OutputGeneration ?? 0;
+        if (generation != Volatile.Read(ref _outputGeneration))
+            App.MainWindow.DispatcherQueue.TryEnqueue(RefreshGaplessOutput);
+    }
 
     private void RefreshGaplessOutput()
     {
         if (_disposed) return;
         long generation = _gaplessIpc?.CurrentDspState?.State.OutputGeneration ?? 0;
         if (generation == _outputGeneration) return;
-        _outputGeneration = generation;
+        Volatile.Write(ref _outputGeneration, generation);
         // An output rebuild can invalidate preparation without changing the timeline epoch.
         // The old confirmation cannot satisfy this new output, even if its reply arrives late.
         if (!IsManualNextPending) CancelGaplessPlan();
@@ -456,7 +477,7 @@ public sealed partial class PlaybackCoordinator
     {
         _cancelSending = true;
         bool confirmed = false;
-        long committed = 0;
+        (long Token, long Epoch) committed = default;
         try
         {
             committed = await _gaplessIpc!.CancelQueuedNextAsync();
@@ -471,17 +492,42 @@ public sealed partial class PlaybackCoordinator
         _cancelRetryAfter = Environment.TickCount64 + 1000;
         if (!confirmed) return;
         var transition = _cancellingTransition;
+        var settled = _gaplessCancellationSettled;
+        _gaplessCancellationSettled = null;
         _cancellingPlan = null;
         _cancellingTransition = default;
-        long cancelledManual = _manualCancellationVersion;
-        _manualCancellationVersion = 0;
         UpdateGaplessTimer();
-        if (committed == plan.Token)
+        try
         {
-            var accepted = cancelledManual == _selectionVersion && cancelledManual != 0 ? plan with { SelectionVersion = cancelledManual } : plan;
-            AcceptCommittedGapless(accepted, transition.Epoch, transition.PositionMs);
+            if (committed.Token == plan.Token)
+                ReconcileCancelledPlan(plan, transition.Epoch > 0 ? transition.Epoch : committed.Epoch, transition.PositionMs);
+            ReconcileSupersededManualHandoff();
+            RefreshGaplessPlan();
         }
-        RefreshGaplessPlan();
+        catch (Exception ex) { logger.LogError(ex, "处理下一曲取消回执失败"); }
+        finally { settled?.TrySetResult(); }
+    }
+
+    private void ReconcileCancelledPlan(NextPlan plan, long epoch, long positionMs)
+    {
+        if (!plan.Manual || plan.SelectionVersion == _selectionVersion)
+        {
+            AcceptCommittedGapless(plan, epoch, positionMs);
+            return;
+        }
+        // The cancel reply proves this handoff was audible. A newer selection can still replace it.
+        if (plan.Token <= _lastAcceptedToken || plan.SelectionVersion <= _activeSelectionVersion
+            || state.CurrentPlayingMusic != plan.From) return;
+        _supersededManualHandoff = (plan, epoch, positionMs);
+    }
+
+    private void ReconcileSupersededManualHandoff()
+    {
+        if (_supersededManualHandoff is not { } confirmed || _cancellingPlan != null
+            || state.State.Playback.PendingSelection != null) return;
+        _supersededManualHandoff = null;
+        if (confirmed.Plan.SelectionVersion <= _activeSelectionVersion) return;
+        AcceptCommittedGapless(confirmed.Plan with { SelectionVersion = _selectionVersion }, confirmed.Epoch, confirmed.PositionMs);
     }
 
     private void GaplessNotification(MessageTypeId type, ReadOnlyMemory<byte> payload)
@@ -510,12 +556,12 @@ public sealed partial class PlaybackCoordinator
             || plan.SelectionVersion != _selectionVersion || state.CurrentPlayingMusic != plan.From
             || (!manual && state.State.Playback.PendingSelection != null)) return;
         _lastAcceptedToken = plan.Token;
+        _supersededManualHandoff = null;
         if (manual) _manualNextVersion = 0;
         _nextPlan = null;
         _planConfirmed = false;
         _planSending = false;
-        _presentation?.Cancel();
-        _presentation?.Dispose();
+        var previousPresentation = _presentation;
         _presentation = new CancellationTokenSource();
         var cancellation = _presentation.Token;
         _acceptingGapless = true;
@@ -543,13 +589,28 @@ public sealed partial class PlaybackCoordinator
             TrackStarted?.Invoke(plan.Next, cancellation);
             PlaybackConfirmed?.Invoke(plan.Next, confirmed);
         }
-        finally { _acceptingGapless = false; }
+        finally
+        {
+            // A cancellation can resume the old selection on this dispatcher inline.
+            // Publish the handoff before releasing its waiter.
+            try { previousPresentation?.Cancel(); }
+            finally
+            {
+                previousPresentation?.Dispose();
+                _acceptingGapless = false;
+            }
+        }
+        UpdateGaplessTimer();
         RefreshGaplessPlan();
     }
 
     private void StopGapless()
     {
         CancelGaplessPlan();
+        _cancellingPlan = null;
+        _supersededManualHandoff = null;
+        _gaplessCancellationSettled?.TrySetResult();
+        _gaplessCancellationSettled = null;
         if (_gaplessTimer != null)
         {
             _gaplessTimer.Stop();

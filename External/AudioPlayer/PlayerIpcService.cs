@@ -157,7 +157,7 @@ public class PlayerIpcService : IDisposable
         WriteEmptyResponse(MessageTypeId.Success);
         try
         {
-            _engine!.SynchronizeGapless();
+            if (commandId != CommandId.TransitionNow) _engine!.SynchronizeGapless();
             switch (commandId)
             {
                 case CommandId.Play:
@@ -230,7 +230,13 @@ public class PlayerIpcService : IDisposable
                 }
                 case CommandId.TransitionNow:
                 {
-                    TransitionNowStatus status = _engine!.TryTransitionNow(GaplessRequest.Read(payload));
+                    TransitionNowStatus status;
+                    if (payload.Length == TransitionNowQuery.Size)
+                    {
+                        var (epoch, token) = TransitionNowQuery.Read(payload);
+                        status = _engine!.GetTransitionNowStatus(epoch, token);
+                    }
+                    else status = _engine!.TryTransitionNow(GaplessRequest.Read(payload));
                     Span<byte> reply = stackalloc byte[1];
                     reply[0] = (byte)status;
                     SetResponse(MessageTypeId.Success, reply);

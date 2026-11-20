@@ -14,7 +14,6 @@ internal static class TransitionSettingsRegression
         AppSettings.Dsp = new()
         {
             TransitionStyle = TrackTransitionStyle.Smart,
-            CrossfadeSeconds = 7,
             CompressorEnabled = true
         };
         using var vm = new PlaybackTransitionsViewModel();
@@ -30,24 +29,26 @@ internal static class TransitionSettingsRegression
             var durationCard = (SettingsCard)view.FindName("DurationCard");
             var manual = (ToggleSwitch)view.FindName("ManualFades");
             Check(mode.Items.Count == 4 && mode.SelectedIndex == 3, "The four-mode selector did not restore Smart.");
-            Check(duration.Items.Count == 12 && duration.SelectedIndex == 6 && durationCard.Visibility == Visibility.Visible,
-                "Smart did not restore seven seconds in a visible duration card.");
+            Check(duration.Items.Count == 5 && duration.SelectedIndex == 1 && durationCard.Visibility == Visibility.Visible,
+                "Smart did not show five durations and default to two seconds.");
+            for (int index = 0; index < duration.Items.Count; index++)
+                Check(duration.Items[index] as string == (index + 1).ToString(), "Duration must offer only whole seconds from one to five.");
             Check(durationCard.Description is string { Length: > 0 } && manual.IsOn, "Smart help or saved manual fades were lost.");
 
             mode.SelectedIndex = 0;
             Check(!AppSettings.Dsp.GaplessPlayback && durationCard.Visibility == Visibility.Collapsed
-                && AppSettings.Dsp.CrossfadeSeconds == 7 && manual.IsOn, "Normal modified independent settings or exposed duration.");
+                && AppSettings.Dsp.CrossfadeSeconds == 2 && manual.IsOn, "Normal modified independent settings or exposed duration.");
             mode.SelectedIndex = 1;
             Check(AppSettings.Dsp is { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless }
                 && durationCard.Visibility == Visibility.Collapsed, "Gapless exposed duration or did not activate.");
             mode.SelectedIndex = 2;
             Check(AppSettings.Dsp.TransitionStyle == TrackTransitionStyle.Crossfade && durationCard.Visibility == Visibility.Visible
-                && duration.SelectedIndex == 6, "Fixed crossfade failed to restore duration.");
-            duration.SelectedIndex = 11;
-            Check(AppSettings.Dsp.CrossfadeSeconds == 12 && AppSettings.Dsp.CompressorEnabled && manual.IsOn,
-                "Choosing twelve seconds lost an independent preference.");
+                && duration.SelectedIndex == 1, "Fixed crossfade failed to restore duration.");
+            duration.SelectedIndex = 4;
+            Check(AppSettings.Dsp.CrossfadeSeconds == 5 && AppSettings.Dsp.CompressorEnabled && manual.IsOn,
+                "Choosing five seconds lost an independent preference.");
             manual.IsOn = false;
-            Check(!view.IsFadeEnabled && AppSettings.Dsp.CrossfadeSeconds == 12, "Manual fade toggle modified the automatic transition.");
+            Check(!view.IsFadeEnabled && AppSettings.Dsp.CrossfadeSeconds == 5, "Manual fade toggle modified the automatic transition.");
             AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 1 };
             Check(mode.SelectedIndex == 3 && duration.SelectedIndex == 0, "External preference restoration did not update both controls.");
             expander.IsExpanded = false;

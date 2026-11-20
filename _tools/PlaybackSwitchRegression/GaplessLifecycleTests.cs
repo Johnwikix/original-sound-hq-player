@@ -10,6 +10,9 @@ internal static unsafe partial class Program
     {
         string path = Path.Combine(AppContext.BaseDirectory, "gapless-lifecycle.wav");
         WriteLoudnessTone(path, 0.1f);
+        Run("Gapless: incompatible PCM is rejected before allocating a standby session", () => CheckStandbyFormatAllocation(path));
+        Run("Gapless: EOF and terminal decoder failure retire unused standbys", CheckTerminalStandbyRetirement);
+        Run("Gapless: steady-state progress does not wait for the render gate", CheckProgressDoesNotWaitForRender);
         Run("Gapless: wall-clock window, seek away, unknown duration and disabled preparation", () =>
         {
             foreach (double rate in new[] { 0.25, 1, 5 })
@@ -168,5 +171,83 @@ internal static unsafe partial class Program
                 published?.Dispose();
             }
         });
+    }
+
+    private static void CheckStandbyFormatAllocation(string path)
+    {
+        var engine = Engine("WasapiShared");
+        using var incompatible = Source(engine, RenderKind.Pcm, 44100);
+        // Measure managed allocations on the opening thread only, after warming the native decoder.
+        Measure(requireCompatible: false);
+        Measure(requireCompatible: true);
+        long unrestricted = Measure(requireCompatible: false);
+        long rejected = Measure(requireCompatible: true);
+        const int stereoRingBytes = 48000 * 2 * 2 * sizeof(double); // 48 kHz, stereo double, 2 s ring.
+        Require(unrestricted - rejected >= stereoRingBytes, "Format rejection allocated a standby ring");
+        Console.WriteLine($"Standby decode allocation: unrestricted={unrestricted} B, incompatible={rejected} B");
+
+        long Measure(bool requireCompatible)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            using var session = Session.Open(engine, path, RenderKind.Pcm, 88200, 0, 1000,
+                requiredPcmFormat: requireCompatible ? incompatible : null);
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Require((session == null) == requireCompatible, "Fixture returned an unexpected decoder format");
+            return allocated;
+        }
+    }
+
+    private static void CheckTerminalStandbyRetirement()
+    {
+        foreach (bool failure in new[] { false, true })
+        {
+            var engine = Engine("WasapiShared");
+            var gate = new object();
+            Set(engine, "_streamLock", gate);
+            var first = BufferedSource(engine, [0.3, 0.3]);
+            var next = BufferedSource(engine, []);
+            var source = new GaplessSource(first);
+            Set(engine, "_session", first);
+            Set(engine, "_gaplessSource", source);
+            Set(engine, "_output", new CorrectionOutput("standby-lifecycle"));
+            var preloader = new GaplessPreloader(gate, (_, _) => next,
+                (preparation, session) => source.Queue(session, preparation.Request.Token));
+            Set(engine, "_gaplessPreloader", preloader);
+            engine.IsPlaying = true;
+            try
+            {
+                var request = new GaplessRequest(first.TimelineEpoch, 42, Path.Combine(AppContext.BaseDirectory, "unused.wav"));
+                preloader.SetPlan(request);
+                preloader.Start(new(request, first, source, 88200, 0, 300, false, 1, false));
+                Require(preloader.Completion.Wait(5000) && source.Pending == next, "Unused standby did not publish");
+                if (failure) Set(first, "_decodeFailure", new IOException("Fixture decoder failed"));
+                else source.FillPcm(new double[4], 2);
+                Invoke(engine, "WatchdogTick");
+                Require(!engine.IsPlaying && source.Current == first && source.CompletedToken == 0
+                    && source.Pending == null && preloader.Request == null && next.DecodeCompletion.Wait(5000),
+                    "Terminal playback retained a session it can no longer render");
+            }
+            finally
+            {
+                engine.StopGaplessAsync().GetAwaiter().GetResult();
+                Invoke(engine, "DisposeSession");
+            }
+        }
+    }
+
+    private static void CheckProgressDoesNotWaitForRender()
+    {
+        var engine = Engine("WasapiShared");
+        Set(engine, "_streamLock", new object());
+        using var first = BufferedSource(engine, [0.3, 0.3]);
+        var source = new GaplessSource(first);
+        Set(engine, "_session", first);
+        Set(engine, "_gaplessSource", source);
+        var gate = typeof(GaplessSource).GetField("_gate", Private)!.GetValue(source)!;
+        lock (gate)
+        {
+            var progress = Task.Run(() => engine.TryCaptureProgress(out var snapshot) && snapshot.Epoch == first.TimelineEpoch);
+            Require(progress.Wait(2000) && progress.Result, "Unchanged session progress waited for the render gate");
+        }
     }
 }

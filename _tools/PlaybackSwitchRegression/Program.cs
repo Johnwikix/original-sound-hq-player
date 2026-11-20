@@ -66,6 +66,11 @@ internal static unsafe partial class Program
             MeasurePlaybackAllocations();
             return 0;
         }
+        if (args.Length == 1 && args[0] == "--measure-transition-render")
+        {
+            MeasureTransitionRenderCallbacks();
+            return 0;
+        }
         if (args.Length == 1 && args[0] == "--test-playback-effects")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;

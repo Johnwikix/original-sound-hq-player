@@ -333,15 +333,19 @@ if (args.Contains("--gapless") || args.Contains("--crossfade") || args.Contains(
             if (style == TrackTransitionStyle.Gapless || (initial.TotalMs - initial.CurrentMs) / rate < 15_000)
                 throw new ArgumentException("Use fixed/smart mode with at least fifteen seconds remaining on the outgoing track.");
             var timer = System.Diagnostics.Stopwatch.StartNew();
+            byte[] statusQuery = new byte[TransitionNowQuery.Size];
+            TransitionNowQuery.Write(statusQuery, queue.Epoch, queue.Token);
+            byte[] commandPayload = requestBytes;
             TransitionNowStatus status;
             do
             {
-                if (Send(CommandId.TransitionNow, requestBytes, out var reply) != MessageTypeId.Success || reply.Length != 1)
+                if (Send(CommandId.TransitionNow, commandPayload, out var reply) != MessageTypeId.Success || reply.Length != 1)
                     throw new InvalidOperationException("Missing manual transition response");
                 status = (TransitionNowStatus)reply[0];
                 if (status == TransitionNowStatus.Committed) break;
                 if (status is not (TransitionNowStatus.Preparing or TransitionNowStatus.Started) || timer.ElapsedMilliseconds > 6000)
                     throw new InvalidOperationException($"Manual transition did not commit in time: {status}");
+                commandPayload = statusQuery;
                 Thread.Sleep(50);
             } while (true);
             Console.WriteLine($"[smoke] PASS: manual Next committed in {timer.ElapsedMilliseconds}ms with {initial.TotalMs - initial.CurrentMs}ms remaining at request");

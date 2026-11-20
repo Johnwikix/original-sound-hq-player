@@ -49,7 +49,7 @@ public sealed class PlaybackTransitionsViewModel : ObservableObject, IDisposable
     public bool CrossfadeVisible => ModeIndex is 2 or 3;
     public string CrossfadeDescription => ModeIndex == 3 ? ToolUtils.GetString("PlaybackTransitionSmartDescription") : "";
 
-    public IReadOnlyList<string> DurationOptions { get; } = (string[])["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+    public IReadOnlyList<string> DurationOptions { get; } = (string[])["1", "2", "3", "4", "5"];
 
     public int DurationIndex
     {

@@ -49,3 +49,30 @@ public sealed record GaplessRequest(long Epoch, long Token, string Path, bool Pr
             throw new ArgumentException("Invalid next-track request.");
     }
 }
+
+/// <summary>Queries an already admitted manual fade or a committed handoff without repeating its path.</summary>
+public static class TransitionNowQuery
+{
+    public const int Size = sizeof(long) * 2;
+
+    public static void Write(Span<byte> payload, long epoch, long token)
+    {
+        Validate(payload.Length, epoch, token);
+        BinaryPrimitives.WriteInt64LittleEndian(payload, epoch);
+        BinaryPrimitives.WriteInt64LittleEndian(payload[sizeof(long)..], token);
+    }
+
+    public static (long Epoch, long Token) Read(ReadOnlySpan<byte> payload)
+    {
+        if (payload.Length != Size) throw new ArgumentException("Invalid transition query size.");
+        long epoch = BinaryPrimitives.ReadInt64LittleEndian(payload);
+        long token = BinaryPrimitives.ReadInt64LittleEndian(payload[sizeof(long)..]);
+        Validate(payload.Length, epoch, token);
+        return (epoch, token);
+    }
+
+    private static void Validate(int size, long epoch, long token)
+    {
+        if (size != Size || epoch <= 0 || token <= 0) throw new ArgumentException("Invalid transition query.");
+    }
+}

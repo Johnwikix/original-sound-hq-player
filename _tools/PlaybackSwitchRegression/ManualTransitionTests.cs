@@ -11,6 +11,7 @@ internal static unsafe partial class Program
         Run("Manual next: replacement, cancellation, invalid input and unavailable plans", CheckManualCancellation);
         Run("Manual next: render commit and cancellation publish one consistent identity", CheckManualCancelAtBoundary);
         Run("Manual next: standby underrun reports unavailable and retains the current track", CheckManualUnderrun);
+        Run("Manual next: compact status query creates no plan and allocates no server bytes", CheckManualStatusQuery);
     }
 
     private static void CheckManualTransitionWindows()
@@ -208,6 +209,62 @@ internal static unsafe partial class Program
         Require(source.RequestTransitionNow(first.TimelineEpoch, 37, TrackTransitionStyle.Crossfade, 1) == TransitionNowStatus.Unavailable
             && source.Current == first && next.FramesPlayed == 300 && source.CompletedToken == 0,
             "Underrun re-armed or committed an incomplete transition");
+    }
+
+    private static void CheckManualStatusQuery()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "manual-status-intro.wav");
+        WriteLoudnessTone(path, .2f);
+        var (engine, source, first) = OpenManualFixture();
+        using var ipc = new AudioPlayer.PlayerIpcService();
+        Set(ipc, "_engine", engine);
+        var request = new GaplessRequest(first.TimelineEpoch, 43, path);
+        byte[] full = request.Write();
+        Span<byte> compact = stackalloc byte[TransitionNowQuery.Size];
+        TransitionNowQuery.Write(compact, request.Epoch, request.Token);
+        try
+        {
+            var empty = ipc.HandleCommand(CommandId.TransitionNow, compact);
+            Require(empty.Type == MessageTypeId.Success && empty.Payload.Span[0] == (byte)TransitionNowStatus.Unavailable
+                && source.Pending == null, "Compact query admitted an unknown request");
+            Require(ipc.HandleCommand(CommandId.TransitionNow, full).Payload.Span[0] == (byte)TransitionNowStatus.Preparing,
+                "Full manual request did not start preparation");
+            WaitManualReady(engine, source);
+            long legacyBytes = CountStatusAllocations(ipc, full);
+            long compactBytes = CountStatusAllocations(ipc, compact);
+            Require(legacyBytes > 0 && compactBytes == 0, "Compact server still decoded or allocated a request path");
+            Console.WriteLine($"Manual status IPC (1000 handler calls): full={legacyBytes} B, compact={compactBytes} B");
+
+            var output = new double[960];
+            source.FillPcm(output, 480);
+            Require(ipc.HandleCommand(CommandId.TransitionNow, compact).Payload.Span[0] == (byte)TransitionNowStatus.Started,
+                "Compact query missed the audible start");
+            for (int i = 1; i < 50; i++) source.FillPcm(output, 480);
+            Require(ipc.HandleCommand(CommandId.TransitionNow, compact).Payload.Span[0] == (byte)TransitionNowStatus.Committed,
+                "Compact query missed the already-committed identity");
+
+            compact.Clear();
+            Require(ipc.HandleCommand(CommandId.TransitionNow, compact).Type == MessageTypeId.Failed,
+                "Invalid compact identity passed protocol validation");
+        }
+        finally
+        {
+            Set(ipc, "_engine", null);
+            CloseManualFixture(engine);
+        }
+    }
+
+    private static long CountStatusAllocations(AudioPlayer.PlayerIpcService ipc, ReadOnlySpan<byte> payload)
+    {
+        for (int i = 0; i < 100; i++) ipc.HandleCommand(CommandId.TransitionNow, payload);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++)
+        {
+            var response = ipc.HandleCommand(CommandId.TransitionNow, payload);
+            Require(response.Type == MessageTypeId.Success && response.Payload.Length == 1
+                && response.Payload.Span[0] == (byte)TransitionNowStatus.Preparing, "Status query changed the prepared manual attempt");
+        }
+        return GC.GetAllocatedBytesForCurrentThread() - before;
     }
 
     private static (PlaybackEngine Engine, GaplessSource Source, Session First) OpenManualFixture(TrackTransitionStyle style = TrackTransitionStyle.Smart)
