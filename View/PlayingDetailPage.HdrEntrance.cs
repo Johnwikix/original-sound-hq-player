@@ -95,7 +95,7 @@ public sealed partial class PlayingDetailPage
 
         using var motion = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _interruptHdrEntranceMotion = Interrupt;
-        long generation = canvas.BeginHdrEntranceMotion();
+        long generation = canvas.BeginHdrNavigationMotion();
         canvas.HdrPresentationChanged += OnPresentationChanged;
         ViewModel.PropertyChanged += OnModeChanged;
         try
@@ -111,7 +111,7 @@ public sealed partial class PlayingDetailPage
         {
             if (_interruptHdrEntranceMotion == (Action)Interrupt)
                 _interruptHdrEntranceMotion = null;
-            canvas.EndHdrEntranceMotion(generation);
+            canvas.EndHdrNavigationMotion(generation);
             canvas.HdrPresentationChanged -= OnPresentationChanged;
             ViewModel.PropertyChanged -= OnModeChanged;
         }
@@ -134,6 +134,15 @@ public sealed partial class PlayingDetailPage
         }
     }
 
+    internal bool TryBeginHdrDismissMotion()
+    {
+        if (NowPlaying is not { IsHdrFramePresented: true } canvas || !ShouldPrepareHdrEntrance)
+            return false;
+        canvas.BeginHdrNavigationMotion();
+        // PauseCanvasRendering ends HDR presentation once the outgoing frame is hidden.
+        return true;
+    }
+
     private void UpdateHdrEntranceWindowPaused(bool paused)
     {
         _hdrEntranceWindowPaused = paused;
@@ -150,7 +159,9 @@ public sealed partial class PlayingDetailPage
     public Task SetCanvasNavigationTransitionAsync(bool active)
     {
         _canvasNavigationTransition = active;
-        if (!active)
+        if (active)
+            SetTitleScenePreparation(false);
+        else
         {
             UpdateSceneRegions();
             UpdateSceneCoverBounds();

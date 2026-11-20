@@ -14,6 +14,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 public sealed partial class AnimatedTextBlock
 {
     private bool _scenePresentation;
+    private bool _preparingScene;
     private bool _sceneTargetDirty;
     private CanvasRenderTarget? _sceneTarget;
     private CanvasDevice? _sceneDevice;
@@ -25,10 +26,6 @@ public sealed partial class AnimatedTextBlock
     private bool _standaloneFramePending;
 
     internal bool IsStandaloneFramePending => _standaloneFramePending;
-    internal bool NeedsSceneFrame => _sceneTargetDirty || _documentLayoutDirty || IsAnimating || _hoverLines is not null;
-
-    internal bool CanDrawInScene(PlaybackCanvasFrame frame, Rect bounds) => IsLoaded && _isActive && Document is not null
-        && bounds.Width * frame.Dpi >= 96 && bounds.Height * frame.Dpi >= 96;
 
     internal void PrepareStandalonePresentation()
     {
@@ -36,7 +33,19 @@ public sealed partial class AnimatedTextBlock
             UpdateScenePresentation(false, prepareStandalone: true);
     }
 
-    internal void SetScenePresentation(bool enabled) => UpdateScenePresentation(enabled, prepareStandalone: false);
+    /// <summary>Holds standalone drawing and animation until the HDR scene can draw its first frame.</summary>
+    public void PrepareScenePresentation(bool preparing)
+    {
+        if (_preparingScene == preparing) return;
+        _preparingScene = preparing;
+        UpdateCanvasPresentation();
+    }
+
+    internal void SetScenePresentation(bool enabled)
+    {
+        UpdateScenePresentation(enabled, prepareStandalone: false);
+        if (enabled) PrepareScenePresentation(false);
+    }
 
     private void UpdateScenePresentation(bool enabled, bool prepareStandalone)
     {
@@ -45,33 +54,36 @@ public sealed partial class AnimatedTextBlock
         _scenePresentation = enabled;
         _preparingStandalone = prepareStandalone;
         _standaloneFramePending = prepareStandalone;
-        if (_canvas is not null)
-            _canvas.Opacity = enabled || prepareStandalone ? 0 : 1;
-        if (enabled)
-        {
-            StopRenderingLoop();
-        }
-        else
+        if (!enabled)
         {
             ReleaseSceneDeviceLayouts(_canvas is { ReadyToDraw: true } canvas ? canvas.Device : null);
             ReleaseSceneTarget();
-            if (_currentState != AnimatedTextBlockRedrawState.Idle || _hoverLines is not null)
-                StartRenderingLoop();
-            InvalidateCanvas();
         }
+        UpdateCanvasPresentation();
+    }
+
+    private void UpdateCanvasPresentation()
+    {
+        if (_canvas is not null)
+            _canvas.Opacity = _scenePresentation || _preparingScene || _preparingStandalone ? 0 : 1;
+        if (_scenePresentation || _preparingScene)
+            StopRenderingLoop();
+        else if (_currentState != AnimatedTextBlockRedrawState.Idle || _hoverLines is not null)
+            StartRenderingLoop();
+        InvalidateCanvas();
     }
 
     private void InvalidateCanvas()
     {
         if (_scenePresentation)
             _sceneTargetDirty = true;
-        else
+        else if (!_preparingScene)
             _canvas?.Invalidate();
     }
 
     internal bool DrawInScene(CanvasDrawingSession presentation, PlaybackCanvasFrame frame, Rect bounds, TimeSpan elapsed)
     {
-        if (!CanDrawInScene(frame, bounds))
+        if (!IsLoaded || !_isActive || Document is null || bounds.Width * frame.Dpi < 96 || bounds.Height * frame.Dpi < 96)
             return false;
 
         bool replace = _sceneTarget is null || !ReferenceEquals(_sceneDevice, frame.Device)
@@ -93,7 +105,7 @@ public sealed partial class AnimatedTextBlock
         }
 
         AdvanceAnimation(elapsed);
-        if (NeedsSceneFrame)
+        if (_sceneTargetDirty || _documentLayoutDirty || IsAnimating || _hoverLines is not null)
         {
             using var tile = _sceneTarget!.CreateDrawingSession();
             tile.Clear(Colors.Transparent);

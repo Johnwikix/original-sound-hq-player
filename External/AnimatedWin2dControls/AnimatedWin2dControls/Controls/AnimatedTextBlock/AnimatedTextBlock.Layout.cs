@@ -139,6 +139,8 @@ public sealed partial class AnimatedTextBlock
     private static void OnTextEffectChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (AnimatedTextBlock)sender;
+        if (control.Document is not null && control._currentState == AnimatedTextBlockRedrawState.Animating)
+            control.SetRedrawState(AnimatedTextBlockRedrawState.Idle, false);
         control._textEffect = (ITextEffect)args.NewValue;
         control.SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }

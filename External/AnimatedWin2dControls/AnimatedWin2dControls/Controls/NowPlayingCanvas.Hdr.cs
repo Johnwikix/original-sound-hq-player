@@ -5,6 +5,7 @@ using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Serilog;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -18,6 +19,7 @@ namespace AnimatedWin2dControls.Controls;
 public sealed partial class NowPlayingCanvas
 {
     private const string HdrPanelPart = "PART_HdrPanel";
+    private const int HdrNavigationFrameRate = 60;
     private CanvasSwapChainPanel? _hdrPanel;
     private CanvasSwapChain? _hdrSwapChain;
     private CanvasDevice? _hdrDevice;
@@ -38,8 +40,10 @@ public sealed partial class NowPlayingCanvas
     private bool _sdrFrameObserved;
     private bool _releaseHdrAfterHandoff;
     private bool _navigationTransitionActive;
-    private bool _hdrEntranceAnimating;
-    private long _hdrEntranceMotionGeneration;
+    private bool _hdrNavigationAnimating;
+    private long _hdrNavigationMotionGeneration;
+    private HdrFrameSubmission? _hdrSubmission;
+    private Task? _retiringHdrSwapChain;
     private volatile bool _hdrOwnsFrame;
     private bool _hdrPresented;
     private bool _hdrFailed;
@@ -47,8 +51,10 @@ public sealed partial class NowPlayingCanvas
     private bool _hdrShuttingDown;
     private SceneTitle? _sceneTitle;
     private Rect _sceneTitleRegion;
-    private HdrTitleLayer? _hdrTitleLayer;
-    private bool _hdrTitleLayerUnsupported;
+    private readonly record struct HdrFrameContent(SceneTitle? Title, IPlaybackSceneCover? Cover, bool DrewCover);
+
+    private readonly record struct HdrFrameSubmission(Task Present, CanvasSwapChain? Replacement,
+        Size LayoutSize, float Dpi, HdrFrameContent Content);
 
     public event Action<bool, bool>? HdrPresentationChanged;
 
@@ -102,17 +108,17 @@ public sealed partial class NowPlayingCanvas
         return _sdrHandoffCompletion?.Task ?? Task.CompletedTask;
     }
 
-    /// <summary>Keeps the completed HDR frame during the page's compositor animation.</summary>
-    public long BeginHdrEntranceMotion()
+    /// <summary>Limits HDR frame production while the page is moving.</summary>
+    public long BeginHdrNavigationMotion()
     {
-        _hdrEntranceAnimating = true;
-        return ++_hdrEntranceMotionGeneration;
+        _hdrNavigationAnimating = true;
+        return ++_hdrNavigationMotionGeneration;
     }
 
-    public void EndHdrEntranceMotion(long generation)
+    public void EndHdrNavigationMotion(long generation)
     {
-        if (_hdrEntranceMotionGeneration == generation)
-            _hdrEntranceAnimating = false;
+        if (_hdrNavigationMotionGeneration == generation)
+            _hdrNavigationAnimating = false;
     }
 
     public void RetryHdrPresentation()
@@ -139,47 +145,47 @@ public sealed partial class NowPlayingCanvas
     private void RenderHdrFrame()
     {
         var panel = _hdrPanel;
-        if (panel is null || !CanPresentHdr)
+        if (panel is null || !CanPresentHdr || _retiringHdrSwapChain is { IsCompleted: false })
             return;
-
-        var size = new Size(ActualWidth, ActualHeight);
-        float dpi = (float)((XamlRoot?.RasterizationScale ?? 1) * 96d);
-        if (size.Width * dpi < 96 || size.Height * dpi < 96)
-            return;
-
-        bool replace = _hdrSwapChain is null || _hdrTargetSize != size || _hdrTargetDpi != dpi;
-        // Let a new size or DPI submit a complete replacement while the
-        // compositor moves the existing frame.
-        bool holdScene = !replace && _hdrPresented && _hdrEntranceAnimating;
-        if ((holdScene && _hdrTitleLayer is null) || !TryTakeHdrFrame() ||
-            !_hdrFrameClock.TryAdvance(Stopwatch.GetTimestamp(), _coordinator.TargetFrameRate, replace, out var elapsed))
-            return;
+        _retiringHdrSwapChain = null;
 
         CanvasSwapChain? replacement = null;
         try
         {
+            if (_hdrSubmission is { } submitted)
+            {
+                if (!submitted.Present.IsCompleted) return;
+                _hdrSubmission = null;
+                replacement = submitted.Replacement;
+                submitted.Present.GetAwaiter().GetResult();
+                AdoptHdrSwapChain(panel, ref replacement, submitted.LayoutSize, submitted.Dpi);
+                CommitHdrFrame(panel, submitted.Content);
+                if (!CanPresentHdr || !ReferenceEquals(panel, _hdrPanel)) return;
+            }
+
+            var size = new Size(ActualWidth, ActualHeight);
+            float dpi = (float)((XamlRoot?.RasterizationScale ?? 1) * 96d);
+            if (size.Width * dpi < 96 || size.Height * dpi < 96) return;
+
+            bool replace = _hdrSwapChain is null || _hdrTargetSize != size || _hdrTargetDpi != dpi;
+            bool moving = _hdrPresented && _hdrNavigationAnimating;
+            double rate = moving ? Math.Min(_coordinator.TargetFrameRate, HdrNavigationFrameRate) : _coordinator.TargetFrameRate;
+            if (!TryTakeHdrFrame() || !_hdrFrameClock.TryAdvance(Stopwatch.GetTimestamp(), rate, replace, out var elapsed)) return;
+
             // Paused CanvasAnimatedControl can still finish or redraw a native SDR frame.
             // Its Present holds the Direct2D device lock after the managed callback returns.
             // Keep HDR rendering on its own device so the UI thread never needs that lock.
             var device = _hdrDevice ??= new CanvasDevice();
             var title = _sceneTitle;
+            var cover = _sceneCover;
             elapsed = elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed;
-            if (holdScene)
-            {
-                bool drewTitleLayer = DrawHdrTitleLayer(new PlaybackCanvasFrame(device, size, dpi, _hdrColor), title, elapsed);
-                _hdrTitleLayer?.SetVisible(drewTitleLayer);
-                title?.SetScenePresentation(drewTitleLayer);
-                return;
-            }
-
             if (replace)
                 replacement = new CanvasSwapChain(device, (float)size.Width, (float)size.Height, dpi,
                     DirectXPixelFormat.R16G16B16A16Float, 2, CanvasAlphaMode.Ignore);
 
             var swapChain = replacement ?? _hdrSwapChain!;
             var frame = new PlaybackCanvasFrame(device, swapChain.Size, dpi, _hdrColor);
-            bool drewLayer = DrawHdrTitleLayer(frame, title, elapsed);
-            bool drewTitle, drewCover;
+            bool drewCover;
             using (var session = swapChain.CreateDrawingSession(Colors.Black))
             {
                 // Direct2D may rasterize scaled effects into intermediate surfaces.
@@ -194,39 +200,17 @@ public sealed partial class NowPlayingCanvas
                 drewCover = DrawHdrScene(frame, session, elapsed);
 
                 DrawHdrForeground?.Invoke(session, frame.Hdr.Peak * 80f);
-                drewTitle = drewLayer || title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed) == true;
+                // The title and lyrics share the swap chain's scRGB space and reference white.
+                title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed);
             }
 
-            swapChain.Present(0);
-            if (replacement is not null)
-            {
-                panel.SwapChain = replacement;
-                var previous = _hdrSwapChain;
-                _hdrSwapChain = replacement;
-                replacement = null;
-                _hdrTargetDpi = dpi;
-                _hdrTargetSize = size;
-                previous?.Dispose();
-            }
-
-            _hdrDeviceLostRetried = false;
-            bool firstFrame = !_hdrPresented;
-            if (firstFrame)
-            {
-                if (_canvas is { } canvas)
-                    canvas.Opacity = 0;
-                _hdrPresented = true;
-                panel.Visibility = Visibility.Visible;
-            }
-            if (ReferenceEquals(title, _sceneTitle))
-            {
-                _hdrTitleLayer?.SetVisible(drewLayer);
-                title?.SetScenePresentation(drewTitle);
-            }
-            CommitSceneCover(drewCover);
-            HdrFramePresented?.Invoke();
-            if (firstFrame)
-                HdrPresentationChanged?.Invoke(true, false);
+            var content = new HdrFrameContent(title, cover, drewCover);
+            // Keep one submission in flight, including the first stationary frame
+            // after the slide. DXGI can still wait on composition or capture at that point.
+            var present = Task.Factory.StartNew(static state => ((CanvasSwapChain)state!).Present(0), swapChain,
+                CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            _hdrSubmission = new(present, replacement, size, dpi, content);
+            replacement = null;
         }
         catch (Exception ex)
         {
@@ -247,24 +231,36 @@ public sealed partial class NowPlayingCanvas
         }
     }
 
-    private bool DrawHdrTitleLayer(PlaybackCanvasFrame frame, SceneTitle? title, TimeSpan elapsed)
+    private void AdoptHdrSwapChain(CanvasSwapChainPanel panel, ref CanvasSwapChain? replacement, Size size, float dpi)
     {
-        if (_hdrTitleLayerUnsupported || title?.CanDrawInScene(frame, _sceneTitleRegion) != true)
-            return false;
+        if (replacement is null) return;
+        panel.SwapChain = replacement;
+        var previous = _hdrSwapChain;
+        _hdrSwapChain = replacement;
+        replacement = null;
+        _hdrTargetDpi = dpi;
+        _hdrTargetSize = size;
+        previous?.Dispose();
+    }
 
-        try
+    private void CommitHdrFrame(CanvasSwapChainPanel panel, HdrFrameContent content)
+    {
+        _hdrDeviceLostRetried = false;
+        bool firstFrame = !_hdrPresented;
+        if (firstFrame)
         {
-            _hdrTitleLayer ??= new HdrTitleLayer(this, frame);
-            return _hdrTitleLayer.Draw(title, frame, _sceneTitleRegion, elapsed);
+            if (_canvas is { } canvas)
+                canvas.Opacity = 0;
+            _hdrPresented = true;
+            panel.Visibility = Visibility.Visible;
         }
-        catch (ArgumentException)
-        {
-            // The compositor can reject FP16 surfaces on some outputs. Retain the in-scene title there.
-            _hdrTitleLayerUnsupported = true;
-            _hdrTitleLayer?.Dispose();
-            _hdrTitleLayer = null;
-            return false;
-        }
+        if (ReferenceEquals(content.Title, _sceneTitle))
+            content.Title?.SetScenePresentation(true);
+        if (ReferenceEquals(content.Cover, _sceneCover))
+            CommitSceneCover(content.DrewCover);
+        HdrFramePresented?.Invoke();
+        if (firstFrame)
+            HdrPresentationChanged?.Invoke(true, false);
     }
 
     private bool TryTakeHdrFrame()
@@ -362,19 +358,31 @@ public sealed partial class NowPlayingCanvas
         _hdrClock?.Dispose();
         _hdrClock = null;
         _hdrFrameClock = default;
-        _hdrEntranceAnimating = false;
-        _hdrTitleLayer?.Dispose();
-        _hdrTitleLayer = null;
-        _hdrTitleLayerUnsupported = false;
-        if (_hdrSwapChain is not null)
+        _hdrNavigationAnimating = false;
+        var pending = _hdrSubmission;
+        _hdrSubmission = null;
+        if (pending is { Present.IsCompleted: true } complete)
+        {
+            _ = ReleaseSubmittedFrameAsync(complete.Present, complete.Replacement, null, null);
+            pending = null;
+        }
+        var swapChain = _hdrSwapChain;
+        _hdrSwapChain = null;
+        if (swapChain is not null)
         {
             if (_hdrPanel is { } panel)
             {
                 panel.Visibility = Visibility.Collapsed;
                 panel.SwapChain = null;
             }
-            _hdrSwapChain.Dispose();
-            _hdrSwapChain = null;
+            if (pending is null)
+                swapChain.Dispose();
+        }
+        if (!releaseDevice && pending is { } paused)
+        {
+            // On a temporary window pause keep the device, but don't draw on it again
+            // until the outgoing swap chain has completed presentation and been released.
+            _retiringHdrSwapChain = ReleaseSubmittedFrameAsync(paused.Present, paused.Replacement, swapChain, null);
         }
 
         if (_hdrOwnsFrame || (releaseDevice && _hdrDevice is not null))
@@ -395,15 +403,17 @@ public sealed partial class NowPlayingCanvas
         finally
         {
             if (releaseDevice)
-                ReleaseHdrDevice();
+                ReleaseHdrDevice(pending, swapChain);
         }
         return wasPresented;
     }
 
-    private void ReleaseHdrDevice()
+    private void ReleaseHdrDevice(HdrFrameSubmission? pending, CanvasSwapChain? swapChain)
     {
         var clear = _hdrClear;
         var device = _hdrDevice;
+        var outstanding = pending?.Present ?? _retiringHdrSwapChain;
+        _retiringHdrSwapChain = null;
         _hdrClear = null;
         _hdrDevice = null;
         try
@@ -419,11 +429,34 @@ public sealed partial class NowPlayingCanvas
             finally
             {
                 clear?.Dispose();
-                device?.Trim();
+                if (outstanding?.IsCompleted != false) device?.Trim();
             }
         }
         catch (Exception ex) { RaiseException(ex); }
-        finally { device?.Dispose(); }
+        finally
+        {
+            if (outstanding is not null)
+                _ = ReleaseSubmittedFrameAsync(outstanding, pending?.Replacement, pending is not null ? swapChain : null, device);
+            else
+                device?.Dispose();
+        }
+    }
+
+    private static async Task ReleaseSubmittedFrameAsync(Task submitted, CanvasSwapChain? replacement,
+        CanvasSwapChain? swapChain, CanvasDevice? device)
+    {
+        try { await submitted.ConfigureAwait(false); }
+        catch (Exception ex) { Log.ForContext<NowPlayingCanvas>().Debug(ex, "Retired HDR frame submission failed"); }
+        try
+        {
+            try { replacement?.Dispose(); }
+            finally
+            {
+                try { swapChain?.Dispose(); }
+                finally { device?.Dispose(); }
+            }
+        }
+        catch (Exception ex) { Log.ForContext<NowPlayingCanvas>().Warning(ex, "Retired HDR frame cleanup failed"); }
     }
 
     private void DetachHdrPanel()

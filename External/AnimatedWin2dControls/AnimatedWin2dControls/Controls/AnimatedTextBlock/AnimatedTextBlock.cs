@@ -205,6 +205,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             ApplyTextForeground();
 
         AttachCanvas();
+        UpdateCanvasPresentation();
         UpdateActiveState(_isActive);
         if (IsLoaded && _isActive)
             SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
@@ -220,6 +221,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _canvas ??= GetTemplateChild("AnimatedCanvas") as CanvasControl;
         EnsureTextFormat();
         AttachCanvas();
+        UpdateCanvasPresentation();
         ApplyTextFormatIfNeeded();
         if (_isActive)
             ApplyTextForeground();
@@ -405,7 +407,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
-        if (!_isActive || _scenePresentation) return;
+        if (!_isActive || _scenePresentation || _preparingScene) return;
 
         // 全部在 UI 线程，无需 lock
         args.DrawingSession.Clear(Colors.Transparent);
@@ -478,7 +480,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void StartRenderingLoop()
     {
-        if (_scenePresentation || _isClockRegistered || !IsLoaded || !_isActive) return;
+        if (_scenePresentation || _preparingScene || _isClockRegistered || !IsLoaded || !_isActive) return;
         SharedAnimationClock.Register(this);
         _isClockRegistered = true;
     }
@@ -682,17 +684,15 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     #region Animation Progress
 
-    private void UpdateAllClusterProgress(TimeSpan elapsed)
+    private void UpdateAllClusterProgress()
     {
         if (_diffResults == null) return;
 
         var animationDuration = _textEffect?.AnimationDuration ?? TimeSpan.FromMilliseconds(600);
         var delayPerCluster = _textEffect?.DelayPerCluster ?? TimeSpan.Zero;
 
-        // step = elapsed / animationDuration，表示本帧推进多少进度
-        float step = (float)(elapsed.TotalMilliseconds / animationDuration.TotalMilliseconds);
-
         var delay = delayPerCluster <= animationDuration ? delayPerCluster : animationDuration;
+        double animationTime = (_totalAnimationTime - _animationBeginTime).TotalMilliseconds;
 
         int insertDelayOffset = 0;
         int moveDelayOffset = 0;
@@ -726,10 +726,11 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
                     break;
             }
 
-            if (!UpdateClusterProgress(diffResult.OldGlyphCluster, delayOffset, step, delay))
+            double clusterTime = animationTime - delay.TotalMilliseconds * delayOffset;
+            if (!UpdateClusterProgress(diffResult.OldGlyphCluster, clusterTime, animationDuration.TotalMilliseconds))
                 ongoingAnimations++;
 
-            if (!UpdateClusterProgress(diffResult.NewGlyphCluster, delayOffset, step, delay))
+            if (!UpdateClusterProgress(diffResult.NewGlyphCluster, clusterTime, animationDuration.TotalMilliseconds))
                 ongoingAnimations++;
         }
 
@@ -743,36 +744,18 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     /// 更新单个 cluster 的进度。
     /// </summary>
     /// <returns>true 表示该 cluster 动画已完成</returns>
-    private bool UpdateClusterProgress(GraphemeCluster cluster, int offset, float step, TimeSpan delay)
+    private static bool UpdateClusterProgress(GraphemeCluster cluster, double time, double duration)
     {
         if (cluster == null) return true;
 
-        var duration = _textEffect?.AnimationDuration ?? TimeSpan.Zero;
-
-        // 从动画开始算起，该 cluster 的结束时间点
-        bool isFinished = _totalAnimationTime.TotalMilliseconds >=
-                          (_animationBeginTime.TotalMilliseconds +
-                           delay.TotalMilliseconds * offset +
-                           duration.TotalMilliseconds);
-
-        if (isFinished)
+        if (time >= duration)
         {
             cluster.Progress = 1.0f;
             cluster.IsAnimationFinished = true;
             return true;
         }
 
-        // 还在延迟等待阶段，进度保持 0
-        bool inDelay = _totalAnimationTime.TotalMilliseconds - _animationBeginTime.TotalMilliseconds
-                       < delay.TotalMilliseconds * offset;
-
-        if (inDelay)
-        {
-            cluster.Progress = 0;
-            return false;
-        }
-
-        cluster.Progress = Math.Clamp(cluster.Progress + step, 0f, 1.0f);
+        cluster.Progress = time > 0 ? (float)(time / duration) : 0f;
         return false;
     }
 
@@ -838,7 +821,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             }
             else
             {
-                UpdateAllClusterProgress(elapsed);
+                UpdateAllClusterProgress();
             }
         }
 
@@ -850,6 +833,13 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         if (state == AnimatedTextBlockRedrawState.TextChanged ||
             (state == AnimatedTextBlockRedrawState.Idle && _currentState == AnimatedTextBlockRedrawState.Animating))
             _documentLayoutDirty = true;
+        if (state == AnimatedTextBlockRedrawState.TextChanged && Document is { } document &&
+            HasSameDocumentText(document, _renderedDocument))
+        {
+            InvalidateCanvas();
+            if (_currentState == AnimatedTextBlockRedrawState.Animating) return;
+            state = AnimatedTextBlockRedrawState.Idle;
+        }
         if (state != AnimatedTextBlockRedrawState.Idle)
             StopHoverScroll();
         _currentState = state;

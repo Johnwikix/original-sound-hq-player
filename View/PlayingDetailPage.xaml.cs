@@ -35,6 +35,7 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         public MainViewModel QueueViewModel { get; }
         private readonly Windows.UI.ViewManagement.UISettings _motionSettings = new();
+        private AnimatedTextEffect? _appliedTextEffect;
         private bool IsCoverMotionEnabled => _motionSettings.AnimationsEnabled;
         private readonly ListViewCentering _queueCentering;
         private readonly PlaybackSelectionTracker _playbackSelection;
@@ -194,9 +195,10 @@ namespace WinUIMusicPlayer.View
             if (textBlock is null)
                 return;
 
-            textBlock.TextEffect = _motionSettings.AnimationsEnabled
-                ? CreateAnimatedTextEffect(ViewModel.AppViewModel.Win2dTextEffectType.Value)
-                : null;
+            AnimatedTextEffect? effect = _motionSettings.AnimationsEnabled ? ViewModel.AppViewModel.Win2dTextEffectType.Value : null;
+            if (_appliedTextEffect == effect) return;
+            textBlock.TextEffect = effect is { } type ? CreateAnimatedTextEffect(type) : null;
+            _appliedTextEffect = effect;
         }
 
         private static AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateAnimatedTextEffect(AnimatedTextEffect type) => type switch
@@ -250,6 +252,7 @@ namespace WinUIMusicPlayer.View
             ApplyBackdrop(canvas);
             UpdateWindowRendering(App.MainWindow.AppWindow);
             UpdateHdrPresentation();
+            UpdateHdrTitleRegion();
             ScheduleLyricsRegionUpdate();
         }
 
@@ -258,12 +261,12 @@ namespace WinUIMusicPlayer.View
 
         private void UpdateHdrTitleRegion()
         {
-            if (NowPlaying is not { IsLoaded: true } canvas || AnimatedPlayingDetailTextBlock is not { } title
-                || !title.IsLoaded || title.ActualWidth <= 0 || title.ActualHeight <= 0)
+            if (NowPlaying is not { IsLoaded: true } canvas || AnimatedPlayingDetailTextBlock is not { } title)
                 return;
 
-            var bounds = title.TransformToVisual(canvas).TransformBounds(
-                new Windows.Foundation.Rect(0, 0, title.ActualWidth, title.ActualHeight));
+            var bounds = title.IsLoaded && title.ActualWidth > 0 && title.ActualHeight > 0
+                ? title.TransformToVisual(canvas).TransformBounds(new Windows.Foundation.Rect(0, 0, title.ActualWidth, title.ActualHeight))
+                : default;
             canvas.SetHdrTitle(title, bounds);
         }
 
@@ -417,15 +420,20 @@ namespace WinUIMusicPlayer.View
         {
             AnimatedPlayingDetailTextBlock.IsActive = false;
             NowPlaying?.PauseRendering();
+            SetTitleScenePreparation(false);
+            StopSceneCoverRendering();
             LyricsView?.PauseRendering();
         }
 
-        public void ResumeCanvasRendering()
+        public void ResumeCanvasRendering(bool prepareHdr = false)
         {
+            SetTitleScenePreparation(prepareHdr);
             AnimatedPlayingDetailTextBlock.IsActive = true;
             NowPlaying?.ResumeRendering();
             LyricsView?.ResumeRendering();
         }
+
+        private void SetTitleScenePreparation(bool preparing) => AnimatedPlayingDetailTextBlock.PrepareScenePresentation(preparing);
 
         private void Dispose(bool dispose)
         {

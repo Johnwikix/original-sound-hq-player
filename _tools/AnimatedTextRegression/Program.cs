@@ -170,6 +170,17 @@ public sealed partial class TestApp : Application
         Check(Math.Abs(transition.Title.X - paper.Title.X) < .015f && transition.PartialCoverage,
             $"The original wipe animates at reference white ({transition})");
         CheckOriginalDocument(transitionPixels, "wipe");
+        var animationStart = (TimeSpan)Field(control, "_animationBeginTime");
+        using (var replacement = new CanvasDevice())
+        using (var replacementTarget = new CanvasRenderTarget(replacement, (float)size.Width, (float)size.Height, dpi,
+            DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied))
+        {
+            using (var replacementDraw = replacementTarget.CreateDrawingSession())
+                Invoke(control, "DrawInScene", replacementDraw, frame with { Device = replacement }, region, TimeSpan.Zero);
+            Draw(TimeSpan.Zero);
+            Check((TimeSpan)Field(control, "_animationBeginTime") == animationStart && control.IsAnimating,
+                "changing the HDR drawing device keeps the title animation phase");
+        }
         var tight = Measure(Draw(TimeSpan.Zero, PlaybackHdrColor.FromNits(200, 206)));
         var raised = Measure(Draw(TimeSpan.Zero, PlaybackHdrColor.FromNits(300, 600)));
         Check(Math.Abs(tight.Title.X - paper.Title.X) < .015f && Math.Abs(raised.Title.X - 3.75f) < .015f,
@@ -712,6 +723,14 @@ public sealed partial class TestApp : Application
             unified.Document = finalDocument;
             await Until(() => !unified.IsAnimating && ReferenceEquals(Field(unified, "_renderedDocument"), finalDocument), "coalesced document update");
             Check(ParagraphValue<CanvasTextLayout>(unified, 1, "NewLayout").LineCount == 2, "Atomic document updates retain complete metadata");
+            unified.IsActive = false;
+            unified.Document = DocumentLayoutRegressionPage.CreateDocument("Final title", "Final album\r\nFinal artist", 44, 30);
+            unified.IsActive = true;
+            var resumedCanvas = (CanvasControl)Field(unified, "_canvas");
+            using (var resumedTarget = new CanvasRenderTarget(resumedCanvas, (float)resumedCanvas.Size.Width, (float)resumedCanvas.Size.Height, 96))
+            using (var resumedDraw = resumedTarget.CreateDrawingSession())
+                Invoke(unified, "DrawDocument", resumedCanvas, resumedCanvas.Size.Width, resumedDraw);
+            Check(!unified.IsAnimating, "reactivating the same title and metadata does not start another animation");
             unified.TextEffect = new TextDefaultEffect { AnimationDuration = TimeSpan.FromSeconds(5), DelayPerCluster = TimeSpan.Zero };
             unified.Document = DocumentLayoutRegressionPage.CreateDocument("Long title", LongText + "\r\nVisible artist", 44, 30);
             await Until(() => (AnimatedTextBlockRedrawState)Field(unified, "_currentState") == AnimatedTextBlockRedrawState.Animating, "trimmed document transition starts");

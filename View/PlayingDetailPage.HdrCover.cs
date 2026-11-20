@@ -105,13 +105,12 @@ public sealed partial class PlayingDetailPage
         if (!_coverAttached) return;
 
         var vm = ViewModel.AppViewModel;
-        if (!vm.IsPlayingDetailVisible || (!vm.IsFluidBackgroundEnabled && !ViewModel.UseHdrPresentation))
+        // The navigation state switches first. Keep the current cover and HDR mode
+        // until the outgoing page has slid out and its canvas stops rendering.
+        if (!vm.IsPlayingDetailVisible) return;
+        if (!vm.IsFluidBackgroundEnabled && !ViewModel.UseHdrPresentation)
         {
-            if (_coverRequested)
-            {
-                ClearSceneCover();
-                UpdateHdrPresentation();
-            }
+            StopSceneCoverRendering();
             return;
         }
 
@@ -265,6 +264,13 @@ public sealed partial class PlayingDetailPage
         _sceneCoverRequestedLimit = 0;
         _sceneCoverCanvas?.SetSceneCover(null);
         _sceneCoverPresenter.Clear();
+    }
+
+    private void StopSceneCoverRendering()
+    {
+        if (!_coverRequested) return;
+        ClearSceneCover();
+        UpdateHdrPresentation();
     }
 
     private void DisposeSceneCover()

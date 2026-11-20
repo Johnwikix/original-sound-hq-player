@@ -107,9 +107,24 @@ namespace WinUIMusicPlayer.View
         internal Rect CoverSlot => _sceneCoverSlot;
         internal int SceneCoverPixelWidth => _sceneCoverPresenter.RequestedArtwork?.Width ?? 0;
         internal Action<NowPlayingCanvas>? ConfigureBackgroundCanvas { get; set; }
+        internal AnimatedWin2dControls.Controls.AnimatedTextBlock.AnimatedTextBlock? ProbeTitle { get; set; }
 
-        public void PauseCanvasRendering() => NowPlaying?.PauseRendering();
-        public void ResumeCanvasRendering() => NowPlaying?.ResumeRendering();
+        public void PauseCanvasRendering()
+        {
+            if (ProbeTitle is { } title) title.IsActive = false;
+            NowPlaying?.PauseRendering();
+            SetTitleScenePreparation(false);
+            StopSceneCoverRendering();
+        }
+
+        public void ResumeCanvasRendering(bool prepareHdr = false)
+        {
+            SetTitleScenePreparation(prepareHdr);
+            if (ProbeTitle is { } title) title.IsActive = true;
+            NowPlaying?.ResumeRendering();
+        }
+
+        private void SetTitleScenePreparation(bool preparing) => ProbeTitle?.PrepareScenePresentation(preparing);
 
         private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
         {

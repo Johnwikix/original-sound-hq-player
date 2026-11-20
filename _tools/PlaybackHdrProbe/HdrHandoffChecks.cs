@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
+using AnimatedWin2dControls.Messages;
 using AnimatedWin2dControls.Impressionist;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
@@ -57,6 +58,7 @@ public sealed partial class ProbeApp
         int revealCount = 0;
         int completionCount = 0;
         int hdrDraws = 0;
+        int hdrSubmissions = 0;
         bool prematureReveal = false;
         long hdrReadyAt = 0;
         long slideStartedAt = 0;
@@ -68,6 +70,7 @@ public sealed partial class ProbeApp
         page.ConfigureBackgroundCanvas = canvas =>
         {
             canvas.DrawHdrForeground += DrawMarker;
+            canvas.HdrFramePresented += () => hdrSubmissions++;
             canvas.HdrPresentationChanged += (active, _) =>
             {
                 if (active)
@@ -179,10 +182,10 @@ public sealed partial class ProbeApp
 
                 Show();
                 await WaitForSlideAsync();
-                int heldDraws = hdrDraws;
-                await Task.Delay(65);
-                if (!navigation.IsPreparingShow || hdrDraws != heldDraws)
-                    throw new InvalidOperationException("Win2D redrew the scene while the compositor moved the committed HDR frame.");
+                int drawsAtStart = hdrDraws;
+                await WaitUntilAsync(() => hdrDraws > drawsAtStart + 1, "live HDR frames during the slide");
+                if (!navigation.IsPreparingShow)
+                    throw new InvalidOperationException("HDR drawing did not advance until the slide finished.");
 
                 bool hidDisabledHdr = false;
                 canvas.HdrPresentationChanged += ObserveMotionInterrupted;
@@ -226,12 +229,12 @@ public sealed partial class ProbeApp
                 priorCompletions = completionCount;
                 Show();
                 await WaitForSlideAsync();
-                heldDraws = hdrDraws;
-                await WaitUntilAsync(() => completionCount > priorCompletions && hdrDraws > heldDraws,
+                drawsAtStart = hdrDraws;
+                await WaitUntilAsync(() => completionCount > priorCompletions && hdrDraws > drawsAtStart,
                     "HDR drawing resumed after the slide");
                 failFirstDraw = true;
                 await VerifySdrFallbackAsync(completionCount);
-                Console.WriteLine("PASS HDR draw held during motion, size replacement, disable during slide, and failure after resuming");
+                Console.WriteLine("PASS live HDR during motion, size replacement, disable during slide, and failure after resuming");
 
                 void ObserveMotionInterrupted(bool active, bool failed)
                 {
@@ -302,42 +305,72 @@ public sealed partial class ProbeApp
                 Foreground = new SolidColorBrush(Colors.White), Document = MakeTitle("Previous song"), TextEffect = effect
             };
             root.Children.Add(title);
+            page.ProbeTitle = title;
             NowPlayingCanvas? canvas = null;
             float startedAt = -1, lastSubmitted = -1;
             int titleFrames = 0, sceneDrawsAtStart = -1, sceneDrawsDuringSlide = -1;
+            double lyricTimeAtStart = -1, lyricTimeDuringSlide = -1;
+            Func<double>? readLyricTime = null;
             try
             {
                 ShowWithDuration(0);
                 await WaitUntilAsync(() => title.IsLoaded && model.PlaybackHdrActive && !navigation.IsPreparingShow,
                     "previous song in HDR playback");
                 canvas = page.BackgroundCanvas!;
+                canvas.LyricsRegion = new Rect(210, 100, 125, 125);
+                var coordinator = typeof(NowPlayingCanvas).GetField("_coordinator",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(canvas)!;
+                var time = coordinator.GetType().GetField("_lastExternalTimeMs",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                readLyricTime = () => (double)time.GetValue(coordinator)!;
                 canvas.SetHdrTitle(title, new Rect(12, 80, 180, 48));
                 await WaitUntilAsync(() => !title.IsAnimating && FindChild<CanvasControl>(title, "AnimatedCanvas")?.Opacity == 0,
                     "previous title settled in the HDR scene");
                 await DismissAsync();
-                title.IsActive = false;
+                title.Document = MakeTitle("Previous song");
+                Show();
+                await WaitForSlideAsync();
+                await Task.Delay(100);
+                if (!navigation.IsPreparingShow || title.IsAnimating || Progress() != 1f)
+                    throw new InvalidOperationException("Re-entering the same HDR song replayed the title animation.");
+                await WaitUntilAsync(() => !navigation.IsPreparingShow, "same-song HDR slide completion");
+                await DismissAsync();
                 title.Document = MakeTitle("New song selected in library");
+                long playbackStart = Stopwatch.GetTimestamp();
+                TimeProgressBus.SetClock(() => (long)Stopwatch.GetElapsedTime(playbackStart).TotalMilliseconds);
+                IsPlayingBus.Publish(true);
+                UILyricsBus.Publish([new()
+                {
+                    StartMs = 0, EndMs = 12000,
+                    Words = { new() { Word = "Karaoke", StartMs = 0, DurationMs = 12000 } }
+                }]);
                 long start = frame.RegisterPropertyChangedCallback(UIElement.OpacityProperty, (_, _) =>
                 {
                     if (navigation.IsPreparingShow && frame.Opacity == 1 && frame.RenderTransform is TranslateTransform)
                     {
                         startedAt = Progress();
                         lastSubmitted = startedAt;
-                        sceneDrawsAtStart = hdrDraws;
+                        sceneDrawsAtStart = hdrSubmissions;
+                        lyricTimeAtStart = readLyricTime();
                     }
                 });
                 CompositionTarget.Rendering += OnRendering;
                 try
                 {
-                    title.IsActive = true;
+                    canvas.SetWindowPaused(true);
+                    Show();
+                    await Task.Delay(350);
+                    if (!navigation.IsPreparingShow || frame.Opacity != 0 || Progress() != 1f)
+                        throw new InvalidOperationException("The hidden standalone title advanced while HDR was preparing.");
+                    void Ready() => canvas.SetWindowPaused(false);
                     if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TITLE_ENTRANCE_ONLY") == "1")
                     {
-                        Show();
+                        Ready();
                         await WaitUntilAsync(() => !navigation.IsPreparingShow && model.PlaybackHdrActive, "new song HDR entrance");
                     }
                     else
                     {
-                        await CheckFirstVisibleFrameAsync("HDR navigation with animated title", Show);
+                        await CheckFirstVisibleFrameAsync("HDR navigation with animated title", Ready);
                     }
                 }
                 finally
@@ -347,24 +380,67 @@ public sealed partial class ProbeApp
                 }
                 if (startedAt < 0 || titleFrames < 2 || lastSubmitted <= startedAt || lastSubmitted >= 1)
                     throw new InvalidOperationException($"Title did not animate during the HDR slide (start {startedAt:F3}, last {lastSubmitted:F3}, frames {titleFrames}).");
-                if (sceneDrawsDuringSlide != sceneDrawsAtStart)
-                    throw new InvalidOperationException("Title animation caused the HDR background to redraw during the slide.");
+                if (sceneDrawsDuringSlide < sceneDrawsAtStart + 13 || lyricTimeDuringSlide <= lyricTimeAtStart)
+                    throw new InvalidOperationException($"Background and lyrics did not advance during the HDR slide (scene {sceneDrawsAtStart}–{sceneDrawsDuringSlide}, lyrics {lyricTimeAtStart}–{lyricTimeDuringSlide}).");
                 await WaitUntilAsync(() => !title.IsAnimating, "new title settled after re-entry");
-                Console.WriteLine($"PASS HDR title advances during navigation ({startedAt:F3} to {lastSubmitted:F3}, {titleFrames} title frames, held background)");
-                await DismissAsync();
+                Console.WriteLine($"PASS HDR slide in: {titleFrames} title frames, {sceneDrawsDuringSlide - sceneDrawsAtStart} scene frames, lyrics advanced {lyricTimeDuringSlide - lyricTimeAtStart:F0} ms");
+
+                if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TITLE_ENTRANCE_ONLY") == "1")
+                    await CheckLiveDismissAsync();
+                else
+                {
+                    var (count, pixels, _) = await CaptureNavigationAsync(CheckLiveDismissAsync);
+                    int sample = 3;
+                    int last = ((count - 1) * points.Length + 1) * 3;
+                    if (count < 3 || pixels[sample + 1] is < 2.35f or > 2.65f || pixels[last + 2] < .2f)
+                        throw new InvalidOperationException("HDR dismissal did not fade from a complete HDR frame to the library.");
+                    for (int offset = sample; offset <= last; offset += points.Length * 3)
+                        if (pixels[offset] > .12f || pixels[offset + 1] > 2.65f)
+                            throw new InvalidOperationException("HDR dismissal exposed an SDR frame or a white-level jump.");
+                }
             }
             finally
             {
+                page.ProbeTitle = null;
+                canvas?.SetWindowPaused(false);
                 canvas?.SetHdrTitle(null, default);
+                TimeProgressBus.SetClock(null);
+                IsPlayingBus.Publish(false);
+                UILyricsBus.Publish(null);
                 title.PrepareForShutdown();
                 root.Children.Remove(title);
+            }
+
+            async Task CheckLiveDismissAsync()
+            {
+                using var monitoring = new CancellationTokenSource();
+                var responses = Task.Run(() => MonitorMessagePumpAsync(monitoring.Token));
+                int initialDraws = hdrSubmissions;
+                double initialLyrics = readLyricTime!();
+                int frames;
+                double lyrics;
+                try
+                {
+                    var dismissal = DismissAsync(300);
+                    await Task.Delay(145);
+                    frames = hdrSubmissions - initialDraws;
+                    lyrics = readLyricTime() - initialLyrics;
+                    if (dismissal.IsCompleted || !model.PlaybackHdrActive || frames < 3 || lyrics <= 0)
+                        throw new InvalidOperationException($"Outgoing scene stopped its HDR or lyrics updates ({frames} scene frames, {lyrics:F0} ms of lyrics).");
+                    await dismissal;
+                }
+                finally { monitoring.Cancel(); }
+                var (maxResponse, timedOut) = await responses;
+                if (timedOut != 0) throw new InvalidOperationException("The UI stopped responding during the HDR exit.");
+                Console.WriteLine($"PASS HDR slide out: {frames} scene frames, lyrics advanced {lyrics:F0} ms, max WM_NULL response {maxResponse:F0} ms");
             }
 
             void OnRendering(object? sender, object args)
             {
                 if (navigation.IsPreparingShow && frame.Opacity == 1 && frame.RenderTransform is TranslateTransform)
                 {
-                    sceneDrawsDuringSlide = hdrDraws;
+                    sceneDrawsDuringSlide = hdrSubmissions;
+                    lyricTimeDuringSlide = readLyricTime!();
                     float progress = Progress();
                     if (progress > lastSubmitted)
                     {
@@ -486,7 +562,7 @@ public sealed partial class ProbeApp
             return (maxResponse, timedOut);
         }
 
-        async Task CheckFirstVisibleFrameAsync(string label, Action start, bool expectMotion = true)
+        async Task<(int Count, float[] Pixels, long[] Times)> CaptureNavigationAsync(Func<Task> motion)
         {
             var pixels = new float[frameLimit * points.Length * 3];
             var times = new long[frameLimit];
@@ -507,7 +583,7 @@ public sealed partial class ProbeApp
                     await capture;
                     throw new InvalidOperationException("WGC did not capture the previous page before navigation.");
                 }
-                await MeasureNavigationAsync(label, start);
+                await motion();
                 await Task.Delay(75);
             }
             finally
@@ -515,6 +591,12 @@ public sealed partial class ProbeApp
                 completed.Set();
                 count = await capture;
             }
+            return (count, pixels, times);
+        }
+
+        async Task CheckFirstVisibleFrameAsync(string label, Action start, bool expectMotion = true)
+        {
+            var (count, pixels, times) = await CaptureNavigationAsync(() => MeasureNavigationAsync(label, start));
             int[] firstHdr = [-1, -1, -1];
             int mixed = 0, offColor = 0, regressions = 0;
             float minHdr = float.PositiveInfinity, maxHdr = 0;
@@ -589,9 +671,11 @@ public sealed partial class ProbeApp
         }
 
         if (output is null) throw new InvalidOperationException("The HDR handoff check requires an HDR output.");
-        double white = Math.Min(200, peak);
-        int width = 640, height = 420;
+        double white = Math.Min(300, peak);
         var work = output.WorkArea;
+        bool largeWindow = Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_LARGE_WINDOW") == "1";
+        int width = Math.Min(work.Width, largeWindow ? 1920 : 640);
+        int height = Math.Min(work.Height, largeWindow ? 1080 : 420);
         if (window.AppWindow.Presenter is OverlappedPresenter presenter)
             presenter.IsAlwaysOnTop = true;
         window.AppWindow.MoveAndResize(new RectInt32(work.X + (work.Width - width) / 2,
@@ -676,6 +760,10 @@ public sealed partial class ProbeApp
             coverReady = true;
             await WaitUntilAsync(() => preview.Opacity == 0, "HDR cover ownership after present");
             await TestLayerColorsAsync("HDR title and delayed cover committed", expectedCoverBlue: false);
+            var titleWhite = Sample("HDR title and scene reference white", (116, 35), (266, 24));
+            float expectedWhite = (float)(white / 80);
+            if (Math.Abs(titleWhite[0] - expectedWhite) > .08f || Math.Abs(titleWhite[0] - titleWhite[3]) > .08f)
+                throw new InvalidOperationException($"HDR title white {titleWhite[0]:F3} differs from scene white {titleWhite[3]:F3}.");
 
             int beforeFallback = Volatile.Read(ref sdrFrames);
             int beforeTitleFallback = titleFrames;
@@ -778,6 +866,9 @@ public sealed partial class ProbeApp
             hdrFrames++;
             coverDrawn = coverReady;
             session.Clear(Colors.Green);
+            using var paperWhite = CanvasSolidColorBrush.CreateHdr(session.Device, new Vector4((float)(white / 80),
+                (float)(white / 80), (float)(white / 80), 1));
+            session.FillRectangle(258, 16, 20, 32, paperWhite);
             if (coverDrawn)
             {
                 cover ??= CanvasSolidColorBrush.CreateHdr(session.Device, new Vector4(2.5f, 2.5f, 0, 1));

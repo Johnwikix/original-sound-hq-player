@@ -136,17 +136,24 @@ public sealed partial class AnimatedTextBlock
         }
     }
 
-    private void PrepareDocumentLayouts(ICanvasResourceCreator sender, double width)
+    private static bool HasSameDocumentText(AnimatedTextDocument current, AnimatedTextDocument previous)
     {
-        bool needsDiff = _textEffect != null && _currentState == AnimatedTextBlockRedrawState.TextChanged;
-        // Layout changes during a transition must keep its original source frame.
-        // A new document starts from the last submitted frame instead.
-        var sourceDocument = !needsDiff ? Document : ReferenceEquals(Document, _renderedDocument)
-            ? _transitionSourceDocument : _renderedDocument;
+        if (ReferenceEquals(current, previous)) return true;
+        if (previous is null || current.Paragraphs.Count != previous.Paragraphs.Count) return false;
+        for (int i = 0; i < current.Paragraphs.Count; i++)
+        {
+            if (current.Paragraphs[i].Text != previous.Paragraphs[i].Text) return false;
+        }
+        return true;
+    }
+
+    private void PrepareDocumentLayouts(ICanvasResourceCreator sender, double width, AnimatedTextDocument sourceDocument, bool needsDiff)
+    {
         var paragraphs = Document.Paragraphs;
         int oldCount = sourceDocument?.Paragraphs.Count ?? 0;
         var layouts = new ParagraphLayouts[Math.Max(paragraphs.Count, needsDiff ? oldCount : 0)];
-        var combinedDiffs = needsDiff ? new List<TextDiffResult>() : null;
+        var combinedDiffs = needsDiff && _textEffect is not Effects.TextFadeEffect and not Effects.TextWipeEffect
+            ? new List<TextDiffResult>() : null;
         float y = 0;
         try
         {
@@ -170,7 +177,7 @@ public sealed partial class AnimatedTextBlock
                     item.OldLayout = CreateParagraphLayout(sender, width, item.OldText, item.Format);
                     // Fade/Wipe operate on complete layouts; grapheme effects share
                     // one combined progress list, including paragraph-wide staggering.
-                    if (_textEffect is not Effects.TextFadeEffect && _textEffect is not Effects.TextWipeEffect)
+                    if (combinedDiffs is not null)
                     {
                         item.Diffs = GraphemeClusterDiff.Diff(
                             TextRenderingHelper.GenerateGraphemeClusters(item.OldText, item.OldLayout),
@@ -205,16 +212,20 @@ public sealed partial class AnimatedTextBlock
             if (deviceChanged)
                 ApplyTextForeground(sender);
             StopHoverScroll();
-            if (_currentState == AnimatedTextBlockRedrawState.Animating)
-                SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
-            PrepareDocumentLayouts(sender, width);
-        }
-        if (_currentState == AnimatedTextBlockRedrawState.TextChanged)
-        {
-            if (_textEffect == null)
+            bool textChanged = !HasSameDocumentText(Document, _renderedDocument);
+            bool start = _textEffect != null && textChanged;
+            bool resume = _textEffect != null && !textChanged && _currentState == AnimatedTextBlockRedrawState.Animating;
+            if (!start && !resume && _currentState != AnimatedTextBlockRedrawState.Idle)
                 SetRedrawState(AnimatedTextBlockRedrawState.Idle, false);
-            else
+
+            // The previous text is captured only for a new change. Resizing or switching
+            // drawing devices rebuilds the layouts at the current animation time.
+            var source = start ? _renderedDocument : resume ? _transitionSourceDocument : Document;
+            PrepareDocumentLayouts(sender, width, source, start || resume);
+            if (start)
                 BeginTextAnimation();
+            else if (resume && _diffResults is not null)
+                UpdateAllClusterProgress();
         }
         Color foreground = GetDocumentForeground(sender);
         if (_currentState == AnimatedTextBlockRedrawState.Idle)

@@ -314,7 +314,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
                 if (prepareHdr && playingPage is not null)
                 {
-                    playingPage.ResumeCanvasRendering();
+                    playingPage.ResumeCanvasRendering(prepareHdr: true);
                     _ = RevealWhenPreparedAsync(playingPage);
                 }
                 else
@@ -544,7 +544,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             Storyboard? storyboard = null;
             try
             {
-                if (playingPage is not null)
+                if (playingPage is not null && !playingPage.TryBeginHdrDismissMotion())
                     await playingPage.SetCanvasNavigationTransitionAsync(true);
 
                 var translate = new TranslateTransform();
