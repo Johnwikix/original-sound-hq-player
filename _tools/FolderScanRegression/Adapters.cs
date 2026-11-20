@@ -74,6 +74,7 @@ namespace WinUIMusicPlayer
     {
         public CommunityToolkit.WinUI.TestDispatcher DispatcherQueue { get; } = new();
         public TestWindow AppWindow => this;
+        public View.MainPage Content { get; } = new();
         public Microsoft.UI.WindowId Id => new(1);
     }
 }
@@ -107,6 +108,13 @@ namespace WinUIMusicPlayer.ViewModel
                 PropertyChanged?.Invoke(this, new(nameof(IsFolderWatchEnabled)));
             }
         }
+        public bool IsInitialized => true;
+        public int DsdPcmFreq => 0;
+        public int DsdGain => 0;
+        public string InfoBarTitle { get; set; } = "";
+        public string InfoBarMessage { get; set; } = "";
+        public bool InfoBarIsOpen { get; set; }
+        public int FullRefreshes { get; private set; }
         public bool IsPlaybackEngineReady => false;
         public bool CanPublishState => true;
         public bool IsPlaying { get; set; }
@@ -129,6 +137,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public async Task RefreshSongsSourceAsync()
         {
+            FullRefreshes++;
             var database = (Services.MusicDatabaseService)App.Services.GetService(typeof(Services.MusicDatabaseService))!;
             var songs = await database.GetMusicListAsync();
             SongsSource.Clear();
@@ -141,9 +150,11 @@ namespace WinUIMusicPlayer.Services
     public partial class MusicDatabaseService
     {
         private readonly Microsoft.Extensions.Logging.ILogger<MusicDatabaseService> _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MusicDatabaseService>.Instance;
+        public Task<LyricsDocument> GetLyricsDocumentAsync(Music music) => Task.FromResult(LyricsDocument.Empty);
         internal int WatchPublications;
         internal Task PublishLibrarySnapshotAsync(CancellationToken token, bool preserveRows)
         {
+            if (!preserveRows) throw new InvalidOperationException("Expected an incremental library publication");
             Interlocked.Increment(ref WatchPublications);
             return Task.CompletedTask;
         }

@@ -114,29 +114,35 @@ namespace WinUIMusicPlayer.Services
             _converter.progressEvent += (_, progress) => OnProgressChanged(progress);
         }
 
-        public async Task<bool> ConvertAudioAsync(Music music, string type = "wav", int bitRateKbps = 320)
+        public async Task<bool> ConvertAudioAsync(Music music, string type = "wav", int bitRateKbps = 320, Action? onCommitted = null)
         {
             if (music.IsRemote) { OnProgressChanged(100); return false; }
             string format = type.ToLowerInvariant();
             if (music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
                 return true; // 同格式无需转换（多选批量时逐文件判重）
             string outputPath = GenerateOutputPath(music.Path, format);
-            if (!await ConvertForExportAsync(music, outputPath, format, bitRateKbps))
-                return false;
-            // 转换产物主动入库（不再依赖 AutoScan 二次扫描发现），列表刷新由调用方统一触发
-            await AddConvertedFileToLibraryAsync(outputPath);
-            return true;
-        }
-
-        private async Task AddConvertedFileToLibraryAsync(string outputPath)
-        {
+            // FFmpeg selects its muxer from format. A non-audio suffix keeps unfinished data out of the library.
+            string temporaryPath = Path.Combine(Path.GetDirectoryName(outputPath) ?? "", $".{Guid.NewGuid():N}.tmp");
             try
             {
-                await App.Services.GetRequiredService<MusicDatabaseService>().AddConvertedFileAsync(outputPath);
+                if (!await ConvertForExportAsync(music, temporaryPath, format, bitRateKbps).ConfigureAwait(false))
+                    return false;
+                await App.Services.GetRequiredService<MusicDatabaseService>()
+                    .InstallConvertedFileAsync(temporaryPath, outputPath, onCommitted).ConfigureAwait(false);
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"AddConvertedFileToLibraryAsync 转换产物入库失败: {outputPath}");
+                _logger.LogError(ex, "转换产物入库失败: {Path}", outputPath);
+                return false;
+            }
+            finally
+            {
+                try { File.Delete(temporaryPath); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.LogWarning(ex, "清理转换临时文件失败: {Path}", temporaryPath);
+                }
             }
         }
 

@@ -6,16 +6,14 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.Helper;
-using ZLinq;
 using Microsoft.Extensions.Logging;
 namespace WinUIMusicPlayer.ViewModel;
 
 /// <summary>转换交互与进度的唯一归属，不依赖音乐浏览页面实例。</summary>
-public sealed class AudioConversionViewModel(AudioConverterService ConverterService, AppViewModel AppViewModel, ApplicationTasks tasks)
+public sealed class AudioConversionViewModel(AudioConverterService ConverterService, AppViewModel AppViewModel, ApplicationTasks tasks, MusicDatabaseService database)
 {
     private ProgressDialog? ProgressDialog;
     private int ProgressBarValue;
-    private bool IsMutiFile;
     private bool _busy;
     public Task ConvertAsync(IEnumerable<Music> music, string? tag)
     {
@@ -30,7 +28,7 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
         return tasks.RunAsync(_ => ConvertTrackedAsync(snapshot, tag));
     }
 
-    private async Task ConvertTrackedAsync(IEnumerable<Music> music, string? tag)
+    private async Task ConvertTrackedAsync(List<Music> music, string? tag)
     {
         if (_busy || !AppViewModel.IsInitialized) return;
         _busy = true;
@@ -78,9 +76,9 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
         _ = ProgressDialog.UpdateProgress(ProgressBarValue);
     }
 
-    private async Task ConvertCoreAsync(IEnumerable<Music> uniqueSelectedMusics, string? tag)
+    private async Task ConvertCoreAsync(List<Music> musicList, string? tag)
     {
-        if (uniqueSelectedMusics is null || tag is null)
+        if (musicList.Count == 0 || tag is null)
             return;
 
         // tag 形如 "wav"（无损直转）或 "mp3:320"（有损格式:码率）
@@ -89,19 +87,21 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
         int bitrate = parts.Length > 1 && int.TryParse(parts[1], out var b) && b > 0 ? b : 320;
 
         ProgressBarValue = 0;
-        var musicList = uniqueSelectedMusics.AsValueEnumerable().ToList();
-        IsMutiFile = musicList.Count > 1;
-        if (IsMutiFile)
+        bool committed = false;
+        void OnCommitted() => committed = true;
+        try
         {
-            await ConvertMultipleFiles(musicList, targetFormat, bitrate);
+            if (musicList.Count > 1) await ConvertMultipleFiles(musicList, targetFormat, bitrate, OnCommitted);
+            else await ConvertSingleFile(musicList[0], targetFormat, bitrate, OnCommitted);
         }
-        else
+        finally
         {
-            await ConvertSingleFile(musicList.AsValueEnumerable().FirstOrDefault(), targetFormat, bitrate);
+            if (committed && AppViewModel.CanPublishState)
+                await database.PublishLibrarySnapshotAsync(default, preserveRows: true);
         }
     }
 
-    private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat, int bitrate)
+    private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat, int bitrate, Action onCommitted)
     {
         await ProgressDialog.UpdateProgress(ProgressBarValue);
         _ = ProgressDialog.ShowThemedAsync(App.MainWindow.Content.XamlRoot);
@@ -115,7 +115,7 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
             {
                 if (!AppViewModel.IsInitialized) break;
                 _batchCurrentFilePercent = 0;
-                if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate))
+                if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate, onCommitted))
                     allSuccess = false;
                 _batchCompletedFiles++;
             }
@@ -127,17 +127,10 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
         _ = ProgressDialog.UpdateProgress(100);
         if (!allSuccess)
             UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverterFailed"));
-        // 转换产物已主动入库；等写入门清空、watcher 触发的 AutoScan 收尾后统一刷新一次
-        await AudioFileWriteGate.WaitUntilClearAsync();
-        await AutoRescanService.WaitUntilIdleAsync();
-        await AppViewModel.RefreshSongsSourceAsync();
     }
 
-    private async Task ConvertSingleFile(Music? music, string targetFormat, int bitrate)
+    private async Task ConvertSingleFile(Music music, string targetFormat, int bitrate, Action onCommitted)
     {
-        if (music is null)
-            return;
-
         if (music.Extension.Equals(targetFormat, StringComparison.OrdinalIgnoreCase))
         {
             UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
@@ -146,7 +139,7 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
 
         _ = ProgressDialog.UpdateProgress(ProgressBarValue);
         // 先启动转换再决定是否弹出进度对话框（瞬间完成的小文件不闪框）
-        Task<bool> convertTask = ConverterService.ConvertAudioAsync(music, targetFormat, bitrate);
+        Task<bool> convertTask = ConverterService.ConvertAudioAsync(music, targetFormat, bitrate, onCommitted);
         if (ProgressBarValue < 100)
         {
             _ = ProgressDialog.ShowThemedAsync(App.MainWindow.Content.XamlRoot);
@@ -155,10 +148,6 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
         {
             UpdateInfoBar(string.Format(ToolUtils.GetString("InfoBarMessageConverterFailedWithFile"), music.Title));
         }
-        // 转换产物已主动入库；等写入门清空、watcher 触发的 AutoScan 收尾后统一刷新一次
-        await AudioFileWriteGate.WaitUntilClearAsync();
-        await AutoRescanService.WaitUntilIdleAsync();
-        await AppViewModel.RefreshSongsSourceAsync();
     }
 
     public void UpdateInfoBar(string message)

@@ -28,6 +28,7 @@ try
     if (!progressive) throw new Exception("FAIL: a slow file blocks all batches in the same directory.");
     if (count != 151) throw new Exception($"FAIL: expected 151 songs, got {count}.");
     Console.WriteLine("PASS: first batch arrives before slow file completes; all 151 songs delivered.");
+    await ConversionRegression.RunAsync(root);
     await WatcherRegression.RunAsync(root);
     await RegressionSuite.RunAsync(root);
     await ReadonlyQueryChecks.RunAsync(root);

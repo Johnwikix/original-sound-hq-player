@@ -28,6 +28,7 @@ namespace WinUIMusicPlayer.Services
     public sealed class AppLifecycle
     {
         public bool IsReady => false;
+        public CancellationToken StoppingToken => default;
         public event EventHandler? Changed { add { } remove { } }
     }
     public partial class MusicDatabaseService

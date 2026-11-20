@@ -11,7 +11,7 @@ public partial class MusicDatabaseService
     /// 外部打开文件入库（OneShotPlaybackService 在固定本地盘且库内无同路径行时调用）：
     /// 先确保"外部导入"虚拟文件夹行存在，再复用提交批核心（PendingMetadataWrite 检查 +
     /// 事务内同路径二次查重，防并发扫描/转换重复落库）。返回权威库内行；并发方先落库时按路径
-    /// 回查；失败返回 null 由调用方回退一次性播放。与 AddConvertedFileAsync 同模式，不取
+    /// 回查；失败返回 null 由调用方回退一次性播放。不取
     /// LibraryOperationGate——单行小事务，避免与扫描互锁。
     /// </summary>
     public async Task<Music?> AddExternalFileAsync(Music music, string lyrics)

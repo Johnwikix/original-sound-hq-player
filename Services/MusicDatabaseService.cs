@@ -1445,54 +1445,6 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        /// <summary>
-        /// 转换产物主动入库：转换流程写完文件与标签后（仍持有写入门时）立即调用。
-        /// 直接走入库核心，不经过写入门检查——门正是转换流程自己持有的，
-        /// 若走扫描路径的门检查会把自己挡掉，导致产物永远不入库。
-        /// 已存在同路径记录时为幂等空操作。
-        /// </summary>
-        public async Task AddConvertedFileAsync(string path)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                var result = await AddMusicFileCoreAsync(path);
-                if (result.Music is not null)
-                {
-                    await CommitScanBatchAsync([result], null);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"AddConvertedFileAsync 转换产物入库失败: {path}: {ex.Message}");
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        /// <summary>入库核心：存在性检查 + 读取元数据，不含信号量与写入门逻辑。</summary>
-        private async Task<(Music? Music, string Lyrics)> AddMusicFileCoreAsync(string path)
-        {
-            try
-            {
-                var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
-                if (existingMusic is not null)
-                {
-                    return (null, "");
-                }
-                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                var (music, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
-                return (music, lyrics ?? "");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"AddMusicFileCoreAsync 添加新音乐文件时出错: {ex.Message}");
-                return (null, "");
-            }
-        }
-
         public async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId)
         {
             return await _dbConnection.Table<UsbDeviceMusic>().Where(m => m.UniqueDeviceId == uniqueDeviceId).ToListAsync();

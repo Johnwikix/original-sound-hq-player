@@ -19,7 +19,7 @@
     <Compile Include="../../Services/MusicDatabaseService.ExternalImports.cs" />
     <Compile Include="../../Services/OneShotPlaybackService.cs" />
     <Compile Include="../../Services/MusicDatabaseService.Metadata.cs" />
-    <Compile Include="../../Services/AudioFileWriteGate.cs" />
+    <Compile Include="../../Services/AudioFileWriteGate.cs;../../Services/AudioConverterService.cs;../../AudioConverters/FFmpegAudioConverter.cs;../../Model/ConversionMetadata.cs;../../ViewModel/AudioConversionViewModel.cs;../../Services/ApplicationTasks.cs" />
     <Compile Include="../../Model/PendingMetadataWrite.cs" />
     <Compile Include="../../Services/FolderCommands.cs" />
     <Compile Include="../../Services/FolderAccessService.cs" />

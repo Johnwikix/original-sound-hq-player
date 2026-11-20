@@ -45,7 +45,7 @@ namespace WinUIMusicPlayer.Services
         public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => music.Title == LyricsErrorForTitle
             ? Task.FromException<Model.LyricsDocument>(new IOException("Controlled lyrics read failure")) : Task.FromResult(
             new Model.LyricsDocument(new("[00:00.00]USB regression", Model.LyricsFormat.Lrc), "[00:00.00]翻译", "[00:00.00]pronunciation"));
-        public Task AddConvertedFileAsync(string path) => throw new InvalidOperationException("USB export must not add staged files to the library.");
+        internal Task InstallConvertedFileAsync(string temporaryPath, string outputPath, Action? onCommitted) => throw new InvalidOperationException("USB export must not add staged files to the library.");
     }
 }
 

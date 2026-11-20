@@ -1,3 +1,8 @@
+## 2026-11-20 内置音频转换按曲库改动更新列表
+
+- `AudioConverterService`、`MusicDatabaseService.Scanning` 先编码到同目录临时文件，成功后替换输出并入库。覆盖已有输出时保留曲目 ID，更新元数据。目标文件有待写标签时保留原文件及排队编辑。
+- `AudioConversionViewModel` 在单曲或批量转换实际提交曲目后统一增量发布一次；全部跳过或失败时保留当前列表。
+
 ## 2026-11-20 修复监听中断、目录改名和缺失收藏的增量更新
 
 - `LibraryWatcherService`、`MusicDatabaseService.Scanning` 在重新开启监听后补核对中断的变更。目录只改大小写时保留曲目 ID，移走含 emoji 的目录时正确标记下级曲目，批量删歌按文件路径索引查询。

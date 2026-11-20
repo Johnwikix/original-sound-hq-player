@@ -75,8 +75,8 @@ public partial class MusicDatabaseService
 
         /// <summary>提交一批扫描结果；返回新增行（供增量 UI 回调复用）与 UPDATE 命中的行数——
         /// 两者都属于数据库变更，调用方据此决定是否刷新视图。</summary>
-        private async Task<(List<Music> Added, int Updated)> CommitScanBatchAsync(IReadOnlyList<(Music Music, string Lyrics)> batch,
-            Func<IReadOnlyList<Music>, Task>? onBatchInserted, Action? onCommitted = null)
+        internal async Task<(List<Music> Added, int Updated)> CommitScanBatchAsync(IReadOnlyList<(Music Music, string Lyrics)> batch,
+            Func<IReadOnlyList<Music>, Task>? onBatchInserted, Action? onCommitted = null, bool replaceExistingPath = false)
         {
             var parser = new WinUIMusicPlayer.Services.Lyrics.LyricsParser();
             var embedded = new Dictionary<Music, LyricsDocument>();
@@ -96,7 +96,7 @@ public partial class MusicDatabaseService
                     var existing = music.Id == 0
                         ? db.FindWithQuery<Music>("SELECT Id,IsDetached,IsMissing FROM Music WHERE Path=? COLLATE NOCASE ORDER BY IsDetached,Id LIMIT 1", music.Path)
                         : db.FindWithQuery<Music>("SELECT Id,IsDetached,IsMissing FROM Music WHERE Id=?", music.Id);
-                    if (music.Id == 0 && existing is { IsDetached: false, IsMissing: false }) continue;
+                    if (music.Id == 0 && !replaceExistingPath && existing is { IsDetached: false, IsMissing: false }) continue;
                     if (existing is not null) music.Id = existing.Id;
                     // 延迟写入时保留数据库标签，重新纳入的文件仍可恢复可见性。
                     if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM PendingMetadataWrite WHERE Path=? COLLATE NOCASE", music.Path) != 0)
@@ -451,6 +451,24 @@ public partial class MusicDatabaseService
                     _logger.LogWarning(ex, "无法扫描监视目录 {Path}", path);
                 }
             }
+        }
+
+        /// <summary>编码成功后以同目录重命名替换目标。在同一维护锁内写入曲库，迟到的监听通知只会核对已提交的版本。</summary>
+        internal async Task InstallConvertedFileAsync(string temporaryPath, string outputPath, Action? onCommitted)
+        {
+            using var lease = await LibraryOperationGate.EnterAsync(reportBusy: false).ConfigureAwait(false);
+            await _metadataGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                // Queued tags identify the old file by size and timestamp. Replacing it would strand that edit.
+                if (await _dbConnection.ExecuteScalarAsync<int>("SELECT EXISTS(SELECT 1 FROM PendingMetadataWrite WHERE Path=? COLLATE NOCASE)", outputPath).ConfigureAwait(false) != 0)
+                    throw new IOException($"转换目标有待写入的标签: {outputPath}");
+                File.Move(temporaryPath, outputPath, overwrite: true);
+                var result = await AddFolderService.ReadMusicAsync(outputPath, default).ConfigureAwait(false);
+                if (result.Music is null) throw new IOException($"无法读取转换产物: {outputPath}");
+                await CommitScanBatchAsync([result], null, onCommitted, replaceExistingPath: true).ConfigureAwait(false);
+            }
+            finally { _metadataGate.Release(); }
         }
 
         public Task AddMusicList(IEnumerable<Music> songs)

@@ -114,6 +114,7 @@ namespace WinUIMusicPlayer.Utils
         public static TaskCompletionSource SlowFile = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static TaskCompletionSource SlowFileEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static int Reads;
+        public static Task<byte[]?> GetRawImage(Model.Music song) => Task.FromResult<byte[]?>(null);
         public static bool IsMusicFile(string extension) => extension == ".mp3";
         public static async Task<(Model.Music?, string?)> GetMusicInfo(Windows.Storage.StorageFile file)
         {
