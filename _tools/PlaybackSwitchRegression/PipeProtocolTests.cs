@@ -7,6 +7,7 @@ internal static unsafe partial class Program
     private static void RunPipeProtocolTests()
     {
         Run("Pipe: partial/adjacent frames and malformed input", () => PipeChecks.FramingAsync().GetAwaiter().GetResult());
+        Run("Pipe: legacy next-track plans and Smart boundary flag", PipeChecks.NextTrackRequest);
         Run("Pipe: abandoned replies cannot overwrite released buffers", () => PipeChecks.AbandonedRepliesAsync().GetAwaiter().GetResult());
         Run("Pipe: disconnect completes all outstanding requests", () => PipeChecks.DisconnectAsync().GetAwaiter().GetResult());
         Run("Pipe: queue capacity and in-flight disposal", () => PipeChecks.QueueAndShutdownAsync().GetAwaiter().GetResult());
@@ -61,6 +62,45 @@ internal static class PipeChecks
         wrongVersion[4]++;
         await ExpectAsync<InvalidDataException>(async () => await reader.ReadAsync(new MemoryStream(wrongVersion), default));
         await ExpectAsync<EndOfStreamException>(async () => await reader.ReadAsync(new FragmentedStream(valid[..30]), default));
+    }
+
+    public static void NextTrackRequest()
+    {
+        var legacy = new GaplessRequest(42, 7, @"C:\music\曲.wav");
+        byte[] payload = legacy.Write();
+        Check(BinaryPrimitives.ReadInt64LittleEndian(payload) == 42 && BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(8)) == 7
+            && payload.AsSpan(16).SequenceEqual(System.Text.Encoding.UTF8.GetBytes(legacy.Path)) && GaplessRequest.Read(payload) == legacy,
+            "legacy epoch/token/path encoding changed");
+        var cancel = new GaplessRequest(0, 0, "");
+        Check(cancel.Write().AsSpan().SequenceEqual(new byte[16]) && GaplessRequest.Read(cancel.Write()) == cancel,
+            "legacy cancellation encoding changed");
+
+        var protectedTrack = new GaplessRequest(long.MaxValue, long.MaxValue, new string('x', 2032), true);
+        byte[] marked = protectedTrack.Write();
+        Check(marked.Length == 2048 && BinaryPrimitives.ReadInt64LittleEndian(marked.AsSpan(8)) == -1
+            && GaplessRequest.Read(marked) == protectedTrack, "Smart hint truncated a valid token or maximum-length path");
+
+        byte[] malformed = (byte[])marked.Clone();
+        BinaryPrimitives.WriteInt64LittleEndian(malformed.AsSpan(8), long.MinValue);
+        Reject(() => GaplessRequest.Read(malformed));
+        BinaryPrimitives.WriteInt64LittleEndian(malformed.AsSpan(8), -1);
+        Reject(() => GaplessRequest.Read(malformed.AsSpan(0, 16)));
+        BinaryPrimitives.WriteInt64LittleEndian(malformed, 0);
+        Reject(() => GaplessRequest.Read(malformed));
+        marked[16] = 0;
+        Reject(() => GaplessRequest.Read(marked));
+        marked[16] = 0xff;
+        Reject(() => GaplessRequest.Read(marked));
+        Reject(() => (legacy with { Token = -1 }).Write());
+        Reject(() => (protectedTrack with { Path = protectedTrack.Path + "x" }).Write());
+        Reject(() => (cancel with { PreserveAlbumBoundary = true }).Write());
+
+        static void Reject(Action action)
+        {
+            try { action(); }
+            catch (ArgumentException) { return; }
+            throw new Exception("invalid queue plan was accepted");
+        }
     }
     public static async Task AbandonedRepliesAsync()
     {

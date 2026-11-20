@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using BassPlayerIpc.Shared;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using WinUIMusicPlayer;
@@ -333,6 +334,7 @@ internal static class Regression
             "playback toggle pauses remote current track without starting the pending remote track");
 
         await GaplessAsync();
+        await SmartTransitionsAsync();
 
         using var responsive = new Scenario();
         responsive.State.CurrentPlayingList = [current, offline, nextLocal];
@@ -637,6 +639,111 @@ internal static class Regression
             Check(remote.Player.Ends == 1 && remote.Remote.Played.Count == 2,
                 $"{mode}: unavailable remote song ends after one bounded probe");
         }
+    }
+
+    private static async Task SmartTransitionsAsync()
+    {
+        var savedSettings = AppSettings.Dsp;
+        AppSettings.Dsp = savedSettings with { GaplessPlayback = true, TransitionStyle = TrackTransitionStyle.Smart };
+        try
+        {
+            using var test = new Scenario();
+            var first = new Music(0) { Path = Path.GetFullPath("first.wav"), Album = " Unknown Pleasures ", AlbumArtist = " Artist ", Author = "Guest 1", TrackNumber = 4 };
+            var second = new Music(0) { Path = Path.GetFullPath("second.wav"), Album = "unknown pleasures", AlbumArtist = "artist", Author = "Guest 2", TrackNumber = 5, DiskNumber = 1 };
+            test.State.CurrentPlayingList = [first, second];
+            test.State.CurrentPlayingMusic = first;
+            test.State.State.Queue.SelectEntry(test.State.State.Queue.EntryIdAt(0), first);
+            test.Ipc.Progress = new(1, 91, 1500, 100000, 0, true);
+            test.Coordinator.StartGapless();
+            test.State.IsPlaying = true;
+            var plan = test.Ipc.Queued.Last();
+            Check(test.Player.Played.Count == 0 && plan.PreserveAlbumBoundary,
+                "startup playback protects a credible consecutive album pair without requiring explicit reselection");
+
+            int sent = test.Ipc.Queued.Count;
+            second.Author = "New guest";
+            AppSettings.Dsp = AppSettings.Dsp with { CompressorThresholdDb = -20 };
+            await Task.Delay(550);
+            Check(test.Ipc.Queued.Count == sent, "unrelated preferences and artist credit shadowed by album artist keep the confirmed plan");
+
+            async Task CheckReplacementAsync(Action change, bool preserves, string message)
+            {
+                var previous = test.Ipc.Queued.Last();
+                change();
+                await WaitAsync(() => test.Ipc.Queued.Last().Path == second.Path && test.Ipc.Queued.Last().Token != previous.Token);
+                Check(test.Ipc.Queued.Last().PreserveAlbumBoundary == preserves, message);
+            }
+
+            await CheckReplacementAsync(() => second.DiskNumber = 2, false, "different discs crossfade in Smart mode");
+            await CheckReplacementAsync(() => second.DiskNumber = 1, true, "correcting the disc number rebuilds the same candidate");
+            await CheckReplacementAsync(() => second.TrackNumber = 7, false, "nonconsecutive album tracks crossfade");
+            await CheckReplacementAsync(() => second.TrackNumber = 5, true, "corrected track numbering restores Smart protection");
+            await CheckReplacementAsync(() => second.AlbumArtist = "Other artist", false, "same album title across different artists is insufficient");
+            await CheckReplacementAsync(() => second.AlbumArtist = "Artist", true, "explicit album artist takes precedence over feature credits");
+            await CheckReplacementAsync(() => second.Album = "Unknown Album", false, "unknown album placeholders are not credible album identity");
+            first.Album = "未知专辑";
+            second.Album = "未知专辑";
+            await Task.Yield();
+            Check(!test.Ipc.Queued.Last().PreserveAlbumBoundary, "matching fallback album labels and zero transient IDs do not imply the same release or song");
+            first.Author = "Same performer";
+            second.Author = "Same performer";
+            first.AlbumArtist = "";
+            second.AlbumArtist = "";
+            first.Album = "Actual album";
+            await CheckReplacementAsync(() => second.Album = "Actual album", true, "missing album artist falls back to known track artist");
+            await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Crossfade }, true,
+                "crossfade preference replaces an already confirmed Smart plan for the same track");
+            await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 9 }, true,
+                "crossfade duration replaces an already confirmed plan for the same track");
+
+            var crossfade = AppSettings.Dsp;
+            sent = test.Ipc.Queued.Count;
+            AppSettings.Dsp = crossfade with { TransitionStyle = TrackTransitionStyle.Smart };
+            AppSettings.Dsp = crossfade;
+            await Task.Delay(50);
+            Check(test.Ipc.Queued.Count == sent && test.Ipc.Queued.Last().PreserveAlbumBoundary,
+                "rapid style round trip keeps the confirmed plan and its album hint");
+
+            var progress = test.Ipc.Progress;
+            test.Ipc.Progress = null;
+            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 8 };
+            await WaitAsync(() => test.Ipc.Queued.Last().Path.Length == 0);
+            test.Ipc.Progress = progress;
+            await WaitAsync(() => test.Ipc.Queued.Last().Path == second.Path);
+            Check(test.Ipc.Queued.Last().Path == second.Path, "a confirmed plan is invalidated even before fresh progress is available");
+
+            using var notificationFirst = new Scenario();
+            var from = new Music(201);
+            var next = new Music(202) { Duration = TimeSpan.FromMinutes(1) };
+            notificationFirst.State.CurrentPlayingList = [from, next];
+            notificationFirst.Ipc.Progress = new(1, 92, 57000, 60000, 0, true);
+            await notificationFirst.Coordinator.PlayAtAsync(0);
+            notificationFirst.State.IsPlaying = true;
+            var nextPlan = notificationFirst.Ipc.Queued.Last();
+            ProgressSnapshot? confirmation = null;
+            notificationFirst.Coordinator.PlaybackConfirmed += (music, snapshot) => { if (music == next) confirmation = snapshot; };
+            await Task.Run(() => notificationFirst.Ipc.Transition(nextPlan.Token, 93, 4800));
+            await WaitAsync(() => confirmation.HasValue);
+            Check(confirmation is { Epoch: 93, CurrentMs: 4800, TotalMs: 60000 } && notificationFirst.State.CurrentPlayingMusic == next,
+                "crossfade confirmation carries the position already rendered before matching telemetry");
+
+            AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Smart };
+            test.State.CurrentPlayMode = WinUIMusicPlayer.Utils.ToolUtils.PlayMode.SingleLoop;
+            await WaitAsync(() => test.Ipc.Queued.Last().Path == first.Path);
+            Check(test.Ipc.Queued.Last().PreserveAlbumBoundary, "Smart mode preserves the boundary when replaying the same track");
+
+            int cancellationAttempts = 0;
+            test.Ipc.CancelReply = () => ++cancellationAttempts == 1
+                ? Task.FromException<long>(new TimeoutException("lost disable acknowledgement"))
+                : Task.FromResult(0L);
+            AppSettings.Dsp = AppSettings.Dsp with { GaplessPlayback = false };
+            await WaitAsync(() => cancellationAttempts == 2);
+            int afterDisable = test.Ipc.Queued.Count;
+            await Task.Delay(550);
+            Check(test.Ipc.Queued.Count == afterDisable && test.Ipc.Queued.Last().Path.Length == 0,
+                "disabling transitions retries an unconfirmed cancellation and stops preload work when acknowledged");
+        }
+        finally { AppSettings.Dsp = savedSettings; }
     }
 
     private static async Task SongVersionsAsync()

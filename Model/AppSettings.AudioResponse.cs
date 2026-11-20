@@ -7,6 +7,7 @@ namespace WinUIMusicPlayer.Model;
 public static partial class AppSettings
 {
     public static event EventHandler? AudioResponseChanged;
+    public static event EventHandler? PlaybackTransitionsChanged;
 
     public static DspSettings Dsp
     {
@@ -14,7 +15,10 @@ public static partial class AppSettings
         set
         {
             if (field == value) return;
+            bool transitionsChanged = field.GaplessPlayback != value.GaplessPlayback
+                || field.TransitionStyle != value.TransitionStyle || field.CrossfadeSeconds != value.CrossfadeSeconds;
             field = value;
+            if (transitionsChanged) PlaybackTransitionsChanged?.Invoke(null, EventArgs.Empty);
             AudioResponseChanged?.Invoke(null, EventArgs.Empty);
         }
     } = new();

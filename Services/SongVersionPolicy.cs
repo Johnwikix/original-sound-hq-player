@@ -45,6 +45,11 @@ public static class SongVersionPolicy
         "Álbum desconocido", "Artista desconocido", "不明なアルバム", "不明なアーティスト", "Неизвестный альбом", "Неизвестный артист",
         "Unbekanntes Album", "Unbekannter Künstler", "Bilinmeyen Albüm", "Bilinmeyen Sanatçı"
     };
+
+    internal static bool IsKnownTag(ReadOnlySpan<char> value) => !value.IsEmpty && !value.SequenceEqual("未知")
+        && !value.SequenceEqual("不明") && !value.Equals("Bilinmiyor", StringComparison.OrdinalIgnoreCase)
+        && !UnknownLabels.GetAlternateLookup<ReadOnlySpan<char>>().Contains(value);
+
     private static string Normalize(string value)
     {
         // 候选检索是冷路径；不在音频进度或歌词帧中规范化字符串。

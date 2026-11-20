@@ -1201,11 +1201,38 @@
   <data name="PlayerGitHub.Content" xml:space="preserve">
     <value>Audio program GitHub</value>
   </data>
-  <data name="FadeInOutDescription" xml:space="preserve">
-    <value>Действует только под DirectSound.</value>
+  <data name="PlaybackTransitions" xml:space="preserve">
+    <value>Переходы между треками</value>
   </data>
-  <data name="FadeInOut.Text" xml:space="preserve">
-    <value>Уйти</value>
+  <data name="PlaybackTransitionsDescription" xml:space="preserve">
+    <value>Автоматические переходы применяются по окончании совместимых локальных треков PCM.</value>
+  </data>
+  <data name="PlaybackTransitionMode" xml:space="preserve">
+    <value>Автоматический переход</value>
+  </data>
+  <data name="PlaybackTransitionNormal" xml:space="preserve">
+    <value>Обычный</value>
+  </data>
+  <data name="PlaybackTransitionGapless" xml:space="preserve">
+    <value>Без пауз</value>
+  </data>
+  <data name="PlaybackTransitionCrossfade" xml:space="preserve">
+    <value>Фиксированное сведение</value>
+  </data>
+  <data name="PlaybackTransitionSmart" xml:space="preserve">
+    <value>Умный</value>
+  </data>
+  <data name="PlaybackTransitionDuration" xml:space="preserve">
+    <value>Длительность сведения (с)</value>
+  </data>
+  <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
+    <value>Соседние треки альбома звучат без пауз. Длительность треков и громкость начала следующего трека определяют перекрытие в пределах выбранного времени.</value>
+  </data>
+  <data name="ManualPlaybackFades" xml:space="preserve">
+    <value>Плавное изменение громкости при ручном управлении</value>
+  </data>
+  <data name="ManualPlaybackFadesDescription" xml:space="preserve">
+    <value>Плавно меняет громкость при запуске, паузе или ручной смене трека.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Эффект дословного текста</value>
@@ -2338,12 +2365,6 @@ SHA-256: {5}
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
     <value>WebDAV · Аудио кэшировано</value>
-  </data>
-  <data name="GaplessPlayback" xml:space="preserve">
-    <value>Воспроизведение без пауз</value>
-  </data>
-  <data name="GaplessPlaybackDescription" xml:space="preserve">
-    <value>Предзагрузка совместимых локальных PCM-треков без пауз и перекрёстного затухания. Для битовых потоков, сетевых источников и смены формата — обычные переходы.</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Скорость воспроизведения</value>

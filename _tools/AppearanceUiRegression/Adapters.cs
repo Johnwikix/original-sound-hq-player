@@ -1,9 +1,10 @@
 using BassPlayerIpc.Shared;
+using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace WinUIMusicPlayer.Model
 {
-    public static class AppSettings { public static DspSettings Dsp { get; set; } = new(); }
+    public static partial class AppSettings { }
 }
 namespace WinUIMusicPlayer.Services
 {
@@ -13,9 +14,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 {
     public partial class DspSettingsViewModel : ObservableObject
     {
-        private bool _syncing = true, _loaded, _dirty;
+        private bool _syncing = true, _loaded;
         private DspState? _lastState;
-        private readonly FakeTimer _commitTimer = new();
         public bool EffectsActive { get; private set; } = true;
         public bool NormalizeEditable => EffectsActive;
         public bool CrossfeedEditable => EffectsActive;
@@ -38,12 +38,15 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             _syncing = false;
         }
         private void SettingChanged(WinUIMusicPlayer.Services.LicenseFeature feature) { }
-        private Task CommitAsync() => Task.CompletedTask;
-        private sealed class FakeTimer { public void Stop() { } }
     }
 }
 namespace WinUIMusicPlayer.Utils
 {
+    public static class BindUtils
+    {
+        public static Visibility BoolToVisibilityConverter(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     public static class ToolUtils
     {
         private static readonly Dictionary<string, string> Resources = System.Xml.Linq.XDocument.Load(

@@ -1,3 +1,5 @@
+param([switch]$TransitionsOnly)
+
 $ErrorActionPreference = 'Stop'
 python "$PSScriptRoot/prepare_pcm_fixture.py"
 if ($LASTEXITCODE -ne 0) { throw 'PCM fixture preparation failed' }
@@ -6,7 +8,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Appearance regression build failed' }
 $testExe = Join-Path $PSScriptRoot 'bin/x64/Debug/net11.0-windows10.0.26100.0/win-x64/AppearanceUiRegression.exe'
 $resultPath = Join-Path (Split-Path $testExe) 'result.txt'
 if (Test-Path -LiteralPath $resultPath) { Remove-Item -LiteralPath $resultPath }
-$testProcess = Start-Process -FilePath $testExe -WindowStyle Hidden -PassThru
+$launch = @{ FilePath = $testExe; WindowStyle = 'Hidden'; PassThru = $true }
+if ($TransitionsOnly) { $launch.ArgumentList = '--transitions-only' }
+$testProcess = Start-Process @launch
 if (-not $testProcess.WaitForExit(30000)) {
     Stop-Process -Id $testProcess.Id
     throw 'Appearance regression timed out'

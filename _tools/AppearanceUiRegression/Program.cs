@@ -24,6 +24,8 @@ internal static class Program
 
 internal sealed partial class RegressionApplication : Application, IXamlMetadataProvider
 {
+    private const string TransitionResult = "PASS: shipping transition compiled bindings; saved selection and duration, four modes, and independent manual fades";
+
     private readonly IXamlMetadataProvider[] _metadata =
     [
         new Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider(),
@@ -60,6 +62,12 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         {
             Resources.MergedDictionaries.Add(new XamlControlsResources());
             await Task.Delay(300);
+            await TransitionSettingsRegression.RunAsync(host);
+            if (Environment.GetCommandLineArgs().Contains("--transitions-only"))
+            {
+                Complete(window, TransitionResult);
+                return;
+            }
             await BackgroundSettingsRegression.RunAsync(host);
             await SpectralSettingsRegression.RunAsync(host);
             await PcmSettingsRegression.RunAsync(host);
@@ -143,8 +151,14 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             result += "\nPASS: all 9 saved/user rates, legacy custom rate, initialization guard\nPASS: real composition load, blur, stale request, missing/corrupt image, clear, unload/reload and idempotent disposal";
             result += "\nPASS: shipping background SettingsExpander expansion, collapse/re-expansion and warning visibility";
             result += "\nPASS: shipping PCM compiled bindings; resample dependency/labels, shared peak ceiling, nonseekable stream, custom crossfeed and multichannel/bypass guards";
+            result += "\n" + TransitionResult;
         }
         catch (Exception ex) { result = "FAIL: " + ex; Environment.ExitCode = 1; }
+        Complete(window, result);
+    }
+
+    private void Complete(Window window, string result)
+    {
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), result);
         window.Close();
         Exit();

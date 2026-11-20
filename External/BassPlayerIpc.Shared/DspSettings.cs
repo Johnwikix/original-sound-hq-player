@@ -6,6 +6,10 @@ namespace BassPlayerIpc.Shared;
 /// <summary>保存 PCM 音效的用户偏好；位流旁路不修改这些偏好。</summary>
 public sealed record DspSettings
 {
+    public const int MinCrossfadeSeconds = 1;
+    public const int MaxCrossfadeSeconds = 12;
+    public const int DefaultCrossfadeSeconds = 5;
+
     /// <summary>获取或设置 DSP 总开关；默认开启以保留旧版音效偏好。</summary>
     public bool IsEnabled { get; init; } = true;
     /// <summary>获取普通 PCM 重采样策略；默认保持源率。</summary>
@@ -20,7 +24,12 @@ public sealed record DspSettings
     public bool DitherEnabled { get; init; }
     /// <summary>获取 Crossfeed 低通截止频率，单位 Hz。</summary>
     public double CrossfeedCutoffHz { get; init; } = 700;
+    /// <summary>是否启用曲终自动过渡；沿用旧配置和 IPC 的无缝开关。</summary>
     public bool GaplessPlayback { get; init; } = true;
+    /// <summary>启用自动过渡时使用的方式。旧偏好仍使用无缝衔接。</summary>
+    public TrackTransitionStyle TransitionStyle { get; init; }
+    /// <summary>固定交叉淡化时长或智能过渡的时长上限，单位为秒。</summary>
+    public int CrossfadeSeconds { get; init; } = DefaultCrossfadeSeconds;
     public double PlaybackRate { get; init; } = 1;
     public bool CompressorEnabled { get; init; }
     public double CompressorThresholdDb { get; init; } = -18;
@@ -80,20 +89,41 @@ public sealed record DspSettings
         double crossfeed = Finite(Crossfeed, 0, 0.5, 0);
         double width = Finite(StereoWidth, 0, 1.5, 1);
         double rate = Finite(PlaybackRate, 0.25, 5, 1);
+        var transitionStyle = NormalizeTransitionStyle(TransitionStyle);
+        int crossfadeSeconds = NormalizeCrossfadeSeconds(CrossfadeSeconds);
         double threshold = Finite(CompressorThresholdDb, -40, -3, -18);
         double ratio = Finite(CompressorRatio, 1, 20, 4);
         double makeup = Finite(CompressorMakeupDb, 0, 18, 6);
         if (ResampleMode == mode && ResampleTargetRate == targetRate && TruePeakCeilingDb == ceiling && CrossfeedCutoffHz == cutoff
             && TargetLufs == target && HeadroomDb == headroom && Balance == balance
+            && TransitionStyle == transitionStyle && CrossfadeSeconds == crossfadeSeconds
             && PlaybackRate == rate && CompressorThresholdDb == threshold && CompressorRatio == ratio && CompressorMakeupDb == makeup
             && Crossfeed == crossfeed && StereoWidth == width && ConvolutionTrimDb == trim && ImpulsePath == path && CurvePoints == curve && ConvolutionSource == source) return this;
         return this with { ResampleMode = mode, ResampleTargetRate = targetRate, TruePeakCeilingDb = ceiling, CrossfeedCutoffHz = cutoff, TargetLufs = target, HeadroomDb = headroom, Balance = balance,
+            TransitionStyle = transitionStyle, CrossfadeSeconds = crossfadeSeconds,
             PlaybackRate = rate, CompressorThresholdDb = threshold, CompressorRatio = ratio, CompressorMakeupDb = makeup,
             Crossfeed = crossfeed, StereoWidth = width, ConvolutionTrimDb = trim, ImpulsePath = path, CurvePoints = curve, ConvolutionSource = source };
     }
 
+    internal static TrackTransitionStyle NormalizeTransitionStyle(TrackTransitionStyle value) =>
+        Enum.IsDefined(value) ? value : TrackTransitionStyle.Gapless;
+
+    internal static int NormalizeCrossfadeSeconds(int value) =>
+        Math.Clamp(value, MinCrossfadeSeconds, MaxCrossfadeSeconds);
+
     private static double Finite(double value, double min, double max, double fallback) =>
         double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
+}
+
+/// <summary>兼容本地 PCM 曲目自然结束时的自动过渡方式。</summary>
+public enum TrackTransitionStyle
+{
+    /// <summary>无缝衔接，不重叠曲目。</summary>
+    Gapless,
+    /// <summary>重叠曲目并按设定时长交叉淡化。</summary>
+    Crossfade,
+    /// <summary>按曲目关系和边界选择无缝衔接或交叉淡化。</summary>
+    Smart
 }
 
 /// <summary>标记当前曲目的响度分析状态。</summary>
@@ -125,7 +155,8 @@ public readonly record struct DspState(byte RenderKind, bool EqualizerActive, in
 public static class DspProtocol
 {
     /// <summary>设置载荷字节数。</summary>
-    public const int SettingsSize = 1654;
+    public const int SettingsSize = SettingsV7Size + 2;
+    internal const int SettingsV7Size = 1654;
     /// <summary>状态载荷字节数。</summary>
     public const int StateSize = 320;
 
@@ -133,7 +164,9 @@ public static class DspProtocol
     public static void WriteSettings(Span<byte> data, DspSettings settings)
     {
         data[..SettingsSize].Clear();
-        data[0] = 7;
+        data[0] = 8;
+        data[SettingsV7Size] = (byte)DspSettings.NormalizeTransitionStyle(settings.TransitionStyle);
+        data[SettingsV7Size + 1] = (byte)DspSettings.NormalizeCrossfadeSeconds(settings.CrossfadeSeconds);
         data[1630] = (byte)settings.ResampleMode;
         data[1631] = settings.TruePeakLimiterEnabled ? (byte)1 : (byte)0;
         data[1632] = settings.DitherEnabled ? (byte)1 : (byte)0;
@@ -177,7 +210,8 @@ public static class DspProtocol
         bool legacy = data.Length == 44 && data[0] == 1;
         bool v2 = data.Length == 45 && data[0] == 2;
         bool v3 = data.Length == 1080 && data[0] == 3;
-        bool v7 = data.Length == SettingsSize && data[0] == 7;
+        bool v8 = data.Length == SettingsSize && data[0] == 8;
+        bool v7 = (data.Length == SettingsV7Size && data[0] == 7) || v8;
         if (v7 && (data[1630] > 2 || data[1631] > 1 || data[1632] > 1 || data[1633] != 0))
             throw new ArgumentException("Invalid PCM DSP settings.");
         bool v6 = (data.Length == 1630 && data[0] == 6) || v7;
@@ -211,6 +245,8 @@ public static class DspProtocol
             TruePeakCeilingDb = v7 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1638..]) : -1,
             CrossfeedCutoffHz = v7 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1646..]) : 700,
             GaplessPlayback = !v6 || data[1596] != 0,
+            TransitionStyle = v8 ? (TrackTransitionStyle)data[SettingsV7Size] : TrackTransitionStyle.Gapless,
+            CrossfadeSeconds = v8 ? data[SettingsV7Size + 1] : DspSettings.DefaultCrossfadeSeconds,
             CompressorEnabled = v6 && data[1597] != 0,
             PlaybackRate = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1598..]) : 1,
             CompressorThresholdDb = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1606..]) : -18,

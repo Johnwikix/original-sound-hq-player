@@ -7,6 +7,7 @@ internal static unsafe partial class Program
     private static void RunPlaybackEffectsTests()
     {
         RunGaplessLifecycleTests();
+        RunTrackTransitionTests();
         Run("Export: failed native resampler initialization releases ownership", () =>
         {
             FFmpeg.AutoGen.AVChannelLayout stereo = default;

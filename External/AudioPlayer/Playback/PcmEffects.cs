@@ -345,10 +345,13 @@ internal sealed class PcmEffects : IDisposable
 
     /// <summary>跨无缝播放边界转移渲染历史，并保留各曲目自身的响度目标。
     /// 仅由音频线程在停止渲染前一会话后调用。</summary>
-    internal void ContinueFrom(PcmEffects previous)
+    internal void ContinueFrom(PcmEffects previous, bool preserveInputGain = false)
     {
-        _renderTarget = previous._renderTarget;
-        _gain = previous._gain;
+        if (!preserveInputGain)
+        {
+            _renderTarget = previous._renderTarget;
+            _gain = previous._gain;
+        }
         _balance = previous._balance;
         _width = previous._width;
         _crossfeed = previous._crossfeed;

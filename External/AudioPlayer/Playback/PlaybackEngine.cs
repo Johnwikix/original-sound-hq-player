@@ -852,7 +852,6 @@ public sealed partial class PlaybackEngine : IDisposable
     private void ApplyVolumeToOutput()
     {
         if (_pauseFadeActive) return; // 暂停淡出进行中：音量同步会让淡出斜坡跳回，等暂停完成后再说
-        _gaplessSource?.Pending?.Gain?.SetImmediately(GainVolumeTarget);
         var session = _gaplessSource?.Current ?? _session;
         var output = _output;
         if (session == null || output == null) return;
@@ -1050,6 +1049,8 @@ public sealed partial class PlaybackEngine : IDisposable
             _previewDeviceId = null;
             _previewSettings = null;
             _dspSettings = normalized;
+            if (_gaplessPreloader?.Request is { } plan)
+                _gaplessSource?.UpdateTransition(ResolveTransitionStyle(plan, normalized), normalized.CrossfadeSeconds);
             if (rateChanged || topologyChanged || enhancementChanged) ChangingSetting();
             ApplyDspToSessions();
             QueueDspState();

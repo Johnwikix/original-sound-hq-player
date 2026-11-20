@@ -40,3 +40,22 @@ markup = ('<UserControl x:Class="AppearanceUiRegression.PcmControl" '
           'xmlns:tool="using:WinUIMusicPlayer.Utils"><ScrollViewer>\n')
 markup += ET.tostring(panel, encoding="unicode") + "\n</ScrollViewer></UserControl>\n"
 (here / "PcmControl.xaml").write_bytes(markup.replace("\r\n", "\n").replace("\n", "\r\n").encode("utf-8"))
+
+source = ET.parse(root / "View/SubView/Settings/GeneralSettingsControl.xaml")
+expander, = (e for e in source.iter(c + "SettingsExpander") if "('PlaybackTransitions')" in e.get("Header", ""))
+mode, duration, manual = expander.find(c + "SettingsExpander.Items").findall(c + "SettingsCard")
+expander.set(x + "Name", "TransitionExpander")
+mode.find(ns + "ComboBox").set(x + "Name", "TransitionMode")
+duration.set(x + "Name", "DurationCard")
+duration.find(ns + "ComboBox").set(x + "Name", "Duration")
+toggle = manual.find(ns + "ToggleSwitch")
+toggle.set(x + "Name", "ManualFades")
+toggle.set("IsOn", toggle.get("IsOn").replace("ViewModel.AppViewModel.IsFadeEnabled", "IsFadeEnabled"))
+expander.tail = None
+ET.indent(expander, space="    ")
+markup = ('<UserControl x:Class="AppearanceUiRegression.TransitionControl" '
+          'xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" '
+          'xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" '
+          'xmlns:tool="using:WinUIMusicPlayer.Utils"><ScrollViewer>\n')
+markup += ET.tostring(expander, encoding="unicode") + "\n</ScrollViewer></UserControl>\n"
+(here / "TransitionControl.xaml").write_bytes(markup.replace("\n", "\r\n").encode("utf-8"))

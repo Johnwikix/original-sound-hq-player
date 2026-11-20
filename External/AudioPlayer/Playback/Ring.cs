@@ -56,6 +56,17 @@ internal abstract class FrameRingBase<T> : IDisposable where T : unmanaged
     public bool IsDrained { get { lock (_gate) { return InputEnded && _head == _tail; } } }
     public int ReadyFrames { get { lock (_gate) { return (int)(_head - _tail); } } }
 
+    internal (int ReadyFrames, bool Ended) GetInputStatus()
+    {
+        lock (_gate)
+        {
+            int ready = (int)(_head - _tail);
+            // Overlap may observe the buffering gate without opening it. A normal Render still handles timeout.
+            if (_prebuffering && ready < _bufferTarget && !InputEnded) ready = 0;
+            return (ready, InputEnded);
+        }
+    }
+
     public void BeginSession()
     {
         lock (_gate)

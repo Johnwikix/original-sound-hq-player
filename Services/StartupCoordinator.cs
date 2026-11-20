@@ -258,9 +258,12 @@ namespace WinUIMusicPlayer.Services
         /// <summary>播放引擎就绪 = 生命周期 Ready 且 IPC 已连接且首曲推送完成；主界面启用与引擎轨完成两处刷新。</summary>
         private void UpdatePlaybackEngineReady()
         {
-            AppViewModel.IsPlaybackEngineReady =
+            bool ready =
                 _engineInitialized && App.Services.GetRequiredService<IpcService>().IsConnected &&
                 App.Services.GetRequiredService<AppLifecycle>().IsReady;
+            bool startTransitions = ready && !AppViewModel.IsPlaybackEngineReady;
+            AppViewModel.IsPlaybackEngineReady = ready;
+            if (startTransitions) App.Services.GetRequiredService<PlaybackCoordinator>().StartGapless();
         }
 
         // 由 App.OnLaunched 在 Host.StartAsync 完成后同步调用，无 await 的交互启用阶段。

@@ -1,3 +1,5 @@
+using BassPlayerIpc.Shared;
+
 namespace AudioPlayer.Playback;
 
 /// <summary>稳定的输出音源：在准确的 PCM 帧边界拼接，无需停止设备。
@@ -5,12 +7,20 @@ namespace AudioPlayer.Playback;
 /// 音频线程不执行文件 I/O、创建任务、发送通知或释放资源。</summary>
 internal sealed class GaplessSource(Session current) : IRenderSource
 {
+    private const int MixBlockFrames = 512;
     private readonly object _gate = new();
     private Session _current = current;
     private Session? _next;
     private long _token, _completedToken, _submitted;
     private readonly int _sampleRate = current.SampleRate, _channels = current.Channels;
+    private readonly int _recoveryDuration = Math.Max(1, current.SampleRate / 50);
     private readonly uint _channelMask = current.ChannelMask;
+    private double[]? _mixBuffer;
+    private TrackTransitionStyle _style;
+    private int _overlapLimit, _overlapRemaining, _endGuard, _recoveryRemaining;
+    private double _incomingWeight, _recoveryStartWeight;
+    private long _recoveryEpoch;
+    private bool _rejectPending;
     internal Session Current => Volatile.Read(ref _current);
     internal Session? Pending => Volatile.Read(ref _next);
     internal long CompletedToken => Volatile.Read(ref _completedToken);
@@ -26,16 +36,35 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         lock (_gate) return (_current, _next, _completedToken);
     }
 
-    internal bool Queue(Session next, long token)
+    internal bool Queue(Session next, long token, TrackTransitionStyle style = TrackTransitionStyle.Gapless,
+        int seconds = DspSettings.DefaultCrossfadeSeconds)
     {
         lock (_gate)
         {
             if (_next != null || next.Kind != Kind || next.SampleRate != SampleRate
                 || next.Channels != Channels || next.ChannelMask != ChannelMask) return false;
+            SetTransition(style, seconds);
+            next.ShareOutputGain(_current);
             _next = next;
             _token = token;
             return true;
         }
+    }
+
+    internal void UpdateTransition(TrackTransitionStyle style, int seconds)
+    {
+        lock (_gate)
+        {
+            if (_next != null) SetTransition(style, seconds);
+        }
+    }
+
+    private void SetTransition(TrackTransitionStyle style, int seconds)
+    {
+        _style = style;
+        _overlapLimit = style is TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart
+            ? Math.Clamp(seconds, DspSettings.MinCrossfadeSeconds, DspSettings.MaxCrossfadeSeconds) * SampleRate : 0;
+        if (_overlapLimit > 0) _mixBuffer ??= new double[(MixBlockFrames + 1) * Channels];
     }
 
     internal Session? Cancel()
@@ -43,6 +72,8 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         lock (_gate)
         {
             var next = _next;
+            AbortOverlap();
+            _rejectPending = false;
             _next = null;
             return next;
         }
@@ -62,20 +93,199 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     {
         lock (_gate)
         {
-            bool join = !_current.TailStarted && _next is { DecodeFailure: null } pending
-                && pending.DspReady && (pending.ReadyFrames >= pending.InitialBufferFrames || pending.InputEnded && pending.ReadyFrames > 0);
-            int rendered = _current.RenderPcm(buffer, frames, drainTail: !join);
-            if (rendered < frames && (join ? _current.PcmInputDrained : _current.IsDrained) && _next is { DecodeFailure: null } next
-                && next.DspReady && (next.ReadyFrames >= next.InitialBufferFrames || next.InputEnded && next.ReadyFrames > 0))
+            int rendered = RenderRecovery(buffer, frames);
+            if (rendered < frames && _recoveryRemaining == 0 && !_rejectPending && _next is { } next)
             {
-                next.ContinueDspFrom(_current);
-                _next = null;
-                _current = next;
-                Volatile.Write(ref _completedToken, _token);
-                rendered += next.RenderPcm(buffer[(rendered * Channels)..], frames - rendered);
+                if (_overlapRemaining > 0 || _overlapLimit > 0 && !_current.TailStarted && CanJoin(next))
+                    rendered += RenderOverlap(next, buffer[(rendered * Channels)..], frames - rendered);
             }
+            if (rendered < frames) rendered += RenderRecovery(buffer[(rendered * Channels)..], frames - rendered);
+            if (rendered < frames) rendered += RenderRemainder(buffer[(rendered * Channels)..], frames - rendered);
             Interlocked.Add(ref _submitted, rendered);
         }
+    }
+
+    private int RenderRemainder(Span<double> buffer, int frames)
+    {
+        bool join = !_current.TailStarted && CanJoin(_next);
+        int rendered = _current.RenderPcm(buffer, frames, drainTail: !join);
+        if (rendered < frames && (join ? _current.PcmInputDrained : _current.IsDrained)
+            && _next is { } next && CanJoin(next))
+        {
+            Promote(next, preserveInputGain: false);
+            rendered += next.RenderPcm(buffer[(rendered * Channels)..], frames - rendered);
+        }
+        return rendered;
+    }
+
+    private bool CanJoin(Session? next)
+    {
+        if (_rejectPending || next is not { DecodeFailure: null, DspReady: true }) return false;
+        var (ready, ended) = next.PcmInputStatus;
+        return ready > 0 && (ready >= next.InitialBufferFrames || ended);
+    }
+
+    private int RenderOverlap(Session next, Span<double> buffer, int frames)
+    {
+        int rendered = 0;
+        if (_overlapRemaining == 0)
+        {
+            int prefix = GetOverlapStart(next, frames, out int overlap);
+            if (overlap == 0) return 0;
+            if (prefix > 0)
+            {
+                rendered = _current.RenderPcm(buffer, prefix, drainTail: false);
+                if (rendered < prefix) return rendered;
+            }
+            _overlapRemaining = overlap;
+            _endGuard = Math.Min(overlap / 4, SampleRate / 8);
+        }
+
+        while (rendered < frames)
+        {
+            var (outgoingReady, outgoingEnded) = _current.PcmInputStatus;
+            var (incomingReady, incomingEnded) = next.PcmInputStatus;
+            if (next.DecodeFailure != null || !next.DspReady || incomingReady == 0
+                || outgoingEnded && outgoingReady > _overlapRemaining + SampleRate / 20
+                || !outgoingEnded && (_overlapRemaining <= _endGuard || outgoingReady == 0))
+            {
+                AbortOverlap();
+                break;
+            }
+
+            // Once the decoder has reached EOF its exact frame count replaces the duration estimate.
+            if (outgoingEnded) _overlapRemaining = outgoingReady;
+            if (incomingEnded && incomingReady < _overlapRemaining)
+            {
+                AbortOverlap();
+                break;
+            }
+            if (_overlapRemaining == 0)
+            {
+                Promote(next, preserveInputGain: _incomingWeight > 0);
+                break;
+            }
+
+            int take = Math.Min(frames - rendered, MixBlockFrames);
+            take = Math.Min(take, Math.Min(outgoingReady, incomingReady));
+            take = Math.Min(take, outgoingEnded ? _overlapRemaining : _overlapRemaining - _endGuard);
+            var output = buffer.Slice(rendered * Channels, take * Channels);
+            RenderMix(next, output, take);
+            rendered += take;
+            _overlapRemaining -= take;
+            if (_overlapRemaining == 0)
+            {
+                Promote(next, preserveInputGain: true);
+                break;
+            }
+        }
+        return rendered;
+    }
+
+    private int GetOverlapStart(Session next, int frames, out int overlap)
+    {
+        overlap = 0;
+        var (outgoingReady, outgoingEnded) = _current.PcmInputStatus;
+        var (incomingReady, incomingEnded) = next.PcmInputStatus;
+        if (outgoingReady == 0 || !outgoingEnded && _current.TotalMs <= 0 || !incomingEnded && next.TotalMs <= 0) return 0;
+
+        long played = Volatile.Read(ref _current.AnchorFrames) + _current.FramesPlayed;
+        long outgoingLength = outgoingEnded ? played + outgoingReady : _current.MsToFrames(_current.TotalMs);
+        long incomingLength = incomingEnded ? incomingReady : next.MsToFrames(next.TotalMs);
+        long remaining = outgoingEnded ? outgoingReady : Math.Max(outgoingReady, outgoingLength - played);
+        int preferred = _overlapLimit;
+        int lengthDivisor = 2;
+        if (_style == TrackTransitionStyle.Smart)
+        {
+            lengthDivisor = 4;
+            // A quiet intro can enter earlier; a loud attack gets a shorter blend.
+            double energy = next.IntroMeanSquare;
+            preferred = energy <= 0.00025 ? preferred : energy >= 0.01 ? preferred / 2 : preferred * 3 / 4;
+        }
+        preferred = (int)Math.Min(preferred, Math.Min(outgoingLength, incomingLength) / lengthDivisor);
+        long prefix = Math.Max(0, remaining - preferred);
+        if (prefix >= frames || prefix >= outgoingReady) return 0;
+        int duration = (int)Math.Min(remaining, preferred);
+        if (duration < Math.Max(2, SampleRate * 80 / 1000)) return 0;
+        // Buffer only enough for this pull. Both decoder threads continue filling their rings in parallel.
+        int needed = (int)Math.Min(duration, frames - prefix);
+        if (incomingReady < needed) return 0;
+        overlap = duration;
+        return (int)prefix;
+    }
+
+    private void RenderMix(Session next, Span<double> output, int frames)
+    {
+        var incoming = _mixBuffer.AsSpan(0, output.Length);
+        // The render lock excludes seeks and retirement; each ring has only one consumer.
+        _current.ReadPcm(output, frames);
+        next.ReadPcm(incoming, frames);
+        _current.ApplyPcmInputGain(output, frames);
+        next.ApplyPcmInputGain(incoming, frames);
+        double weight = _incomingWeight;
+        double step = (1 - weight) / _overlapRemaining;
+        for (int offset = 0; offset < output.Length; offset += Channels)
+        {
+            weight = Math.Min(1, weight + step);
+            for (int ch = 0; ch < Channels; ch++)
+            {
+                int sample = offset + ch;
+                output[sample] = output[sample] * (1 - weight) + incoming[sample] * weight;
+            }
+        }
+        _incomingWeight = weight;
+        // The final slot retains one post-normalization frame after the standby session is detached.
+        incoming[^Channels..].CopyTo(_mixBuffer.AsSpan(MixBlockFrames * Channels));
+        _current.ProcessPcm(output, frames, inputGainApplied: true);
+    }
+
+    private void AbortOverlap()
+    {
+        _overlapRemaining = 0;
+        if (_incomingWeight == 0) return;
+        // A partially consumed intro cannot be handed off as an ordinary splice.
+        _rejectPending = true;
+        _recoveryStartWeight = _incomingWeight;
+        _recoveryRemaining = _recoveryDuration;
+        _recoveryEpoch = _current.TimelineEpoch;
+        _incomingWeight = 0;
+    }
+
+    private int RenderRecovery(Span<double> buffer, int frames)
+    {
+        if (_recoveryRemaining <= 0 || frames <= 0) return 0;
+        if (_recoveryEpoch != _current.TimelineEpoch)
+        {
+            _recoveryRemaining = 0;
+            return 0;
+        }
+        int take = Math.Min(frames, _recoveryRemaining);
+        _current.ReadPcm(buffer, take);
+        _current.ApplyPcmInputGain(buffer, take);
+        var lastIncoming = _mixBuffer.AsSpan(MixBlockFrames * Channels);
+        double step = _recoveryStartWeight / _recoveryDuration;
+        // Finish the decay even if the outgoing ring is empty. Its read pads the unavailable frames with silence.
+        for (int frame = 0; frame < take; frame++)
+        {
+            double weight = --_recoveryRemaining * step;
+            for (int ch = 0; ch < Channels; ch++)
+            {
+                int sample = frame * Channels + ch;
+                buffer[sample] = buffer[sample] * (1 - weight) + lastIncoming[ch] * weight;
+            }
+        }
+        _current.ProcessPcm(buffer, take, inputGainApplied: true);
+        return take;
+    }
+
+    private void Promote(Session next, bool preserveInputGain)
+    {
+        next.ContinueDspFrom(_current, preserveInputGain);
+        _next = null;
+        _overlapRemaining = _recoveryRemaining = 0;
+        _incomingWeight = 0;
+        Volatile.Write(ref _current, next);
+        Volatile.Write(ref _completedToken, _token);
     }
 
     public void FillDop(Span<uint> buffer, int frames) => throw new NotSupportedException();

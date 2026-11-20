@@ -147,12 +147,32 @@
                     </controls:SettingsCard.Header>
                 </controls:SettingsCard>
 
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="FadeInOut" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Header>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
+                <controls:SettingsExpander Header="{x:Bind tool:ToolUtils.GetString('PlaybackTransitions')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionsDescription')}">
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionMode')}">
+                            <ComboBox MinWidth="160" SelectedIndex="{x:Bind PlaybackTransitions.ModeIndex, Mode=TwoWay}"
+                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionMode')}">
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionNormal')}" />
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionGapless')}" />
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionCrossfade')}" />
+                                <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionSmart')}" />
+                            </ComboBox>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionDuration')}"
+                            Description="{x:Bind PlaybackTransitions.CrossfadeDescription, Mode=OneWay}"
+                            Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(PlaybackTransitions.CrossfadeVisible), Mode=OneWay}">
+                            <ComboBox MinWidth="80" ItemsSource="{x:Bind PlaybackTransitions.DurationOptions}"
+                                SelectedIndex="{x:Bind PlaybackTransitions.DurationIndex, Mode=TwoWay}"
+                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionDuration')}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('ManualPlaybackFades')}"
+                            Description="{x:Bind tool:ToolUtils.GetString('ManualPlaybackFadesDescription')}">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}"
+                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ManualPlaybackFades')}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
                 <TextBlock x:Uid="SettingInterface" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 

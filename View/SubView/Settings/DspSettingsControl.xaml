@@ -30,11 +30,6 @@
                     Margin="2,0,0,0"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     TextWrapping="Wrap" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('GaplessPlayback')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('GaplessPlaybackDescription')}">
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.GaplessPlayback, Mode=TwoWay}"
-                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('GaplessPlayback')}" />
-                </controls:SettingsCard>
                 <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DspMasterDescription')}" Header="{x:Bind tool:ToolUtils.GetString('DspMaster')}">
                     <ToggleSwitch
                         MinWidth="0"

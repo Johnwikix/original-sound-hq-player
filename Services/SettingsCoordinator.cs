@@ -12,7 +12,7 @@ using WinUIMusicPlayer.State;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>偏好编辑到持久化的应用边界。启动恢复只改内存，Ready 后才接受自动保存。</summary>
-public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LyricsLoader lyricsLoader, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger, Lyrics.LyricsOnlineSearch onlineLyrics, ApplicationFontService applicationFont) : IDisposable
+public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LyricsLoader lyricsLoader, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger, Lyrics.LyricsOnlineSearch onlineLyrics, ApplicationFontService applicationFont, IpcService ipc) : IDisposable
 {
     public event Action? ThemeChanged;
     private bool _started;
@@ -46,6 +46,14 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
         _started = true;
         state.Preferences.PropertyChanged += OnPreferencesChanged;
         state.Preferences.Appearance.PlaybackSpectrum.PropertyChanged += OnSpectrumChanged;
+        AppSettings.PlaybackTransitionsChanged += OnPlaybackTransitionsChanged;
+    }
+
+    private void OnPlaybackTransitionsChanged(object? sender, EventArgs e)
+    {
+        if (!state.Lifecycle.IsReady) return;
+        ipc.UpdateDsp();
+        _ = database.SaveSettingAsync();
     }
 
     private void OnSpectrumChanged(object? sender, PropertyChangedEventArgs e)
@@ -617,5 +625,6 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
         }
         state.Preferences.PropertyChanged -= OnPreferencesChanged;
         state.Preferences.Appearance.PlaybackSpectrum.PropertyChanged -= OnSpectrumChanged;
+        AppSettings.PlaybackTransitionsChanged -= OnPlaybackTransitionsChanged;
     }
 }

@@ -61,14 +61,18 @@ internal sealed class Session : IRenderSource, IDisposable
     private DsdByteRing? _dsdRing;
 
     internal readonly Equalizer Eq = new();
-    internal readonly GainRamp? Gain;
+    internal GainRamp? Gain { get; private set; }
     internal readonly PcmEffects? Effects;
     private bool _dspEnabled = true;
     private int _dspResetVersion, _renderDspResetVersion;
     private bool _tailStarted, _hasRenderedPcm;
     private int _tailRemaining, _tailFramesRendered;
     private long _renderedFrames;
+    // The standby decoder publishes one bounded measurement. The render thread only reads the result.
+    private double _introMeanSquare = double.NaN;
+    internal double IntroMeanSquare => Volatile.Read(ref _introMeanSquare);
     internal bool PcmInputDrained => _pcmRing?.IsDrained == true;
+    internal (int ReadyFrames, bool Ended) PcmInputStatus => _pcmRing?.GetInputStatus() ?? default;
     internal bool DspReady => Effects?.IsPrepared ?? true;
     internal bool TailStarted => _tailStarted;
     internal long DspDelayMs => Kind == RenderKind.Pcm && Volatile.Read(ref _dspEnabled)
@@ -138,7 +142,8 @@ internal sealed class Session : IRenderSource, IDisposable
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
-        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null, PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000)
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null,
+        PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000, bool measureTransitionIntro = false)
     {
         Session? pending = null;
         IDisposable? input = null;
@@ -174,7 +179,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     };
                     s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source, dec.AnalysisChannelMask);
                     pending = s;
-                    s.StartThread(s.PcmDecodeProc);
+                    s.StartThread(measureTransitionIntro ? s.PcmDecodeWithIntroMeasurement : s.PcmDecodeProc);
                     return s;
                 }
                 case RenderKind.Dop:
@@ -374,8 +379,15 @@ internal sealed class Session : IRenderSource, IDisposable
         }
     }
 
-    private void PcmDecodeProc()
+    private void PcmDecodeProc() => DecodePcm(measureTransitionIntro: false);
+
+    private void PcmDecodeWithIntroMeasurement() => DecodePcm(measureTransitionIntro: true);
+
+    private void DecodePcm(bool measureTransitionIntro)
     {
+        int introFramesRemaining = measureTransitionIntro ? SampleRate / 5 : 0;
+        double introSum = 0;
+        int introCount = 0;
         try
         {
             while (!_cancelled)
@@ -384,9 +396,25 @@ internal sealed class Session : IRenderSource, IDisposable
                 int frames = _tempo?.Read(_pcm!, _decodeScratchF) ?? _pcm!.Read(_decodeScratchF);
                 if (frames <= 0)
                 {
+                    if (introFramesRemaining > 0 && introCount > 0)
+                        Volatile.Write(ref _introMeanSquare, introSum / introCount);
+                    introFramesRemaining = 0;
                     if (!_pcmRing!.MarkInputEnded(_decodeEpoch)) continue;
                     if (WaitForSeekAfterEnd()) continue;
                     break;
+                }
+                if (introFramesRemaining > 0)
+                {
+                    int take = Math.Min(introFramesRemaining, frames);
+                    foreach (double sample in _decodeScratchF.AsSpan(0, take * _channels))
+                    {
+                        if (!double.IsFinite(sample)) continue;
+                        introSum += sample * sample;
+                        introCount++;
+                    }
+                    introFramesRemaining -= take;
+                    if (introFramesRemaining == 0 && introCount > 0)
+                        Volatile.Write(ref _introMeanSquare, introSum / introCount);
                 }
                 if (!_pcmRing!.Push(_decodeScratchF, frames, _isCancelled, _decodeEpoch))
                 {
@@ -532,15 +560,17 @@ internal sealed class Session : IRenderSource, IDisposable
     public void FillPcm(Span<double> buffer, int frames)
         => RenderPcm(buffer, frames);
 
-    internal void ContinueDspFrom(Session previous)
+    internal void ContinueDspFrom(Session previous, bool preserveInputGain)
     {
         if (!Volatile.Read(ref _dspEnabled) || !Volatile.Read(ref previous._dspEnabled)) return;
         Eq.ContinueFrom(previous.Eq);
-        if (Effects != null && previous.Effects != null) Effects.ContinueFrom(previous.Effects);
+        if (Effects != null && previous.Effects != null) Effects.ContinueFrom(previous.Effects, preserveInputGain);
         _renderDspResetVersion = Volatile.Read(ref _dspResetVersion);
     }
 
-    internal int RenderPcm(Span<double> buffer, int frames, bool drainTail = true)
+    internal void ShareOutputGain(Session current) => Gain = current.Gain;
+
+    internal int ReadPcm(Span<double> buffer, int frames)
     {
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return 0; }
         int reset = Volatile.Read(ref _dspResetVersion);
@@ -554,9 +584,15 @@ internal sealed class Session : IRenderSource, IDisposable
         }
         int audible = _pcmRing.Render(buffer, frames);
         if (audible > 0) _hasRenderedPcm = true;
-        bool enabled = Volatile.Read(ref _dspEnabled);
-        if (drainTail && _pcmRing.IsDrained)
+        return audible;
+    }
+
+    internal int RenderPcm(Span<double> buffer, int frames, bool drainTail = true)
+    {
+        int audible = ReadPcm(buffer, frames);
+        if (drainTail && PcmInputDrained)
         {
+            bool enabled = Volatile.Read(ref _dspEnabled);
             if (!_tailStarted)
             {
                 _tailStarted = true;
@@ -567,20 +603,31 @@ internal sealed class Session : IRenderSource, IDisposable
             audible += extra; _tailRemaining -= extra;
             _tailFramesRendered += extra;
         }
-        if (audible <= 0) return 0; // 暂时欠载不推进处理历史。
+        ProcessPcm(buffer, audible);
+        return audible;
+    }
+
+    internal void ApplyPcmInputGain(Span<double> buffer, int frames)
+    {
+        if (Volatile.Read(ref _dspEnabled)) Effects?.ApplyInput(buffer, frames);
+    }
+
+    internal void ProcessPcm(Span<double> buffer, int frames, bool inputGainApplied = false)
+    {
+        if (frames <= 0) return; // 暂时欠载不推进处理历史。
+        bool enabled = Volatile.Read(ref _dspEnabled);
         if (enabled)
         {
-            Effects?.ApplyInput(buffer, audible);
-            Eq.Process(buffer, audible, _channels);
-            Effects?.ApplyConvolution(buffer, audible);
-            Effects?.ApplyStereo(buffer, audible);
-            Effects?.ApplyDynamics(buffer, audible);
+            if (!inputGainApplied) Effects?.ApplyInput(buffer, frames);
+            Eq.Process(buffer, frames, _channels);
+            Effects?.ApplyConvolution(buffer, frames);
+            Effects?.ApplyStereo(buffer, frames);
+            Effects?.ApplyDynamics(buffer, frames);
         }
-        Gain.Apply(buffer, audible, _channels);
-        if (enabled) Effects?.ApplyFinal(buffer, audible);
-        Interlocked.Add(ref _renderedFrames, audible);
-        _engine.CaptureFft(buffer, audible, _channels, ChannelMask, SampleRate);
-        return audible;
+        Gain?.Apply(buffer, frames, _channels);
+        if (enabled) Effects?.ApplyFinal(buffer, frames);
+        Interlocked.Add(ref _renderedFrames, frames);
+        _engine.CaptureFft(buffer, frames, _channels, ChannelMask, SampleRate);
     }
 
     public void FillDop(Span<uint> buffer, int frames)

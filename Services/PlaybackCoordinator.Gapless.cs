@@ -2,6 +2,7 @@ using BassPlayerIpc.Shared;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using System;
+using System.Buffers.Binary;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,9 +16,10 @@ public sealed partial class PlaybackCoordinator
     // SelectionVersion rejects an old user intent; Epoch rejects an old engine timeline;
     // Token identifies this exact plan, including duplicate queue entries.
     private sealed record NextPlan(long Token, long SelectionVersion, Music From, Music Next,
-        long EntryId, long Epoch, string Path);
+        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeSeconds, bool PreserveAlbumBoundary);
     private NextPlan? _nextPlan;
     private NextPlan? _cancellingPlan;
+    private (long Epoch, long PositionMs) _cancellingTransition;
     private IpcService? _gaplessIpc;
     private DispatcherQueueTimer? _gaplessTimer;
     private long _nextToken, _lastAcceptedToken, _retryAfter, _outputGeneration;
@@ -25,22 +27,24 @@ public sealed partial class PlaybackCoordinator
     private bool _cancelSending;
     private long _cancelRetryAfter;
     private bool _candidateDirty = true;
+    private bool _candidatePreserveAlbumBoundary;
     private long _candidateQueueVersion = -1, _candidateCurrentEntry, _candidateEntry;
     private PlayMode _candidateMode;
     private Music? _candidateFrom, _candidateNext;
 
-    private void StartGapless()
+    internal void StartGapless()
     {
         if (_disposed) return;
         if (_gaplessIpc == null)
         {
+            RegisterPlaybackLifecycle();
             _gaplessIpc = ipc;
             _gaplessIpc.NotificationReceived += GaplessNotification;
             _gaplessIpc.DspStateChanged += GaplessOutputChanged;
             _outputGeneration = _gaplessIpc.CurrentDspState?.State.OutputGeneration ?? 0;
             state.PropertyChanged += GaplessStateChanged;
             state.State.Queue.PropertyChanged += GaplessQueueChanged;
-            AppSettings.AudioResponseChanged += GaplessPreferencesChanged;
+            AppSettings.PlaybackTransitionsChanged += GaplessPreferencesChanged;
             _gaplessTimer = App.MainWindow.DispatcherQueue.CreateTimer();
             _gaplessTimer.Interval = TimeSpan.FromMilliseconds(500);
             _gaplessTimer.Tick += GaplessTick;
@@ -51,12 +55,14 @@ public sealed partial class PlaybackCoordinator
 
     private void UpdateGaplessTimer()
     {
-        if (!_disposed && AppSettings.Dsp.GaplessPlayback && state.IsPlaying
-            && state.CurrentPlayingMusic is { IsRemote: false } && state.CurrentPlayMode != PlayMode.RepeatOff)
+        if (!_disposed && state.CanStartPlayback && (_cancellingPlan != null
+            || AppSettings.Dsp.GaplessPlayback && state.IsPlaying && state.CurrentPlayingMusic is { IsRemote: false }
+                && state.CurrentPlayMode != PlayMode.RepeatOff))
             _gaplessTimer?.Start();
         else _gaplessTimer?.Stop();
     }
 
+    // SettingsCoordinator sends the DSP snapshot during this event. Queue changes follow it on the ordered command pipe.
     private void GaplessPreferencesChanged(object? sender, EventArgs e)
         => App.MainWindow.DispatcherQueue.TryEnqueue(RefreshGaplessPreferences);
 
@@ -99,15 +105,22 @@ public sealed partial class PlaybackCoordinator
         if (e.PropertyName != nameof(state.State.Queue.Version)) return;
         _candidateDirty = true;
         UpdateGaplessTimer();
-        CancelGaplessPlan();
         RefreshGaplessPlan();
     }
 
     private void CandidateMusicChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(Music.Path) or nameof(Music.IsPlayable))) return;
+        if (e.PropertyName is not (nameof(Music.Path) or nameof(Music.IsPlayable) or nameof(Music.Album)
+            or nameof(Music.AlbumArtist) or nameof(Music.Author) or nameof(Music.DiskNumber) or nameof(Music.TrackNumber))) return;
+        var dispatcher = App.MainWindow.DispatcherQueue;
+        if (dispatcher.HasThreadAccess) RefreshCandidateMusic(sender);
+        else dispatcher.TryEnqueue(() => RefreshCandidateMusic(sender));
+    }
+
+    private void RefreshCandidateMusic(object? sender)
+    {
+        if (_disposed || sender != _candidateFrom && sender != _candidateNext) return;
         _candidateDirty = true;
-        CancelGaplessPlan();
         RefreshGaplessPlan();
     }
 
@@ -131,6 +144,7 @@ public sealed partial class PlaybackCoordinator
         _candidateFrom = current;
         _candidateNext = null;
         _candidateEntry = 0;
+        _candidatePreserveAlbumBoundary = false;
         if (_candidateMode == PlayMode.SingleLoop)
         {
             _candidateNext = current;
@@ -161,8 +175,37 @@ public sealed partial class PlaybackCoordinator
             }
         }
         current.PropertyChanged += CandidateMusicChanged;
-        if (_candidateNext != null && _candidateNext != current)
-            _candidateNext.PropertyChanged += CandidateMusicChanged;
+        if (_candidateNext is { } next)
+        {
+            if (next != current) next.PropertyChanged += CandidateMusicChanged;
+            _candidatePreserveAlbumBoundary = PreserveAlbumBoundary(current, next);
+        }
+    }
+
+    private static bool PreserveAlbumBoundary(Music current, Music next)
+    {
+        // 同一首歌的循环（含重复出现项或文件版本）保留原始边界。
+        if (current == next || current.Id > 0 && current.Id == next.Id
+            || current.SongId > 0 && current.SongId == next.SongId
+            || !string.IsNullOrWhiteSpace(current.Path) && string.Equals(current.Path, next.Path, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 缺省碟号是 0，按单碟的碟 1 处理；曲号必须明确且连续。
+        if (current.TrackNumber <= 0 || (long)current.TrackNumber + 1 != next.TrackNumber
+            || current.DiskNumber < 0 || next.DiskNumber < 0 || Math.Max(1, current.DiskNumber) != Math.Max(1, next.DiskNumber))
+            return false;
+
+        var album = current.Album.AsSpan().Trim();
+        if (!SongVersionPolicy.IsKnownTag(album) || !album.Equals(next.Album.AsSpan().Trim(), StringComparison.OrdinalIgnoreCase))
+            return false;
+        var artist = GetAlbumArtist(current);
+        return SongVersionPolicy.IsKnownTag(artist) && artist.Equals(GetAlbumArtist(next), StringComparison.OrdinalIgnoreCase);
+
+        static ReadOnlySpan<char> GetAlbumArtist(Music music)
+        {
+            var albumArtist = music.AlbumArtist.AsSpan().Trim();
+            return SongVersionPolicy.IsKnownTag(albumArtist) ? albumArtist : music.Author.AsSpan().Trim();
+        }
     }
 
     private void GaplessTick(DispatcherQueueTimer sender, object args) => RefreshGaplessPlan();
@@ -178,38 +221,56 @@ public sealed partial class PlaybackCoordinator
                 _ = CancelGaplessPlanAsync(cancelling);
             return;
         }
-        if (!state.IsPlaying || !AppSettings.Dsp.GaplessPlayback || state.State.Playback.PendingSelection != null
+        var settings = AppSettings.Dsp;
+        if (!state.IsPlaying || !settings.GaplessPlayback || state.State.Playback.PendingSelection != null
             || state.CurrentPlayingMusic is not { IsRemote: false, IsPlayable: true } current
             || state.CurrentPlayMode == PlayMode.RepeatOff)
         {
             CancelGaplessPlan();
             return;
         }
-        if (!_gaplessIpc.TryGetProgressSnapshot(out var progress) || progress.Epoch <= 0) return;
-        if (_nextPlan is { } completed && progress.GaplessToken == completed.Token)
+        bool hasProgress = _gaplessIpc.TryGetProgressSnapshot(out var progress) && progress.Epoch > 0;
+        var plan = _nextPlan;
+        if (hasProgress && plan is not null && progress.GaplessToken == plan.Token)
         {
-            AcceptGapless(completed.Token);
+            AcceptGapless(plan.Token, progress.Epoch, progress.CurrentMs);
             return;
         }
         ResolveCandidate(current);
-        if (_candidateNext is not { IsRemote: false, IsPlayable: true } next) { CancelGaplessPlan(); return; }
-        if (_nextPlan is not { } plan || plan.Epoch != progress.Epoch || plan.EntryId != _candidateEntry
-            || plan.From != current || plan.Next != next || plan.SelectionVersion != _selectionVersion || plan.Path != next.Path)
+        if (_candidateNext is not { IsRemote: false, IsPlayable: true } next || string.IsNullOrEmpty(next.Path))
         {
-            _nextPlan = new(++_nextToken, _selectionVersion, current, next, _candidateEntry, progress.Epoch, next.Path);
+            CancelGaplessPlan();
+            return;
+        }
+        // 保留已入队计划的专辑信息，播放端在设置命令与替换请求之间也能正确启用智能模式。
+        bool preserveAlbumBoundary = _candidatePreserveAlbumBoundary;
+        if (plan is not null && ((hasProgress && plan.Epoch != progress.Epoch) || plan.EntryId != _candidateEntry
+            || plan.From != current || plan.Next != next || plan.SelectionVersion != _selectionVersion || plan.Path != next.Path
+            || plan.Style != settings.TransitionStyle || plan.CrossfadeSeconds != settings.CrossfadeSeconds
+            || plan.PreserveAlbumBoundary != preserveAlbumBoundary))
+        {
+            CancelGaplessPlan();
+            return;
+        }
+        if (!hasProgress || !progress.Playing) return;
+        if (plan is null)
+        {
+            plan = new(++_nextToken, _selectionVersion, current, next, _candidateEntry, progress.Epoch, next.Path,
+                settings.TransitionStyle, settings.CrossfadeSeconds, preserveAlbumBoundary);
+            _nextPlan = plan;
             _planConfirmed = false;
             _planSending = false;
             _retryAfter = 0;
         }
         if (_planConfirmed || _planSending || Environment.TickCount64 < _retryAfter) return;
         _planSending = true;
-        _ = SendGaplessPlanAsync(_nextPlan);
+        _ = SendGaplessPlanAsync(plan);
     }
 
     private async Task SendGaplessPlanAsync(NextPlan plan)
     {
         bool accepted = false;
-        try { accepted = await _gaplessIpc!.QueueNextAsync(new(plan.Epoch, plan.Token, plan.Path)); }
+        try { accepted = await _gaplessIpc!.QueueNextAsync(new(plan.Epoch, plan.Token, plan.Path, plan.PreserveAlbumBoundary)); }
         catch (Exception ex) { logger.LogWarning(ex, "无法提交下一曲预载计划，保留普通切歌"); }
         if (_disposed || !ReferenceEquals(_nextPlan, plan)) return;
         _planSending = false;
@@ -224,6 +285,8 @@ public sealed partial class PlaybackCoordinator
         _planConfirmed = false;
         _planSending = false;
         _cancellingPlan = plan;
+        _cancellingTransition = default;
+        UpdateGaplessTimer();
         _ = CancelGaplessPlanAsync(plan);
     }
 
@@ -245,26 +308,34 @@ public sealed partial class PlaybackCoordinator
         _cancelSending = false;
         _cancelRetryAfter = Environment.TickCount64 + 1000;
         if (!confirmed) return;
+        var transition = _cancellingTransition;
         _cancellingPlan = null;
-        if (committed == plan.Token) AcceptCommittedGapless(plan);
+        _cancellingTransition = default;
+        UpdateGaplessTimer();
+        if (committed == plan.Token) AcceptCommittedGapless(plan, transition.Epoch, transition.PositionMs);
         RefreshGaplessPlan();
     }
 
     private void GaplessNotification(MessageTypeId type, ReadOnlyMemory<byte> payload)
     {
-        if (type != MessageTypeId.GaplessTransition || payload.Length != 16) return;
-        long token = System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(payload.Span);
-        App.MainWindow.DispatcherQueue.TryEnqueue(() => AcceptGapless(token));
+        if (type != MessageTypeId.GaplessTransition || payload.Length is not (16 or 24)) return;
+        long token = BinaryPrimitives.ReadInt64LittleEndian(payload.Span);
+        long epoch = BinaryPrimitives.ReadInt64LittleEndian(payload.Span[8..]);
+        long positionMs = payload.Length == 24 ? BinaryPrimitives.ReadInt64LittleEndian(payload.Span[16..]) : 0;
+        if (token <= 0 || epoch <= 0 || positionMs < 0) return;
+        App.MainWindow.DispatcherQueue.TryEnqueue(() => AcceptGapless(token, epoch, positionMs));
     }
 
-    private void AcceptGapless(long token)
+    private void AcceptGapless(long token, long epoch, long positionMs)
     {
-        if (_nextPlan is { } plan && plan.Token == token) AcceptCommittedGapless(plan);
+        if (_disposed) return;
+        if (_nextPlan is { } plan && plan.Token == token) AcceptCommittedGapless(plan, epoch, positionMs);
         // While cancelling, only the ordered reply decides whether this token committed.
         // Transition notifications use a separate pipe and can arrive out of order.
+        else if (_cancellingPlan?.Token == token) _cancellingTransition = (epoch, positionMs);
     }
 
-    private void AcceptCommittedGapless(NextPlan plan)
+    private void AcceptCommittedGapless(NextPlan plan, long epoch, long positionMs)
     {
         if (_disposed || !state.CanStartPlayback || plan.Token <= _lastAcceptedToken
             || plan.SelectionVersion != _selectionVersion || state.CurrentPlayingMusic != plan.From
@@ -291,14 +362,14 @@ public sealed partial class PlaybackCoordinator
             catch (Exception ex) { logger.LogError(ex, "记录无缝播放统计失败"); }
             state.UILyrics = [];
             state.LoadLyricsToUI(plan.Next);
-            state.UpdateProgressTimerUI();
-            TrackStarted?.Invoke(plan.Next, cancellation);
             // The transition notification can beat the state-pipe snapshot. Its committed token,
             // not the previous track's cached position, identifies this occurrence.
             bool hasProgress = ipc.TryGetProgressSnapshot(out var confirmed) && confirmed.GaplessToken == plan.Token;
             if (!hasProgress)
-                confirmed = new(0, 0, 0, (long)plan.Next.Duration.TotalMilliseconds,
+                confirmed = new(0, epoch, positionMs, (long)plan.Next.Duration.TotalMilliseconds,
                     System.Diagnostics.Stopwatch.GetTimestamp(), true, GaplessToken: plan.Token);
+            else state.UpdateProgressTimerUI();
+            TrackStarted?.Invoke(plan.Next, cancellation);
             PlaybackConfirmed?.Invoke(plan.Next, confirmed);
         }
         finally { _acceptingGapless = false; }
@@ -320,7 +391,7 @@ public sealed partial class PlaybackCoordinator
         }
         state.PropertyChanged -= GaplessStateChanged;
         state.State.Queue.PropertyChanged -= GaplessQueueChanged;
-        AppSettings.AudioResponseChanged -= GaplessPreferencesChanged;
+        AppSettings.PlaybackTransitionsChanged -= GaplessPreferencesChanged;
         UnobserveCandidates();
         _candidateFrom = _candidateNext = null;
     }

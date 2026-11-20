@@ -369,11 +369,12 @@ public class PlayerIpcService : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void GaplessTransition(long token, long epoch)
+    public void GaplessTransition(long token, long epoch, long positionMs)
     {
-        Span<byte> payload = stackalloc byte[16];
+        Span<byte> payload = stackalloc byte[positionMs > 0 ? 24 : 16];
         System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(payload, token);
         System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(payload[8..], epoch);
+        if (positionMs > 0) System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(payload[16..], positionMs);
         SendNotification(MessageTypeId.GaplessTransition, payload);
     }
 

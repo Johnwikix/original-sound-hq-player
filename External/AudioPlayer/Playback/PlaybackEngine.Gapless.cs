@@ -61,7 +61,7 @@ public sealed partial class PlaybackEngine
             MusicUrl = request.Path;
             _currentGaplessToken = request.Token;
             _lastProgressSeekId = 0;
-            _ipc?.GaplessTransition(request.Token, rendered.Current.TimelineEpoch);
+            _ipc?.GaplessTransition(request.Token, rendered.Current.TimelineEpoch, GetTimeProgress().currentMs);
         }
         _gaplessPreloader?.Cancel();
         RetireGaplessSession(old);
@@ -84,7 +84,7 @@ public sealed partial class PlaybackEngine
             AdoptGapless();
             if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping) return false;
             if (request.Path.Length == 0) { CancelGapless(); return true; }
-            if (request.Epoch != _session?.TimelineEpoch) return false;
+            if (request.Epoch != _session?.TimelineEpoch || Volatile.Read(ref _fadeBusy) != 0) return false;
             if (request == _gaplessPreloader?.Request) return true;
             CancelGapless();
             if (!IsPlaying || _dspSettings?.GaplessPlayback != true
@@ -109,9 +109,17 @@ public sealed partial class PlaybackEngine
                 || _session is not { Kind: RenderKind.Pcm } current || _gaplessSource is not { } source) return;
             if (request.Epoch != current.TimelineEpoch) { CancelGapless(); return; }
             var (position, duration) = GetTimeProgress();
-            if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
+            var style = ResolveTransitionStyle(request, _dspSettings);
+            double leadTimeMs = GaplessLeadTimeMs;
+            if (style is TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart)
+            {
+                leadTimeMs = Math.Max(leadTimeMs, (_dspSettings.CrossfadeSeconds + 3) * 1000);
+                position = current.CurrentMs;
+            }
+            if (duration > 0 && (duration - position) / current.PlaybackRate > leadTimeMs) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate(), EffectiveResampleMode, EffectiveResampleTarget));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement,
+                EnhancementMixRate(), EffectiveResampleMode, EffectiveResampleTarget, style == TrackTransitionStyle.Smart));
         }
     }
 
@@ -125,7 +133,8 @@ public sealed partial class PlaybackEngine
             maxChannels: preparation.Current.Channels <= 2 ? 2 : null,
             experimentalSurround51: preparation.Surround, cancellationToken: token,
             playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
-            enhancementDeviceRate: preparation.EnhancementDeviceRate, resampleMode: preparation.ResampleMode, resampleTargetRate: preparation.ResampleTargetRate);
+            enhancementDeviceRate: preparation.EnhancementDeviceRate, resampleMode: preparation.ResampleMode,
+            resampleTargetRate: preparation.ResampleTargetRate, measureTransitionIntro: preparation.MeasureTransitionIntro);
     }
 
     // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。
@@ -135,9 +144,17 @@ public sealed partial class PlaybackEngine
             || _gaplessSource != preparation.Source) return false;
         next.ConfigureDsp(ResolveDsp(_output?.DeviceId));
         next.Eq.Configure(next.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
-        next.Gain?.SetImmediately(GainVolumeTarget);
-        return preparation.Source.Queue(next, preparation.Request.Token);
+        return preparation.Source.Queue(next, preparation.Request.Token, ResolveTransitionStyle(preparation.Request, _dspSettings),
+            _dspSettings?.CrossfadeSeconds ?? DspSettings.DefaultCrossfadeSeconds);
     }
+
+    private static TrackTransitionStyle ResolveTransitionStyle(GaplessRequest request, DspSettings? settings) =>
+        settings?.TransitionStyle switch
+        {
+            TrackTransitionStyle.Crossfade => TrackTransitionStyle.Crossfade,
+            TrackTransitionStyle.Smart when !request.PreserveAlbumBoundary => TrackTransitionStyle.Smart,
+            _ => TrackTransitionStyle.Gapless,
+        };
 
     // 相对于渲染边界的拼接操作，原子地快照两个借用引用。
     // 在渲染锁外发布目标时，由流锁防止对象被释放。

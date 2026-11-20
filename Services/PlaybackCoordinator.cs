@@ -86,14 +86,17 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         long version = ++_selectionVersion;
         _presentation?.Cancel(); // 收到新意图即停止上一轮等待，不等 ApplicationTasks 的下一次调度。
         SetPending(new(music, entryId));
-        if (!_registered)
-        {
-            _registered = true;
-            shutdown.RegisterCleanup(Dispose);
-            remote.Failed += OnRemoteFailed;
-            remote.PlaybackStarted += OnRemotePlaybackStarted;
-        }
+        RegisterPlaybackLifecycle();
         return tasks.RunAsync(stoppingToken => RunSelectionCoreAsync(operation, stoppingToken, version));
+    }
+
+    private void RegisterPlaybackLifecycle()
+    {
+        if (_registered) return;
+        _registered = true;
+        shutdown.RegisterCleanup(Dispose);
+        remote.Failed += OnRemoteFailed;
+        remote.PlaybackStarted += OnRemotePlaybackStarted;
     }
 
     private async Task RunSelectionCoreAsync(Func<CancellationToken, Task> operation, CancellationToken stoppingToken, long version)

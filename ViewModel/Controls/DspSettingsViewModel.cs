@@ -304,7 +304,14 @@ public partial class DspSettingsViewModel : ObservableObject
 
     public async Task ResetAsync()
     {
-        AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(new(), AppSettings.Dsp, _license.RestrictedFeatures);
+        DspSettings saved = AppSettings.Dsp;
+        var defaults = new DspSettings
+        {
+            GaplessPlayback = saved.GaplessPlayback,
+            TransitionStyle = saved.TransitionStyle,
+            CrossfadeSeconds = saved.CrossfadeSeconds
+        };
+        AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(defaults, saved, _license.RestrictedFeatures);
         LoadValues();
         ApplyState(_lastState);
         _dirty = true;
@@ -318,7 +325,6 @@ public partial class DspSettingsViewModel : ObservableObject
         DspSettings settings = AppSettings.Dsp.ToUnifiedGain();
         bool effectsActive = _available && settings.IsEnabled;
         LoadPcmValues(settings, effectsActive);
-        GaplessPlayback = settings.GaplessPlayback;
         PlaybackRate = settings.PlaybackRate;
         CompressorEnabled = effectsActive && settings.CompressorEnabled;
         CompressorThresholdDb = settings.CompressorThresholdDb;

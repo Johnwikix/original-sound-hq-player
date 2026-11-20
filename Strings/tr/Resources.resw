@@ -1201,11 +1201,38 @@
   <data name="PlayerGitHub.Content" xml:space="preserve">
     <value>Ses programı GitHub</value>
   </data>
-  <data name="FadeInOutDescription" xml:space="preserve">
-    <value>Yalnızca DirectSound altında etkilidir</value>
+  <data name="PlaybackTransitions" xml:space="preserve">
+    <value>Oynatma geçişleri</value>
   </data>
-  <data name="FadeInOut.Text" xml:space="preserve">
-    <value>Sesi kademeli aç ve kapat</value>
+  <data name="PlaybackTransitionsDescription" xml:space="preserve">
+    <value>Otomatik geçişler uyumlu yerel PCM parçaları bittiğinde uygulanır.</value>
+  </data>
+  <data name="PlaybackTransitionMode" xml:space="preserve">
+    <value>Otomatik geçiş</value>
+  </data>
+  <data name="PlaybackTransitionNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="PlaybackTransitionGapless" xml:space="preserve">
+    <value>Boşluksuz</value>
+  </data>
+  <data name="PlaybackTransitionCrossfade" xml:space="preserve">
+    <value>Sabit çapraz geçiş</value>
+  </data>
+  <data name="PlaybackTransitionSmart" xml:space="preserve">
+    <value>Akıllı</value>
+  </data>
+  <data name="PlaybackTransitionDuration" xml:space="preserve">
+    <value>Çapraz geçiş süresi (saniye)</value>
+  </data>
+  <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
+    <value>Albümdeki ardışık parçalar boşluksuz çalınır. Örtüşme, parça sürelerine ve sonraki parçanın girişindeki ses düzeyine göre, seçilen süreye kadar ayarlanır.</value>
+  </data>
+  <data name="ManualPlaybackFades" xml:space="preserve">
+    <value>Elle oynatma denetimlerinde ses geçişi</value>
+  </data>
+  <data name="ManualPlaybackFadesDescription" xml:space="preserve">
+    <value>Oynatma başlatıldığında, duraklatıldığında veya elle parça değiştirildiğinde sesi yumuşakça açar ya da kısar.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Sözcük sözcük şarkı sözleri efekti</value>
@@ -2338,12 +2365,6 @@ SHA-256: {5}
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
     <value>WebDAV · Ses önbelleğe alındı</value>
-  </data>
-  <data name="GaplessPlayback" xml:space="preserve">
-    <value>Kesintisiz çalma</value>
-  </data>
-  <data name="GaplessPlaybackDescription" xml:space="preserve">
-    <value>Uyumlu yerel PCM parçalarını çapraz geçiş olmadan kesintisiz çalmak için önceden yükler. Bit akışları, ağ kaynakları ve biçim değişiklikleri normal geçiş kullanır.</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Çalma hızı</value>

@@ -296,7 +296,7 @@ if(args.Contains("--upsampling-master"))
 }
 
 // Actual NativeAOT + persistent IPC + WASAPI integration for the new playback chain.
-if (args.Contains("--gapless"))
+if (args.Contains("--gapless") || args.Contains("--crossfade") || args.Contains("--smart-transition"))
 {
     try
     {
@@ -307,7 +307,11 @@ if (args.Contains("--gapless"))
         Span<byte> dsp = stackalloc byte[DspProtocol.SettingsSize];
         string? impulsePath = args.FirstOrDefault(a => a.StartsWith("--ir="))?[5..];
         if (impulsePath != null) impulsePath = Path.GetFullPath(impulsePath);
+        TrackTransitionStyle style = args.Contains("--smart-transition") ? TrackTransitionStyle.Smart :
+            args.Contains("--crossfade") ? TrackTransitionStyle.Crossfade : TrackTransitionStyle.Gapless;
+        bool preserveAlbumBoundary = args.Contains("--album-boundary");
         DspProtocol.WriteSettings(dsp, new DspSettings { PlaybackRate = rate, CompressorEnabled = true,
+            TransitionStyle = style, CrossfadeSeconds = 2,
             ConvolutionEnabled = impulsePath != null, ConvolutionSource = ConvolutionSource.Wave, ImpulsePath = impulsePath ?? "",
             AutoPreamp = impulsePath == null ? null : false, TruePeakLimiterEnabled = impulsePath != null });
         if (Send(CommandId.UpdateDsp, dsp, out _) != MessageTypeId.Success)
@@ -318,7 +322,8 @@ if (args.Contains("--gapless"))
             throw new InvalidOperationException("Real-device convolution preparation did not complete");
         states.TryGetProgress(out var initial);
         long outputGeneration = states.CurrentDspState!.State.OutputGeneration;
-        var queue = new GaplessRequest(initial.Epoch, 77, mediaPath);
+        string? nextMediaPath = args.FirstOrDefault(a => a.StartsWith("--next="))?[7..];
+        var queue = new GaplessRequest(initial.Epoch, 77, nextMediaPath == null ? mediaPath : Path.GetFullPath(nextMediaPath), preserveAlbumBoundary);
         if (Send(CommandId.QueueNext, queue.Write(), out _) != MessageTypeId.Success)
             throw new InvalidOperationException("Gapless queue rejected");
         if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.GaplessToken == 77, drainTimeout))
@@ -327,7 +332,15 @@ if (args.Contains("--gapless"))
         if (playbackEnds != 0 || !transitioned.Playing || transitioned.Epoch == initial.Epoch
             || transitioned.PlaybackRate != rate || states.CurrentDspState!.State.OutputGeneration != outputGeneration)
             throw new InvalidOperationException("Transition stopped or rebuilt the output");
-        Console.WriteLine($"[smoke] PASS: gapless at {rate}x + compressor, unchanged native output, no PlayEnded at boundary");
+        // The first new epoch includes the incoming frames played during overlap. Use the six-second
+        // fixture so a frame splice and a real overlap remain distinguishable through device latency.
+        if (style != TrackTransitionStyle.Gapless)
+        {
+            bool expectOverlap = style == TrackTransitionStyle.Crossfade || !preserveAlbumBoundary;
+            if (expectOverlap != (transitioned.CurrentMs > 400 * rate))
+                throw new InvalidOperationException($"Unexpected incoming position {transitioned.CurrentMs}ms for {style}, album boundary={preserveAlbumBoundary}");
+        }
+        Console.WriteLine($"[smoke] PASS: {style} at {rate}x + compressor, position {transitioned.CurrentMs}ms, unchanged native output, no PlayEnded at boundary");
         var pause = Send(CommandId.PlayButton, ReadOnlySpan<byte>.Empty, out var paused);
         if (pause != MessageTypeId.PlayState || BinarySerializer.ReadPlayStateResponse(paused).IsPlaying)
             throw new InvalidOperationException("Pause after transition failed");

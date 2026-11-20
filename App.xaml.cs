@@ -158,6 +158,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<WinUIMusicPlayer.Services.Recommendations.HomeRecommendationService>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
+                 services.AddSingleton<PlaybackTransitionsViewModel>();
                  services.AddSingleton<LlmTranslationService>();
                  services.AddSingleton<ILlmTranslationService>(sp => sp.GetRequiredService<LlmTranslationService>());
                  services.AddTransient<DspSettingsViewModel>();

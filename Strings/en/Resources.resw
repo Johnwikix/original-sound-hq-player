@@ -1201,11 +1201,38 @@
   <data name="PlayerGitHub.Content" xml:space="preserve">
     <value>Audio program GitHub</value>
   </data>
-  <data name="FadeInOutDescription" xml:space="preserve">
-    <value>Only effective under DirectSound</value>
+  <data name="PlaybackTransitions" xml:space="preserve">
+    <value>Playback transitions</value>
   </data>
-  <data name="FadeInOut.Text" xml:space="preserve">
-    <value>Fade in and fade out</value>
+  <data name="PlaybackTransitionsDescription" xml:space="preserve">
+    <value>Automatic transitions apply when compatible local PCM tracks end.</value>
+  </data>
+  <data name="PlaybackTransitionMode" xml:space="preserve">
+    <value>Automatic transition</value>
+  </data>
+  <data name="PlaybackTransitionNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="PlaybackTransitionGapless" xml:space="preserve">
+    <value>Gapless</value>
+  </data>
+  <data name="PlaybackTransitionCrossfade" xml:space="preserve">
+    <value>Fixed crossfade</value>
+  </data>
+  <data name="PlaybackTransitionSmart" xml:space="preserve">
+    <value>Smart</value>
+  </data>
+  <data name="PlaybackTransitionDuration" xml:space="preserve">
+    <value>Crossfade duration (seconds)</value>
+  </data>
+  <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
+    <value>Keeps consecutive album tracks gapless. Track lengths and the next track's opening volume determine the overlap, up to the selected duration.</value>
+  </data>
+  <data name="ManualPlaybackFades" xml:space="preserve">
+    <value>Manual fades</value>
+  </data>
+  <data name="ManualPlaybackFadesDescription" xml:space="preserve">
+    <value>Fade when starting, pausing or manually skipping tracks.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Word for word lyrics effect</value>
@@ -2338,12 +2365,6 @@ SHA-256: {5}
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
     <value>WebDAV · Audio cached</value>
-  </data>
-  <data name="GaplessPlayback" xml:space="preserve">
-    <value>Gapless playback</value>
-  </data>
-  <data name="GaplessPlaybackDescription" xml:space="preserve">
-    <value>Preload compatible local PCM tracks for uninterrupted transitions without crossfade. Bitstreams, network sources and format changes use normal transitions.</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Playback speed</value>

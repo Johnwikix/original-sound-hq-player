@@ -63,8 +63,11 @@ namespace WinUIMusicPlayer.Model
         public bool IsDetached { get; set; }
         public bool IsMissing { get; set; }
         public string Title { get; set; } = "Song";
-        public string Author { get; set; } = "Artist";
-        public string Album { get; set; } = "Album";
+        public string Author { get; set => SetProperty(ref field, value); } = "Artist";
+        public string Album { get; set => SetProperty(ref field, value); } = "Album";
+        public string AlbumArtist { get; set => SetProperty(ref field, value); } = "";
+        public int DiskNumber { get; set => SetProperty(ref field, value); }
+        public int TrackNumber { get; set => SetProperty(ref field, value); }
         public string CodecId { get; set; } = "";
         public string Extension { get; set; } = "";
         public int BitDepth { get; set; }
@@ -115,8 +118,18 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static string MusicCoverCache { get; set; } = Path.GetTempPath();
-        public static event EventHandler? AudioResponseChanged;
-        public static BassPlayerIpc.Shared.DspSettings Dsp { get; set { field = value; AudioResponseChanged?.Invoke(null, EventArgs.Empty); } } = new();
+        public static event EventHandler? PlaybackTransitionsChanged;
+        public static BassPlayerIpc.Shared.DspSettings Dsp
+        {
+            get => field;
+            set
+            {
+                bool changed = field.GaplessPlayback != value.GaplessPlayback || field.TransitionStyle != value.TransitionStyle
+                    || field.CrossfadeSeconds != value.CrossfadeSeconds;
+                field = value;
+                if (changed) PlaybackTransitionsChanged?.Invoke(null, EventArgs.Empty);
+            }
+        } = new();
     }
 }
 namespace WinUIMusicPlayer.Utils { public static class ToolUtils { public enum PlayMode { SingleLoop, ListLoop, RandomLoop, RepeatOff } public static string GetString(string key) => key; } }
@@ -263,11 +276,12 @@ namespace WinUIMusicPlayer.Services
             await Task.Yield();
             return token;
         }
-        public void Transition(long token, long epoch)
+        public void Transition(long token, long epoch, long positionMs = 0)
         {
-            byte[] bytes = new byte[16];
+            byte[] bytes = new byte[positionMs > 0 ? 24 : 16];
             System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(bytes, token);
             System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(8), epoch);
+            if (positionMs > 0) System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(16), positionMs);
             NotificationReceived?.Invoke(BassPlayerIpc.Shared.MessageTypeId.GaplessTransition, bytes);
         }
     }
