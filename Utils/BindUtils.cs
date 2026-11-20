@@ -203,11 +203,6 @@ namespace WinUIMusicPlayer.Utils
             return isInPlayingDetailMode ? 0 : 1;
         }
 
-        public static double VisibilityToOpacityConverter(Visibility visibility)
-        {
-            return visibility is Visibility.Visible ? 1.0 : 0;
-        }
-
         public static bool OpacityToBoolConverter(double opacity)
         {
             return opacity > 0;

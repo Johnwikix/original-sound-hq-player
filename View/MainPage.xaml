@@ -604,7 +604,7 @@
             <StackPanel
                 Grid.Column="0"
                 Margin="15,0,0,0"
-                Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}"
+                Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsPlayingDetailVisible), Mode=OneWay}"
                 Orientation="Horizontal">
                 <Image
                     x:Name="AppLogo"
