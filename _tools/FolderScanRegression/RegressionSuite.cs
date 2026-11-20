@@ -251,6 +251,14 @@ internal static class RegressionSuite
             var imported = new Music { Path = importedPath, FolderPath = dir, Title = "imported.mp3" };
             Check(await database.AddExternalFileAsync(imported, "") is not null, "external import failed");
 
+            string unregistered = Path.Combine(dir, "neighbor.mp3");
+            File.WriteAllText(unregistered, "");
+            await database.RescanFolderByPath(dir, isUpdate: false);
+            var refreshed = (await database.GetMusicListAsync()).Single();
+            Check(refreshed.Path == importedPath && refreshed.MetadataRevision > 0,
+                "rescanning an external track refreshes that file without importing its neighbors");
+            File.Delete(unregistered);
+
             var counted = await database.GetFoldersWithSongCountsAsync();
             Check(counted.Single(f => f.IsExternalImport).SongCount == 1, "external import count missing");
 

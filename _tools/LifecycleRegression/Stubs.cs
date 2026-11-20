@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.Services
     {
         public static int Scans;
         public static Func<CancellationToken, Task>? Scan;
-        internal static Task AutoScan(MusicDatabaseService database, Dictionary<string, HashSet<string>?> changes, CancellationToken token)
+        internal static Task AutoScan(MusicDatabaseService database, Dictionary<string, WatchedFolderChanges?> changes, CancellationToken token)
         {
             Interlocked.Increment(ref Scans);
             return Scan?.Invoke(token) ?? Task.CompletedTask;

@@ -144,11 +144,13 @@ internal static class ReviewRegression
             };
             await File.WriteAllTextAsync(Path.Combine(directory, "in-flight.mp3"), "scanning");
             await scanStarted.Task.WaitAsync(TimeSpan.FromSeconds(4));
+            int interruptedScan = AutoRescanService.Scans;
             state.IsFolderWatchEnabled = false;
             state.IsFolderWatchEnabled = true;
             await scanCancelled.Task.WaitAsync(TimeSpan.FromSeconds(3));
             AutoRescanService.Scan = null;
             await WaitUntilAsync(() => WatcherCount(watcher) == 2);
+            await WaitUntilAsync(() => AutoRescanService.Scans > interruptedScan);
             await watcher.StopAsync();
             state.IsFolderWatchEnabled = false;
             state.IsFolderWatchEnabled = true;

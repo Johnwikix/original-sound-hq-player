@@ -1,3 +1,9 @@
+## 2026-11-20 修复监听中断、目录改名和缺失收藏的增量更新
+
+- `LibraryWatcherService`、`MusicDatabaseService.Scanning` 在重新开启监听后补核对中断的变更。目录只改大小写时保留曲目 ID，移走含 emoji 的目录时正确标记下级曲目，批量删歌按文件路径索引查询。
+- `MusicDatabaseService.Scanning` 在排队重扫时重新确认目录归属，防止已移除的曲库被重新导入。
+- `MusicBrowsePage` 在只剩缺失收藏时继续显示收藏列表，其他浏览页沿用空库提示。
+
 ## 2026-11-20 修复切歌交接和暂停进度
 
 - `PlaybackEngine`、`BassPlayerCommandService` 按播放实例和时间线识别曲终，避免迟到或重复的通知跳过当前曲目。

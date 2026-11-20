@@ -31,6 +31,9 @@ namespace WinUIMusicPlayer.View
         public MusicBrowseViewModel ViewModel { get; }
 
         // x:Bind 函数绑定用：空库占位可见时隐藏内容 Frame（空子页可能残留表头/滚动条）
+        public static Visibility GetEmptyVisibility(Visibility libraryEmpty, string tab, int favoriteCount) =>
+            tab == "favourite" && favoriteCount > 0 ? Visibility.Collapsed : libraryEmpty;
+
         public static Visibility InvertVisibility(Visibility value) =>
             value == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
 

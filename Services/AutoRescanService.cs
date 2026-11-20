@@ -43,7 +43,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         internal static async Task AutoScan(MusicDatabaseService database,
-            Dictionary<string, HashSet<string>?> changes, CancellationToken cancellationToken)
+            Dictionary<string, WatchedFolderChanges?> changes, CancellationToken cancellationToken)
         {
             using var lease = await LibraryOperationGate.EnterAsync(cancellationToken, reportBusy: false);
             Interlocked.Increment(ref _activeScans);

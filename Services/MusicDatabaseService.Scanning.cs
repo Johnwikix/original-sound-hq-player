@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
@@ -9,7 +8,6 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using FileAttributes = System.IO.FileAttributes;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Services;
@@ -67,7 +65,7 @@ public partial class MusicDatabaseService
             string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder.Path));
             string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
             var existingPaths = new HashSet<string>(
-                await _dbConnection.QueryScalarsAsync<string>("SELECT Path FROM Music WHERE SourceId=0 AND IsDetached=0 AND IsMissing=0 AND (FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,?)=? COLLATE NOCASE)", root, prefix.Length, prefix), StringComparer.OrdinalIgnoreCase);
+                await _dbConnection.QueryScalarsAsync<string>("SELECT Path FROM Music WHERE SourceId=0 AND IsDetached=0 AND IsMissing=0 AND (FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,length(?))=? COLLATE NOCASE)", root, prefix, prefix), StringComparer.OrdinalIgnoreCase);
             await addFolderService.ScanPathsAsync(
                 AddFolderService.EnumerateMusicPaths(folder.Path).Where(path => !existingPaths.Contains(path)),
                 batch => CommitScanBatchAsync(batch, onBatchInserted));
@@ -153,8 +151,8 @@ public partial class MusicDatabaseService
                 return _dbConnection.QueryAsync<Music>("SELECT * FROM Music WHERE FolderPath = ? COLLATE NOCASE", root);
             string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
             return _dbConnection.QueryAsync<Music>(
-                "SELECT * FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,?) = ? COLLATE NOCASE",
-                root, prefix.Length, prefix);
+                "SELECT * FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,length(?)) = ? COLLATE NOCASE",
+                root, prefix, prefix);
         }
 
         /// <summary>扫描根下现有歌曲行数（含子目录），与 GetSongsInFolderAsync 的递归口径一致；供重扫进度做分母，不物化行。</summary>
@@ -163,8 +161,8 @@ public partial class MusicDatabaseService
             string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folderPath));
             string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
             return _dbConnection.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,?) = ? COLLATE NOCASE",
-                root, prefix.Length, prefix);
+                "SELECT COUNT(*) FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,length(?)) = ? COLLATE NOCASE",
+                root, prefix, prefix);
         }
 
         internal event Action? LocalFoldersChanged;
@@ -182,13 +180,13 @@ public partial class MusicDatabaseService
             }
             string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder.Path));
             string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
-            const string inFolder = "SourceId=0 AND IsDetached=0 AND (FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,?)=? COLLATE NOCASE)";
+            const string inFolder = "SourceId=0 AND IsDetached=0 AND (FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,length(?))=? COLLATE NOCASE)";
             await _dbConnection.RunInTransactionAsync(db =>
             {
                 if (MusicMetadataStorage.HasSongs(db))
-                    db.Execute("UPDATE Music SET IsDetached=1,IsMissing=1 WHERE " + inFolder, root, prefix.Length, prefix);
+                    db.Execute("UPDATE Music SET IsDetached=1,IsMissing=1 WHERE " + inFolder, root, prefix, prefix);
                 else
-                    foreach (int id in db.QueryScalars<int>("SELECT Id FROM Music WHERE " + inFolder, root, prefix.Length, prefix))
+                    foreach (int id in db.QueryScalars<int>("SELECT Id FROM Music WHERE " + inFolder, root, prefix, prefix))
                     {
                         db.Delete<Music>(id);
                         WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, id);
@@ -246,25 +244,45 @@ public partial class MusicDatabaseService
             await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted, onFilesChecked: onFilesChecked);
         }
 
-        public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
+        public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false,
+            CancellationToken cancellationToken = default)
         {
-            using var lease = await LibraryOperationGate.EnterAsync();
-            try { await RescanFolderCoreAsync(folderPath, true, isSingleFolder); }
+            using var lease = await LibraryOperationGate.EnterAsync(cancellationToken);
+            var folders = await GetFolders();
+            bool managed = folders.Any(folder => !folder.IsExternalImport && LibraryPath.IsWithin(folderPath, folder.Path));
+            if (!managed && !folders.Any(folder => folder.IsExternalImport)) return;
+            bool committed = false;
+            try
+            {
+                await RescanFolderCoreAsync(folderPath, true, isSingleFolder, cancellationToken: cancellationToken,
+                    onCommitted: () => committed = true, attachedFilesOnly: !managed);
+            }
             finally
             {
-                if (isUpdate) await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
+                if (isUpdate && committed) await PublishLibrarySnapshotAsync(default, preserveRows: true);
             }
         }
 
         private async Task<int> RescanFolderCoreAsync(string folderPath, bool updateExisting, bool singleFolder,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted = null, bool onlyChanged = false,
             CancellationToken cancellationToken = default, IReadOnlyList<string>? scannedPaths = null,
-            Action<int>? onFilesChecked = null, Action? onCommitted = null)
+            Action<int>? onFilesChecked = null, Action? onCommitted = null, string? previousFolderPath = null,
+            bool attachedFilesOnly = false)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var existing = await GetSongsInFolderAsync(folderPath, !singleFolder);
+            if (previousFolderPath is not null && previousFolderPath != folderPath)
+                existing.AddRange(await GetSongsInFolderAsync(previousFolderPath, !singleFolder));
+            // Outside a registered root only explicitly imported files belong to the library.
+            if (attachedFilesOnly)
+            {
+                existing.RemoveAll(song => song.IsRemote || song.IsDetached);
+                if (existing.Count == 0) return 0;
+                scannedPaths = existing.Where(song => File.Exists(song.Path)).Select(song => song.Path).ToList();
+            }
             var remaining = new Dictionary<string, Music>(existing.Count, StringComparer.OrdinalIgnoreCase);
-            foreach (var song in existing) remaining.TryAdd(song.Path, song);
+            foreach (var song in existing)
+                if (!song.IsRemote) remaining.TryAdd(song.Path, song);
             int changes = 0;
 
             // Only the source enumerator owns remaining; deletion reads it after every worker/consumer completes.
@@ -320,72 +338,102 @@ public partial class MusicDatabaseService
         public Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
             => RescanFolderCoreAsync(folderPath, false, isSingleFolder);
 
-        internal async Task ReconcileWatchedFolderAsync(string root, HashSet<string>? paths, Action onCommitted,
+        internal async Task ReconcileWatchedFolderAsync(string root, WatchedFolderChanges? changes, Action onCommitted,
             CancellationToken token)
         {
-            // An unavailable root is never evidence of deletion, even if the watcher reported an error.
             if ((File.GetAttributes(root) & FileAttributes.Directory) == 0) return;
-            if (paths is null)
+            if (changes is null)
             {
                 await RescanFolderCoreAsync(root, true, false, onlyChanged: true, cancellationToken: token, onCommitted: onCommitted);
                 return;
             }
 
-            HashSet<string> subtrees = new(StringComparer.OrdinalIgnoreCase);
-            HashSet<string> directories = new(StringComparer.OrdinalIgnoreCase);
-            List<string> missingPaths = [];
-            foreach (string path in paths)
+            var subtrees = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var missingTrees = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var (original, current) in changes.Directories)
+            {
+                if (!TryReadAttributes(current, out var attributes)) continue;
+                if (attributes is null)
+                {
+                    missingTrees.Add(original);
+                    missingTrees.Add(current);
+                }
+                else if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.Directory)
+                    subtrees.Add(original, current);
+            }
+
+            var parents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var missingFiles = new List<string>();
+            foreach (string path in changes.Files)
+            {
+                if (!TryReadAttributes(path, out var attributes)) continue;
+                if (attributes is null) missingFiles.Add(path);
+                else if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0 &&
+                    Path.GetDirectoryName(path) is { } parent) parents.Add(parent);
+            }
+
+            foreach (var (original, current) in subtrees)
+            {
+                if (subtrees.Keys.Any(parent => parent != original && LibraryPath.IsWithin(original, parent))) continue;
+                await ScanDirectoryAsync(current, singleFolder: false, previous: original);
+            }
+            foreach (string parent in parents)
+            {
+                if (!subtrees.Keys.Any(tree => LibraryPath.IsWithin(parent, tree)))
+                    await ScanDirectoryAsync(parent, singleFolder: true);
+            }
+
+            if (missingFiles.Count > 0)
+            {
+                // FileName events can use IX_Music_Path_NoCase for the entire batch.
+                var parameters = string.Join(',', Enumerable.Repeat("?", missingFiles.Count));
+                var rows = await _dbConnection.QueryAsync<Music>(
+                    $"SELECT Id,Path FROM Music WHERE SourceId=0 AND IsMissing=0 AND IsDetached=0 AND Path COLLATE NOCASE IN ({parameters})",
+                    missingFiles.ToArray());
+                await MarkMissingAsync(rows);
+            }
+            foreach (string path in missingTrees)
             {
                 token.ThrowIfCancellationRequested();
-                try
-                {
-                    var attributes = File.GetAttributes(path);
-                    if ((attributes & FileAttributes.ReparsePoint) != 0) continue;
-                    if ((attributes & FileAttributes.Directory) != 0) subtrees.Add(path);
-                    else if (ToolUtils.IsMusicFile(Path.GetExtension(path)) && Path.GetDirectoryName(path) is { } parent)
-                        directories.Add(parent);
-                }
-                catch (FileNotFoundException) { missingPaths.Add(path); }
-                catch (DirectoryNotFoundException) { missingPaths.Add(path); }
+                string prefix = Path.EndsInDirectorySeparator(path) ? path : path + Path.DirectorySeparatorChar;
+                var rows = await _dbConnection.QueryAsync<Music>(
+                    "SELECT Id,Path FROM Music WHERE SourceId=0 AND IsMissing=0 AND IsDetached=0 AND " +
+                    "(FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,length(?))=? COLLATE NOCASE)", path, prefix, prefix);
+                await MarkMissingAsync(rows);
+            }
+
+            bool TryReadAttributes(string path, out FileAttributes? attributes)
+            {
+                token.ThrowIfCancellationRequested();
+                attributes = null;
+                try { attributes = File.GetAttributes(path); }
+                catch (FileNotFoundException) { }
+                catch (DirectoryNotFoundException) { }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
                     _logger.LogWarning(ex, "无法检查监视路径 {Path}", path);
+                    return false;
                 }
+                return true;
             }
 
-            foreach (string path in subtrees)
+            async Task MarkMissingAsync(List<Music> rows)
             {
-                if (subtrees.Any(parent => parent != path && LibraryPath.IsWithin(path, parent))) continue;
-                await ScanDirectoryAsync(path, singleFolder: false);
-            }
-            foreach (string path in directories)
-            {
-                if (subtrees.Any(parent => LibraryPath.IsWithin(path, parent))) continue;
-                await ScanDirectoryAsync(path, singleFolder: true);
-            }
-            foreach (string path in missingPaths)
-            {
-                token.ThrowIfCancellationRequested();
-                try
+                if (rows.Count == 0 || !Directory.Exists(root)) return;
+                var confirmed = new List<Music>(rows.Count);
+                foreach (var row in rows)
                 {
-                    if (!Directory.Exists(root)) return;
-                    // A removed directory has the same event shape as a removed file. Match the exact
-                    // old file path and its possible descendants, then confirm absence on disk.
-                    string prefix = Path.EndsInDirectorySeparator(path) ? path : path + Path.DirectorySeparatorChar;
-                    var missing = await _dbConnection.QueryAsync<Music>(
-                        "SELECT Id,Path FROM Music WHERE SourceId=0 AND IsMissing=0 AND IsDetached=0 AND " +
-                        "(Path=? COLLATE NOCASE OR FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,?)=? COLLATE NOCASE)",
-                        path, path, prefix.Length, prefix);
-                    missing.RemoveAll(song => !LibraryPath.IsConfirmedMissing(song.Path, root));
-                    if (missing.Count > 0 && Directory.Exists(root)) await DeletedMusicList(missing, token, onCommitted);
+                    token.ThrowIfCancellationRequested();
+                    try { if (LibraryPath.IsConfirmedMissing(row.Path, root)) confirmed.Add(row); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        _logger.LogWarning(ex, "无法核对监视路径 {Path} 是否缺失", row.Path);
+                    }
                 }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    _logger.LogWarning(ex, "无法核对监视路径 {Path} 是否缺失", path);
-                }
+                if (confirmed.Count > 0 && Directory.Exists(root)) await DeletedMusicList(confirmed, token, onCommitted);
             }
 
-            async Task ScanDirectoryAsync(string path, bool singleFolder)
+            async Task ScanDirectoryAsync(string path, bool singleFolder, string? previous = null)
             {
                 try
                 {
@@ -396,7 +444,7 @@ public partial class MusicDatabaseService
                         if ((File.GetAttributes(parent) & FileAttributes.ReparsePoint) != 0) return;
                     }
                     await RescanFolderCoreAsync(path, true, singleFolder, onlyChanged: true, cancellationToken: token,
-                        onCommitted: onCommitted);
+                        onCommitted: onCommitted, previousFolderPath: previous);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {

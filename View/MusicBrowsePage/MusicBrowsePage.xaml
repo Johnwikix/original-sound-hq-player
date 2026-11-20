@@ -135,7 +135,7 @@
                         Margin="6,6,0,0"
                         CacheSize="0"
                         IsNavigationStackEnabled="False"
-                        Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(ViewModel.AppViewModel.LibraryEmptyVisibility), Mode=OneWay}" />
+                        Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(EmptyLibraryGrid.Visibility), Mode=OneWay}" />
 
                     <!--  空音乐库占位：整个库无任何歌曲时覆盖内容区，顶栏标签保留  -->
                     <Grid
@@ -146,7 +146,7 @@
                         DragOver="EmptyLibraryGrid_DragOver"
                         Drop="EmptyLibraryGrid_Drop"
                         Unloaded="EmptyLibraryGrid_Unloaded"
-                        Visibility="{x:Bind ViewModel.AppViewModel.LibraryEmptyVisibility, Mode=OneWay}">
+                        Visibility="{x:Bind local:MusicBrowsePage.GetEmptyVisibility(ViewModel.AppViewModel.LibraryEmptyVisibility, ViewModel.SelectedPageTag, ViewModel.AppViewModel.FavoriteSongs.Count), Mode=OneWay}">
                         <StackPanel
                             MaxWidth="520"
                             HorizontalAlignment="Center"

@@ -66,7 +66,7 @@ public sealed class LibraryTrackActions(AppState state, MusicDatabaseService dat
         string path = music.FolderPath;
         return tasks.RunAsync(async token =>
         {
-            try { await Task.Run(() => database.RescanFolderByPath(path), token); }
+            try { await Task.Run(() => database.RescanFolderByPath(path, cancellationToken: token), token); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             catch (Exception ex) { Report(ex); }
         });
