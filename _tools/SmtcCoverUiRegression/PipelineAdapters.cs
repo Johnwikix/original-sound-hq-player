@@ -33,7 +33,23 @@ namespace WinUIMusicPlayer.State
         public PlaybackState Playback { get; } = new();
         public PresentationState Presentation { get; } = new();
     }
-    public sealed class PlaybackState { public Model.Music? CurrentPlayingMusic { get; set; } }
+    public sealed class PlaybackState : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public Model.Music? CurrentPlayingMusic { get; set; }
+        public Model.Music? DisplayedPlaybackMusic => TransitionPresentation?.Music ?? CurrentPlayingMusic;
+        public PlaybackTransitionPresentation? TransitionPresentation
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                PropertyChanged?.Invoke(this, new(nameof(TransitionPresentation)));
+            }
+        }
+    }
+    public readonly record struct PlaybackTransitionPresentation(Model.Music Music, bool IsCommitted = false);
     public sealed class PreferencesState : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -100,8 +116,12 @@ namespace WinUIMusicPlayer.Helper
     internal static class CoverLoadQueue
     {
         internal const int CoverSize = 150;
+        internal static int ThumbnailReads;
         internal static string GetThumbCachePath(string hash, int size)
-            => Utils.ToolUtils.FindRawCachePath("small");
+        {
+            Interlocked.Increment(ref ThumbnailReads);
+            return Utils.ToolUtils.FindRawCachePath("small");
+        }
     }
 }
 namespace WinUIMusicPlayer.Utils

@@ -1,16 +1,35 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using WinUIMusicPlayer.Model;
+
+namespace WinUIMusicPlayer.Model
+{
+    public sealed class Music(int id) : ObservableObject
+    {
+        public int Id { get; } = id;
+        public int SongId { get; init; }
+        public int SourceId { get; init; }
+        public bool IsRemote { get; init; }
+        public bool IsMissing { get; init; }
+        public bool IsDetached { get; init; }
+        public bool IsRemoteOffline { get; set => SetProperty(ref field, value); }
+        public bool IsPlayable { get; set => SetProperty(ref field, value); } = true;
+    }
+}
 namespace WinUIMusicPlayer.ViewModel
 {
-    public sealed record Music(int Id);
     public sealed class AppViewModel : ObservableObject
     {
         public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public System.Collections.ObjectModel.ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); } = [];
         public int GetCurrentIndex() => CurrentPlayingList.ToList().FindIndex(music => music.Id == CurrentPlayingMusic?.Id);
         public bool IsPlaying { get; set; }
+        public bool CanSeekDisplayedPlayback { get; set => SetProperty(ref field, value); } = true;
         public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
         public bool IsFolderWatchEnabled { get; set => SetProperty(ref field, value); } = true;
         public ProgressCenter Progress { get; } = new();
+        public WinUIMusicPlayer.State.AppState State { get; } = new();
+        public Music? FindById(int id) => CurrentPlayingList.FirstOrDefault(music => music.Id == id);
+        public IReadOnlyList<Music> FindVersions(int songId) => CurrentPlayingList.Where(music => music.SongId == songId).ToArray();
     }
     // 与真实 ProgressCenter 同签名的空桩：监视器只用到 Begin/Complete。
     public sealed class ProgressCenter
@@ -26,12 +45,44 @@ namespace WinUIMusicPlayer.ViewModel
         public Task PlayMusic(Music music) { LastPlayed = music; return Task.CompletedTask; }
     }
 }
+namespace WinUIMusicPlayer.State
+{
+    public sealed class AppState
+    {
+        public PlaybackState Playback { get; } = new();
+        public PlaybackQueueState Queue { get; } = new();
+    }
+    public sealed class PlaybackState { public object? PendingSelection { get; set; } }
+    public sealed class PlaybackQueueState
+    {
+        public long CurrentEntryId => 1;
+        public long EntryIdAt(int index) => index + 1L;
+        public int RequestedVersion(long entryId) => 0;
+        public int SourceScope(long entryId) => -1;
+    }
+}
 namespace WinUIMusicPlayer.Services
 {
     public sealed class PlaybackCoordinator(WinUIMusicPlayer.ViewModel.AppViewModel state, WinUIMusicPlayer.ViewModel.MusicBrowseViewModel browse)
     {
-        public Task PlayAtAsync(int index) => browse.PlayMusic(state.CurrentPlayingList[index]);
+        public int GetNavigationIndex() => state.GetCurrentIndex();
+        public Task PlayAtAsync(int index, int direction) => browse.PlayMusic(state.CurrentPlayingList[index]);
+        public Task PlayAsync(Music music, long entryId) => browse.PlayMusic(music);
+        public Task ResumeCurrentAsync() => state.CurrentPlayingMusic is { } music ? browse.PlayMusic(music) : Task.CompletedTask;
+        public void CancelPendingSelection() => state.State.Playback.PendingSelection = null;
     }
+    public sealed class RemotePlaybackService
+    {
+        public bool WantsPlay { get; private set; }
+        public bool NeedsStart { get; set; }
+        public Task SetIntentAsync(bool playing) { WantsPlay = playing; return Task.CompletedTask; }
+    }
+    public static class SongVersionPolicy
+    {
+        internal static bool InScope(Music music, int sourceId) => !music.IsDetached &&
+            (sourceId == -1 || sourceId == music.SourceId || sourceId == -2 && music.IsRemote);
+    }
+    public sealed class ShellService { public void ShowMainWindow() => App.MainWindow.Visible = true; }
     public sealed class BassPlayerCommandService(WinUIMusicPlayer.ViewModel.AppViewModel state)
     {
         public int Toggles, NextCalls;
@@ -79,11 +130,8 @@ namespace WinUIMusicPlayer
     public sealed class Window
     {
         public Queue DispatcherQueue { get; } = new();
-        public WindowOptions AppWindow { get; } = new();
         public bool Visible;
-        public void Activate() { }
     }
-    public sealed class WindowOptions { public object? Presenter { get; set; } }
     public sealed class Queue
     {
         public int? OwnerThread;
@@ -103,28 +151,12 @@ namespace WinUIMusicPlayer
     }
 }
 namespace Microsoft.UI.Dispatching { public delegate void DispatcherQueueHandler(); }
-namespace WinUIEx
-{
-    public static class Extensions
-    {
-        public static void Show(this WinUIMusicPlayer.Window window) => window.Visible = true;
-        public static void SetForegroundWindow(this WinUIMusicPlayer.Window window) { }
-    }
-}
-namespace Microsoft.UI.Windowing
-{
-    public enum OverlappedPresenterState { Minimized, Restored }
-    public sealed class OverlappedPresenter
-    {
-        public OverlappedPresenterState State;
-        public void Restore() => State = OverlappedPresenterState.Restored;
-    }
-}
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     public sealed class DesktopLyricsViewModel
     {
         public bool IsEnabled, IsKaraokeEnabled, IsLocked;
+        public DesktopLyricsMode Mode { get; set; }
     }
     public static class DesktopLyricsManager { public static void ResetWindowBounds() { } }
 }

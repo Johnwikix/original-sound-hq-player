@@ -594,7 +594,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
         {
             _ = database.SaveSettingAsync();
             lyrics.SendLyricsSettings();
-            if (state.Playback.CurrentPlayingMusic is { } music)
+            if (state.Playback.DisplayedPlaybackMusic is { } music)
                 lyricsLoader.Load(music);
         }
     }

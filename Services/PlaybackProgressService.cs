@@ -1,8 +1,9 @@
-﻿using AnimatedWin2dControls.Messages;
+using AnimatedWin2dControls.Messages;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using System;
 using System.Globalization;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>拥有播放时钟、轮询与 UI 发布定时器；退出等待所有轮询代次后才释放 IPC。</summary>
 public sealed class PlaybackProgressService(AppState state, SystemMediaControlsService media, ILogger<PlaybackProgressService> logger)
 {
-    private readonly BassPlayerIpc.Shared.PlaybackTimeline _cache = new();
+    private readonly PlaybackPresentationClock _clock = new();
     private DispatcherQueue? _dispatcher;
     private IpcService? _source;
     private DispatcherQueueTimer? _progressTimer;
@@ -43,7 +44,7 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
     }
     private void UpdateCore()
     {
-        if (_source?.TryGetProgressSnapshot(out var snapshot) == true) _cache.Apply(snapshot);
+        if (_source?.TryGetProgressSnapshot(out var snapshot) == true) _clock.Apply(snapshot);
         OnProgressTick(null, null!);
     }
 
@@ -68,7 +69,7 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
     {
         if (_isDisposed || !state.Lifecycle.IsReady || !state.Playback.IsPlaybackEngineReady) return;
         TimeProgressBus.SetClock(ReadPlaybackClock);
-        _cache.SetPaused(false);
+        _clock.SetPaused(false);
         if (_progressTimer is null)
         {
             _progressTimer = _dispatcher!.CreateTimer();
@@ -107,7 +108,7 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
 
     private void StopProgressTimerCore()
     {
-        _cache.SetPaused(true);
+        _clock.SetPaused(true);
         _progressTimer?.Stop();
         if (_progressPollingTask is { IsCompleted: false }) _progressPollingCts?.Cancel();
     }
@@ -117,12 +118,21 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
         Dispatch(UpdateCore);
     }
 
-    public (long curMs, long totalMs) GetTimeProgressCache() => _cache.Load();
-    public void BeginProgressSeek(long positionMs, long seekId) => _cache.BeginSeek(positionMs, seekId);
-    public void CancelProgressSeek(long seekId) => _cache.CancelSeek(seekId);
-    private long ReadPlaybackClock() => _cache.Load().curMs;
+    public (long curMs, long totalMs) GetTimeProgressCache() => _clock.Confirmed.Load();
+    public void BeginProgressSeek(long positionMs, long seekId) => _clock.Confirmed.BeginSeek(positionMs, seekId);
+    public void CancelProgressSeek(long seekId) => _clock.Confirmed.CancelSeek(seekId);
+    public (long curMs, long totalMs) GetDisplayedTimeProgressCache() => _clock.ReadAt(Stopwatch.GetTimestamp());
+    private long ReadPlaybackClock() => GetDisplayedTimeProgressCache().curMs;
 
-    public void MarkPlaybackEnded(long totalMs) => _cache.MarkPlaybackEnded(totalMs);
+    // Selection changes arrive on the UI dispatcher. Refresh synchronously, including while the timer is stopped.
+    internal void SetTransitionPresentation(PlaybackTransitionPresentation? target)
+    {
+        if (_source?.TryGetProgressSnapshot(out var snapshot) == true) _clock.Apply(snapshot);
+        _clock.SetTarget(target);
+        PublishProgress(updateConfirmed: false);
+    }
+
+    public void MarkPlaybackEnded(long totalMs) => _clock.Confirmed.MarkPlaybackEnded(totalMs);
 
     private async Task PollProgressLoopAsync(CancellationToken ct)
     {
@@ -136,7 +146,7 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
                 try
                 {
                     if (svc.TryGetProgressSnapshot(out var snapshot) && !ct.IsCancellationRequested)
-                        _cache.Apply(snapshot);
+                        _clock.Apply(snapshot);
                 }
                 catch (Exception ex)
                 {
@@ -148,16 +158,27 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
         catch (ObjectDisposedException) { }
     }
 
-    private void OnProgressTick(DispatcherQueueTimer? sender, object args)
+    private void OnProgressTick(DispatcherQueueTimer? sender, object args) => PublishProgress(updateConfirmed: true);
+
+    private void PublishProgress(bool updateConfirmed)
     {
         if (_isDisposed || state.Playback.IsUserDraggingProgressSlider) return;
         try
         {
-            var (curMs, totalMs) = _cache.Load();
+            if (updateConfirmed)
+            {
+                var (confirmedMs, confirmedTotalMs) = _clock.Confirmed.Load();
+                CurrentPlayingTimeChanged?.Invoke(confirmedMs);
+                if (Environment.TickCount64 - _lastSmtcUpdateTick >= 1000)
+                {
+                    _lastSmtcUpdateTick = Environment.TickCount64;
+                    media.UpdateTimelineProperties(TimeSpan.FromMilliseconds(confirmedMs), TimeSpan.FromMilliseconds(confirmedTotalMs));
+                }
+            }
+            var (curMs, totalMs) = GetDisplayedTimeProgressCache();
             TotalTime = TimeSpan.FromMilliseconds(totalMs);
             CurrentTime = TimeSpan.FromMilliseconds(curMs);
             state.Playback.CurrentPlayingTime = CurrentTime;
-            CurrentPlayingTimeChanged?.Invoke(curMs);
             TimeProgressBus.Publish(curMs);
 
             if (state.Playback.IsManualSelect) return;
@@ -184,11 +205,7 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
             state.Playback.RemainingTimeText = remaining.TotalHours >= 1
                 ? remaining.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
                 : remaining.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
-            if (Environment.TickCount64 - _lastSmtcUpdateTick >= 250)
-            {
-                _lastSmtcUpdateTick = Environment.TickCount64;
-                media.UpdateTimelineProperties(CurrentTime, TotalTime);
-            }
+
         }
         catch (Exception ex)
         {

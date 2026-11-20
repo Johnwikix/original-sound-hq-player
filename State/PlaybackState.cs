@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.State;
 
@@ -7,7 +8,31 @@ namespace WinUIMusicPlayer.State;
 public sealed class PlaybackState : ObservableObject
 {
     public PlaybackSelection? PendingSelection { get; internal set => SetProperty(ref field, value); }
-    public WinUIMusicPlayer.Model.Music? CurrentPlayingMusic { get; internal set => SetProperty(ref field, value); }
+    public Music? CurrentPlayingMusic
+    {
+        get => field;
+        internal set
+        {
+            var previous = DisplayedPlaybackMusic;
+            if (SetProperty(ref field, value) && !ReferenceEquals(previous, DisplayedPlaybackMusic))
+                OnPropertyChanged(nameof(DisplayedPlaybackMusic));
+        }
+    }
+
+    /// <summary>供播放页展示的曲目；曲间过渡可以早于实际队列提交。</summary>
+    public Music? DisplayedPlaybackMusic => TransitionPresentation?.Music ?? CurrentPlayingMusic;
+
+    /// <summary>过渡时钟的起点与身份。实时位置从播放进程快照读取。</summary>
+    public PlaybackTransitionPresentation? TransitionPresentation
+    {
+        get => field;
+        internal set
+        {
+            var previous = DisplayedPlaybackMusic;
+            if (SetProperty(ref field, value) && !ReferenceEquals(previous, DisplayedPlaybackMusic))
+                OnPropertyChanged(nameof(DisplayedPlaybackMusic));
+        }
+    }
     public double Volume { get; set => SetProperty(ref field, value); } = 50;
     public bool IsPlaying { get; internal set => SetProperty(ref field, value); }
     public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
@@ -23,4 +48,8 @@ public sealed class PlaybackState : ObservableObject
 }
 
 /// <summary>立即呈现用户选曲意图，不提前改变播放统计、歌词或系统媒体信息。</summary>
-public sealed record PlaybackSelection(WinUIMusicPlayer.Model.Music Music, long EntryId);
+public sealed record PlaybackSelection(Music Music, long EntryId);
+
+/// <summary>表示手动预览、已开始的交叠，或等待状态管道同步的已提交过渡。</summary>
+public readonly record struct PlaybackTransitionPresentation(Music Music, long EntryId, long Token = 0,
+    long Epoch = 0, long PositionMs = 0, long DurationMs = 0, bool IsCommitted = false);

@@ -60,6 +60,9 @@ internal static class Regression
 
     public static async Task RunAsync()
     {
+#if !REAL_REMOTE
+        PlaybackPresentationClockTests.Run();
+#endif
         await SongVersionsAsync();
         await ConfirmedStartsAsync();
         await CacheSizeRegression.RunAsync();
@@ -336,6 +339,7 @@ internal static class Regression
         await GaplessAsync();
         await SmartTransitionsAsync();
         await ManualNextTransitionsAsync();
+        await TransitionPresentationAsync();
         await WebDavTransitionFallbackAsync();
 
         using var responsive = new Scenario();
@@ -955,6 +959,192 @@ internal static class Regression
             }
         }
         finally { AppSettings.Dsp = savedSettings; }
+    }
+
+    private static async Task TransitionPresentationAsync()
+    {
+        var savedSettings = AppSettings.Dsp;
+        AppSettings.Dsp = savedSettings with { GaplessPlayback = true, TransitionStyle = TrackTransitionStyle.Crossfade };
+        try
+        {
+            var from = new Music(230) { Duration = TimeSpan.FromMinutes(2) };
+            var second = new Music(231) { Duration = TimeSpan.FromMinutes(3) };
+            var third = new Music(232) { Duration = TimeSpan.FromMinutes(4) };
+            using (var rapid = new Scenario())
+            {
+                // Wrap at the third click. The first and final target are the same Music at distinct entries.
+                rapid.State.CurrentPlayingList = [second, from, second, third];
+                await BeginAsync(rapid, 1);
+                var playback = rapid.State.State.Playback;
+                long origin = rapid.State.State.Queue.EntryIdAt(1);
+                long firstOccurrence = rapid.State.State.Queue.EntryIdAt(2);
+                long wrappedOccurrence = rapid.State.State.Queue.EntryIdAt(0);
+                var displays = new List<Music?>();
+                playback.PropertyChanged += (_, change) =>
+                {
+                    if (change.PropertyName != nameof(playback.DisplayedPlaybackMusic)) return;
+                    Check(App.MainWindow.DispatcherQueue.HasThreadAccess, "transition display publishes on the UI dispatcher");
+                    displays.Add(playback.DisplayedPlaybackMusic);
+                };
+                var firstStatus = new TaskCompletionSource<TransitionNowStatus>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var cancel = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+                rapid.Ipc.ManualReply = _ => rapid.Ipc.Manual.Count == 1 ? firstStatus.Task : Task.FromResult(TransitionNowStatus.Started);
+                rapid.Ipc.CancelReply = () => cancel.Task;
+
+                Task firstClick = rapid.Coordinator.PlayNextAsync();
+                Check(playback.TransitionPresentation is { Token: 0 } preview && preview.EntryId == firstOccurrence
+                      && playback.DisplayedPlaybackMusic == second && playback.CurrentPlayingMusic == from
+                      && rapid.State.State.Queue.CurrentEntryId == origin && rapid.Statistics.Starts == 0,
+                    "first Next immediately previews the queue target before command submission or playback commit");
+                await WaitAsync(() => rapid.Ipc.Manual.Count == 1);
+                var old = rapid.Ipc.Manual[0];
+                Task secondClick = rapid.Coordinator.PlayNextAsync();
+                Check(playback.DisplayedPlaybackMusic == third && playback.CurrentPlayingMusic == from,
+                    "second Next immediately displays the next pending entry while the first cancel is held");
+                Task thirdClick = rapid.Coordinator.PlayNextAsync();
+                Check(playback.TransitionPresentation?.EntryId == wrappedOccurrence && playback.DisplayedPlaybackMusic == second
+                      && playback.CurrentPlayingMusic == from && rapid.State.State.Queue.CurrentEntryId == origin,
+                    "third Next wraps to the first duplicate occurrence without changing committed playback");
+
+                firstStatus.SetResult(TransitionNowStatus.Started);
+                rapid.Ipc.Progress = new(2, 301, 2000, 120000, 0, true, TransitionToken: old.Token,
+                    TransitionEpoch: 302, TransitionCurrentMs: 50, TransitionTotalMs: 180000);
+                rapid.Ipc.Transition(old.Token, 302, 60);
+                await Task.Yield();
+                Check(playback.TransitionPresentation is { Token: 0 } latestPreview && latestPreview.EntryId == wrappedOccurrence
+                      && playback.CurrentPlayingMusic == from,
+                    "superseded start, status, and commit events cannot overwrite the third click projection");
+                cancel.SetResult(0);
+                await WaitAsync(() => rapid.Ipc.Manual.Count == 2);
+                var latest = rapid.Ipc.Manual[1];
+                rapid.Ipc.Progress = new(3, 301, 2500, 120000, 0, true, TransitionToken: latest.Token,
+                    TransitionEpoch: 303, TransitionCurrentMs: 190, TransitionTotalMs: 180000);
+                await WaitAsync(() => playback.TransitionPresentation?.Token == latest.Token);
+                Check(playback.TransitionPresentation is { Epoch: 303, PositionMs: 190, IsCommitted: false }
+                      && rapid.State.State.Queue.CurrentEntryId == origin,
+                    "first audible incoming progress attaches to the shown manual entry without committing it");
+                rapid.Ipc.Transition(latest.Token, 303, 1100);
+                await Task.WhenAll(firstClick, secondClick, thirdClick);
+                Check(playback.TransitionPresentation is { IsCommitted: true, PositionMs: 1100 } held && held.Token == latest.Token
+                      && rapid.State.State.Queue.CurrentEntryId == wrappedOccurrence && playback.CurrentPlayingMusic == second
+                      && rapid.State.LyricsLoads.SequenceEqual([from]) && rapid.Player.Played.SequenceEqual([from]),
+                    "manual handoff commits exact occurrence once and retains its clock while base telemetry is outgoing");
+                rapid.Ipc.Progress = new(4, 303, 1120, 180000, 0, true, GaplessToken: latest.Token);
+                await WaitAsync(() => playback.TransitionPresentation == null && rapid.Statistics.Starts == 1);
+                Check(displays.SequenceEqual([second, third, second]), "audio handoff and telemetry catch-up produce no additional track or lyrics presentation");
+            }
+
+            using (var natural = new Scenario())
+            {
+                natural.State.CurrentPlayingList = [from, second, third];
+                await BeginAsync(natural, 0);
+                var playback = natural.State.State.Playback;
+                var automatic = natural.Ipc.Queued.Last();
+                Check(playback.DisplayedPlaybackMusic == from, "natural preloading alone leaves the current display in place");
+                int identityChanges = 0;
+                playback.PropertyChanged += (_, change) => { if (change.PropertyName == nameof(playback.TransitionPresentation)) identityChanges++; };
+                natural.Ipc.Progress = new(2, 301, 119000, 120000, 0, true, TransitionToken: automatic.Token,
+                    TransitionEpoch: 302, TransitionCurrentMs: 120, TransitionTotalMs: 180000);
+                await WaitAsync(() => playback.DisplayedPlaybackMusic == second);
+                Check(playback.TransitionPresentation is { PositionMs: 120, IsCommitted: false } && playback.CurrentPlayingMusic == from
+                      && natural.Coordinator.GetNavigationIndex() == 1 && natural.Statistics.Starts == 0,
+                    "natural overlap shows the incoming track at first audio and navigates from its occurrence");
+                natural.Ipc.Progress = natural.Ipc.Progress!.Value with { Revision = 3, TransitionCurrentMs = 420 };
+                await Task.Yield();
+                Check(identityChanges == 1 && playback.TransitionPresentation?.PositionMs == 120,
+                    "periodic incoming positions do not republish the transition projection");
+                natural.Ipc.Progress = new(4, 301, 119450, 120000, 0, true);
+                await WaitAsync(() => playback.DisplayedPlaybackMusic == from);
+                Check(playback.TransitionPresentation == null && playback.CurrentPlayingMusic == from && natural.Statistics.Starts == 0,
+                    "aborted natural overlap rolls display back to the still-committed outgoing track");
+            }
+
+            using (var aborted = new Scenario())
+            {
+                aborted.State.CurrentPlayingList = [from, second];
+                await BeginAsync(aborted, 0);
+                var status = new TaskCompletionSource<TransitionNowStatus>(TaskCreationOptions.RunContinuationsAsynchronously);
+                aborted.Ipc.ManualReply = _ => status.Task;
+                Task pending = aborted.Coordinator.PlayNextAsync();
+                await WaitAsync(() => aborted.Ipc.Manual.Count > 0);
+                var old = aborted.Ipc.Manual[0];
+                aborted.Coordinator.CancelPendingSelection();
+                status.SetResult(TransitionNowStatus.Started);
+                await pending;
+                aborted.Ipc.Progress = new(2, 301, 5090, 120000, 0, true, TransitionToken: old.Token,
+                    TransitionEpoch: 302, TransitionCurrentMs: 60, TransitionTotalMs: 180000);
+                await Task.Yield();
+                Check(aborted.State.DisplayedPlaybackMusic == from && aborted.State.State.Playback.TransitionPresentation == null
+                      && aborted.State.CurrentPlayingMusic == from && aborted.Player.Played.SequenceEqual([from]),
+                    "cancelling a manual preview restores the confirmed track and rejects its late overlap snapshot");
+            }
+
+            using (var webDav = new Scenario())
+            {
+                var remote = new Music(233, 41);
+                webDav.State.CurrentPlayingList = [from, remote];
+                await BeginAsync(webDav, 0);
+                var probe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                webDav.Library.Probe = (_, token) => probe.Task.WaitAsync(token);
+                Task pending = webDav.Coordinator.PlayNextAsync();
+                await WaitAsync(() => webDav.Library.Probes.Contains(remote.SourceId));
+                Check(webDav.State.DisplayedPlaybackMusic == from && webDav.State.State.Playback.TransitionPresentation == null,
+                    "ordinary manual WebDAV probing retains the outgoing display");
+                probe.SetResult(false);
+                await pending;
+                Check(webDav.State.DisplayedPlaybackMusic == from && webDav.Remote.Played.Count == 0,
+                    "failed WebDAV probe preserves the committed display and playback");
+            }
+
+            using (var version = new Scenario())
+            {
+                var wanted = new Music(234) { SongId = 91, SongPreferredMusicId = 234, Path = MissingFile() };
+                var available = new Music(235) { SongId = 91, Path = Environment.ProcessPath! };
+                version.State.LibrarySongs = [from, wanted, available];
+                version.State.CurrentPlayingList = [from, wanted];
+                await BeginAsync(version, 0);
+                var playback = version.State.State.Playback;
+                var shownVersions = new List<Music?>();
+                playback.PropertyChanged += (_, change) =>
+                {
+                    if (change.PropertyName == nameof(playback.DisplayedPlaybackMusic)) shownVersions.Add(playback.DisplayedPlaybackMusic);
+                };
+                Task pending = version.Coordinator.PlayNextAsync();
+                Check(playback.DisplayedPlaybackMusic == wanted && playback.CurrentPlayingMusic == from,
+                    "local row previews immediately before checking that its file still exists");
+                await pending;
+                Check(shownVersions.SequenceEqual([wanted, available]) && playback.DisplayedPlaybackMusic == available
+                      && playback.CurrentPlayingMusic == available && playback.TransitionPresentation is { IsCommitted: true, Token: 0 }
+                      && version.Player.Played.SequenceEqual([from, available]),
+                    "preview follows the playable version and ordinary fallback keeps its clock anchored until a new epoch");
+                version.Ipc.Progress = new(2, 302, 85, 60000, 0, true);
+                await WaitAsync(() => playback.TransitionPresentation == null);
+                Check(shownVersions.SequenceEqual([wanted, available]), "ordinary fallback clock confirmation leaves the presented version intact");
+            }
+
+            using (var unavailable = new Scenario())
+            {
+                var missing = new Music(236) { SongId = 92, Path = MissingFile() };
+                unavailable.State.CurrentPlayingList = [from, missing];
+                await BeginAsync(unavailable, 0);
+                Task pending = unavailable.Coordinator.PlayNextAsync();
+                Check(unavailable.State.DisplayedPlaybackMusic == missing, "manual intent appears while local eligibility is pending");
+                await pending;
+                Check(unavailable.State.DisplayedPlaybackMusic == from && unavailable.State.State.Playback.TransitionPresentation == null
+                      && unavailable.Player.Played.SequenceEqual([from]),
+                    "unavailable final local candidate rolls the preview back without initiating another playback");
+            }
+        }
+        finally { AppSettings.Dsp = savedSettings; }
+
+        static async Task BeginAsync(Scenario test, int index)
+        {
+            test.Ipc.Progress = new(1, 301, 1000, 120000, 0, true);
+            await test.Coordinator.PlayAtAsync(index);
+            test.State.IsPlaying = true;
+        }
+
+        static string MissingFile() => Path.Combine(Path.GetTempPath(), $"navigation-absent-{Guid.NewGuid():N}.wav");
     }
 
     private static async Task WebDavTransitionFallbackAsync()

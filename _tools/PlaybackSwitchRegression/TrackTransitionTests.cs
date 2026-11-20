@@ -13,6 +13,7 @@ internal static unsafe partial class Program
         Run("Crossfade: unknown length, inaccurate duration, underrun and cancellation preserve outgoing audio", CheckCrossfadeFallback);
         Run("Crossfade: cancellation and underrun release the last incoming contribution over at most 20 ms", CheckCrossfadeWithdrawal);
         Run("Smart transition: engine honors album continuity and reports consumed incoming position", CheckEngineTrackTransitions);
+        Run("Crossfade progress: outgoing commit stays stable and incoming uses its own rate with shared device/DSP delay", CheckIncomingTimelineRate);
         RunManualTransitionTests();
     }
 
@@ -253,6 +254,7 @@ internal static unsafe partial class Program
             var source = new GaplessSource(first);
             Set(engine, "_session", first);
             Set(engine, "_gaplessSource", source);
+            Set(engine, "_output", new CorrectionOutput("natural-transition"));
             engine.IsPlaying = true;
             try
             {
@@ -275,14 +277,23 @@ internal static unsafe partial class Program
                 Require(preserveAlbum || Math.Abs(next.IntroMeanSquare - .02) < 1e-8,
                     $"Real decoder mismeasured the 4 kHz intro: {next.IntroMeanSquare}");
                 double[] output = new double[2 * 480];
+                Require(engine.TryCaptureProgress(out var before) && before.TransitionToken == 0, "Prepared silent track was presented as mixing");
                 for (int offset = 0; offset < 192000; offset += 480)
                 {
                     source.FillPcm(output, 480);
                     if (preserveAlbum) CheckStereo(output, 0, .3, .3);
+                    if (offset == 180000)
+                    {
+                        Require(engine.TryCaptureProgress(out var during) && during.Epoch == first.TimelineEpoch && during.GaplessToken == 0,
+                            "Natural overlap changed the committed track before handoff");
+                        Require(preserveAlbum ? during.TransitionToken == 0 : during.TransitionToken == 27 && during.TransitionEpoch == next.TimelineEpoch
+                            && during.TransitionCurrentMs == 260 && during.TransitionTotalMs == next.TotalMs,
+                            "Natural overlap did not expose its advancing incoming position or previewed a gapless splice");
+                    }
                 }
                 if (preserveAlbum) source.FillPcm(output, 480);
                 Require(engine.TryCaptureProgress(out var progress) && progress.GaplessToken == 27
-                    && progress.Epoch == next.TimelineEpoch && progress.CurrentMs == (preserveAlbum ? 10 : 500),
+                    && progress.Epoch == next.TimelineEpoch && progress.CurrentMs == (preserveAlbum ? 10 : 500) && progress.TransitionToken == 0,
                     $"Engine reported incorrect incoming progress: {progress.CurrentMs}");
                 Require(engine.TryTransitionNow(request) == TransitionNowStatus.Committed,
                     "Manual poll missed an already committed natural handoff");
@@ -293,6 +304,35 @@ internal static unsafe partial class Program
                 Invoke(engine, "DisposeSession");
             }
         }
+    }
+
+    private static void CheckIncomingTimelineRate()
+    {
+        const int rate = 48000;
+        const long pendingAudioMs = 40;
+        var engine = Engine("WasapiShared");
+        Set(engine, "_streamLock", new object());
+        using var first = TransitionSession(engine, rate, rate * 8, .2, .2);
+        using var next = TransitionSession(engine, rate, rate * 4, .4, .4);
+        Set(next, "<PlaybackRate>k__BackingField", 2d);
+        first.ConfigureDsp(new() { TruePeakLimiterEnabled = true });
+        var source = new GaplessSource(first);
+        Set(engine, "_session", first);
+        Set(engine, "_gaplessSource", source);
+        Set(engine, "_output", new CorrectionOutput("preview-delay", pendingAudioMs));
+        engine.IsPlaying = true;
+        Require(source.Queue(next, 42, TrackTransitionStyle.Crossfade, 1, transitionNow: true), "Queue rejected");
+        var output = new double[rate / 5 * 2];
+        source.FillPcm(output, rate / 50);
+        Require(engine.TryCaptureProgress(out var initially) && initially.TransitionToken == 42 && initially.TransitionCurrentMs == 0,
+            "Incoming timeline went negative behind the pipeline");
+        source.FillPcm(output, rate / 10);
+        long expected = next.CurrentMs - (pendingAudioMs + first.DspDelayMs) * 2;
+        Require(first.DspDelayMs > 0 && engine.TryCaptureProgress(out var later) && later.Epoch == first.TimelineEpoch && later.GaplessToken == 0
+            && later.TransitionEpoch == next.TimelineEpoch && later.TransitionCurrentMs == expected && later.TransitionPlaybackRate == 2,
+            "Incoming clock did not apply the actual shared pipeline and incoming playback rate");
+        Require(source.Cancel() == next && engine.TryCaptureProgress(out var cleared) && cleared.TransitionToken == 0
+            && cleared.Epoch == first.TimelineEpoch, "Cancellation did not restore the outgoing clock");
     }
 
     private static Session TransitionSession(PlaybackEngine engine, int rate, int frames, double left, double right,

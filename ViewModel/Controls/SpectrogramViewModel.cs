@@ -71,7 +71,7 @@ public sealed class SpectrogramViewModel : ObservableObject
         }
     } = true;
     public bool IsOpaque { get => !IsTransparencyEnabled; set => IsTransparencyEnabled = !value; }
-    public bool HasPlaybackCursor => SameMusic(_app.CurrentPlayingMusic);
+    public bool HasPlaybackCursor => SameMusic(_app.DisplayedPlaybackMusic);
     public bool IsPlaying => HasPlaybackCursor && _app.IsPlaying;
     public double PositionSeconds => HasPlaybackCursor ? _app.CurrentPlayingTime.TotalSeconds : 0;
     public IRelayCommand RetryCommand { get; }
@@ -171,7 +171,7 @@ public sealed class SpectrogramViewModel : ObservableObject
             || music.Id == 0 && _music.Id == 0 && string.Equals(music.Path, _music.Path, StringComparison.OrdinalIgnoreCase)));
     private void PlaybackChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(AppViewModel.CurrentPlayingMusic)) NotifyPlayback();
+        if (args.PropertyName == nameof(AppViewModel.DisplayedPlaybackMusic)) NotifyPlayback();
         else if (args.PropertyName == nameof(AppViewModel.CurrentPlayingTime)) OnPropertyChanged(nameof(PositionSeconds));
         else if (args.PropertyName == nameof(AppViewModel.IsPlaying))
         {

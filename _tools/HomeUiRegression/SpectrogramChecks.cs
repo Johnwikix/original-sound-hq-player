@@ -88,9 +88,27 @@ internal sealed partial class RegressionApplication
         app.IsPlaying = false;
         app.CurrentPlayingTime = TimeSpan.FromSeconds(90);
         Check(!vm.IsPlaying && vm.PositionSeconds == 90, "paused spectrum observes seek without extrapolation");
-        app.CurrentPlayingMusic = new Music { Id = 7722, Path = "other.wav" };
+        var other = new Music { Id = 7722, Path = "other.wav" };
+        var originalData = vm.Data;
+        int cursorChanges = 0;
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SpectrogramViewModel.HasPlaybackCursor)) cursorChanges++;
+        };
+        app.PreviewPlaybackMusic = other;
+        app.CurrentPlayingTime = TimeSpan.FromSeconds(2);
+        Check(app.CurrentPlayingMusic == music && !vm.HasPlaybackCursor && vm.PositionSeconds == 0 && cursorChanges == 1,
+            "outgoing spectrum hides the cursor as soon as another song owns the displayed clock");
+        app.PreviewPlaybackMusic = null;
+        Check(vm.HasPlaybackCursor && cursorChanges == 2, "spectrum cursor returns when the transition display rolls back");
+        app.CurrentPlayingMusic = other;
         Check(!vm.HasPlaybackCursor && vm.PositionSeconds == 0 && ReferenceEquals(vm.Data, control.ViewModel.Data),
             "switching playback hides the cursor without replacing the inspected song");
+        app.PreviewPlaybackMusic = music;
+        app.CurrentPlayingTime = TimeSpan.FromSeconds(3);
+        Check(vm.HasPlaybackCursor && vm.PositionSeconds == 3 && cursorChanges == 4 && ReferenceEquals(originalData, vm.Data) && source.Starts == 1,
+            "incoming spectrum uses the displayed position before handoff without reanalyzing the file");
+        app.PreviewPlaybackMusic = null;
         vm.ZoomAt(.5, 2);
         Check(vm.Zoom == 2 && Math.Abs(vm.ViewStart - .25) < .001, "spectrum zoom keeps its anchor time");
         vm.ZoomFrequencyAt(.25, 2);
@@ -158,7 +176,8 @@ internal sealed partial class RegressionApplication
         await Wait(() => details.IsLoaded);
         Check(tabSource.Starts == 0, "real details pivot starts no analysis on its tags tab");
         var tabs = (Pivot)details.FindName("WorkspaceTabs");
-        tabs.SelectedIndex = 3;
+        var originalTab = tabs.SelectedItem;
+        tabs.SelectedItem = details.FindName("SpectrumTab");
         await Wait(() => tabVm.Data is not null);
         await Wait(() => Descendants<SpectrogramControl>(details).Any(control => control.IsLoaded));
         Check(ReferenceEquals(Descendants<SpectrogramControl>(details).Single().ViewModel, tabVm), "real spectrum pivot binds the existing detail view model");
@@ -190,7 +209,7 @@ internal sealed partial class RegressionApplication
         Check(ReferenceEquals(actions.Parent, identityPanel) && actionsBottom <= panelBottom + .1 && playlistRight <= panelRight + .1,
             "long titles keep all detail actions visible in a fixed compact-layout footer");
         await Capture(details, "details-long-title-fixed-actions.png");
-        tabs.SelectedIndex = 0;
+        tabs.SelectedItem = originalTab;
         Check(!tabVm.RetryCommand.CanExecute(null), "leaving the spectrum pivot deactivates analysis");
         await presentation.StopAsync();
     }

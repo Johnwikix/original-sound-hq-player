@@ -626,14 +626,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     DispatcherQueue.TryEnqueue(UpdateTaskbarLyricsWidth);
                 return;
             }
-            if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic)
-                or nameof(AppViewModel.IsPlaying)
-                or nameof(AppViewModel.IsPlaybackEngineReady))
+            if (e.PropertyName == nameof(AppViewModel.DisplayedPlaybackMusic))
             {
                 if (DispatcherQueue.HasThreadAccess)
                     UpdateTaskbarMedia();
                 else
                     DispatcherQueue.TryEnqueue(UpdateTaskbarMedia);
+            }
+            else if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic)
+                or nameof(AppViewModel.IsPlaying) or nameof(AppViewModel.IsPlaybackEngineReady))
+            {
                 UpdateTaskbarSpectrumState();
             }
         }
@@ -648,7 +650,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_mode != DesktopLyricsMode.Taskbar) return;
 
-            Music? music = AppViewModel.CurrentPlayingMusic;
+            Music? music = AppViewModel.DisplayedPlaybackMusic;
             bool visible = music is not null;
             TaskbarMediaPanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
             if (!visible)

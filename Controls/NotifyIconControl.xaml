@@ -16,7 +16,7 @@
         IconSource="ms-appx:///Assets/icon.ico"
         LeftClickCommand="{x:Bind ViewModel.ShowWindowCommand}"
         NoLeftClickDelay="True"
-        ToolTipText="{x:Bind tools:BindUtils.MusicToTitleConverter(ViewModel.State.CurrentPlayingMusic), Mode=OneWay}">
+        ToolTipText="{x:Bind tools:BindUtils.MusicToTitleConverter(ViewModel.State.DisplayedPlaybackMusic), Mode=OneWay}">
         <tb:TaskbarIcon.ContextFlyout>
             <MenuFlyout
                 AreOpenCloseAnimationsEnabled="True"
@@ -31,7 +31,7 @@
                     MinWidth="200"
                     MaxWidth="400"
                     Command="{x:Bind ViewModel.ShowPlayingDetailCommand}"
-                    Text="{x:Bind tools:BindUtils.MusicToTitleConverter(ViewModel.State.CurrentPlayingMusic), Mode=OneWay}">
+                    Text="{x:Bind tools:BindUtils.MusicToTitleConverter(ViewModel.State.DisplayedPlaybackMusic), Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE8D6;" />
                     </MenuFlyoutItem.Icon>

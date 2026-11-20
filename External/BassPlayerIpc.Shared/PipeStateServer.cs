@@ -159,7 +159,12 @@ public sealed class PipeStateServer : IDisposable
                         _preferFft = true;
                         kind = PipeFrameKind.Progress;
                         id = _progress.Revision;
-                        ProgressProtocol.Write(buffer, _progress);
+                        if (_progress.TransitionToken > 0)
+                        {
+                            type = (int)MessageTypeId.TransitionProgress;
+                            ProgressProtocol.WriteTransition(buffer, _progress);
+                        }
+                        else ProgressProtocol.Write(buffer, _progress);
                         payload = buffer.AsMemory(0, ProgressProtocol.Size);
                     }
                 }
@@ -180,6 +185,10 @@ public sealed class PipeStateServer : IDisposable
                 continue;
             }
             await writer.WriteAsync(pipe, kind, id, type, payload, token).ConfigureAwait(false);
+            // Preserve the version-4 progress payload. Legacy readers ignore the coalesced companion notification.
+            if (kind == PipeFrameKind.Progress && type == (int)MessageTypeId.TransitionProgress)
+                await writer.WriteAsync(pipe, PipeFrameKind.Notification, id, type,
+                    buffer.AsMemory(0, ProgressProtocol.TransitionSize), token).ConfigureAwait(false);
         }
     }
 

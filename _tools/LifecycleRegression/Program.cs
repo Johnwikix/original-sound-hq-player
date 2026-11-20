@@ -60,10 +60,12 @@ var state = new AppViewModel { CurrentPlayingMusic = new(1), CurrentPlayingList 
 int created = 0;
 using var services = new ServiceCollection().AddSingleton(state)
     .AddSingleton(sp => { created++; return new BassPlayerCommandService(state); })
+    .AddSingleton<RemotePlaybackService>().AddSingleton<ShellService>()
     .AddSingleton<WinUIMusicPlayer.View.MainPage>().AddSingleton<MusicBrowseViewModel>().AddSingleton<PlaybackCoordinator>().BuildServiceProvider();
 WinUIMusicPlayer.App.Services = services;
 using var commands = new PlaybackCommands(life, state, services);
-using var tray = new TrayViewModel(life, state, new WinUIMusicPlayer.DesktopLyrics.DesktopLyricsViewModel(), commands);
+using var tray = new TrayViewModel(life, state, new WinUIMusicPlayer.DesktopLyrics.DesktopLyricsViewModel(), commands,
+    services.GetRequiredService<ShellService>());
 Check(!tray.OpenSettingsCommand.CanExecute(null) && !tray.ToggleDesktopLyricsCommand.CanExecute(null), "Tray bypassed startup availability");
 tray.OpenSettingsCommand.Execute(null); tray.ToggleDesktopLyricsCommand.Execute(null);
 Check(!tray.DesktopLyrics.IsEnabled, "Disabled tray action mutated state");
@@ -92,6 +94,12 @@ player.Pending.SetResult(); await playing; player.Pending = null;
 await commands.PreviousCommand.ExecuteAsync(null);
 Check(services.GetRequiredService<MusicBrowseViewModel>().LastPlayed?.Id == 2, "Previous track wrap changed");
 commands.SeekCommand.Execute(-10L); Check(player.Position == 0, "Seek guard/clamp failed");
+state.CanSeekDisplayedPlayback = false;
+Check(!commands.SeekCommand.CanExecute(500L), "Seek remained available while the new track was only a preview");
+commands.SeekCommand.Execute(500L);
+Check(player.Position == 0, "Seek reached the outgoing track while the displayed track was a preview");
+state.CanSeekDisplayedPlayback = true;
+Check(commands.SeekCommand.CanExecute(500L), "Seek did not become available after clearing the preview");
 int availabilityChanges = 0;
 commands.NextCommand.CanExecuteChanged += (_, _) => availabilityChanges++;
 state.CurrentPlayingList.Clear();

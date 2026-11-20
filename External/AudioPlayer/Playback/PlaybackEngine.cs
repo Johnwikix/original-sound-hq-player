@@ -876,11 +876,15 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         var session = _session;
         if (session == null) return (0, 0);
-        long total = session.TotalMs;
+        long delay = (_output?.PendingAudioMs ?? 0) + session.DspDelayMs;
+        return (GetAudiblePosition(session, session.CurrentMs, delay), session.TotalMs);
+    }
+
+    private static long GetAudiblePosition(Session session, long currentMs, long delayMs)
+    {
         long anchor = session.FramesToMs(Volatile.Read(ref session.AnchorFrames));
-        long cur = Math.Min(Math.Max(anchor, session.CurrentMs - (long)(((_output?.PendingAudioMs ?? 0) + session.DspDelayMs) * session.PlaybackRate)),
-            total > 0 ? total : long.MaxValue);
-        return (cur, total);
+        return Math.Min(Math.Max(anchor, currentMs - (long)(delayMs * session.PlaybackRate)),
+            session.TotalMs > 0 ? session.TotalMs : long.MaxValue);
     }
 
     // 仅供定时器或控制线程调用；设备正在重建时跳过，避免延误命令和渲染。
@@ -891,9 +895,26 @@ public sealed partial class PlaybackEngine : IDisposable
         try
         {
             AdoptGapless();
-            var (current, total) = GetTimeProgress();
-            snapshot = new(0, _session?.TimelineEpoch ?? 0, current, total,
-                System.Diagnostics.Stopwatch.GetTimestamp(), IsPlaying && _output is { IsFailed: false }, _lastProgressSeekId, _session?.PlaybackRate ?? 1, _currentGaplessToken);
+            var session = _session;
+            var output = _output;
+            long delay = session == null ? 0 : (output?.PendingAudioMs ?? 0) + session.DspDelayMs;
+            bool playing = IsPlaying && output is { IsFailed: false };
+            long current = session == null ? 0 : GetAudiblePosition(session, session.CurrentMs, delay);
+            snapshot = new(0, session?.TimelineEpoch ?? 0, current, session?.TotalMs ?? 0,
+                System.Diagnostics.Stopwatch.GetTimestamp(), playing, _lastProgressSeekId, session?.PlaybackRate ?? 1, _currentGaplessToken);
+            if (playing && session != null && _gaplessSource?.TryCaptureOverlap(session, out var incoming, out long token, out long position) == true
+                && incoming != null)
+            {
+                // Both tracks are in the outgoing session's shared DSP/endpoint pipeline until handoff.
+                snapshot = snapshot with
+                {
+                    TransitionToken = token,
+                    TransitionEpoch = incoming.TimelineEpoch,
+                    TransitionCurrentMs = GetAudiblePosition(incoming, position, delay),
+                    TransitionTotalMs = incoming.TotalMs,
+                    TransitionPlaybackRate = incoming.PlaybackRate,
+                };
+            }
             return true;
         }
         finally { Monitor.Exit(_streamLock); }

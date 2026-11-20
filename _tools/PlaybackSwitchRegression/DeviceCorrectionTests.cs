@@ -3,11 +3,12 @@ using BassPlayerIpc.Shared;
 
 internal static unsafe partial class Program
 {
-    private sealed class CorrectionOutput(string id) : IAudioOutput
+    private sealed class CorrectionOutput(string id, long pendingAudioMs = 0) : IAudioOutput
     {
         public string DeviceId => id;
         public bool IsFailed => false;
         public int LatencyMs => 10;
+        public long PendingAudioMs => pendingAudioMs;
         public void Pause() { }
         public void Resume() { }
         public void Dispose() { }

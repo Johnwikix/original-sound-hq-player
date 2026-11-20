@@ -18,6 +18,8 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
     public DspStateSnapshot? CurrentDspState => Volatile.Read(ref _dsp);
     public FftSnapshot? CurrentFftSnapshot => Volatile.Read(ref _fft);
     public event Action<DspStateSnapshot>? DspStateChanged;
+    /// <summary>Raised on the state reader thread after the incoming timeline changes or clears.</summary>
+    public event Action? TransitionProgressChanged;
     /// <summary>Raised on the pipe reader thread. The snapshot is immutable by convention.</summary>
     public event Action<FftSnapshot>? FftDataChanged;
     /// <summary>Payload is borrowed only for the duration of this callback.</summary>
@@ -59,6 +61,7 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
     private async Task ReadAsync()
     {
         using var reader = new PipeFrameReader(IpcConstants.MaxStatePayloadSize);
+        long transitionRevision = 0;
         try
         {
             while (true)
@@ -68,11 +71,10 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
                 {
                     case PipeFrameKind.Progress:
                         var progress = ProgressProtocol.Read(frame.Payload.Span);
-                        if (frame.Id != progress.Revision || frame.Id <= 0) throw new InvalidDataException("Invalid progress revision.");
-                        lock (_gate)
-                        {
-                            if (progress.Revision > _progress.Revision) _progress = progress;
-                        }
+                        if (frame.Id != progress.Revision || frame.Id <= 0 || transitionRevision != 0 || progress.TransitionToken != 0)
+                            throw new InvalidDataException("Invalid progress revision.");
+                        if (frame.Type == (int)MessageTypeId.TransitionProgress) transitionRevision = frame.Id;
+                        else ApplyProgress(progress);
                         break;
                     case PipeFrameKind.DspState:
                         if (frame.Id <= 0 || frame.Payload.Length != DspProtocol.StateSize) throw new InvalidDataException("Invalid DSP snapshot.");
@@ -88,6 +90,16 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
                         FftDataChanged?.Invoke(fft);
                         break;
                     case PipeFrameKind.Notification:
+                        if (frame.Type == (int)MessageTypeId.TransitionProgress)
+                        {
+                            if (transitionRevision == 0 || frame.Id != transitionRevision || frame.Payload.Length != ProgressProtocol.TransitionSize)
+                                throw new InvalidDataException("Invalid transition progress framing.");
+                            var transition = ProgressProtocol.Read(frame.Payload.Span);
+                            if (transition.Revision != frame.Id) throw new InvalidDataException("Invalid transition progress revision.");
+                            transitionRevision = 0;
+                            ApplyProgress(transition);
+                            break;
+                        }
                         if (frame.Type is < short.MinValue or > short.MaxValue) throw new InvalidDataException("Invalid notification type.");
                         NotificationReceived?.Invoke((MessageTypeId)frame.Type, frame.Payload);
                         break;
@@ -104,6 +116,18 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
             }
         }
         finally { _pipe.Dispose(); }
+    }
+
+    private void ApplyProgress(ProgressSnapshot progress)
+    {
+        bool changed;
+        lock (_gate)
+        {
+            if (progress.Revision <= _progress.Revision) return;
+            changed = progress.TransitionToken != _progress.TransitionToken || progress.TransitionEpoch != _progress.TransitionEpoch;
+            _progress = progress;
+        }
+        if (changed) TransitionProgressChanged?.Invoke();
     }
 
     public async ValueTask DisposeAsync()

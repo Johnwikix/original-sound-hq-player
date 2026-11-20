@@ -245,7 +245,27 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInitialized => State.Lifecycle.IsReady;
         public bool CanPublishState => State.Lifecycle.Phase != Services.AppPhase.Stopping;
         public bool CanStartPlayback => IsInitialized && IsPlaybackEngineReady;
-        public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
+        public Music? CurrentPlayingMusic
+        {
+            get => field;
+            set
+            {
+                var previous = DisplayedPlaybackMusic;
+                if (SetProperty(ref field, value) && !ReferenceEquals(previous, DisplayedPlaybackMusic))
+                    OnPropertyChanged(nameof(DisplayedPlaybackMusic));
+            }
+        }
+        public Music? PreviewPlaybackMusic
+        {
+            get => field;
+            set
+            {
+                var previous = DisplayedPlaybackMusic;
+                if (SetProperty(ref field, value) && !ReferenceEquals(previous, DisplayedPlaybackMusic))
+                    OnPropertyChanged(nameof(DisplayedPlaybackMusic));
+            }
+        }
+        public Music? DisplayedPlaybackMusic => PreviewPlaybackMusic ?? CurrentPlayingMusic;
         public bool IsPlaying { get; set => SetProperty(ref field, value); }
         public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); }
         public Visibility LibraryEmptyVisibility { get; set; } = Visibility.Collapsed;

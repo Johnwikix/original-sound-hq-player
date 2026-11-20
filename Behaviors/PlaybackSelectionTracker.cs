@@ -115,7 +115,7 @@ public sealed class PlaybackSelectionTracker
             }
             if (_app.SelectedPlaybackMusic is not { } current) return;
             object? match = null;
-            long queueEntry = _app.State.Playback.PendingSelection?.EntryId ?? _app.State.Queue.CurrentEntryId;
+            long queueEntry = _app.SelectedPlaybackEntryId;
             int playlistEntry = _app.State.Queue.PlaylistEntry(queueEntry);
             foreach (var item in _list.Items)
             {

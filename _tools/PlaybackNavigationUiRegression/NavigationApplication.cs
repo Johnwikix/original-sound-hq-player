@@ -19,7 +19,9 @@ internal sealed class NavigationApplication : Application
         App.MainWindow.Activate();
         try
         {
-            await Regression.RunAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            var nativePlayer = Environment.GetEnvironmentVariable("RAPID_NEXT_TEST_PLAYER");
+            if (string.IsNullOrWhiteSpace(nativePlayer)) await Regression.RunAsync().WaitAsync(TimeSpan.FromSeconds(45));
+            else await NativeRapidNextProbe.RunAsync(nativePlayer).WaitAsync(TimeSpan.FromSeconds(45));
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), "PASS: real WinUI dispatcher\n" + output);
         }
         catch (Exception ex)

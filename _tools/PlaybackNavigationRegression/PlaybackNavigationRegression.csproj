@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../../Services/PlaybackPresentationClock.cs" />
     <Compile Include="../../Services/PlaybackCoordinator.Gapless.cs" />
     <Compile Include="../../Services/SongVersionPolicy.cs" />
     <Compile Include="../../State/PlaybackQueueState.cs" />

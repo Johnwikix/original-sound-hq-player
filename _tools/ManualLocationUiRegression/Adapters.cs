@@ -125,13 +125,15 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public WinUIMusicPlayer.State.PlaybackQueueState Queue => State.Queue;
         public long PendingEntryId { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(SelectedPlaybackMusic)); } }
+        public long TransitionEntryId { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(SelectedPlaybackMusic)); } }
+        public long SelectedPlaybackEntryId => PendingEntryId != 0 ? PendingEntryId : TransitionEntryId != 0 ? TransitionEntryId : Queue.CurrentEntryId;
         public BulkObservableCollection<Music> CurrentPlayingList => Queue.Playing;
         public int GetSelectedPlaybackIndex()
         {
-            if (PendingEntryId != 0)
+            if (PendingEntryId != 0 || TransitionEntryId != 0)
             {
                 for (int i = 0; i < CurrentPlayingList.Count; i++)
-                    if (Queue.EntryIdAt(i) == PendingEntryId) return i;
+                    if (Queue.EntryIdAt(i) == SelectedPlaybackEntryId) return i;
                 return -1;
             }
             return Queue.IndexOf(SelectedPlaybackMusic);
@@ -163,6 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
         public SortOption SelectedSortOption { get; } = new();
         public Music? SelectedPlaybackMusic { get; set => SetProperty(ref field, value); }
         public Music? CurrentPlayingMusic => SelectedPlaybackMusic;
+        public Music? DisplayedPlaybackMusic => CurrentPlayingMusic;
         public Music? CurrentAlbumObj { get; set; }
         public Music? CurrentArtistObj { get; set; }
         public Music? CurrentFolderObj { get; set; }

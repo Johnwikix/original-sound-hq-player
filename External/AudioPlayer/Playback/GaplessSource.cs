@@ -20,7 +20,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     private int _overlapLimit, _overlapRemaining, _endGuard, _recoveryRemaining;
     private double _incomingWeight, _recoveryStartWeight;
     private long _recoveryEpoch;
-    private bool _rejectPending, _manualRequested, _manualOverlap;
+    private bool _rejectPending, _manualRequested, _manualOverlap, _overlapActive;
     internal Session Current => Volatile.Read(ref _current);
     internal Session? Pending => Volatile.Read(ref _next);
     internal long CompletedToken => Volatile.Read(ref _completedToken);
@@ -34,6 +34,26 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     internal (Session Current, Session? Pending, long CompletedToken) Snapshot()
     {
         lock (_gate) return (_current, _next, _completedToken);
+    }
+
+    internal bool TryCaptureOverlap(Session from, out Session? incoming, out long token, out long positionMs)
+    {
+        if (Volatile.Read(ref _overlapActive))
+        {
+            lock (_gate)
+            {
+                if (_overlapActive && _current == from && _next is { } next)
+                {
+                    incoming = next;
+                    token = _token;
+                    positionMs = next.CurrentMs;
+                    return true;
+                }
+            }
+        }
+        incoming = null;
+        token = positionMs = 0;
+        return false;
     }
 
     internal bool Queue(Session next, long token, TrackTransitionStyle style = TrackTransitionStyle.Gapless,
@@ -259,6 +279,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         _current.ApplyPcmInputGain(output, frames);
         next.ApplyPcmInputGain(incoming, frames);
         double weight = _incomingWeight;
+        bool started = weight == 0;
         double step = (1 - weight) / _overlapRemaining;
         for (int offset = 0; offset < output.Length; offset += Channels)
         {
@@ -273,6 +294,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         // The final slot retains one post-normalization frame after the standby session is detached.
         incoming[^Channels..].CopyTo(_mixBuffer.AsSpan(MixBlockFrames * Channels));
         _current.ProcessPcm(output, frames, inputGainApplied: true);
+        if (started) Volatile.Write(ref _overlapActive, true);
     }
 
     private void AbortOverlap()
@@ -286,6 +308,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         _recoveryRemaining = _recoveryDuration;
         _recoveryEpoch = _current.TimelineEpoch;
         _incomingWeight = 0;
+        Volatile.Write(ref _overlapActive, false);
     }
 
     private int RenderRecovery(Span<double> buffer, int frames)
@@ -322,6 +345,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         _manualRequested = false;
         _overlapRemaining = _recoveryRemaining = 0;
         _incomingWeight = 0;
+        Volatile.Write(ref _overlapActive, false);
         Volatile.Write(ref _current, next);
         Volatile.Write(ref _completedToken, _token);
     }

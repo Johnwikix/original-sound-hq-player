@@ -16,24 +16,38 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
     private CancellationTokenSource? _request;
     private bool _disposed;
     private int _ticket;
-    public void Load(Music music)
+    public void Load(Music music) => Request(music, immediate: false);
+
+    /// <summary>过渡展示换曲时立即清除旧歌词，并优先解析当前展示曲目的歌词。</summary>
+    public void ShowTransitionTrack(Music? music) => Request(music, immediate: true);
+
+    private void Request(Music? music, bool immediate)
     {
         if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping) return;
         var dispatcher = App.MainWindow.DispatcherQueue;
         if (!dispatcher.HasThreadAccess)
         {
-            dispatcher.TryEnqueue(() => Load(music));
+            dispatcher.TryEnqueue(() => Request(music, immediate));
             return;
         }
+        if (!ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic)) return;
+
         state.Presentation.LastLyricIndex = -1;
         int ticket = Interlocked.Increment(ref _ticket);
         _request?.Cancel();
+        if (immediate) state.Presentation.UILyrics = [];
+        if (music is null) return;
+
         var owner = new CancellationTokenSource();
         _request = owner;
         var snapshot = new Music { Id = music.Id, SourceId = music.SourceId, Path = music.Path, Title = music.Title,
             Author = music.Author, Album = music.Album, Duration = music.Duration, EmbeddedLyrics = music.EmbeddedLyrics,
             IsLrcSearched = music.IsLrcSearched, IsKrcSearched = music.IsKrcSearched };
         _ = RunOwnedAsync();
+        bool CanPublish() => !_disposed && state.Lifecycle.Phase != AppPhase.Stopping
+            && !owner.IsCancellationRequested && ticket == Volatile.Read(ref _ticket)
+            && ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic);
+
         async Task RunOwnedAsync()
         {
             try
@@ -44,17 +58,16 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
                     bool finalPublished = false;
                     try
                     {
-                        // Coalesce track changes before any cache, disk or online lookup starts.
-                        // The request owns this delay, so switching or shutdown cancels it immediately.
-                        await Task.Delay(DebounceMilliseconds, linked.Token);
+                        // 普通重载仍合并磁盘和网络查询；交接应立即尝试已缓存的歌词。
+                        if (!immediate) await Task.Delay(DebounceMilliseconds, linked.Token);
                         var lyrics = await Task.Run(() => parser.SetLyrics(snapshot, linked.Token, cached =>
                             dispatcher.TryEnqueue(() =>
                             {
-                                if (!finalPublished && !_disposed && state.Lifecycle.Phase != AppPhase.Stopping && !owner.IsCancellationRequested && ticket == Volatile.Read(ref _ticket))
+                                if (!finalPublished && CanPublish())
                                     state.Presentation.UILyrics = EnsureDisplayLyrics(cached, snapshot.Duration);
                             })), linked.Token);
                         finalPublished = true;
-                        if (!_disposed && state.Lifecycle.Phase != AppPhase.Stopping && !linked.IsCancellationRequested && ticket == Volatile.Read(ref _ticket))
+                        if (!linked.IsCancellationRequested && CanPublish())
                             state.Presentation.UILyrics = EnsureDisplayLyrics(lyrics, snapshot.Duration);
                     }
                     catch (OperationCanceledException) when (linked.IsCancellationRequested) { }

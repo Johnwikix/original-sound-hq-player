@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging.Abstractions;
 using WinUIMusicPlayer.Model;
@@ -6,6 +7,9 @@ using WinUIMusicPlayer.WebService;
 
 internal static class LoaderCancellationChecks
 {
+    internal static List<LyricLine> CreateLyrics(string text) =>
+        [new() { Words = [new() { Word = text }] }];
+
     public static void RunSwitching(LrcService service)
     {
         var previous = SynchronizationContext.Current;
@@ -27,22 +31,29 @@ internal static class LoaderCancellationChecks
         var tasks = new ApplicationTasks(state.Lifecycle);
         var parser = new LyricsRefreshService(service)
         {
-            Handler = (music, _, _) => Task.FromResult(new List<string> { music.Title })
+            Handler = (music, _, _) => Task.FromResult(CreateLyrics(music.Title))
         };
         using var loader = new LyricsLoader(state, parser, tasks, NullLogger<LyricsLoader>.Instance);
         var releaseOld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Load(string title)
+        {
+            var music = new Music { Title = title };
+            state.Playback.DisplayedPlaybackMusic = music;
+            loader.Load(music);
+        }
+
         try
         {
-            loader.Load(new Music { Title = "A" });
+            Load("A");
             await Task.Delay(100);
-            loader.Load(new Music { Title = "B" });
+            Load("B");
             await Task.Delay(150);
-            loader.Load(new Music { Title = "C" });
+            Load("C");
             await Task.Delay(200);
             if (parser.Calls != 0 || state.Presentation.Publications != 0)
                 throw new Exception("500 ms 防抖到期前已经解析或发布歌词");
             await Task.Delay(450);
-            if (parser.Calls != 1 || state.Presentation.LastLyrics.Single() != "C")
+            if (parser.Calls != 1 || state.Presentation.LastLyrics.Single().Words.Single().Word != "C")
                 throw new Exception("快速切歌没有仅加载最后一首");
 
             var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -54,23 +65,59 @@ internal static class LoaderCancellationChecks
                     using var registration = token.Register(() => cancelled.TrySetResult());
                     started.TrySetResult();
                     await releaseOld.Task; // Keep real work alive after cancellation, as an uncooperative provider may do.
-                    cached?.Invoke(["Stale cache"]);
+                    cached?.Invoke(CreateLyrics("Stale cache"));
                 }
-                return [music.Title];
+                return CreateLyrics(music.Title);
             };
-            loader.Load(new Music { Title = "Old in-flight" });
+            Load("Old in-flight");
             await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            loader.Load(new Music { Title = "Newest" });
+            Load("Newest");
             await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(1));
             await Task.Delay(650);
             int publications = state.Presentation.Publications;
-            if (state.Presentation.LastLyrics.Single() != "Newest") throw new Exception("新歌词被旧请求阻塞");
+            if (state.Presentation.LastLyrics.Single().Words.Single().Word != "Newest") throw new Exception("新歌词被旧请求阻塞");
             releaseOld.TrySetResult();
             await Task.Delay(100);
             if (state.Presentation.Publications != publications) throw new Exception("取消后仍发布旧缓存或最终结果");
 
+            var previewStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var finishPreview = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            parser.Handler = async (music, _, cached) =>
+            {
+                if (music.Title == "First preview")
+                {
+                    previewStarted.TrySetResult();
+                    await finishPreview.Task;
+                    cached?.Invoke(CreateLyrics("Stale preview"));
+                }
+                return CreateLyrics(music.Title);
+            };
+            try
+            {
+                var preview = new Music { Title = "First preview" };
+                state.Playback.DisplayedPlaybackMusic = preview;
+                loader.ShowTransitionTrack(preview);
+                if (state.Presentation.LastLyrics.Count != 0) throw new Exception("Preview retained outgoing lyrics.");
+                await previewStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                var latest = new Music { Title = "Latest preview" };
+                state.Playback.DisplayedPlaybackMusic = latest;
+                loader.ShowTransitionTrack(latest);
+                loader.Load(new Music { Title = "Outgoing editor completion" });
+                await WaitForLyricsAsync(latest.Title);
+                finishPreview.TrySetResult();
+                await Task.Delay(100);
+                if (state.Presentation.LastLyrics.Single().Words.Single().Word != latest.Title)
+                    throw new Exception("An older preview or outgoing reload replaced the latest lyrics.");
+
+                var rollback = new Music { Title = "Rollback" };
+                state.Playback.DisplayedPlaybackMusic = rollback;
+                loader.ShowTransitionTrack(rollback);
+                await WaitForLyricsAsync(rollback.Title);
+            }
+            finally { finishPreview.TrySetResult(); }
+
             int calls = parser.Calls;
-            loader.Load(new Music { Title = "Pending at shutdown" });
+            Load("Pending at shutdown");
             loader.Dispose();
             state.Lifecycle.TryBeginExit(out _);
             await tasks.DrainAsync();
@@ -82,6 +129,13 @@ internal static class LoaderCancellationChecks
             loader.Dispose();
             state.Lifecycle.TryBeginExit(out _);
             await tasks.DrainAsync();
+        }
+
+        async Task WaitForLyricsAsync(string title)
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            while (state.Presentation.LastLyrics.Count != 1 || state.Presentation.LastLyrics[0].Words.Single().Word != title)
+                await Task.Delay(10, timeout.Token);
         }
     }
 
@@ -106,7 +160,9 @@ internal static class LoaderCancellationChecks
         var tasks = new ApplicationTasks(state.Lifecycle);
         var parser = new LyricsRefreshService(service);
         var loader = new LyricsLoader(state, parser, tasks, NullLogger<LyricsLoader>.Instance);
-        loader.Load(new Music());
+        var music = new Music();
+        state.Playback.DisplayedPlaybackMusic = music;
+        loader.Load(music);
         await handler.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         state.Lifecycle.TryBeginExit(out _);
         var drain = tasks.DrainAsync();
@@ -154,13 +210,19 @@ namespace WinUIMusicPlayer.State
     {
         public AppLifecycle Lifecycle { get; } = new();
         public TestPresentation Presentation { get; } = new();
+        public TestPlayback Playback { get; } = new();
     }
+    public sealed class TestPlayback
+    {
+        public Music? DisplayedPlaybackMusic { get; set; }
+    }
+
     public sealed class TestPresentation
     {
         public int LastLyricIndex { get; set; }
         public int Publications { get; private set; }
-        public List<string> LastLyrics { get; private set; } = [];
-        public List<string> UILyrics
+        public List<LyricLine> LastLyrics { get; private set; } = [];
+        public List<LyricLine> UILyrics
         {
             get => LastLyrics;
             set
@@ -179,14 +241,22 @@ namespace WinUIMusicPlayer.Services
     public sealed class LyricsRefreshService(LrcService service)
     {
         public int Calls;
-        public Func<Music, CancellationToken, Action<List<string>>?, Task<List<string>>>? Handler;
-        public async Task<List<string>> SetLyrics(Music music, CancellationToken token, Action<List<string>>? publishCached = null)
+        public Func<Music, CancellationToken, Action<List<LyricLine>>?, Task<List<LyricLine>>>? Handler;
+        public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken token, Action<List<LyricLine>>? publishCached = null)
         {
             Interlocked.Increment(ref Calls);
             if (Handler is not null) return await Handler(music, token, publishCached);
             try { await service.GetMixedLyricsAsync(music, token); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            return ["late lyrics"];
+            return LoaderCancellationChecks.CreateLyrics("late lyrics");
         }
+    }
+}
+
+namespace WinUIMusicPlayer.Utils
+{
+    internal static class ToolUtils
+    {
+        internal static string GetString(string key) => key;
     }
 }

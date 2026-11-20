@@ -341,7 +341,7 @@ public sealed class MusicDetailsViewModel : ObservableObject
     {
         if (_closing) return;
         VersionMessage = ToolUtils.GetString("SongVersionsSaved");
-        if (_app.CurrentPlayingMusic is { } current && current.SongId == Music.SongId) _app.LoadLyricsToUI(current);
+        if (_app.DisplayedPlaybackMusic is { } displayed && displayed.SongId == Music.SongId) _app.LoadLyricsToUI(displayed);
         EditorCloseRequested(sender, args);
     }
     private void EditorCloseRequested(object? sender, EventArgs args)

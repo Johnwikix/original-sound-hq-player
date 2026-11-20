@@ -101,6 +101,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         _stopIntentVersion++;
         _autoAdvance.DiscardPending();
         CancelPendingSelection();
+        state.State.Playback.TransitionPresentation = null;
     }
 
     private bool DeferEndForPendingSelection()
@@ -160,6 +161,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     {
         if (_disposed || !state.CanStartPlayback) return Task.CompletedTask;
         long version = ++_selectionVersion;
+        BeginSelectionPreview(manualNext, music, entryId, version);
         BeginManualNext(manualNext, entryId, version);
         _presentation?.Cancel(); // 收到新意图即停止上一轮等待，不等 ApplicationTasks 的下一次调度。
         SetPending(new(music, entryId));
@@ -190,6 +192,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         {
             if (version == _selectionVersion)
             {
+                FinishSelectionPreview();
                 FinishManualNext(version);
                 SetPending(null);
                 ReconcileSupersededManualHandoff();
@@ -222,6 +225,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         CancelGaplessPlan();
         _playingVersion = ++_selectionVersion;
         _deferredFailure = null;
+        FinishSelectionPreview();
         _presentation?.Cancel();
         SetPending(null);
         ReconcileSupersededManualHandoff();
@@ -353,6 +357,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             token.ThrowIfCancellationRequested();
             if (Environment.TickCount64 >= _versionDeadline) return null;
             if (!SongVersionPolicy.InScope(version, _intentScope) || !_attemptedVersions.Add(version.Id)) continue;
+            PresentManualCandidate(version, _intentEntry);
             using var probe = CancellationTokenSource.CreateLinkedTokenSource(token);
             probe.CancelAfter(TimeSpan.FromMilliseconds(Math.Max(1, _versionDeadline - Environment.TickCount64)));
             bool retryImmediately = !_intentMayAdvance && _probedVersionSources.Add(version.SourceId);
@@ -422,13 +427,18 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             state.State.Queue.SelectEntry(entryId, music);
             _activeIntent = (music, entryId, exact, mayAdvance, false);
             _activeSelectionVersion = _selectionVersion;
+            bool lyricsAlreadyPresented = IsPresenting(music, entryId);
             state.CurrentPlayingMusic = music;
+            FinishTrackPresentation(music, entryId, previousEpoch, lyricsAlreadyPresented);
             state.RemotePlaybackStatus = music.IsRemote ? Utils.ToolUtils.GetString("WebDavOpening") : "";
             if (music.IsRemote) { state.IsPlaying = false; state.StopProgressTimer(); }
             try { if (music.IsRemote) statistics.FlushSession(); else statistics.StartSession(music); }
             catch (Exception ex) { logger.LogError(ex, "记录播放统计会话失败"); }
-            state.UILyrics = [];
-            state.LoadLyricsToUI(music);
+            if (!lyricsAlreadyPresented)
+            {
+                state.UILyrics = [];
+                state.LoadLyricsToUI(music);
+            }
             state.UpdateProgressTimerUI();
             TrackStarted?.Invoke(music, token);
             StartGapless();
@@ -460,6 +470,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                         if (!_disposed && state.CanPublishState && !token.IsCancellationRequested
                             && ReferenceEquals(state.CurrentPlayingMusic, music))
                         {
+                            ClearConfirmedPresentation(progress);
                             ConfirmVersion(music);
                             PlaybackConfirmed?.Invoke(music, progress);
                         }
@@ -472,6 +483,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 if (_disposed || token.IsCancellationRequested || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
+                if (state.State.Playback.TransitionPresentation is { IsCommitted: true, Token: 0 })
+                    state.State.Playback.TransitionPresentation = null;
                 if (_intentExact || _intentMusic?.SongId <= 0) { ShowVersionFailure(); return; }
                 _ = RunSelectionAsync(async retry =>
                 {

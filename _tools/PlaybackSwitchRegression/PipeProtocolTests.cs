@@ -8,6 +8,8 @@ internal static unsafe partial class Program
     {
         Run("Pipe: partial/adjacent frames and malformed input", () => PipeChecks.FramingAsync().GetAwaiter().GetResult());
         Run("Pipe: legacy next-track plans and Smart boundary flag", PipeChecks.NextTrackRequest);
+        Run("Pipe: legacy state readers retain the committed 72-byte progress during overlap", () => PipeChecks.LegacyTransitionProgressAsync().GetAwaiter().GetResult());
+        Run("Pipe: real commands and PCM mixing publish preview, supersession and final commit in order", CheckTransitionProgressPipe);
         Run("Pipe: abandoned replies cannot overwrite released buffers", () => PipeChecks.AbandonedRepliesAsync().GetAwaiter().GetResult());
         Run("Pipe: disconnect completes all outstanding requests", () => PipeChecks.DisconnectAsync().GetAwaiter().GetResult());
         Run("Pipe: queue capacity and in-flight disposal", () => PipeChecks.QueueAndShutdownAsync().GetAwaiter().GetResult());
@@ -16,6 +18,93 @@ internal static unsafe partial class Program
         Run("Pipe: stalled subscriber retains final state and every critical event", () => PipeChecks.StateBackpressureAsync().GetAwaiter().GetResult());
         Run("Pipe: critical event overflow fails explicitly", () => PipeChecks.StateOverflowAsync().GetAwaiter().GetResult());
         Run("Pipe: connection cancellation and stop before listeners start", () => PipeChecks.StartupShutdownAsync().GetAwaiter().GetResult());
+    }
+
+    private static void CheckTransitionProgressPipe()
+    {
+        FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+        string path = Path.Combine(AppContext.BaseDirectory, "transition-progress-pipe.wav");
+        WriteLoudnessTone(path, .2f);
+        using var stop = new CancellationTokenSource(15000);
+        var (engine, source, first) = OpenManualFixture();
+        using var player = new AudioPlayer.PlayerIpcService();
+        Set(player, "_engine", engine);
+        Set(engine, "_ipc", player);
+        var publisher = (PipeStateServer)typeof(AudioPlayer.PlayerIpcService).GetField("_stateServer", Private)!.GetValue(player)!;
+        string commandName = "TransitionCommands-" + Guid.NewGuid().ToString("N");
+        string stateName = "TransitionState-" + Guid.NewGuid().ToString("N");
+        Guid instance = Guid.NewGuid();
+        Task commandServer = new PipeCommandServer(commandName, instance, player.HandleCommand).RunAsync(stop.Token);
+        Task stateServer = publisher.RunAsync(stateName, instance, stop.Token);
+        using var commands = PipeCommandClient.ConnectAsync(commandName, stop.Token).GetAwaiter().GetResult();
+        using var client = PipeStateClient.ConnectAsync(stateName, stop.Token).GetAwaiter().GetResult();
+        var changes = new System.Collections.Concurrent.ConcurrentQueue<(long ActiveToken, long CommitToken)>();
+        client.TransitionProgressChanged += () =>
+        {
+            if (client.TryGetProgress(out var p)) changes.Enqueue((p.TransitionToken, p.GaplessToken));
+        };
+        client.Start();
+        try
+        {
+            byte[] response = new byte[IpcConstants.MaxResponseSize];
+            byte[] cancel = new GaplessRequest(0, 0, "").Write();
+            double[] buffer = new double[480 * 2];
+            for (long token = 101; token <= 103; token++)
+            {
+                var plan = new GaplessRequest(first.TimelineEpoch, token, path);
+                var reply = commands.RequestAsync(CommandId.TransitionNow, plan.Write(), response, token: stop.Token).GetAwaiter().GetResult();
+                Require(reply is { Type: MessageTypeId.Success, Length: 1 } && response[0] == (byte)TransitionNowStatus.Preparing,
+                    "Manual playback command did not reserve the requested token");
+                var next = WaitManualReady(engine, source);
+                Publish(0);
+                for (int i = 0; i < 4; i++) source.FillPcm(buffer, 480); // Also lets the previous 20ms withdrawal finish.
+                var active = Publish(token);
+                Require(active.Epoch == first.TimelineEpoch && active.GaplessToken == 0 && active.TransitionEpoch == next.TimelineEpoch
+                    && active.TransitionCurrentMs > 0, "Active state did not retain committed identity or advance the incoming position");
+                source.FillPcm(buffer, 480);
+                Require(Publish(token).TransitionCurrentMs > active.TransitionCurrentMs, "Incoming progress did not advance on the wire");
+                if (token < 103)
+                {
+                    reply = commands.RequestAsync(CommandId.QueueNext, cancel, response, token: stop.Token).GetAwaiter().GetResult();
+                    Require(reply is { Type: MessageTypeId.Success, Length: 16 } && BinaryPrimitives.ReadInt64LittleEndian(response) == 0,
+                        "Ordered cancellation committed a partial overlap");
+                    Require(Publish(0).Epoch == first.TimelineEpoch, "Cancellation retained the incoming timeline");
+                }
+                else
+                {
+                    Require(SpinWait.SpinUntil(() => { source.FillPcm(buffer, 480); return source.CompletedToken == token; }, 5000),
+                        "Last PCM attempt did not complete");
+                    var committed = Publish(0);
+                    Require(committed.GaplessToken == token && committed.Epoch == active.TransitionEpoch,
+                        "Commit did not adopt the exact track previously presented");
+                }
+            }
+            (long, long)[] expected = [(101, 0), (0, 0), (102, 0), (0, 0), (103, 0), (0, 103)];
+            Require(SpinWait.SpinUntil(() => changes.Count >= expected.Length, 5000) && changes.SequenceEqual(expected),
+                "Incoming status changes were lost, duplicated during progress, or restored a superseded timeline");
+
+            ProgressSnapshot Publish(long expectedToken)
+            {
+                long revision = client.TryGetProgress(out var previous) ? previous.Revision : 0;
+                Require(engine.TryCaptureProgress(out var captured), "Engine progress capture unavailable");
+                publisher.PublishProgress(captured);
+                Require(SpinWait.SpinUntil(() => client.TryGetProgress(out var updated) && updated.Revision > revision, 5000),
+                    "Progress did not arrive in the state pipe");
+                Require(client.TryGetProgress(out var delivered) && delivered.TransitionToken == expectedToken, "Unexpected preview token on the wire");
+                return delivered;
+            }
+        }
+        finally
+        {
+            stop.Cancel();
+            try { Task.WhenAll(commandServer, stateServer).GetAwaiter().GetResult(); }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                Set(player, "_engine", null);
+                CloseManualFixture(engine);
+            }
+        }
     }
 }
 
@@ -100,6 +189,37 @@ internal static class PipeChecks
             try { action(); }
             catch (ArgumentException) { return; }
             throw new Exception("invalid queue plan was accepted");
+        }
+    }
+
+    public static async Task LegacyTransitionProgressAsync()
+    {
+        string name = Name();
+        using var stop = new CancellationTokenSource(5000);
+        using var publisher = new PipeStateServer();
+        var server = publisher.RunAsync(name, Guid.NewGuid(), stop.Token);
+        using var oldClient = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous);
+        await PipeProtocol.ConnectAsync(oldClient, stop.Token);
+        using var reader = new PipeFrameReader(IpcConstants.MaxStatePayloadSize);
+        try
+        {
+            var snapshot = new ProgressSnapshot(0, 100, 1234, 5000, 1000, true, TransitionToken: 33, TransitionEpoch: 101,
+                TransitionCurrentMs: 120, TransitionTotalMs: 9000, TransitionPlaybackRate: 1.5);
+            publisher.PublishProgress(snapshot);
+            var baseFrame = await reader.ReadAsync(oldClient, stop.Token);
+            Check(baseFrame.Kind == PipeFrameKind.Progress && baseFrame.Payload.Length == 72, "Legacy progress length changed at overlap");
+            var legacy = ProgressProtocol.Read(baseFrame.Payload.Span);
+            Check(legacy.Epoch == 100 && legacy.CurrentMs == 1234 && legacy.GaplessToken == 0 && legacy.TransitionToken == 0,
+                "Legacy progress exposed an uncommitted track");
+            var companion = await reader.ReadAsync(oldClient, stop.Token);
+            Check(companion.Kind == PipeFrameKind.Notification && companion.Id == legacy.Revision
+                && companion.Type == (int)MessageTypeId.TransitionProgress && ProgressProtocol.Read(companion.Payload.Span) == (snapshot with { Revision = 1 }),
+                "Supplemental progress no longer fits backward-compatible notification framing");
+        }
+        finally
+        {
+            stop.Cancel();
+            try { await server; } catch (OperationCanceledException) { }
         }
     }
     public static async Task AbandonedRepliesAsync()

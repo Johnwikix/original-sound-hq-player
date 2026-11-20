@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.State;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services;
@@ -34,11 +35,77 @@ public sealed partial class PlaybackCoordinator
     private PlayMode _candidateMode;
     private Music? _candidateFrom, _candidateNext;
     private long _manualNextVersion;
+    private long _previewNextVersion;
 
     internal bool IsManualNextPending => _manualNextVersion != 0 && _manualNextVersion == _selectionVersion;
 
     private static bool AllowsManualNext(DspSettings settings) => settings.GaplessPlayback
         && settings.TransitionStyle is TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart;
+
+    private bool HasManualPreview => _previewNextVersion != 0 && _previewNextVersion == _selectionVersion;
+
+    private void BeginSelectionPreview(bool manualNext, Music requested, long entryId, long version)
+    {
+        _previewNextVersion = manualNext && state.CurrentPlayingMusic is { IsRemote: false } ? version : 0;
+        if (!HasManualPreview)
+        {
+            ClearUncommittedPresentation();
+            return;
+        }
+
+        int exact = state.State.Queue.RequestedVersion(entryId);
+        var candidate = _nextPlan is { } prepared && prepared.EntryId == entryId ? prepared.Next
+            : exact > 0 && exact != requested.Id ? state.FindById(exact) ?? requested : requested;
+        PresentManualCandidate(candidate, entryId);
+    }
+
+    private void PresentManualCandidate(Music candidate, long entryId)
+    {
+        if (!HasManualPreview) return;
+        // Network probing retains the existing display, including for a cached WebDAV file.
+        if (candidate.IsRemote || !candidate.IsPlayable)
+        {
+            ClearUncommittedPresentation();
+            return;
+        }
+        if (IsPresenting(candidate, entryId)) return;
+        state.State.Playback.TransitionPresentation = new(candidate, entryId, DurationMs: (long)candidate.Duration.TotalMilliseconds);
+    }
+
+    private bool IsPresenting(Music music, long entryId) => state.State.Playback.TransitionPresentation is { IsCommitted: false } shown
+        && shown.EntryId == entryId && ReferenceEquals(shown.Music, music);
+
+    private void FinishSelectionPreview()
+    {
+        _previewNextVersion = 0;
+        ClearUncommittedPresentation();
+    }
+
+    private void ClearUncommittedPresentation()
+    {
+        if (state.State.Playback.TransitionPresentation is { IsCommitted: false })
+            state.State.Playback.TransitionPresentation = null;
+    }
+
+    private void FinishTrackPresentation(Music music, long entryId, long previousEpoch, bool hadPreview)
+    {
+        _previewNextVersion = 0;
+        // An ordinary manual fallback still waits for a new engine epoch before it can show live progress.
+        state.State.Playback.TransitionPresentation = hadPreview && !music.IsRemote
+            ? new PlaybackTransitionPresentation(music, entryId, Epoch: previousEpoch,
+                DurationMs: (long)music.Duration.TotalMilliseconds, IsCommitted: true)
+            : null;
+    }
+
+    private void ClearConfirmedPresentation(ProgressSnapshot progress)
+    {
+        if (state.State.Playback.TransitionPresentation is not { IsCommitted: true } shown) return;
+        bool synchronized = shown.Token > 0 ? progress.GaplessToken == shown.Token
+            : progress.Playing && progress.Epoch > 0 && progress.Epoch != shown.Epoch;
+        if (!synchronized) return;
+        state.State.Playback.TransitionPresentation = null;
+        UpdateGaplessTimer();
+    }
 
     private void BeginManualNext(bool requested, long entryId, long version)
     {
@@ -74,11 +141,12 @@ public sealed partial class PlaybackCoordinator
     // Pause, stop and seek invalidate the pending click, while an already audible handoff still owns the track.
     internal bool CancelManualNext()
     {
-        if (_disposed || !IsManualNextPending) return false;
+        if (_disposed || (!IsManualNextPending && !HasManualPreview)) return false;
         _playingVersion = ++_selectionVersion;
         _manualNextVersion = 0;
         _deferredFailure = null;
         _deferredNaturalEnd = false;
+        FinishSelectionPreview();
         CancelGaplessPlan();
         _presentation?.Cancel();
         SetPending(null);
@@ -218,6 +286,7 @@ public sealed partial class PlaybackCoordinator
             _gaplessIpc = ipc;
             _gaplessIpc.NotificationReceived += GaplessNotification;
             _gaplessIpc.DspStateChanged += GaplessOutputChanged;
+            _gaplessIpc.TransitionProgressChanged += GaplessTransitionProgressChanged;
             _outputGeneration = _gaplessIpc.CurrentDspState?.State.OutputGeneration ?? 0;
             state.PropertyChanged += GaplessStateChanged;
             state.State.Queue.PropertyChanged += GaplessQueueChanged;
@@ -232,7 +301,7 @@ public sealed partial class PlaybackCoordinator
 
     private void UpdateGaplessTimer()
     {
-        if (!_disposed && state.CanStartPlayback && (_cancellingPlan != null
+        if (!_disposed && state.CanStartPlayback && (_cancellingPlan != null || state.State.Playback.TransitionPresentation is { IsCommitted: true }
             || !IsManualNextPending && AppSettings.Dsp.GaplessPlayback && state.IsPlaying && state.CurrentPlayingMusic is { IsRemote: false }
                 && state.CurrentPlayMode != PlayMode.RepeatOff))
             _gaplessTimer?.Start();
@@ -396,6 +465,8 @@ public sealed partial class PlaybackCoordinator
     private void RefreshGaplessPlan()
     {
         if (_disposed || !state.CanStartPlayback || _gaplessIpc == null || _acceptingGapless) return;
+        if (state.State.Playback.TransitionPresentation is { IsCommitted: true }
+            && _gaplessIpc.TryGetProgressSnapshot(out var synchronized)) ClearConfirmedPresentation(synchronized);
         // Keep the old identity until its ordered cancellation reply: the render thread
         // may already have committed it even when its transition notification is late.
         if (_cancellingPlan is { } cancelling)
@@ -465,6 +536,7 @@ public sealed partial class PlaybackCoordinator
     private void CancelGaplessPlan()
     {
         if (_nextPlan is not { } plan) return;
+        RollBackPlanPresentation(plan.Token);
         _nextPlan = null;
         _planConfirmed = false;
         _planSending = false;
@@ -541,6 +613,39 @@ public sealed partial class PlaybackCoordinator
         App.MainWindow.DispatcherQueue.TryEnqueue(() => AcceptGapless(token, epoch, positionMs));
     }
 
+    private void GaplessTransitionProgressChanged()
+        => App.MainWindow.DispatcherQueue.TryEnqueue(PresentLatestAudibleTransition);
+
+    private void PresentLatestAudibleTransition()
+    {
+        if (_disposed || !state.CanStartPlayback || !ipc.TryGetProgressSnapshot(out var progress)) return;
+        var playback = state.State.Playback;
+        if (playback.TransitionPresentation is { Token: > 0, IsCommitted: false } shown && shown.Token != progress.TransitionToken)
+        {
+            if (progress.GaplessToken == shown.Token) AcceptGapless(shown.Token, progress.Epoch, progress.CurrentMs);
+            else RollBackPlanPresentation(shown.Token);
+        }
+        ClearConfirmedPresentation(progress);
+
+        if (progress.TransitionToken <= 0 || progress.TransitionEpoch <= 0
+            || _nextPlan is not { } plan || plan.Token != progress.TransitionToken || plan.Epoch != progress.Epoch
+            || plan.SelectionVersion != _selectionVersion || state.CurrentPlayingMusic != plan.From) return;
+        if (playback.PendingSelection is { } pending && (!HasManualPreview || pending.EntryId != plan.EntryId)) return;
+        if (playback.TransitionPresentation is { } current && current.Token == plan.Token && current.Epoch == progress.TransitionEpoch) return;
+        playback.TransitionPresentation = new(plan.Next, plan.EntryId, plan.Token, progress.TransitionEpoch,
+            progress.TransitionCurrentMs, progress.TransitionTotalMs);
+    }
+
+    private void RollBackPlanPresentation(long planToken)
+    {
+        var playback = state.State.Playback;
+        if (playback.TransitionPresentation is not { IsCommitted: false } shown || shown.Token != planToken) return;
+        // A manual selection still owns its preview when the fade falls back to an ordinary switch.
+        playback.TransitionPresentation = HasManualPreview && playback.PendingSelection?.EntryId == shown.EntryId
+            ? new PlaybackTransitionPresentation(shown.Music, shown.EntryId, DurationMs: shown.DurationMs)
+            : null;
+    }
+
     private void AcceptGapless(long token, long epoch, long positionMs)
     {
         if (_disposed) return;
@@ -569,25 +674,43 @@ public sealed partial class PlaybackCoordinator
         _acceptingGapless = true;
         try
         {
+            bool lyricsAlreadyPresented = IsPresenting(plan.Next, plan.EntryId);
+            var preview = state.State.Playback.TransitionPresentation;
+            bool hasProgress = ipc.TryGetProgressSnapshot(out var confirmed) && confirmed.GaplessToken == plan.Token;
+            if (!hasProgress)
+            {
+                // A command or critical notification can beat progress on the state pipe.
+                // Keep the incoming clock through that gap and never use the outgoing position.
+                if (preview is { } shown && shown.Token == plan.Token)
+                {
+                    if (epoch <= 0) epoch = shown.Epoch;
+                    positionMs = Math.Max(positionMs, shown.PositionMs);
+                }
+                long duration = preview is { } projected && projected.Token == plan.Token && projected.DurationMs > 0
+                    ? projected.DurationMs : (long)plan.Next.Duration.TotalMilliseconds;
+                confirmed = new(0, epoch, positionMs, duration,
+                    System.Diagnostics.Stopwatch.GetTimestamp(), state.IsPlaying, GaplessToken: plan.Token);
+            }
             state.State.Queue.SelectEntry(plan.EntryId, plan.Next);
             BeginVersionIntent(plan.Next, plan.EntryId, state.State.Queue.RequestedVersion(plan.EntryId) > 0, true);
             _versionConfirmed = true;
             _activeIntent = (plan.Next, plan.EntryId, _intentExact, _intentMayAdvance, true);
             _activeSelectionVersion = _selectionVersion;
             state.CurrentPlayingMusic = plan.Next;
+            _previewNextVersion = 0;
+            state.State.Playback.TransitionPresentation = hasProgress ? null
+                : new PlaybackTransitionPresentation(plan.Next, plan.EntryId, plan.Token, confirmed.Epoch,
+                    confirmed.CurrentMs, confirmed.TotalMs, IsCommitted: true);
             if (manual) SetPending(null);
             state.RemotePlaybackStatus = "";
             try { statistics.StartSession(plan.Next); _ = tasks.RunAsync(_ => statistics.RecordPlaybackStartAsync(plan.Next)); }
             catch (Exception ex) { logger.LogError(ex, "记录无缝播放统计失败"); }
-            state.UILyrics = [];
-            state.LoadLyricsToUI(plan.Next);
-            // The transition notification can beat the state-pipe snapshot. Its committed token,
-            // not the previous track's cached position, identifies this occurrence.
-            bool hasProgress = ipc.TryGetProgressSnapshot(out var confirmed) && confirmed.GaplessToken == plan.Token;
-            if (!hasProgress)
-                confirmed = new(0, epoch, positionMs, (long)plan.Next.Duration.TotalMilliseconds,
-                    System.Diagnostics.Stopwatch.GetTimestamp(), state.IsPlaying, GaplessToken: plan.Token);
-            else state.UpdateProgressTimerUI();
+            if (!lyricsAlreadyPresented)
+            {
+                state.UILyrics = [];
+                state.LoadLyricsToUI(plan.Next);
+            }
+            if (hasProgress) state.UpdateProgressTimerUI();
             TrackStarted?.Invoke(plan.Next, cancellation);
             PlaybackConfirmed?.Invoke(plan.Next, confirmed);
         }
@@ -609,6 +732,7 @@ public sealed partial class PlaybackCoordinator
     private void StopGapless()
     {
         CancelGaplessPlan();
+        state.State.Playback.TransitionPresentation = null;
         _cancellingPlan = null;
         _supersededManualHandoff = null;
         _gaplessCancellationSettled?.TrySetResult();
@@ -622,6 +746,7 @@ public sealed partial class PlaybackCoordinator
         {
             _gaplessIpc.NotificationReceived -= GaplessNotification;
             _gaplessIpc.DspStateChanged -= GaplessOutputChanged;
+            _gaplessIpc.TransitionProgressChanged -= GaplessTransitionProgressChanged;
         }
         state.PropertyChanged -= GaplessStateChanged;
         state.State.Queue.PropertyChanged -= GaplessQueueChanged;

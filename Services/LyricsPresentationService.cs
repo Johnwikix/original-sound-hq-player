@@ -28,7 +28,7 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
         SendLyricsFontSize();
         IsPlayingBus.Publish(state.Playback.IsPlaying);
         TimeProgressBus.Publish((long)state.Playback.CurrentPlayingTime.TotalMilliseconds);
-        OffsetMsBus.Publish(state.Playback.CurrentPlayingMusic?.LyricsOffsetMs ?? 0);
+        OffsetMsBus.Publish(state.Playback.DisplayedPlaybackMusic?.LyricsOffsetMs ?? 0);
         // Replay the empty snapshot as well. New lyric controls must clear their
         // renderer and empty-state UI even when the current track has no lyrics.
         UILyricsBus.Publish(state.Presentation.UILyrics);

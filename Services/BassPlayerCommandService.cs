@@ -182,6 +182,7 @@ namespace WinUIMusicPlayer.Services
 
         public void ChangeWaveChannelTime(long positionMs)
         {
+            if (!AppViewModel.CanSeekDisplayedPlayback) return;
             if (_remote.IsActive) { _ = _remote.SeekAsync(positionMs); return; }
             App.Services.GetRequiredService<PlaybackCoordinator>().CancelManualNext();
             IpcService.SetPosition(positionMs);

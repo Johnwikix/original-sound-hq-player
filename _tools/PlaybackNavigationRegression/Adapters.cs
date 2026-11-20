@@ -162,13 +162,25 @@ namespace WinUIMusicPlayer.ViewModel
         public bool CanStartPlayback { get; set; } = true;
         public BulkObservableCollection<Music> CurrentPlayingList { get => State.Queue.Playing; set => State.Queue.Replace(value); }
         public WinUIMusicPlayer.Utils.ToolUtils.PlayMode CurrentPlayMode { get => State.Queue.Mode; set => State.Queue.Mode = value; }
-        public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
+        public Music? CurrentPlayingMusic
+        {
+            get => State.Playback.CurrentPlayingMusic;
+            set
+            {
+                if (ReferenceEquals(State.Playback.CurrentPlayingMusic, value)) return;
+                State.Playback.CurrentPlayingMusic = value;
+                OnPropertyChanged();
+            }
+        }
+        public Music? DisplayedPlaybackMusic => State.Playback.DisplayedPlaybackMusic;
+        public bool CanSeekDisplayedPlayback => State.Playback.TransitionPresentation is null;
         public Music? SelectedPlaybackMusic => State.Playback.PendingSelection?.Music ?? CurrentPlayingMusic;
         public int GetSelectedPlaybackIndex()
         {
-            if (State.Playback.PendingSelection is { } pending)
+            long entryId = State.Playback.PendingSelection?.EntryId ?? State.Playback.TransitionPresentation?.EntryId ?? 0;
+            if (entryId > 0)
                 for (int i = 0; i < CurrentPlayingList.Count; i++)
-                    if (State.Queue.EntryIdAt(i) == pending.EntryId) return i;
+                    if (State.Queue.EntryIdAt(i) == entryId) return i;
             return GetCurrentIndex();
         }
         public int CurrentIndexLookups;
@@ -189,7 +201,8 @@ namespace WinUIMusicPlayer.ViewModel
         public void BeginProgressSeek(long ms, long id) { }
         public void CancelProgressSeek(long id) { }
         public void StopProgressTimer() { }
-        public void LoadLyricsToUI(Music music) { }
+        public List<Music> LyricsLoads { get; } = [];
+        public void LoadLyricsToUI(Music music) => LyricsLoads.Add(music);
         public void UpdateProgressTimerUI() { }
     }
     public sealed class ShellState { public bool InfoBarIsOpen { get; set; } public string InfoBarTitle { get; set; } = ""; public string InfoBarMessage { get; set; } = ""; }
@@ -232,10 +245,12 @@ namespace WinUIMusicPlayer.Services
         public PlaybackCoordinator? Coordinator;
         public List<Music> Played { get; } = [];
         public int Ends;
+        public Action<Music>? OnPlay;
         public void PlayMusic(Music music)
         {
             if (!App.MainWindow.DispatcherQueue.HasThreadAccess) throw new Exception("play called outside UI thread");
             Played.Add(music);
+            OnPlay?.Invoke(music);
         }
         public void MusicEnd(bool preserveInterruptedProgress = false)
         {
@@ -248,12 +263,23 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed class IpcService
     {
-        public BassPlayerIpc.Shared.ProgressSnapshot? Progress;
+        public BassPlayerIpc.Shared.ProgressSnapshot? Progress
+        {
+            get => field;
+            set
+            {
+                var previous = field;
+                field = value;
+                if ((previous?.TransitionToken ?? 0) != (value?.TransitionToken ?? 0)
+                    || (previous?.TransitionEpoch ?? 0) != (value?.TransitionEpoch ?? 0)) TransitionProgressChanged?.Invoke();
+            }
+        }
         public List<BassPlayerIpc.Shared.GaplessRequest> Queued { get; } = [];
         public List<BassPlayerIpc.Shared.GaplessRequest> Manual { get; } = [];
         public List<(long Epoch, long Token)> ManualPolls { get; } = [];
         public event Action<BassPlayerIpc.Shared.MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
         public event Action? DspStateChanged;
+        public event Action? TransitionProgressChanged;
         public BassPlayerIpc.Shared.DspStateSnapshot? CurrentDspState { get; private set; }
         public Func<Task<bool>>? QueueReply;
         public Func<Task<long>>? CancelReply;

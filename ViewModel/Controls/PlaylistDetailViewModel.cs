@@ -194,7 +194,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public PlayListMusicItem? LocateCurrentTrack()
         {
-            long queueEntry = AppViewModel.State.Playback.PendingSelection?.EntryId ?? AppViewModel.State.Queue.CurrentEntryId;
+            long queueEntry = AppViewModel.SelectedPlaybackEntryId;
             int entry = AppViewModel.State.Queue.PlaylistEntry(queueEntry);
             PlayListMusicItem? target = null;
             if (entry > 0) foreach (var item in Songs) if (item.EntryId == entry) { target = item; break; }

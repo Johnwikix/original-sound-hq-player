@@ -466,13 +466,17 @@ namespace WinUIMusicPlayer.View
 
         private void Thumb_DragStarted(object sender, DragStartedEventArgs e)
         {
-            ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
+            if (ViewModel.AppViewModel.CanSeekDisplayedPlayback)
+                ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
         }
 
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
-            ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            var (_, totalMs) = ViewModel.AppViewModel.GetTimeProgressCache();
+            var playback = ViewModel.AppViewModel;
+            bool wasDragging = playback.IsUserDraggingProgressSlider;
+            playback.IsUserDraggingProgressSlider = false;
+            if (!wasDragging || e.Canceled || !playback.CanSeekDisplayedPlayback) return;
+            var (_, totalMs) = playback.GetDisplayedTimeProgressCache();
             long newPosMs = Math.Max(0, Math.Min((long)(ViewModel.AppViewModel.ProgressSlider * 1000), totalMs));
             ViewModel.AppViewModel.IsManualSelect = true;
             try

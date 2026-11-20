@@ -82,9 +82,9 @@ public sealed class MusicDetailsEditorFactory(IServiceProvider services) : IMusi
         {
             MetadataChanged();
             var app = services.GetRequiredService<AppViewModel>();
-            if (app.CurrentPlayingMusic is { } current &&
-                (current.Id == music.Id || music.SongId > 0 && current.SongId == music.SongId))
-                app.LoadLyricsToUI(current);
+            if (app.DisplayedPlaybackMusic is { } displayed &&
+                (displayed.Id == music.Id || music.SongId > 0 && displayed.SongId == music.SongId))
+                app.LoadLyricsToUI(displayed);
         }
         public void NotifyDatabaseSaveFailed(Music music, Exception exception)
         {

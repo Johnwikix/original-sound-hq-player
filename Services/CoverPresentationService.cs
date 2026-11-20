@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,26 +25,86 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         public void Clear() => Interlocked.Exchange(ref _bytes, null);
     }
 
+    private sealed class CoverPreview(Music music)
+    {
+        public Music Music { get; } = music;
+        public Task Preparation { get; set; } = Task.CompletedTask;
+        public bool AcceptsCommit { get; set; } = true;
+        public CancellationToken? CommitToken { get; set; }
+    }
+
     private int _coverUpdateVersion, _defaultPaletteVersion;
     private bool _disposed, _started, _usesDefaultPalette;
     private CancellationTokenSource? _coverUpdateCts;
-    private Music? _paletteMusic;
+    private Music? _displayMusic, _paletteMusic;
+    private CoverPreview? _coverPreview;
     public void Start()
     {
         if (_started || _disposed) return;
         _started = true;
         state.Preferences.PropertyChanged += OnCoverSettingsChanged;
+        state.Playback.PropertyChanged += OnPlaybackChanged;
     }
-    public Task UpdatePlayBar(Music music, CancellationToken token = default)
+
+    private void OnPlaybackChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping) return Task.CompletedTask;
+        if (args.PropertyName != nameof(state.Playback.TransitionPresentation)) return;
+        Music? music = state.Playback.DisplayedPlaybackMusic;
+        if (ReferenceEquals(music, _displayMusic)) return;
+        _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
+    }
+
+    public Task UpdatePlayBar(Music music, CancellationToken token = default) => UpdatePlayBar(music, publishMedia: true, token);
+
+    private Task UpdatePlayBar(Music? music, bool publishMedia, CancellationToken token = default)
+    {
+        if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping || token.IsCancellationRequested
+            || !ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic)) return Task.CompletedTask;
+
+        bool prepareArtwork = true;
+        if (publishMedia && _coverPreview is { } preview && ReferenceEquals(preview.Music, music))
+        {
+            _coverPreview = null;
+            if (preview.AcceptsCommit && !preview.Preparation.IsCompleted)
+            {
+                // Commit augments the existing request. Cancelling it would discard an in-flight decode.
+                preview.CommitToken = token;
+                return preview.Preparation;
+            }
+            prepareArtwork = !ReferenceEquals(_paletteMusic, music);
+        }
+
+        if (!ReferenceEquals(_displayMusic, music))
+        {
+            _displayMusic = music;
+            _defaultPaletteVersion++;
+            _paletteMusic = null;
+            _usesDefaultPalette = false;
+            if (music is null || string.IsNullOrEmpty(music.ImageHash) || music.ImageHash != state.Presentation.LyricPageBackgroundHash)
+            {
+                state.Presentation.LyricPageBackgroundHash = "";
+                state.Presentation.LyricPagePalette = null;
+                state.Presentation.LyricPageArtwork = null;
+            }
+            state.Presentation.MusicInfo = music is null ? ""
+                : $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
+        }
+        var nextPreview = !publishMedia && music is not null ? new CoverPreview(music) : null;
+        _coverPreview = nextPreview;
+        int version = Interlocked.Increment(ref _coverUpdateVersion);
+        if (music is null)
+        {
+            Interlocked.Exchange(ref _coverUpdateCts, null)?.Cancel();
+            return Task.CompletedTask;
+        }
 
         var updateCts = new CancellationTokenSource();
         var previousCts = Interlocked.Exchange(ref _coverUpdateCts, updateCts);
         previousCts?.Cancel();
 
         var scheduled = tasks.RunAsync(lifecycleToken =>
-            RunCoverUpdateAsync(music, updateCts, lifecycleToken, token));
+            RunCoverUpdateAsync(music, version, prepareArtwork, nextPreview, updateCts, lifecycleToken, token));
+        if (nextPreview is not null) nextPreview.Preparation = scheduled;
 
         // ApplicationTasks may already be closed during shutdown and therefore
         // not invoke the operation. Avoid leaving the per-update CTS alive.
@@ -57,6 +118,9 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 
     private async Task RunCoverUpdateAsync(
         Music music,
+        int version,
+        bool prepareArtwork,
+        CoverPreview? preview,
         CancellationTokenSource updateCts,
         CancellationToken lifecycleToken,
         CancellationToken callerToken)
@@ -65,7 +129,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
             updateCts.Token, lifecycleToken, callerToken);
         try
         {
-            await UpdatePlayBarCoreAsync(music, linked.Token);
+            await UpdatePlayBarCoreAsync(music, version, prepareArtwork, preview, linked.Token);
         }
         finally
         {
@@ -74,12 +138,14 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         }
     }
 
-    private async Task UpdatePlayBarCoreAsync(Music music, CancellationToken token)
+    private async Task UpdatePlayBarCoreAsync(Music music, int version, bool prepareArtwork, CoverPreview? preview, CancellationToken token)
     {
-        if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping) return;
-        int version = Interlocked.Increment(ref _coverUpdateVersion);
+        bool CanPublish() => !_disposed && state.Lifecycle.Phase != AppPhase.Stopping && !token.IsCancellationRequested
+            && version == Volatile.Read(ref _coverUpdateVersion);
+        bool CanPublishArtwork() => CanPublish() && ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic);
         try
         {
+            if (!CanPublish()) return;
             byte[]? picData = await Task.Run(async () =>
             {
                 token.ThrowIfCancellationRequested();
@@ -95,47 +161,85 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
             }, token);
             if (token.IsCancellationRequested) return;
 
-            AnimatedWin2dControls.Impressionist.PaletteResult? palette = null;
-            if (!string.IsNullOrEmpty(music.ImageHash))
+            if (prepareArtwork)
             {
-                string thumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
-                palette = await AnimatedWin2dControls.Impressionist.PaletteExtractor
-                    .ExtractFromBmpCacheAsync(thumbPath, state.Preferences.PaletteAlgorithm, ct: token);
-            }
-            if (palette is null)
-            {
-                picData ??= await Task.Run(() => GetRawImage(music, false, token), token);
-                if (picData is { Length: > 0 })
-                    palette = await Task.Run(() =>
-                        AnimatedWin2dControls.Impressionist.PaletteExtractor
-                            .ExtractFromImageBytesAsync(picData, state.Preferences.PaletteAlgorithm, ct: token), token);
-            }
+                // 原图缓存就绪便刷新控件，不等调色板提取或系统媒体缩图。
+                string hash = music.ImageHash ?? "";
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (CanPublishArtwork()) state.Presentation.LyricPageBackgroundHash = hash;
+                });
 
-            // 封面像素：仅供 RotatingMesh 背景着色器旋转层使用，其它着色器只取色、
-            // 不做封面解码（非 RotatingMesh 模式零新增开销）。无封面时为 null，
-            // 着色器回退到调色板渐变。
-            AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork = null;
-            if (state.Preferences.BackgroundShader == AnimatedWin2dControls.BackgroundShaderMode.RotatingMesh)
-            {
-                // 优先读缩略图 BMP 缓存（90KB，最快）；
-                // 缓存缺失（首次播放/被清理）时直接用已读取的大图数据兜底。
+                AnimatedWin2dControls.Impressionist.PaletteResult? palette = null;
                 if (!string.IsNullOrEmpty(music.ImageHash))
                 {
-                    string artworkThumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
-                    artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
-                        .LoadSquareRgba8FromBmpCacheAsync(artworkThumbPath, ct: token);
+                    string thumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
+                    palette = await AnimatedWin2dControls.Impressionist.PaletteExtractor
+                        .ExtractFromBmpCacheAsync(thumbPath, state.Preferences.PaletteAlgorithm, ct: token);
                 }
-
-                if (artwork is null)
+                if (palette is null)
                 {
                     picData ??= await Task.Run(() => GetRawImage(music, false, token), token);
                     if (picData is { Length: > 0 })
-                        artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
-                            .LoadSquareRgba8FromImageBytesAsync(picData, ct: token);
+                        palette = await Task.Run(() =>
+                            AnimatedWin2dControls.Impressionist.PaletteExtractor
+                                .ExtractFromImageBytesAsync(picData, state.Preferences.PaletteAlgorithm, ct: token), token);
                 }
+
+                // 封面像素：仅供 RotatingMesh 背景着色器旋转层使用，其它着色器只取色、
+                // 不做封面解码（非 RotatingMesh 模式零新增开销）。无封面时为 null，
+                // 着色器回退到调色板渐变。
+                AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork = null;
+                if (state.Preferences.BackgroundShader == AnimatedWin2dControls.BackgroundShaderMode.RotatingMesh)
+                {
+                    // 优先读缩略图 BMP 缓存（90KB，最快）；
+                    // 缓存缺失（首次播放/被清理）时直接用已读取的大图数据兜底。
+                    if (!string.IsNullOrEmpty(music.ImageHash))
+                    {
+                        string artworkThumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
+                        artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
+                            .LoadSquareRgba8FromBmpCacheAsync(artworkThumbPath, ct: token);
+                    }
+
+                    if (artwork is null)
+                    {
+                        picData ??= await Task.Run(() => GetRawImage(music, false, token), token);
+                        if (picData is { Length: > 0 })
+                            artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
+                                .LoadSquareRgba8FromImageBytesAsync(picData, ct: token);
+                    }
+                }
+
+                if (token.IsCancellationRequested) return;
+
+                void PublishArtwork()
+                {
+                    if (!CanPublishArtwork()) return;
+                    _defaultPaletteVersion++;
+                    _paletteMusic = music;
+                    _usesDefaultPalette = palette is null;
+                    state.Presentation.LyricPageBackgroundHash = music.ImageHash ?? "";
+                    state.Presentation.LyricPagePalette = palette;
+                    if (_usesDefaultPalette) _ = RefreshDefaultPaletteAsync(token);
+                    state.Presentation.LyricPageArtwork = artwork;
+                }
+
+                // The UI sees the prepared artwork before the preview task reports completion.
+                if (App.MainWindow.DispatcherQueue.HasThreadAccess) PublishArtwork();
+                else App.MainWindow.DispatcherQueue.TryEnqueue(PublishArtwork);
             }
 
-            if (token.IsCancellationRequested) return;
+            // The outer task may still be draining when the core passes the media decision.
+            if (preview is not null)
+            {
+                preview.AcceptsCommit = false;
+                if (!preview.CommitToken.HasValue) return;
+            }
+            using var commitCancellation = preview?.CommitToken is { CanBeCanceled: true } commitToken
+                ? CancellationTokenSource.CreateLinkedTokenSource(token, commitToken)
+                : null;
+            CancellationToken mediaToken = commitCancellation?.Token ?? token;
+            mediaToken.ThrowIfCancellationRequested();
 
             // 正常路径只保留共享文件；缓存失败时才保留原图/已有字节用于兜底。
             string? mediaCoverPath = null;
@@ -151,10 +255,10 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                         mediaCoverPath = rawPath;
                         bool hadDisplayCache = File.Exists(PlaybackCoverImage.GetCachePath(rawPath));
                         mediaCoverPath = await Task.Run(
-                            () => PlaybackCoverImage.GetOrCreateAsync(rawPath, token), token);
+                            () => PlaybackCoverImage.GetOrCreateAsync(rawPath, mediaToken), mediaToken);
                         mediaFallbackCover = null;
                         if (music.IsRemote && !hadDisplayCache && mediaCoverPath != rawPath)
-                            await webDav.TrimCoverCacheAsync(rawPath, token);
+                            await webDav.TrimCoverCacheAsync(rawPath, mediaToken);
                     }
                 }
                 catch (OperationCanceledException) { throw; }
@@ -162,35 +266,19 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
             }
             picData = null;
 
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                if (!_disposed && (state.Lifecycle.Phase != AppPhase.Stopping) && !token.IsCancellationRequested && version == Volatile.Read(ref _coverUpdateVersion) &&
-                    ReferenceEquals(music, state.Playback.CurrentPlayingMusic))
-                {
-                    _defaultPaletteVersion++;
-                    _paletteMusic = music;
-                    _usesDefaultPalette = palette is null;
-                    state.Presentation.LyricPageBackgroundHash = music.ImageHash ?? "";
-                    state.Presentation.LyricPagePalette = palette;
-                    if (_usesDefaultPalette) _ = RefreshDefaultPaletteAsync(token);
-                    state.Presentation.LyricPageArtwork = artwork;
-                    state.Presentation.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
-                }
-            });
-
             // --- 阶段 D: 更新系统媒体控制 (SMTC) ---
             // 在 UI 线程提交；实际文件打开由媒体服务的后台任务处理。
             var fallbackHolder = new CoverFallbackHolder(mediaFallbackCover);
             mediaFallbackCover = null;
-            var fallbackRegistration = token.Register(
+            var fallbackRegistration = mediaToken.Register(
                 static holder => ((CoverFallbackHolder)holder!).Clear(), fallbackHolder);
             bool enqueued = App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 try
                 {
                     var fallbackCover = fallbackHolder.Take();
-                    if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping || token.IsCancellationRequested || version != Volatile.Read(ref _coverUpdateVersion) ||
-                        !ReferenceEquals(music, state.Playback.CurrentPlayingMusic)) return;
+                    if (!CanPublish() || preview?.CommitToken is { IsCancellationRequested: true }
+                        || !ReferenceEquals(music, state.Playback.CurrentPlayingMusic)) return;
 
                     media.UpdateSystemMediaControlsState();
                     media.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
@@ -220,11 +308,15 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         {
             logger.LogError(ex, $"更新播放栏失败: {ex.Message}");
         }
+        finally
+        {
+            if (preview is not null) preview.AcceptsCommit = false;
+        }
     }
 
     public void ThemeChangedUpdateCover()
     {
-        if (state.Playback.CurrentPlayingMusic is null) return;
+        if (state.Playback.DisplayedPlaybackMusic is null) return;
         state.Preferences.IsDarkMode = state.Preferences.ThemeType switch { "Dark" => true, "Light" => false, _ => !GetIsLightTheme() };
     }
 
@@ -241,15 +333,15 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 .ExtractFromImageBytesAsync(bytes, algorithm, ct: token);
         }, token);
 
-    private void OnCoverSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnCoverSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(state.Preferences.IsDarkMode) or nameof(state.Preferences.PaletteAlgorithm))
             _ = RefreshDefaultPaletteAsync();
-        else if (e.PropertyName == nameof(state.Preferences.MusicCoverCache) && state.Playback.CurrentPlayingMusic is { } music)
+        else if (e.PropertyName == nameof(state.Preferences.MusicCoverCache) && state.Playback.DisplayedPlaybackMusic is { } music)
         {
             // 根目录切换后，即使歌曲标识不变，也要重新取得原图并刷新展示控件。
             state.Presentation.LyricPageBackgroundHash = "";
-            _ = UpdatePlayBar(music);
+            _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
         }
     }
 
@@ -260,7 +352,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
     {
         int version = ++_defaultPaletteVersion;
         var music = _paletteMusic;
-        if (!_usesDefaultPalette || music is null || !ReferenceEquals(music, state.Playback.CurrentPlayingMusic)) return;
+        if (!_usesDefaultPalette || music is null || !ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic)) return;
         bool isDark = state.Preferences.IsDarkMode;
         var algorithm = state.Preferences.PaletteAlgorithm;
         try
@@ -269,7 +361,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 if (!_disposed && (state.Lifecycle.Phase != AppPhase.Stopping) && !token.IsCancellationRequested && version == _defaultPaletteVersion && _usesDefaultPalette &&
-                    ReferenceEquals(music, state.Playback.CurrentPlayingMusic) &&
+                    ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic) &&
                     isDark == state.Preferences.IsDarkMode && algorithm == state.Preferences.PaletteAlgorithm)
                     state.Presentation.LyricPagePalette = palette;
             });
@@ -288,7 +380,9 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         Interlocked.Increment(ref _coverUpdateVersion);
         _defaultPaletteVersion++;
         state.Preferences.PropertyChanged -= OnCoverSettingsChanged;
-        _paletteMusic = null;
+        state.Playback.PropertyChanged -= OnPlaybackChanged;
+        _coverPreview = null;
+        _displayMusic = _paletteMusic = null;
         state.Presentation.LyricPagePalette = null;
         state.Presentation.LyricPageArtwork = null;
     }

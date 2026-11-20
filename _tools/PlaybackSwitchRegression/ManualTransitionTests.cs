@@ -97,14 +97,18 @@ internal static unsafe partial class Program
                 Require(Math.Abs(next.IntroMeanSquare - .02) < 1e-8, "Manual Smart did not measure the album intro");
                 Require(engine.TryTransitionNow(request) == TransitionNowStatus.Preparing && next.FramesPlayed == 0,
                     "Ready decoder reported rendered frames before the callback");
+                Require(engine.TryCaptureProgress(out var before) && before.TransitionToken == 0, "Manual preparation previewed before any mix");
                 source.FillPcm(output, 480);
                 CheckStereo(output, 0, .3 * (1 - 1.0 / 24000), .3 * (1 - 1.0 / 24000));
                 Require(engine.TryTransitionNow(request) == TransitionNowStatus.Started, "Started poll did not report audible overlap");
+                Require(engine.TryCaptureProgress(out var started) && started.Epoch == first.TimelineEpoch && started.GaplessToken == 0
+                    && started.TransitionToken == request.Token && started.TransitionEpoch == next.TimelineEpoch && started.TransitionCurrentMs == 10,
+                    "Manual mix did not expose its incoming timeline immediately");
                 for (int i = 1; i < 50; i++) source.FillPcm(output, 480);
                 Require(engine.TryTransitionNow(request) == TransitionNowStatus.Committed && first.FramesPlayed == 33600,
                     "Manual Smart did not commit after half a second at the original playhead");
                 Require(engine.TryCaptureProgress(out var progress) && progress.GaplessToken == request.Token
-                    && progress.Epoch == next.TimelineEpoch && progress.CurrentMs == 500,
+                    && progress.Epoch == next.TimelineEpoch && progress.CurrentMs == 500 && progress.TransitionToken == 0,
                     "Committed handoff lost track position or identity");
                 Require(engine.TryTransitionNow(request with { Path = path + ".different" }) == TransitionNowStatus.Unavailable
                     && engine.TryTransitionNow(request with { Epoch = request.Epoch + 1000 }) == TransitionNowStatus.Unavailable

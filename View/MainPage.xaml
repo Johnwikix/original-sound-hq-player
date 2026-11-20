@@ -88,6 +88,7 @@
                     <Grid Grid.Column="1">
                         <Slider
                             x:Name="ProgressSlider"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.CanSeekDisplayedPlayback, Mode=OneWay}"
                             VerticalAlignment="Center"
                             Loaded="ProgressSlider_Loaded"
                             Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
@@ -127,7 +128,7 @@
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.AlbumCoverImageCommand, Mode=OneWay}"
                             CornerRadius="5"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}"
                             Style="{StaticResource SimpleHoverButtonStyle}">
                             <Grid RowDefinitions="auto">
                                 <Grid
@@ -169,7 +170,7 @@
                             MinHeight="80"
                             HorizontalAlignment="Stretch"
                             RowDefinitions="Auto,*,*,Auto"
-                            Visibility="{x:Bind tools:BindUtils.GetMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
+                            Visibility="{x:Bind tools:BindUtils.GetMusicVisibility(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}">
                             <localControls:AutoScrollView
                                 Grid.Row="0"
                                 Margin="10,0,10,0"
@@ -182,7 +183,7 @@
                                     FontSize="18"
                                     FontWeight="Bold"
                                     IsTextSelectionEnabled="True"
-                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                    Text="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Title, Mode=OneWay}"
                                     TextTrimming="CharacterEllipsis" />
                             </localControls:AutoScrollView>
                             <Button
@@ -194,8 +195,8 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Command="{x:Bind ViewModel.MusicBrowseVM.AlbumButtonCommand, Mode=OneWay}"
-                                CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                                IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
+                                CommandParameter="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Album, Mode=OneWay}"
+                                IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}">
                                 <Button.Content>
                                     <localControls:AutoScrollView
                                         Margin="0"
@@ -205,7 +206,7 @@
                                         PointerExited="AutoScrollHover_PointerExited">
                                         <TextBlock
                                             FontSize="12"
-                                            Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                            Text="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Album, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
                                     </localControls:AutoScrollView>
                                 </Button.Content>
@@ -219,8 +220,8 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Command="{x:Bind ViewModel.MusicBrowseVM.ArtistButtonCommand, Mode=OneWay}"
-                                CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                                IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
+                                CommandParameter="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Author, Mode=OneWay}"
+                                IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}">
                                 <Button.Content>
                                     <localControls:AutoScrollView
                                         Margin="0"
@@ -230,7 +231,7 @@
                                         PointerExited="AutoScrollHover_PointerExited">
                                         <TextBlock
                                             FontSize="12"
-                                            Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                            Text="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Author, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
                                     </localControls:AutoScrollView>
                                 </Button.Content>
@@ -254,7 +255,7 @@
                                     VerticalAlignment="Center"
                                     Background="#F7C8AC"
                                     CornerRadius="2"
-                                    Visibility="{x:Bind tools:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}">
+                                    Visibility="{x:Bind tools:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.DisplayedPlaybackMusic.SampleRate, ViewModel.AppViewModel.DisplayedPlaybackMusic.BitDepth), Mode=OneWay}">
                                     <TextBlock
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
@@ -268,12 +269,12 @@
                                     Grid.Column="2"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Center"
-                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.DisplayedPlaybackMusic.IsRemoteCached), Mode=OneWay}"
                                     FontSize="12"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteOffline, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
-                                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote), Mode=OneWay}" />
+                                    Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(ViewModel.AppViewModel.DisplayedPlaybackMusic.IsRemote, ViewModel.AppViewModel.DisplayedPlaybackMusic.IsRemoteOffline, ViewModel.AppViewModel.DisplayedPlaybackMusic.IsRemoteCached), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.DisplayedPlaybackMusic.IsRemoteCached), Mode=OneWay}"
+                                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.DisplayedPlaybackMusic.IsRemote), Mode=OneWay}" />
                             </Grid>
                         </Grid>
                     </Grid>
@@ -295,11 +296,11 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
-                            CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                            CommandParameter="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon Foreground="Red" Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite), Mode=OneWay}" />
+                            <FontIcon Foreground="Red" Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(ViewModel.AppViewModel.DisplayedPlaybackMusic.IsFavorite), Mode=OneWay}" />
                         </Button>
 
                         <Button

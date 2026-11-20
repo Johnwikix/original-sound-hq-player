@@ -72,13 +72,21 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> ArtistSongs { get => State.LibraryViews.ArtistSongs; set => State.LibraryViews.ArtistSongs = value; }
         public BulkObservableCollection<Music> FolderSongs { get => State.LibraryViews.FolderSongs; set => State.LibraryViews.FolderSongs = value; }
         public Music? CurrentPlayingMusic { get => State.Playback.CurrentPlayingMusic; set => State.Playback.CurrentPlayingMusic = value; }
-        public Music? SelectedPlaybackMusic => State.Playback.PendingSelection?.Music ?? CurrentPlayingMusic;
+        public Music? DisplayedPlaybackMusic => State.Playback.DisplayedPlaybackMusic;
+        public Music? SelectedPlaybackMusic => State.Playback.PendingSelection?.Music ?? DisplayedPlaybackMusic;
+        public long SelectedPlaybackEntryId => State.Playback.PendingSelection?.EntryId
+            ?? State.Playback.TransitionPresentation?.EntryId ?? State.Queue.CurrentEntryId;
+        public bool CanSeekDisplayedPlayback => State.Playback.TransitionPresentation is null;
+        private Music? _displayedTransitionLyrics;
+        private Music? _lastSelectedMusic;
+        private long _lastSelectedEntryId;
         public int GetSelectedPlaybackIndex()
         {
-            if (State.Playback.PendingSelection is { } pending)
+            if (State.Playback.PendingSelection is not null || State.Playback.TransitionPresentation is { IsCommitted: false })
             {
+                long entryId = SelectedPlaybackEntryId;
                 for (int index = 0; index < CurrentPlayingList.Count; index++)
-                    if (State.Queue.EntryIdAt(index) == pending.EntryId) return index;
+                    if (State.Queue.EntryIdAt(index) == entryId) return index;
                 return -1;
             }
             return GetCurrentIndex();
@@ -230,9 +238,29 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnPlaybackStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(State.Playback.TransitionPresentation))
+            {
+                if (State.Playback.TransitionPresentation is null && ReferenceEquals(_displayedTransitionLyrics, CurrentPlayingMusic))
+                    _displayedTransitionLyrics = null;
+                IsUserDraggingProgressSlider = false;
+                _playbackProgress.SetTransitionPresentation(State.Playback.TransitionPresentation);
+                OnPropertyChanged(nameof(CanSeekDisplayedPlayback));
+            }
             OnPropertyChanged(e);
-            if (e.PropertyName is nameof(State.Playback.PendingSelection) or nameof(CurrentPlayingMusic))
-                OnPropertyChanged(nameof(SelectedPlaybackMusic));
+            if (e.PropertyName is nameof(State.Playback.PendingSelection) or nameof(DisplayedPlaybackMusic)
+                or nameof(State.Playback.TransitionPresentation))
+            {
+                var selected = SelectedPlaybackMusic;
+                long entryId = SelectedPlaybackEntryId;
+                if (!ReferenceEquals(selected, _lastSelectedMusic) || entryId != _lastSelectedEntryId)
+                {
+                    _lastSelectedMusic = selected;
+                    _lastSelectedEntryId = entryId;
+                    // Queue observers also use this notification for duplicate occurrences of the same song.
+                    OnPropertyChanged(nameof(SelectedPlaybackMusic));
+                    OnPropertyChanged(nameof(SelectedPlaybackEntryId));
+                }
+            }
             if (e.PropertyName == nameof(Volume) && IsInitialized)
             {
                 if (Volume > 0) IsMuted = false;
@@ -240,8 +268,14 @@ namespace WinUIMusicPlayer.ViewModel
                 App.Services.GetRequiredService<BassPlayerCommandService>().SetVolume(Volume / 100);
             }
             if (e.PropertyName == nameof(ProgressSlider)) HandleProgressSliderChange(ProgressSlider);
-            else if (e.PropertyName == nameof(CurrentPlayingMusic) && IsInitialized)
-                OffsetMsBus.Publish(CurrentPlayingMusic?.LyricsOffsetMs ?? 0);
+            else if (e.PropertyName == nameof(DisplayedPlaybackMusic) && IsInitialized)
+            {
+                bool preview = State.Playback.TransitionPresentation is not null;
+                if (preview || _displayedTransitionLyrics is not null)
+                    App.Services.GetRequiredService<LyricsLoader>().ShowTransitionTrack(DisplayedPlaybackMusic);
+                _displayedTransitionLyrics = preview ? DisplayedPlaybackMusic : null;
+                OffsetMsBus.Publish(DisplayedPlaybackMusic?.LyricsOffsetMs ?? 0);
+            }
             else if (e.PropertyName == nameof(IsPlaying))
             {
                 AppData.IsPlaying = IsPlaying;
@@ -318,7 +352,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private void HandleProgressSliderChange(double value)
         {
-            if (IsMouseOverProgressBar && !IsUserDraggingProgressSlider)
+            if (CanSeekDisplayedPlayback && IsMouseOverProgressBar && !IsUserDraggingProgressSlider)
             {
                 var (curMs, totalMs) = GetTimeProgressCache();
                 long newPosMs = (long)(value * 1000);
@@ -343,6 +377,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void StopProgressTimer() => _playbackProgress.StopProgressTimer();
         public void UpdateProgressTimerUI() => _playbackProgress.UpdateProgressTimerUI();
         public (long curMs, long totalMs) GetTimeProgressCache() => _playbackProgress.GetTimeProgressCache();
+        public (long curMs, long totalMs) GetDisplayedTimeProgressCache() => _playbackProgress.GetDisplayedTimeProgressCache();
         public void BeginProgressSeek(long positionMs, long seekId) => _playbackProgress.BeginProgressSeek(positionMs, seekId);
         public void CancelProgressSeek(long seekId) => _playbackProgress.CancelProgressSeek(seekId);
         public void MarkPlaybackEnded(long totalMs) => _playbackProgress.MarkPlaybackEnded(totalMs);
@@ -678,6 +713,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void SeekRelative(long deltaMs)
         {
+            if (!CanSeekDisplayedPlayback) return;
             var (curMs, totalMs) = GetTimeProgressCache();
             long newPosMs = Math.Clamp(curMs + deltaMs, 0, totalMs);
             IsManualSelect = true;

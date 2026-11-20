@@ -12,5 +12,6 @@
     <Compile Include="../../Services/PlaybackCommands.cs" />
     <Compile Include="../../Services/LibraryWatcherService.cs" />
     <Compile Include="../../ViewModel/TrayViewModel.cs" />
+    <Compile Include="../../Model/DesktopLyricsMode.cs" />
   </ItemGroup>
 </Project>

@@ -99,22 +99,18 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         {
             if (AppViewModel.LastLyricIndex == index)
                 return;
-            TimeSpan duration = TimeSpan.Zero;
-            if (index >= 0 && index < AppViewModel.UILyrics.Count)
+            var uiLyrics = AppViewModel.UILyrics;
+            if (index >= 0 && index < uiLyrics.Count - 1)
             {
-                int nextIndex = index + 1;
-                if (nextIndex < AppViewModel.UILyrics.Count)
-                {
-                    TimeSpan currentTime = TimeSpan.FromMilliseconds(AppViewModel.UILyrics[index].StartMs);
-                    TimeSpan nextTime = TimeSpan.FromMilliseconds(AppViewModel.UILyrics[nextIndex].StartMs);
-                    AppViewModel.LyricsDurationTime = nextTime.Subtract(currentTime);
-                }
+                var currentTime = TimeSpan.FromMilliseconds(uiLyrics[index].StartMs);
+                var nextTime = TimeSpan.FromMilliseconds(uiLyrics[index + 1].StartMs);
+                AppViewModel.LyricsDurationTime = nextTime - currentTime;
             }
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
+                if (!ReferenceEquals(uiLyrics, AppViewModel.UILyrics)) return;
                 try
                 {
-                    var uiLyrics = AppViewModel.UILyrics;
                     for (int i = 0; i < uiLyrics.Count; i++)
                     {
                         uiLyrics[i].IsCurrent = (i == index);

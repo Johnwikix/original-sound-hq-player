@@ -191,7 +191,8 @@ namespace WinUIMusicPlayer.Services
             if (window is null || !window.DispatcherQueue.HasThreadAccess) return;
             var app = App.Services.GetRequiredService<AppViewModel>();
             if (!app.CanStartPlayback) return;
-            if (app.CurrentPlayingMusic?.Id == music.Id)
+            Music? displayed = app.DisplayedPlaybackMusic;
+            if (ReferenceEquals(displayed, music) || (music.Id > 0 && displayed?.Id == music.Id))
                 OffsetMsBus.Publish(value);
             _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateLyricsOffsetAsync(music.Id, value);
         }

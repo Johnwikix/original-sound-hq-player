@@ -425,6 +425,11 @@ internal sealed partial class TestWindow : Window
         _app.PendingEntryId = 0;
         await Task.Delay(50);
         Check(queueList.SelectedIndex == 950, "failed or cancelled pending playback restores the confirmed queue occurrence");
+        _app.TransitionEntryId = _app.Queue.EntryIdAt(20);
+        Check(queueList.SelectedIndex == 20 && queueVm.LocateCurrentTrack() == 20 && _app.Queue.CurrentEntryId == _app.Queue.EntryIdAt(950),
+            "natural overlap highlights the incoming duplicate without changing the committed queue entry");
+        _app.TransitionEntryId = 0;
+        Check(queueList.SelectedIndex == 950, "cancelled natural overlap restores the actual occurrence");
         Check(Math.Abs(queueScrollerBefore.VerticalOffset - queueOffset) < 1,
             "playback selection changes do not scroll the queue");
         var queueCentering = new ListViewCentering(queueList);

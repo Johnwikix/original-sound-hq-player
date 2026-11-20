@@ -301,13 +301,17 @@ namespace WinUIMusicPlayer.View
 
         private void Thumb_DragStarted(object sender, DragStartedEventArgs e)
         {
-            ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
+            if (ViewModel.AppViewModel.CanSeekDisplayedPlayback)
+                ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
         }
 
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
-            ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            var (_, totalMs) = ViewModel.AppViewModel.GetTimeProgressCache();
+            var playback = ViewModel.AppViewModel;
+            bool wasDragging = playback.IsUserDraggingProgressSlider;
+            playback.IsUserDraggingProgressSlider = false;
+            if (!wasDragging || e.Canceled || !playback.CanSeekDisplayedPlayback) return;
+            var (_, totalMs) = playback.GetDisplayedTimeProgressCache();
             long newPosMs = Math.Max(0, Math.Min((long)(ViewModel.AppViewModel.ProgressSlider * 1000), totalMs));
             ViewModel.AppViewModel.IsManualSelect = true;
             try
@@ -460,17 +464,20 @@ namespace WinUIMusicPlayer.View
 
         private void LyricsView_LyricInteracted(object? sender, TimeSpan e)
         {
+            var playback = ViewModel.AppViewModel;
+            if (!playback.CanSeekDisplayedPlayback) return;
+            var lyrics = playback.UILyrics;
             DispatcherQueue.TryEnqueue(() =>
             {
-                AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.StartMs >= e.TotalMilliseconds);
-                ViewModel.AppViewModel.IsManualSelect = true;
-                if (lyricLine is not null)
+                if (!playback.CanSeekDisplayedPlayback || !ReferenceEquals(lyrics, playback.UILyrics)) return;
+                playback.IsManualSelect = true;
+                try
                 {
-                    int index = ViewModel.AppViewModel.UILyrics.IndexOf(lyricLine);
-                    ViewModel.UpdateLyricsToUI(index);
+                    var line = lyrics.AsValueEnumerable().FirstOrDefault(line => line.StartMs >= e.TotalMilliseconds);
+                    if (line is not null) ViewModel.UpdateLyricsToUI(lyrics.IndexOf(line));
+                    App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime((long)e.TotalMilliseconds);
                 }
-                App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime((long)e.TotalMilliseconds);
-                ViewModel.AppViewModel.IsManualSelect = false;
+                finally { playback.IsManualSelect = false; }
             });
         }
 

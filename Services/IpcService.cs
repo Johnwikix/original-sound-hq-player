@@ -32,6 +32,8 @@ namespace WinUIMusicPlayer.Services
         public DspStateSnapshot? CurrentDspState => Volatile.Read(ref _dspSnapshot);
         /// <summary>在监听线程触发；UI 订阅者必须调度到 DispatcherQueue。</summary>
         public event Action? DspStateChanged;
+        /// <summary>过渡身份变化后在状态管道读取线程触发；实时位置通过快照读取。</summary>
+        public event Action? TransitionProgressChanged;
 
         /// <summary>Latest FFT snapshot. Subscribers run on the state-pipe reader thread.</summary>
         public FftSnapshot? CurrentFftSnapshot => Volatile.Read(ref _fftSnapshot);
@@ -111,6 +113,7 @@ namespace WinUIMusicPlayer.Services
                     commands.Faulted += OnTransportFault;
                     state.Faulted += OnTransportFault;
                     state.DspStateChanged += OnDspState;
+                    state.TransitionProgressChanged += OnTransitionProgressChanged;
                     state.FftDataChanged += OnFftData;
                     state.NotificationReceived += OnNotification;
                     Volatile.Write(ref _connected, 1);
@@ -202,6 +205,16 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex) { _logger.LogWarning(ex, "DSP state synchronization failed"); }
             NotifyDspStateChanged();
+        }
+
+        private void OnTransitionProgressChanged()
+        {
+            if (Volatile.Read(ref _disposed) != 0 || Volatile.Read(ref _faulted) != 0 || TransitionProgressChanged is not { } handlers) return;
+            foreach (Action handler in handlers.GetInvocationList())
+            {
+                try { handler(); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Track transition subscriber failed"); }
+            }
         }
 
         private void OnFftData(FftSnapshot snapshot)
@@ -739,6 +752,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _stateClient.Faulted -= OnTransportFault;
                 _stateClient.DspStateChanged -= OnDspState;
+                _stateClient.TransitionProgressChanged -= OnTransitionProgressChanged;
                 _stateClient.FftDataChanged -= OnFftData;
                 _stateClient.NotificationReceived -= OnNotification;
                 try { _stateClient.Dispose(); }

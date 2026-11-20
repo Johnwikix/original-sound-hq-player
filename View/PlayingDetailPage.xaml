@@ -76,14 +76,14 @@
                     RowDefinitions="Auto,Auto">
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTextBlock"
-                        AutomationProperties.Name="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                        AutomationProperties.HelpText="{x:Bind tools:BindUtils.MusicToInfo(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Title, Mode=OneWay}"
+                        AutomationProperties.HelpText="{x:Bind tools:BindUtils.MusicToInfo(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}"
                         FontFamily="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily.FontFamily, Mode=OneWay}"
                         Loaded="AnimatedPlayingDetailTextBlock_Loaded"
                         SizeChanged="AnimatedPlayingDetailTextBlock_SizeChanged"
                         Grid.Row="0"
                         Margin="0,0,0,1"
-                        Document="{x:Bind tools:BindUtils.MusicToAnimatedDocument(ViewModel.AppViewModel.CurrentPlayingMusic, ViewModel.TitleFontSize, ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
+                        Document="{x:Bind tools:BindUtils.MusicToAnimatedDocument(ViewModel.AppViewModel.DisplayedPlaybackMusic, ViewModel.TitleFontSize, ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
                         IsHoverScrollEnabled="True"
                         TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
@@ -109,7 +109,7 @@
                             VerticalAlignment="Center"
                             Background="#F7C8AC"
                             CornerRadius="2"
-                            Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}">
+                            Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.DisplayedPlaybackMusic.SampleRate, ViewModel.AppViewModel.DisplayedPlaybackMusic.BitDepth), Mode=OneWay}">
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -165,6 +165,7 @@
                     <Grid Grid.Column="1">
                         <Slider
                             x:Name="ProgressSliderPlayingDetail"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.CanSeekDisplayedPlayback, Mode=OneWay}"
                             VerticalAlignment="Center"
                             Loaded="ProgressSliderPlayingDetail_Loaded"
                             Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
@@ -232,7 +233,7 @@
                                         Minimum="-100000"
                                         SmallChange="100"
                                         SpinButtonPlacementMode="Inline"
-                                        Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
+                                        Value="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.LyricsOffsetMs, Mode=TwoWay}" />
                                 </Flyout>
                             </Button.Flyout>
                             <ToolTipService.ToolTip>
@@ -311,13 +312,13 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
-                            CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                            CommandParameter="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 FontSize="18"
                                 Foreground="Red"
-                                Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite), Mode=OneWay}" />
+                                Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(ViewModel.AppViewModel.DisplayedPlaybackMusic.IsFavorite), Mode=OneWay}" />
                         </Button>
                         <Button
                             x:Name="FastBackwardButton"

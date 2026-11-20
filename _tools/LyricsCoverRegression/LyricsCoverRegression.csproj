@@ -13,6 +13,9 @@
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../WebService/LrcService.cs" Link="LrcService.cs" />
     <Compile Include="../../Services/LyricsLoader.cs" Link="LyricsLoader.cs" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/LyricLine.cs" Link="LyricLine.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/LyricWord.cs" Link="LyricWord.cs" />
     <Compile Include="../../Services/ApplicationTasks.cs" Link="ApplicationTasks.cs" />
     <Compile Include="../../Services/AppLifecycle.cs" Link="AppLifecycle.cs" />
     <Compile Include="../../Services/LyricsSearchCircuitBreaker.cs" Link="LyricsSearchCircuitBreaker.cs" />

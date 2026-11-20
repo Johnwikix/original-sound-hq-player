@@ -32,7 +32,7 @@ public sealed class PlaybackCommands : IDisposable, INotifyPropertyChanged
     // 引擎就绪（IPC 连接 + 首曲推送完成）是播放的前提；IsPlaybackEngineReady 只在置位时包含 Ready，
     // 退出转 Stopping 后不会复位，生命周期守卫须单独保留。
     private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is not null;
-    private bool CanSeek => CanPlay && _state.CurrentPlayingMusic is { IsPlayable: true };
+    private bool CanSeek => CanPlay && _state.CanSeekDisplayedPlayback && _state.CurrentPlayingMusic is { IsPlayable: true };
     /// <summary>切歌按钮在 UI 上显示的可用状态，与 Next/PreviousCommand 共用同一守卫。</summary>
     public bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasCandidateEntry();
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
@@ -162,6 +162,7 @@ public sealed class PlaybackCommands : IDisposable, INotifyPropertyChanged
     private void Seek(long milliseconds) { if (CanSeek) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
     private void StateChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(AppViewModel.CanSeekDisplayedPlayback)) SeekCommand.NotifyCanExecuteChanged();
         if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList)
             or nameof(AppViewModel.IsPlaybackEngineReady))
         {

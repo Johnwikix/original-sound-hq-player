@@ -65,6 +65,7 @@ public enum MessageTypeId : short
     DspState = 14,
     GaplessTransition = 15,
     FftData = 16,
+    TransitionProgress = 17,
 }
 
 public enum ErrorCode : short
