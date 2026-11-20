@@ -73,7 +73,8 @@ namespace WinUIMusicPlayer.Services
                     var (_, total) = AppViewModel.GetTimeProgressCache();
                     AppViewModel.MarkPlaybackEnded(total);
                     AppViewModel.UpdateProgressTimerUI();
-                    _ = AutoPlayNextTrack();
+                    // A manual Next is already resolving the actual queue occurrence and owns fallback.
+                    if (!App.Services.GetRequiredService<PlaybackCoordinator>().IsManualNextPending) _ = AutoPlayNextTrack();
                 });
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
@@ -166,6 +167,7 @@ namespace WinUIMusicPlayer.Services
 
         public void MusicEnd(bool preserveInterruptedProgress = false)
         {
+            App.Services.GetRequiredService<PlaybackCoordinator>().CancelManualNext();
             _ = _remote.StopAsync(preserveFailedProgress: preserveInterruptedProgress);
             try
             {
@@ -193,10 +195,7 @@ namespace WinUIMusicPlayer.Services
             if (!CanPlay || AppViewModel.CurrentPlayingList.Count == 0) return;
             try
             {
-                var coordinator = App.Services.GetRequiredService<PlaybackCoordinator>();
-                int currentIndex = coordinator.GetNavigationIndex();
-                int nextIndex = PlaybackCommands.FindCandidateIndex(AppViewModel, currentIndex, 1);
-                if (nextIndex >= 0) _ = coordinator.PlayAtAsync(nextIndex);
+                _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayNextAsync();
             }
             catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }
@@ -219,6 +218,7 @@ namespace WinUIMusicPlayer.Services
             }
             try
             {
+                if (AppViewModel.IsPlaying) App.Services.GetRequiredService<PlaybackCoordinator>().CancelManualNext();
                 bool? state = await IpcService.PlayButton();
                 if (state is bool s)
                 {
@@ -241,6 +241,7 @@ namespace WinUIMusicPlayer.Services
         public void ChangeWaveChannelTime(long positionMs)
         {
             if (_remote.IsActive) { _ = _remote.SeekAsync(positionMs); return; }
+            App.Services.GetRequiredService<PlaybackCoordinator>().CancelManualNext();
             IpcService.SetPosition(positionMs);
         }
 

@@ -1205,16 +1205,16 @@
     <value>Transiciones de reproducción</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>Las transiciones automáticas se aplican al terminar las pistas PCM locales compatibles.</value>
+    <value>Las transiciones se aplican al terminar las pistas PCM locales compatibles. El fundido fijo y el inteligente también se aplican al pulsar «Siguiente canción» durante la reproducción.</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>Transición automática</value>
+    <value>Transición entre pistas</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>Normal</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>Sin pausas</value>
+    <value>Sin pausas (estándar)</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>Fundido cruzado fijo</value>
@@ -1226,13 +1226,13 @@
     <value>Duración del fundido (segundos)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>Mantiene sin pausas las pistas consecutivas del álbum. La duración de las pistas y el volumen al inicio de la siguiente determinan el solapamiento hasta el tiempo elegido.</value>
+    <value>Las pistas consecutivas de un álbum se enlazan sin pausas si se reproducen hasta el final. La duración de las pistas y el volumen al inicio de la siguiente determinan el solapamiento hasta el límite elegido.</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>Fundidos en controles manuales</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>Aplica un fundido al iniciar, pausar o cambiar de pista manualmente.</value>
+    <value>Aplica fundidos de 300 ms al reproducir, pausar o cambiar de pista manualmente sin fundido cruzado.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Efecto letra literal</value>

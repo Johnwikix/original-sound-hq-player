@@ -1,3 +1,9 @@
+## 2026-11-20 手动下一首支持曲间过渡
+
+- `BassPlayerCommandService`、`PlaybackCoordinator` 让播放按钮、媒体键和快捷键的「下一首」共用当前队列顺序和过渡设置。
+- `GaplessSource`、`PlaybackEngine` 支持在曲中开始固定或智能交叉淡化。下一首尚未就绪时先准备音频，当前曲目继续播放。
+- `Strings/*/Resources.resw` 将「无缝」更名为「普通无缝」，并说明连续专辑曲目自然播完和手动跳过时的不同过渡方式。
+
 ## 2026-11-20 播放器增加智能过渡
 
 - `GeneralSettingsControl` 将曲间过渡移到「通用 → 播放过渡」，提供普通、无缝、固定交叉淡化和智能四种模式。旧配置保留原来的无缝和手动淡化偏好。

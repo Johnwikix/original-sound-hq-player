@@ -335,6 +335,7 @@ internal static class Regression
 
         await GaplessAsync();
         await SmartTransitionsAsync();
+        await ManualNextTransitionsAsync();
 
         using var responsive = new Scenario();
         responsive.State.CurrentPlayingList = [current, offline, nextLocal];
@@ -746,6 +747,176 @@ internal static class Regression
         finally { AppSettings.Dsp = savedSettings; }
     }
 
+    private static async Task ManualNextTransitionsAsync()
+    {
+        var savedSettings = AppSettings.Dsp;
+        AppSettings.Dsp = savedSettings with { GaplessPlayback = true, TransitionStyle = TrackTransitionStyle.Smart };
+        try
+        {
+            var first = new Music(211) { TrackNumber = 1 };
+            var second = new Music(212) { TrackNumber = 2 };
+            var third = new Music(213) { TrackNumber = 3 };
+            using (var warm = await StartAsync())
+            {
+                var automatic = warm.Ipc.Queued.Last();
+                warm.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Started);
+                using var services = new ServiceCollection().AddSingleton(warm.Player).AddSingleton(warm.Coordinator).AddSingleton(warm.Remote).BuildServiceProvider();
+                using var commands = new PlaybackCommands(warm.Lifecycle, warm.State, services);
+                commands.NextCommand.Execute(null);
+                Check(warm.State.State.Playback.PendingSelection?.Music == second, "Next publishes the pending queue row immediately");
+                await WaitAsync(() => warm.Ipc.Manual.Count > 0);
+                Check(warm.Ipc.Manual[0] == automatic && automatic.PreserveAlbumBoundary, "manual Smart Next reuses the existing album target's decoder identity");
+                Check(warm.Ipc.Queued.All(request => request.Path.Length > 0), "reusing the natural plan does not send cancellation");
+                int presentations = 0;
+                warm.Coordinator.PlaybackConfirmed += (music, _) => { if (music == second) presentations++; };
+                warm.Ipc.Progress = new(2, 201, 400, 100000, 0, true, 0, 1, automatic.Token);
+                warm.Ipc.Transition(automatic.Token, 201, 400);
+                await WaitAsync(() => warm.State.CurrentPlayingMusic == second);
+                warm.Ipc.Transition(automatic.Token, 201, 400);
+                await Task.Delay(50);
+                Check(presentations == 1 && warm.Player.Played.Count == 1 && warm.State.State.Playback.PendingSelection == null,
+                    "manual overlap presents a committed track exactly once with no ordinary Play");
+            }
+
+            AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Crossfade };
+            using (var rapid = await StartAsync(WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RepeatOff))
+            {
+                rapid.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Preparing);
+                Task older = rapid.Coordinator.PlayNextAsync();
+                await WaitAsync(() => rapid.Ipc.Manual.Count > 0);
+                var abandoned = rapid.Ipc.Manual[0];
+                Task latest = rapid.Coordinator.PlayNextAsync();
+                await WaitAsync(() => rapid.Ipc.Manual.Any(request => request.Path == third.Path));
+                var requested = rapid.Ipc.Manual.Last();
+                Check(abandoned.Token != requested.Token && requested.Path == third.Path && requested.Epoch == 200,
+                    "a second click advances the pending occurrence and prepares a distinct target even with Repeat Off");
+                rapid.Ipc.Transition(abandoned.Token, 201);
+                await Task.Delay(35);
+                Check(rapid.State.CurrentPlayingMusic == first, "a stale superseded manual notification cannot steal selection");
+                rapid.Ipc.Transition(requested.Token, 202);
+                await Task.WhenAll(older, latest);
+                Check(rapid.State.CurrentPlayingMusic == third && rapid.Player.Played.Count == 1, "only the latest rapid Next is committed");
+            }
+
+            using (var fallback = await StartAsync())
+            {
+                await fallback.Coordinator.PlayNextAsync();
+                Check(fallback.Player.Played.SequenceEqual([first, second]) && fallback.Ipc.Manual.Count == 1
+                    && fallback.Ipc.Queued.Any(request => request.Path.Length == 0), "unsupported manual transition falls back through the ordered cancellation barrier");
+            }
+
+            using (var statusFirst = await StartAsync())
+            {
+                statusFirst.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Committed);
+                ProgressSnapshot? confirmed = null;
+                statusFirst.Coordinator.PlaybackConfirmed += (music, progress) => { if (music == second) confirmed = progress; };
+                Task selection = statusFirst.Coordinator.PlayNextAsync();
+                await WaitAsync(() => statusFirst.Ipc.Manual.Count > 0);
+                var pending = statusFirst.Ipc.Manual[0];
+                await Task.Delay(40);
+                statusFirst.Ipc.Transition(pending.Token, 201, 1400);
+                await selection;
+                Check(confirmed is { Epoch: 201, CurrentMs: 1400 } && statusFirst.Player.Played.Count == 1,
+                    "committed command reply gives the state notification time to report the actual incoming position");
+            }
+
+            using (var raced = await StartAsync())
+            {
+                var cancel = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+                raced.Ipc.CancelReply = () => cancel.Task;
+                raced.Ipc.ManualReply = _ => Task.FromException<TransitionNowStatus>(new TimeoutException());
+                Task selection = raced.Coordinator.PlayNextAsync();
+                await WaitAsync(() => raced.Ipc.Queued.Last().Path.Length == 0);
+                var pending = raced.Ipc.Manual[0];
+                raced.Ipc.Transition(pending.Token, 201, 500);
+                await Task.Yield();
+                Check(raced.Player.Played.Count == 1 && raced.State.CurrentPlayingMusic == first,
+                    "uncertain transport result waits for the ordered acknowledgement before fallback or adoption");
+                cancel.SetResult(pending.Token);
+                await selection;
+                Check(raced.State.CurrentPlayingMusic == second && raced.Player.Played.Count == 1,
+                    "late commit acknowledgement wins over ordinary fallback playback");
+            }
+
+            using (var paused = await StartAsync())
+            {
+                var reply = new TaskCompletionSource<TransitionNowStatus>(TaskCreationOptions.RunContinuationsAsynchronously);
+                paused.Ipc.ManualReply = _ => reply.Task;
+                Task selection = paused.Coordinator.PlayNextAsync();
+                await WaitAsync(() => paused.Ipc.Manual.Count > 0);
+                var pending = paused.Ipc.Manual[0];
+                paused.Ipc.Progress = new(2, 201, 400, 100000, 0, false, 0, 1, pending.Token);
+                paused.Coordinator.CancelPendingSelection();
+                paused.State.IsPlaying = false;
+                reply.SetResult(TransitionNowStatus.Started);
+                await selection;
+                await WaitAsync(() => paused.State.CurrentPlayingMusic == second);
+                Check(paused.Player.Played.Count == 1 && !paused.State.IsPlaying && paused.State.State.Playback.PendingSelection == null,
+                    "pause reconciles an already committed track and prevents the pending task from falling back");
+            }
+
+            using (var adjusting = await StartAsync())
+            {
+                adjusting.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Started);
+                Task selection = adjusting.Coordinator.PlayNextAsync();
+                await WaitAsync(() => adjusting.Ipc.Manual.Count > 0);
+                var pending = adjusting.Ipc.Manual[0];
+                AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 7 };
+                await Task.Yield();
+                Check(adjusting.State.State.Playback.PendingSelection?.Music == second, "editing crossfade duration keeps an explicit Next pending");
+                adjusting.Ipc.Transition(pending.Token, 201, 1200);
+                await selection;
+                Check(adjusting.State.CurrentPlayingMusic == second && adjusting.Player.Played.Count == 1,
+                    "an active overlap can commit after its duration preference changes");
+            }
+
+            using (var stopping = await StartAsync())
+            {
+                var reply = new TaskCompletionSource<TransitionNowStatus>(TaskCreationOptions.RunContinuationsAsynchronously);
+                stopping.Ipc.ManualReply = _ => reply.Task;
+                Task selection = stopping.Coordinator.PlayNextAsync();
+                await WaitAsync(() => stopping.Ipc.Manual.Count > 0);
+                stopping.Lifecycle.TryBeginExit(out _);
+                await selection.WaitAsync(TimeSpan.FromSeconds(1));
+                Check(stopping.Player.Played.Count == 1 && stopping.State.State.Playback.PendingSelection == null,
+                    "shutdown releases selection waiting on a blocked manual status request without starting fallback");
+            }
+
+            using (var disabledWhilePreparing = await StartAsync())
+            {
+                disabledWhilePreparing.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Preparing);
+                Task selection = disabledWhilePreparing.Coordinator.PlayNextAsync();
+                await WaitAsync(() => disabledWhilePreparing.Ipc.Manual.Count > 0);
+                AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Gapless };
+                await selection;
+                Check(disabledWhilePreparing.Player.Played.SequenceEqual([first, second]), "disabling crossfade during preparation still plays the explicit target");
+            }
+
+            AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Gapless };
+            using (var ordinary = await StartAsync())
+            {
+                await ordinary.Coordinator.PlayNextAsync();
+                Check(ordinary.Ipc.Manual.Count == 0 && ordinary.Player.Played.SequenceEqual([first, second]),
+                    "Gapless mode keeps ordinary manual Next behavior");
+            }
+
+            async Task<Scenario> StartAsync(WinUIMusicPlayer.Utils.ToolUtils.PlayMode mode = WinUIMusicPlayer.Utils.ToolUtils.PlayMode.ListLoop)
+            {
+                var test = new Scenario();
+                test.Lifecycle.TransitionTo(AppPhase.WaitingForAgreement);
+                test.Lifecycle.TransitionTo(AppPhase.Initializing);
+                test.Lifecycle.TransitionTo(AppPhase.Ready);
+                test.State.CurrentPlayingList = [first, second, third];
+                test.State.CurrentPlayMode = mode;
+                test.Ipc.Progress = new(1, 200, 3000, 100000, 0, true);
+                await test.Coordinator.PlayAtAsync(0);
+                test.State.IsPlaying = true;
+                return test;
+            }
+        }
+        finally { AppSettings.Dsp = savedSettings; }
+    }
+
     private static async Task SongVersionsAsync()
     {
         using var test = new Scenario();
@@ -855,6 +1026,7 @@ sealed class Scenario : IDisposable
         Player.State = State;
         Coordinator = new(State, Player, Statistics, new ApplicationTasks(Lifecycle),
             new ShutdownCoordinator(Lifecycle, NullLogger<ShutdownCoordinator>.Instance), NullLogger<PlaybackCoordinator>.Instance, Remote, Library, Ipc);
+        Player.Coordinator = Coordinator;
     }
     public void Dispose() => Coordinator.Dispose();
 }

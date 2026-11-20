@@ -324,8 +324,28 @@ if (args.Contains("--gapless") || args.Contains("--crossfade") || args.Contains(
         long outputGeneration = states.CurrentDspState!.State.OutputGeneration;
         string? nextMediaPath = args.FirstOrDefault(a => a.StartsWith("--next="))?[7..];
         var queue = new GaplessRequest(initial.Epoch, 77, nextMediaPath == null ? mediaPath : Path.GetFullPath(nextMediaPath), preserveAlbumBoundary);
-        if (Send(CommandId.QueueNext, queue.Write(), out _) != MessageTypeId.Success)
+        byte[] requestBytes = queue.Write();
+        bool manual = args.Contains("--transition-now");
+        if ((!manual || args.Contains("--queue-first")) && Send(CommandId.QueueNext, requestBytes, out _) != MessageTypeId.Success)
             throw new InvalidOperationException("Gapless queue rejected");
+        if (manual)
+        {
+            if (style == TrackTransitionStyle.Gapless || (initial.TotalMs - initial.CurrentMs) / rate < 15_000)
+                throw new ArgumentException("Use fixed/smart mode with at least fifteen seconds remaining on the outgoing track.");
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            TransitionNowStatus status;
+            do
+            {
+                if (Send(CommandId.TransitionNow, requestBytes, out var reply) != MessageTypeId.Success || reply.Length != 1)
+                    throw new InvalidOperationException("Missing manual transition response");
+                status = (TransitionNowStatus)reply[0];
+                if (status == TransitionNowStatus.Committed) break;
+                if (status is not (TransitionNowStatus.Preparing or TransitionNowStatus.Started) || timer.ElapsedMilliseconds > 6000)
+                    throw new InvalidOperationException($"Manual transition did not commit in time: {status}");
+                Thread.Sleep(50);
+            } while (true);
+            Console.WriteLine($"[smoke] PASS: manual Next committed in {timer.ElapsedMilliseconds}ms with {initial.TotalMs - initial.CurrentMs}ms remaining at request");
+        }
         if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.GaplessToken == 77, drainTimeout))
             throw new InvalidOperationException("Gapless transition missing");
         states.TryGetProgress(out var transitioned);
@@ -336,7 +356,7 @@ if (args.Contains("--gapless") || args.Contains("--crossfade") || args.Contains(
         // fixture so a frame splice and a real overlap remain distinguishable through device latency.
         if (style != TrackTransitionStyle.Gapless)
         {
-            bool expectOverlap = style == TrackTransitionStyle.Crossfade || !preserveAlbumBoundary;
+            bool expectOverlap = manual || style == TrackTransitionStyle.Crossfade || !preserveAlbumBoundary;
             if (expectOverlap != (transitioned.CurrentMs > 400 * rate))
                 throw new InvalidOperationException($"Unexpected incoming position {transitioned.CurrentMs}ms for {style}, album boundary={preserveAlbumBoundary}");
         }

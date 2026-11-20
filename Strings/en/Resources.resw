@@ -1205,16 +1205,16 @@
     <value>Playback transitions</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>Automatic transitions apply when compatible local PCM tracks end.</value>
+    <value>Transitions apply when compatible local PCM tracks end. Fixed crossfade and Smart also work when you press Next Song during playback.</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>Automatic transition</value>
+    <value>Track transition</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>Normal</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>Gapless</value>
+    <value>Standard gapless</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>Fixed crossfade</value>
@@ -1226,13 +1226,13 @@
     <value>Crossfade duration (seconds)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>Keeps consecutive album tracks gapless. Track lengths and the next track's opening volume determine the overlap, up to the selected duration.</value>
+    <value>Consecutive album tracks stay gapless when played to the end. Track lengths and the next track's opening volume set the overlap, up to the selected duration.</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>Manual fades</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>Fade when starting, pausing or manually skipping tracks.</value>
+    <value>Uses 300 ms fades for play, pause and manual track changes without crossfade.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Word for word lyrics effect</value>

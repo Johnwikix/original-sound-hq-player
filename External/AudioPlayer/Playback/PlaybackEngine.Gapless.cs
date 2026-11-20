@@ -8,7 +8,9 @@ public sealed partial class PlaybackEngine
     private GaplessSource? _gaplessSource;
     private GaplessPreloader? _gaplessPreloader;
     private long _currentGaplessToken;
-    private bool _gaplessStopping;
+    private long _committedGaplessEpoch;
+    private GaplessRequest? _committedGaplessRequest, _lastManualTransition;
+    private bool _gaplessStopping, _manualTransitionPending;
 
     private double EffectivePlaybackRate => _dspSettings is { IsEnabled: true } dsp ? dsp.PlaybackRate : 1;
 
@@ -29,6 +31,7 @@ public sealed partial class PlaybackEngine
     {
         var cancelled = _gaplessSource?.Cancel();
         AdoptGapless();
+        _manualTransitionPending = false;
         _gaplessPreloader?.Cancel();
         RetireGaplessSession(cancelled);
     }
@@ -60,9 +63,12 @@ public sealed partial class PlaybackEngine
         {
             MusicUrl = request.Path;
             _currentGaplessToken = request.Token;
+            _committedGaplessEpoch = rendered.Current.TimelineEpoch;
+            _committedGaplessRequest = request;
             _lastProgressSeekId = 0;
             _ipc?.GaplessTransition(request.Token, rendered.Current.TimelineEpoch, GetTimeProgress().currentMs);
         }
+        _manualTransitionPending = false;
         _gaplessPreloader?.Cancel();
         RetireGaplessSession(old);
     }
@@ -86,6 +92,7 @@ public sealed partial class PlaybackEngine
             if (request.Path.Length == 0) { CancelGapless(); return true; }
             if (request.Epoch != _session?.TimelineEpoch || Volatile.Read(ref _fadeBusy) != 0) return false;
             if (request == _gaplessPreloader?.Request) return true;
+            if (_manualTransitionPending) return false; // 自动预载不可抢占用户的手动下一首。
             CancelGapless();
             if (!IsPlaying || _dspSettings?.GaplessPlayback != true
                 || _session is not { Kind: RenderKind.Pcm } || _gaplessSource == null
@@ -96,6 +103,72 @@ public sealed partial class PlaybackEngine
             PrepareGaplessIfDue();
             return true;
         }
+    }
+
+    public TransitionNowStatus TryTransitionNow(GaplessRequest request)
+    {
+        lock (_streamLock)
+        {
+            AdoptGapless();
+            if (HasCommittedTransition(request)) return TransitionNowStatus.Committed;
+
+            bool sameManual = SameTransition(_lastManualTransition, request);
+            if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping || !IsPlaying || Volatile.Read(ref _fadeBusy) != 0
+                || _output is not { IsFailed: false } || _currentStream != Guid.Empty || ExperimentalAtmosPassthrough
+                || _session is not { Kind: RenderKind.Pcm, DecodeFailure: null } current || request.Epoch != current.TimelineEpoch
+                || _gaplessSource is not { } source || request.Token <= 0 || !Path.IsPathFullyQualified(request.Path)
+                || _dspSettings is not { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart } settings)
+                return sameManual && _manualTransitionPending ? CancelManualTransition(request) : TransitionNowStatus.Unavailable;
+
+            // Tokens increase within the host. A late poll must never resurrect a replaced or cancelled attempt.
+            if (_lastManualTransition is { } last && last.Epoch == request.Epoch && last.Token >= request.Token)
+            {
+                if (!_manualTransitionPending || !sameManual) return TransitionNowStatus.Unavailable;
+            }
+            else
+            {
+                var plan = _gaplessPreloader?.Request;
+                if (plan?.Token == request.Token && !SameTransition(plan, request)) return TransitionNowStatus.Unavailable;
+                if (!SameTransition(plan, request) || _gaplessPreloader!.State == GaplessPreparationState.Failed)
+                {
+                    CancelGapless();
+                    if (HasCommittedTransition(request)) return TransitionNowStatus.Committed;
+                    if (_session != current || current.TimelineEpoch != request.Epoch) return TransitionNowStatus.Unavailable;
+                    _gaplessPreloader ??= new(_streamLock, OpenGaplessSession, PublishGaplessSession);
+                    _gaplessPreloader.SetPlan(request);
+                }
+                _lastManualTransition = request;
+                _manualTransitionPending = true;
+            }
+
+            var preloader = _gaplessPreloader!;
+            switch (preloader.State)
+            {
+                case GaplessPreparationState.Waiting:
+                    StartGaplessPreparation(preloader, preloader.Request!, current, source);
+                    return TransitionNowStatus.Preparing;
+                case GaplessPreparationState.Preparing:
+                    return TransitionNowStatus.Preparing;
+                case GaplessPreparationState.Ready:
+                    var status = source.RequestTransitionNow(request.Epoch, request.Token, settings.TransitionStyle, settings.CrossfadeSeconds);
+                    if (status != TransitionNowStatus.Unavailable) return status;
+                    break;
+            }
+            return CancelManualTransition(request);
+        }
+    }
+
+    private static bool SameTransition(GaplessRequest? plan, GaplessRequest request) =>
+        plan != null && plan.Epoch == request.Epoch && plan.Token == request.Token && string.Equals(plan.Path, request.Path, StringComparison.Ordinal);
+
+    private bool HasCommittedTransition(GaplessRequest request) =>
+        request.Token == _currentGaplessToken && _session?.TimelineEpoch == _committedGaplessEpoch
+        && SameTransition(_committedGaplessRequest, request);
+
+    private TransitionNowStatus CancelManualTransition(GaplessRequest request)
+    {
+        CancelGapless();
+        return HasCommittedTransition(request) ? TransitionNowStatus.Committed : TransitionNowStatus.Unavailable;
     }
 
     // 由现有控制看门狗调用；窗口外不探测文件，也不产生额外分配。
@@ -117,11 +190,14 @@ public sealed partial class PlaybackEngine
                 position = current.CurrentMs;
             }
             if (duration > 0 && (duration - position) / current.PlaybackRate > leadTimeMs) return;
-            preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement,
-                EnhancementMixRate(), EffectiveResampleMode, EffectiveResampleTarget, style == TrackTransitionStyle.Smart));
+            StartGaplessPreparation(preloader, request, current, source);
         }
     }
+
+    private void StartGaplessPreparation(GaplessPreloader preloader, GaplessRequest request, Session current, GaplessSource source)
+        => preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
+            ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement,
+            EnhancementMixRate(), EffectiveResampleMode, EffectiveResampleTarget, _dspSettings?.TransitionStyle == TrackTransitionStyle.Smart));
 
     private Session? OpenGaplessSession(GaplessPreparation preparation, CancellationToken token)
     {
@@ -144,8 +220,11 @@ public sealed partial class PlaybackEngine
             || _gaplessSource != preparation.Source) return false;
         next.ConfigureDsp(ResolveDsp(_output?.DeviceId));
         next.Eq.Configure(next.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
-        return preparation.Source.Queue(next, preparation.Request.Token, ResolveTransitionStyle(preparation.Request, _dspSettings),
-            _dspSettings?.CrossfadeSeconds ?? DspSettings.DefaultCrossfadeSeconds);
+        var style = _manualTransitionPending ? _dspSettings?.TransitionStyle ?? TrackTransitionStyle.Gapless
+            : ResolveTransitionStyle(preparation.Request, _dspSettings);
+        if (_manualTransitionPending && style == TrackTransitionStyle.Gapless) return false;
+        return preparation.Source.Queue(next, preparation.Request.Token, style,
+            _dspSettings?.CrossfadeSeconds ?? DspSettings.DefaultCrossfadeSeconds, _manualTransitionPending);
     }
 
     private static TrackTransitionStyle ResolveTransitionStyle(GaplessRequest request, DspSettings? settings) =>

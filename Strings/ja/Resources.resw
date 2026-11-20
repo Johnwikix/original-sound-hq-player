@@ -1205,16 +1205,16 @@
     <value>再生時の曲間切り替え</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>対応するローカル PCM トラックの再生終了時に自動切り替えが適用されます。</value>
+    <value>対応するローカル PCM 曲の再生終了時に適用されます。固定とスマートは、再生中に「次の曲」を押したときもクロスフェードします。</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>自動切り替え方式</value>
+    <value>曲間の切り替え方式</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>通常</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>ギャップレス</value>
+    <value>標準ギャップレス</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>固定クロスフェード</value>
@@ -1226,13 +1226,13 @@
     <value>クロスフェード時間（秒）</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>アルバム内の連続する曲はギャップレスでつなぎます。曲の長さと次の曲の冒頭の音量に応じて、設定時間を上限に重なりを調整します。</value>
+    <value>曲の終わりまで再生した場合、アルバム内の連続する曲はギャップレスでつなぎます。クロスフェードは曲の長さと次の曲の冒頭の音量に応じて調整し、設定時間を上限とします。</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>手動操作時のフェード</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>再生開始、一時停止、手動での曲送りや曲戻しにフェードを適用します。</value>
+    <value>再生や一時停止、クロスフェードを伴わない手動の曲切り替えに、300 ミリ秒のフェードを適用します。</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>逐語歌詞効果</value>

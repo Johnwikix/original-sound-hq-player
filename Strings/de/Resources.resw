@@ -1205,16 +1205,16 @@
     <value>Wiedergabeübergänge</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>Automatische Übergänge gelten am Ende kompatibler lokaler PCM-Titel.</value>
+    <value>Übergänge gelten am Ende kompatibler lokaler PCM-Titel. Feste und intelligente Überblendung funktionieren auch mit „Nächster Titel“ während der Wiedergabe.</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>Automatischer Übergang</value>
+    <value>Übergang zwischen Titeln</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>Normal</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>Lückenlos</value>
+    <value>Lückenlos (Standard)</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>Feste Überblendung</value>
@@ -1226,13 +1226,13 @@
     <value>Überblenddauer (Sekunden)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>Aufeinanderfolgende Albumtitel bleiben lückenlos. Titellängen und Anfangslautstärke des nächsten Titels bestimmen die Überblendung bis zur gewählten Dauer.</value>
+    <value>Aufeinanderfolgende Albumtitel gehen am natürlichen Titelende lückenlos ineinander über. Titellängen und die Anfangslautstärke des nächsten Titels bestimmen die Überblendung bis zur gewählten Dauer.</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>Ein- und Ausblenden bei manueller Steuerung</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>Beim Starten, Pausieren oder manuellen Überspringen ein- oder ausblenden.</value>
+    <value>Blendet beim Starten, Pausieren und manuellen Titelwechsel ohne Überblendung 300 ms lang ein oder aus.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Wort-für-Wort Songtexte</value>

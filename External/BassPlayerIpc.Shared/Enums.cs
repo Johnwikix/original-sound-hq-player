@@ -34,6 +34,16 @@ public enum CommandId : short
     StreamControl = 23,
     QueueNext = 24,
     SetFftEnabled = 25,
+    TransitionNow = 26,
+}
+
+/// <summary>播放进程处理带曲目令牌的手动过渡请求后报告的状态。</summary>
+public enum TransitionNowStatus : byte
+{
+    Preparing = 0,
+    Started = 1,
+    Committed = 2,
+    Unavailable = 3,
 }
 
 public enum MessageTypeId : short

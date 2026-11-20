@@ -53,6 +53,17 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index));
     }
 
+    internal Task PlayNextAsync()
+    {
+        if (_disposed || !state.CanStartPlayback) return Task.CompletedTask;
+        int index = PlaybackCommands.FindCandidateIndex(state, GetNavigationIndex(), 1);
+        if (index < 0) return Task.CompletedTask;
+        if (_gaplessIpc == null) StartGapless();
+        _failedEntries.Clear();
+        return RunSelectionAsync(token => PlayQueueCoreAsync(index, 1, false, token, manualNext: true),
+            state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index), manualNext: true);
+    }
+
     public Task PlayAsync(Music music, long entryId = 0, bool exactVersion = false)
         => SelectMusicAsync(music, entryId, resumeInterrupted: false, exactVersion);
 
@@ -79,11 +90,11 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         }, music, entryId);
     }
 
-    private Task RunSelectionAsync(Func<CancellationToken, Task> operation, Music music, long entryId)
+    private Task RunSelectionAsync(Func<CancellationToken, Task> operation, Music music, long entryId, bool manualNext = false)
     {
         if (_disposed || !state.CanStartPlayback) return Task.CompletedTask;
-        CancelGaplessPlan();
         long version = ++_selectionVersion;
+        BeginManualNext(manualNext, entryId, version);
         _presentation?.Cancel(); // 收到新意图即停止上一轮等待，不等 ApplicationTasks 的下一次调度。
         SetPending(new(music, entryId));
         RegisterPlaybackLifecycle();
@@ -113,6 +124,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         {
             if (version == _selectionVersion)
             {
+                FinishManualNext(version);
                 SetPending(null);
                 bool failedExact = _intentExact && _activeSelectionVersion != version;
                 if (_activeSelectionVersion != version && _activeIntent is { } active && ReferenceEquals(state.CurrentPlayingMusic, active.Music))
@@ -126,12 +138,14 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                 var failure = _deferredFailure;
                 _deferredFailure = null;
                 if (!failedExact && failure is { } deferred) OnRemoteFailed(deferred.Music, deferred.Generation, deferred.Advance);
+                RefreshGaplessPlan();
             }
         }
     }
 
     public void CancelPendingSelection()
     {
+        if (CancelManualNext()) return;
         CancelGaplessPlan();
         _playingVersion = ++_selectionVersion;
         _deferredFailure = null;
@@ -180,7 +194,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     }
 
     private async Task PlayQueueCoreAsync(int index, int direction, bool stopWhenUnavailable, CancellationToken token,
-        bool preserveInterruptedProgress = false)
+        bool preserveInterruptedProgress = false, bool manualNext = false)
     {
         var list = state.CurrentPlayingList;
         int count = list.Count;
@@ -205,6 +219,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                     state.State.Queue.EntryIdAt(index) != entryId || !ReferenceEquals(list[index], music)) return;
                 if (available is not null)
                 {
+                    if (manualNext && await TryManualNextAsync(available, entryId, token)) return;
+                    token.ThrowIfCancellationRequested();
                     await PlayCoreAsync(available, entryId, token);
                     return;
                 }

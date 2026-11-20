@@ -13,6 +13,7 @@ internal static unsafe partial class Program
         Run("Crossfade: unknown length, inaccurate duration, underrun and cancellation preserve outgoing audio", CheckCrossfadeFallback);
         Run("Crossfade: cancellation and underrun release the last incoming contribution over at most 20 ms", CheckCrossfadeWithdrawal);
         Run("Smart transition: engine honors album continuity and reports consumed incoming position", CheckEngineTrackTransitions);
+        RunManualTransitionTests();
     }
 
     private static void CheckFixedCrossfade()
@@ -283,6 +284,8 @@ internal static unsafe partial class Program
                 Require(engine.TryCaptureProgress(out var progress) && progress.GaplessToken == 27
                     && progress.Epoch == next.TimelineEpoch && progress.CurrentMs == (preserveAlbum ? 10 : 500),
                     $"Engine reported incorrect incoming progress: {progress.CurrentMs}");
+                Require(engine.TryTransitionNow(request) == TransitionNowStatus.Committed,
+                    "Manual poll missed an already committed natural handoff");
             }
             finally
             {

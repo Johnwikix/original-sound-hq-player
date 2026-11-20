@@ -228,6 +228,14 @@ public class PlayerIpcService : IDisposable
                     SetResponse(MessageTypeId.Success, reply);
                     break;
                 }
+                case CommandId.TransitionNow:
+                {
+                    TransitionNowStatus status = _engine!.TryTransitionNow(GaplessRequest.Read(payload));
+                    Span<byte> reply = stackalloc byte[1];
+                    reply[0] = (byte)status;
+                    SetResponse(MessageTypeId.Success, reply);
+                    break;
+                }
                 case CommandId.UpdateDsp:
                     _engine!.UpdateDsp(DspProtocol.ReadSettings(payload));
                     break;

@@ -20,7 +20,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     private int _overlapLimit, _overlapRemaining, _endGuard, _recoveryRemaining;
     private double _incomingWeight, _recoveryStartWeight;
     private long _recoveryEpoch;
-    private bool _rejectPending;
+    private bool _rejectPending, _manualRequested, _manualOverlap;
     internal Session Current => Volatile.Read(ref _current);
     internal Session? Pending => Volatile.Read(ref _next);
     internal long CompletedToken => Volatile.Read(ref _completedToken);
@@ -37,13 +37,14 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     }
 
     internal bool Queue(Session next, long token, TrackTransitionStyle style = TrackTransitionStyle.Gapless,
-        int seconds = DspSettings.DefaultCrossfadeSeconds)
+        int seconds = DspSettings.DefaultCrossfadeSeconds, bool transitionNow = false)
     {
         lock (_gate)
         {
             if (_next != null || next.Kind != Kind || next.SampleRate != SampleRate
                 || next.Channels != Channels || next.ChannelMask != ChannelMask) return false;
             SetTransition(style, seconds);
+            _manualRequested = transitionNow;
             next.ShareOutputGain(_current);
             _next = next;
             _token = token;
@@ -51,11 +52,35 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         }
     }
 
+    internal TransitionNowStatus RequestTransitionNow(long epoch, long token, TrackTransitionStyle style, int seconds)
+    {
+        lock (_gate)
+        {
+            if (_current.TimelineEpoch != epoch || _token != token || _next is not { } next || _rejectPending
+                || _current.DecodeFailure != null || next.DecodeFailure != null || _current.TailStarted)
+                return TransitionNowStatus.Unavailable;
+            if (_incomingWeight > 0)
+            {
+                // A natural overlap to the same track is already audible. Keep its envelope and render position.
+                _manualRequested = true;
+                return TransitionNowStatus.Started;
+            }
+            if (!_manualRequested)
+            {
+                SetTransition(style, seconds);
+                _manualRequested = true;
+            }
+            // Decoder EOF provides an exact frame count for a short or unlabelled track.
+            return GetOverlapLength(next, _current.PcmInputStatus, next.PcmInputStatus, out _) >= MinimumOverlapFrames
+                ? TransitionNowStatus.Preparing : TransitionNowStatus.Unavailable;
+        }
+    }
+
     internal void UpdateTransition(TrackTransitionStyle style, int seconds)
     {
         lock (_gate)
         {
-            if (_next != null) SetTransition(style, seconds);
+            if (_next != null && !_manualRequested) SetTransition(style, seconds);
         }
     }
 
@@ -74,6 +99,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
             var next = _next;
             AbortOverlap();
             _rejectPending = false;
+            _manualRequested = false;
             _next = null;
             return next;
         }
@@ -107,9 +133,9 @@ internal sealed class GaplessSource(Session current) : IRenderSource
 
     private int RenderRemainder(Span<double> buffer, int frames)
     {
-        bool join = !_current.TailStarted && CanJoin(_next);
+        bool join = !_manualRequested && !_current.TailStarted && CanJoin(_next);
         int rendered = _current.RenderPcm(buffer, frames, drainTail: !join);
-        if (rendered < frames && (join ? _current.PcmInputDrained : _current.IsDrained)
+        if (!_manualRequested && rendered < frames && (join ? _current.PcmInputDrained : _current.IsDrained)
             && _next is { } next && CanJoin(next))
         {
             Promote(next, preserveInputGain: false);
@@ -138,6 +164,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
                 if (rendered < prefix) return rendered;
             }
             _overlapRemaining = overlap;
+            _manualOverlap = _manualRequested;
             _endGuard = Math.Min(overlap / 4, SampleRate / 8);
         }
 
@@ -146,15 +173,15 @@ internal sealed class GaplessSource(Session current) : IRenderSource
             var (outgoingReady, outgoingEnded) = _current.PcmInputStatus;
             var (incomingReady, incomingEnded) = next.PcmInputStatus;
             if (next.DecodeFailure != null || !next.DspReady || incomingReady == 0
-                || outgoingEnded && outgoingReady > _overlapRemaining + SampleRate / 20
-                || !outgoingEnded && (_overlapRemaining <= _endGuard || outgoingReady == 0))
+                || !_manualOverlap && outgoingEnded && outgoingReady > _overlapRemaining + SampleRate / 20
+                || !outgoingEnded && (outgoingReady == 0 || !_manualOverlap && _overlapRemaining <= _endGuard))
             {
                 AbortOverlap();
                 break;
             }
 
-            // Once the decoder has reached EOF its exact frame count replaces the duration estimate.
-            if (outgoingEnded) _overlapRemaining = outgoingReady;
+            // A manual fade may end mid-track. At EOF it can only get shorter.
+            if (outgoingEnded) _overlapRemaining = _manualOverlap ? Math.Min(_overlapRemaining, outgoingReady) : outgoingReady;
             if (incomingEnded && incomingReady < _overlapRemaining)
             {
                 AbortOverlap();
@@ -168,7 +195,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
 
             int take = Math.Min(frames - rendered, MixBlockFrames);
             take = Math.Min(take, Math.Min(outgoingReady, incomingReady));
-            take = Math.Min(take, outgoingEnded ? _overlapRemaining : _overlapRemaining - _endGuard);
+            take = Math.Min(take, outgoingEnded || _manualOverlap ? _overlapRemaining : _overlapRemaining - _endGuard);
             var output = buffer.Slice(rendered * Channels, take * Channels);
             RenderMix(next, output, take);
             rendered += take;
@@ -185,14 +212,31 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     private int GetOverlapStart(Session next, int frames, out int overlap)
     {
         overlap = 0;
-        var (outgoingReady, outgoingEnded) = _current.PcmInputStatus;
-        var (incomingReady, incomingEnded) = next.PcmInputStatus;
-        if (outgoingReady == 0 || !outgoingEnded && _current.TotalMs <= 0 || !incomingEnded && next.TotalMs <= 0) return 0;
+        var outgoing = _current.PcmInputStatus;
+        var incoming = next.PcmInputStatus;
+        if (outgoing.ReadyFrames == 0) return 0;
+        int duration = GetOverlapLength(next, outgoing, incoming, out long remaining);
+        if (duration < MinimumOverlapFrames) return 0;
+        long prefix = _manualRequested ? 0 : remaining - duration;
+        if (prefix >= frames || prefix >= outgoing.ReadyFrames) return 0;
+        // Buffer only enough for this pull. Both decoder threads continue filling their rings in parallel.
+        int needed = (int)Math.Min(duration, frames - prefix);
+        if (incoming.ReadyFrames < needed) return 0;
+        overlap = duration;
+        return (int)prefix;
+    }
 
+    private int MinimumOverlapFrames => Math.Max(2, SampleRate * 80 / 1000);
+
+    private int GetOverlapLength(Session next, (int ReadyFrames, bool Ended) outgoing, (int ReadyFrames, bool Ended) incoming,
+        out long remaining)
+    {
+        remaining = 0;
+        if (!outgoing.Ended && _current.TotalMs <= 0 || !incoming.Ended && next.TotalMs <= 0) return 0;
         long played = Volatile.Read(ref _current.AnchorFrames) + _current.FramesPlayed;
-        long outgoingLength = outgoingEnded ? played + outgoingReady : _current.MsToFrames(_current.TotalMs);
-        long incomingLength = incomingEnded ? incomingReady : next.MsToFrames(next.TotalMs);
-        long remaining = outgoingEnded ? outgoingReady : Math.Max(outgoingReady, outgoingLength - played);
+        long outgoingLength = outgoing.Ended ? played + outgoing.ReadyFrames : _current.MsToFrames(_current.TotalMs);
+        long incomingLength = incoming.Ended ? incoming.ReadyFrames : next.MsToFrames(next.TotalMs);
+        remaining = outgoing.Ended ? outgoing.ReadyFrames : Math.Max(outgoing.ReadyFrames, outgoingLength - played);
         int preferred = _overlapLimit;
         int lengthDivisor = 2;
         if (_style == TrackTransitionStyle.Smart)
@@ -203,15 +247,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
             preferred = energy <= 0.00025 ? preferred : energy >= 0.01 ? preferred / 2 : preferred * 3 / 4;
         }
         preferred = (int)Math.Min(preferred, Math.Min(outgoingLength, incomingLength) / lengthDivisor);
-        long prefix = Math.Max(0, remaining - preferred);
-        if (prefix >= frames || prefix >= outgoingReady) return 0;
-        int duration = (int)Math.Min(remaining, preferred);
-        if (duration < Math.Max(2, SampleRate * 80 / 1000)) return 0;
-        // Buffer only enough for this pull. Both decoder threads continue filling their rings in parallel.
-        int needed = (int)Math.Min(duration, frames - prefix);
-        if (incomingReady < needed) return 0;
-        overlap = duration;
-        return (int)prefix;
+        return (int)Math.Min(remaining, preferred);
     }
 
     private void RenderMix(Session next, Span<double> output, int frames)
@@ -242,6 +278,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     private void AbortOverlap()
     {
         _overlapRemaining = 0;
+        _rejectPending |= _manualRequested;
         if (_incomingWeight == 0) return;
         // A partially consumed intro cannot be handed off as an ordinary splice.
         _rejectPending = true;
@@ -282,6 +319,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     {
         next.ContinueDspFrom(_current, preserveInputGain);
         _next = null;
+        _manualRequested = false;
         _overlapRemaining = _recoveryRemaining = 0;
         _incomingWeight = 0;
         Volatile.Write(ref _current, next);

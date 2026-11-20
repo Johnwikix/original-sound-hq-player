@@ -1205,16 +1205,16 @@
     <value>Oynatma geçişleri</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>Otomatik geçişler uyumlu yerel PCM parçaları bittiğinde uygulanır.</value>
+    <value>Geçişler uyumlu yerel PCM parçaları sona erdiğinde uygulanır. Sabit ve akıllı çapraz geçiş, oynatma sırasında “Sonraki şarkı” düğmesine bastığınızda da uygulanır.</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>Otomatik geçiş</value>
+    <value>Parçalar arası geçiş</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>Normal</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>Boşluksuz</value>
+    <value>Standart boşluksuz geçiş</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>Sabit çapraz geçiş</value>
@@ -1226,13 +1226,13 @@
     <value>Çapraz geçiş süresi (saniye)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>Albümdeki ardışık parçalar boşluksuz çalınır. Örtüşme, parça sürelerine ve sonraki parçanın girişindeki ses düzeyine göre, seçilen süreye kadar ayarlanır.</value>
+    <value>Albümdeki ardışık parçalar sonuna kadar çalındığında boşluksuz geçer. Örtüşme, seçilen süreyi aşmadan parça sürelerine ve sonraki parçanın girişindeki ses düzeyine göre ayarlanır.</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>Elle oynatma denetimlerinde ses geçişi</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>Oynatma başlatıldığında, duraklatıldığında veya elle parça değiştirildiğinde sesi yumuşakça açar ya da kısar.</value>
+    <value>Başlatırken, duraklatırken ve çapraz geçiş olmadan elle parça değiştirirken sesi 300 ms içinde yumuşakça açar veya kısar.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Sözcük sözcük şarkı sözleri efekti</value>

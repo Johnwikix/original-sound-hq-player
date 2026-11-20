@@ -1204,16 +1204,16 @@
     <value>播放过渡</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>兼容的本地 PCM 曲目播完时应用自动过渡。</value>
+    <value>兼容的本地 PCM 曲目播完时使用曲间过渡。固定交叉淡化和智能模式也适用于播放途中点按「下一首」。</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>自动过渡方式</value>
+    <value>曲间过渡</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>普通</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>无缝</value>
+    <value>普通无缝</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>固定交叉淡化</value>
@@ -1225,13 +1225,13 @@
     <value>交叉淡化时长（秒）</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>专辑内连续曲目保持无缝。曲目时长和下一首开头的音量决定重叠长度，最长为所选时长。</value>
+    <value>自然曲终时，专辑内连续曲目保持无缝。交叉淡化时，按曲目时长和下一首开头的音量调整重叠，最长为所选时长。</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>手动操作淡入淡出</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>开始播放、暂停或手动切歌时使用淡入淡出。</value>
+    <value>播放、暂停及未使用交叉淡化的手动切歌采用 300 毫秒淡入淡出。</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>逐字歌词效果</value>

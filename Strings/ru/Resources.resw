@@ -1205,16 +1205,16 @@
     <value>Переходы между треками</value>
   </data>
   <data name="PlaybackTransitionsDescription" xml:space="preserve">
-    <value>Автоматические переходы применяются по окончании совместимых локальных треков PCM.</value>
+    <value>Переходы работают в конце совместимых локальных PCM-треков. Фиксированное и умное сведение также работают при нажатии «Следующая» во время воспроизведения.</value>
   </data>
   <data name="PlaybackTransitionMode" xml:space="preserve">
-    <value>Автоматический переход</value>
+    <value>Переход между треками</value>
   </data>
   <data name="PlaybackTransitionNormal" xml:space="preserve">
     <value>Обычный</value>
   </data>
   <data name="PlaybackTransitionGapless" xml:space="preserve">
-    <value>Без пауз</value>
+    <value>Без пауз (стандарт)</value>
   </data>
   <data name="PlaybackTransitionCrossfade" xml:space="preserve">
     <value>Фиксированное сведение</value>
@@ -1226,13 +1226,13 @@
     <value>Длительность сведения (с)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
-    <value>Соседние треки альбома звучат без пауз. Длительность треков и громкость начала следующего трека определяют перекрытие в пределах выбранного времени.</value>
+    <value>При естественном окончании соседние треки альбома звучат без пауз. Длительность треков и громкость вступления следующего трека определяют перекрытие в пределах выбранного времени.</value>
   </data>
   <data name="ManualPlaybackFades" xml:space="preserve">
     <value>Плавное изменение громкости при ручном управлении</value>
   </data>
   <data name="ManualPlaybackFadesDescription" xml:space="preserve">
-    <value>Плавно меняет громкость при запуске, паузе или ручной смене трека.</value>
+    <value>Плавно меняет громкость за 300 мс при запуске, паузе и ручной смене трека без сведения.</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Эффект дословного текста</value>

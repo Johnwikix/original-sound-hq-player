@@ -252,8 +252,8 @@ namespace WinUIMusicPlayer.Services
 
         public Task<(MessageTypeId Type, int ResponseLen)> SendWithResponseAsync(
             CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer,
-            int timeoutMs = 1000, bool skipIfBusy = false)
-            => _transport?.RequestAsync(commandId, payload.Span, responseBuffer, timeoutMs, skipIfBusy)
+            int timeoutMs = 1000, bool skipIfBusy = false, CancellationToken token = default)
+            => _transport?.RequestAsync(commandId, payload.Span, responseBuffer, timeoutMs, skipIfBusy, token)
                 ?? Task.FromResult((MessageTypeId.Failed, 0));
 
         /// <summary>同步复制到发送队列；同类高频状态在有序屏障内合并。</summary>
@@ -608,6 +608,16 @@ namespace WinUIMusicPlayer.Services
             var (type, length) = await SendWithResponseAsync(CommandId.QueueNext, request.Write(), reply);
             return type == MessageTypeId.Success && length == reply.Length
                 && System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(reply.AsSpan(8)) == request.Epoch;
+        }
+
+        /// <summary>请求从当前位置过渡到指定队列曲目。使用相同令牌重试时，播放端返回该次过渡的状态。</summary>
+        public async Task<TransitionNowStatus> TransitionNowAsync(GaplessRequest request, CancellationToken token = default)
+        {
+            byte[] reply = new byte[1];
+            var (type, length) = await SendWithResponseAsync(CommandId.TransitionNow, request.Write(), reply, token: token);
+            if (type != MessageTypeId.Success || length != 1 || reply[0] > (byte)TransitionNowStatus.Unavailable)
+                throw new InvalidOperationException("Manual track transition was not confirmed.");
+            return (TransitionNowStatus)reply[0];
         }
 
         /// <summary>Cancellation may race a render boundary. Return the committed identity so the UI

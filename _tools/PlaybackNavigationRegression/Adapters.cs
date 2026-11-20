@@ -229,6 +229,7 @@ namespace WinUIMusicPlayer.Services
     public sealed class BassPlayerCommandService
     {
         public WinUIMusicPlayer.ViewModel.AppViewModel? State;
+        public PlaybackCoordinator? Coordinator;
         public List<Music> Played { get; } = [];
         public int Ends;
         public void PlayMusic(Music music)
@@ -241,7 +242,7 @@ namespace WinUIMusicPlayer.Services
             Ends++;
             if (!preserveInterruptedProgress && State is not null) State.ProgressSlider = 0;
         }
-        public void PlayNextTrack() { }
+        public void PlayNextTrack() { if (Coordinator is { } coordinator) _ = coordinator.PlayNextAsync(); }
         public Task PlayButton() => Task.CompletedTask;
         public void ChangeWaveChannelTime(long ms) { }
     }
@@ -249,11 +250,13 @@ namespace WinUIMusicPlayer.Services
     {
         public BassPlayerIpc.Shared.ProgressSnapshot? Progress;
         public List<BassPlayerIpc.Shared.GaplessRequest> Queued { get; } = [];
+        public List<BassPlayerIpc.Shared.GaplessRequest> Manual { get; } = [];
         public event Action<BassPlayerIpc.Shared.MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
         public event Action? DspStateChanged;
         public BassPlayerIpc.Shared.DspStateSnapshot? CurrentDspState { get; private set; }
         public Func<Task<bool>>? QueueReply;
         public Func<Task<long>>? CancelReply;
+        public Func<BassPlayerIpc.Shared.GaplessRequest, Task<BassPlayerIpc.Shared.TransitionNowStatus>>? ManualReply;
         public void RebuildOutput(long generation)
         {
             CurrentDspState = new(generation, new BassPlayerIpc.Shared.DspState(0, false, 2, 0, 0, 0, true)
@@ -275,6 +278,11 @@ namespace WinUIMusicPlayer.Services
             long token = Progress?.GaplessToken ?? 0;
             await Task.Yield();
             return token;
+        }
+        public Task<BassPlayerIpc.Shared.TransitionNowStatus> TransitionNowAsync(BassPlayerIpc.Shared.GaplessRequest request, CancellationToken token = default)
+        {
+            Manual.Add(request);
+            return ManualReply?.Invoke(request).WaitAsync(token) ?? Task.FromResult(BassPlayerIpc.Shared.TransitionNowStatus.Unavailable);
         }
         public void Transition(long token, long epoch, long positionMs = 0)
         {

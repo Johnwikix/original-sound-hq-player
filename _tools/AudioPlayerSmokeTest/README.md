@@ -48,3 +48,5 @@ $probe = '_tools/AudioPlayerSmokeTest/bin/Release/net11.0/AudioPlayerSmokeTest.e
 & $probe $player $first 6 --smart-transition --rate=1 --vol=0.02 "--next=$second"
 & $probe $player $first 6 --smart-transition --album-boundary --rate=1 --vol=0.02 "--next=$second"
 ```
+
+验证曲中按「下一首」时，将第一首换成 30 秒的文件，并添加 `--transition-now`。探针会在距曲尾至少 15 秒时请求过渡，检查交接时间、下一首已混入的进度及最终结束通知。添加 `--queue-first` 可复测已提交下一首计划的路径。
