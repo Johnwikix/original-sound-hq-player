@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Services/PlaybackCommands.cs" />
+    <Compile Include="../../Services/AutoAdvanceGate.cs" />
     <Compile Include="../../Services/PlaybackCoordinator.Gapless.cs" />
     <Compile Include="../../State/PlaybackQueueState.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

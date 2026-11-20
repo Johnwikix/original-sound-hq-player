@@ -1,3 +1,8 @@
+## 2026-11-20 修正网络歌曲切换时的队列推进
+
+- `PlaybackCoordinator`、`BassPlayerCommandService` 统一处理本地和 WebDAV 曲终。手动下一首仍在探测网络目标时，旧曲结束会等待这次选择，避免连续点击后播回较早的队列项。
+- `AppViewModel`、`PlaybackCoordinator` 在主动停止后忽略迟到的曲终通知，重新播放后恢复自然推进。
+
 ## 2026-11-20 缩短交叉淡化并减少切歌时的预载开销
 
 - `DspSettings`、`PlaybackTransitionsViewModel` 将交叉淡化设为默认 2 秒，可选 1–5 秒。旧配置保留范围内的时长，原来的 6–12 秒按 5 秒载入。

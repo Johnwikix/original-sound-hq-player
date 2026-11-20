@@ -50,3 +50,22 @@ $probe = '_tools/AudioPlayerSmokeTest/bin/Release/net11.0/AudioPlayerSmokeTest.e
 ```
 
 验证曲中按「下一首」时，将第一首换成 30 秒的文件，并添加 `--transition-now`。探针会在距曲尾至少 15 秒时请求过渡，检查交接时间、下一首已混入的进度及最终结束通知。添加 `--queue-first` 可复测已提交下一首计划的路径。
+
+## 独占设备的异采样率切歌
+
+准备两个时长不同且至少 20 秒的静音双声道 PCM WAV，使用 44.1 kHz 与 48 kHz，或设备均支持的另一组采样率。传入同一个发布目录下的 NativeAOT 播放器，保留随包分发的原生库。先列出设备，再用名称中的唯一片段选定一个实际端点或驱动。
+
+```powershell
+$probe = '_tools/AudioPlayerSmokeTest/bin/Release/net11.0/AudioPlayerSmokeTest.exe'
+$player = 'path/to/publish/AudioPlayer.exe'
+$first = 'path/to/silent-44100.wav'
+$second = 'path/to/silent-48000.wav'
+& $probe $player $first --list-output-devices
+& $probe $player $first --mode=WasapiExclusiveEvent '--device-name=扬声器 (Senary Audio)' --rate-mismatch-fallback=manual --expect-rate=44100 --next-rate=48000 "--next=$second"
+```
+
+对实际设备重复 `--rate-mismatch-fallback=natural`，以及 `WasapiExclusivePush` 和 `ASIO`，再交换文件和采样率参数测反向。自然用例会先定位到当前曲尾前三秒，再观察真实曲终。手动用例会提交候选曲并查询 `TransitionNow`，只接受 `Preparing` 后转为 `Unavailable`。两种用例都检查失败的候选未换曲，一次普通 `Play` 后重新以指定设备和目标采样率推进，并统计曲终和自动交接通知。实际退回共享或驱动未启动时返回失败。所有用例的播放器音量为 0。
+
+自然用例加 `--no-queued-candidate` 可直接比较同一个设备和采样率组合下的曲终、普通换曲，不提交候选曲。
+
+若已注册的 ASIO 驱动无法启动而播放器退回共享，`--shared-fallback-rate=<系统混音率>` 可单独验证该路径。结果会明确记录实际共享模式，ASIO 设备验证仍以原生输出为准。

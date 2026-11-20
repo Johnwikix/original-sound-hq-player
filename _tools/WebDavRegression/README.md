@@ -31,3 +31,7 @@ dotnet run --project _tools/WebDavRegression/WebDavRegression.csproj -- --scan-a
 `--integration-only` 跳过本地 fixture，只运行真实服务验证。可选 `MUSIC_WEBDAV_PLAYER` 指向带 FFmpeg DLL 的 AudioPlayer.exe：对抽样歌曲使用独立 IPC 命名空间，验证生产播放桥接能由实际播放器准备 PCM 并定位到 30 秒，随后停止会话和进程，不启动可听播放。
 
 2026-09-22：真实 OpenList 224 首全部成功。独立播放器的设备播放/TLS/定位等验证使用 `_tools/StreamingRegression`；主程序界面、数据库迁移和凭据保存另做实际安装包验证。所有临时缓存使用系统临时目录内的独立随机子目录，不触及用户音频文件。
+
+## 曲间过渡回退
+
+`dotnet run --project _tools/WebDavRegression -c Release -- --transition-fallback <AudioPlayer.exe>` 使用带 FFmpeg DLL 的发布播放器、独立 IPC、本机 WebDAV 服务和 WASAPI 共享设备。夹具提供两首采样率和声道数相同的静音 WAV。固定交叉淡化和智能模式分别覆盖手动与自然换曲，检查本地 → WebDAV → 本地的实际播放进度、源站 GET、网络会话结束和本地曲终通知。主程序如何选择队列项由 `PlaybackNavigationRegression` 验证。

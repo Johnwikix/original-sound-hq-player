@@ -654,7 +654,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnStopButtonChanged()
         {
-            App.Services.GetRequiredService<PlaybackCoordinator>().CancelPendingSelection();
+            App.Services.GetRequiredService<PlaybackCoordinator>().StopPendingSelection();
             App.Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
             ProgressSlider = 0;
         }

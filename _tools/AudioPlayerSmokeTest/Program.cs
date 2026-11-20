@@ -79,6 +79,12 @@ void StopPlayer()
     }
 }
 
+if (args.Contains("--list-output-devices") || args.Any(a => a.StartsWith("--rate-mismatch-fallback=", StringComparison.Ordinal)))
+{
+    try { return RateMismatchFallbackProbe.Run(args, transport, states, mediaPath, outputMode); }
+    finally { StopPlayer(); }
+}
+
 Span<byte> urlBuf = new byte[BinarySerializer.SetMusicUrlRequestSize];
 BinarySerializer.WriteSetMusicUrlRequest(urlBuf, new SetMusicUrlRequest { Url = mediaPath });
 var t = Send(CommandId.SetMusicUrl, urlBuf, out _);

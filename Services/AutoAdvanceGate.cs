@@ -43,4 +43,9 @@ internal sealed class AutoAdvanceGate
             _running = false;
         }
     }
+
+    public void DiscardPending()
+    {
+        lock (_sync) _pending = false;
+    }
 }

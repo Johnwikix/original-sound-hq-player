@@ -9,6 +9,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.WebDav;
 using WinUIMusicPlayer.State;
 using WinUIMusicPlayer.ViewModel;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services;
 
@@ -22,6 +23,9 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private bool _registered;
     private long _selectionVersion;
     private long _playingVersion, _playingGeneration;
+    private readonly AutoAdvanceGate _autoAdvance = new();
+    private bool _deferredNaturalEnd;
+    private long _stopIntentVersion, _resumeStopIntentVersion;
     private readonly HashSet<long> _failedEntries = [];
     private (Music Music, long Generation, bool Advance)? _deferredFailure;
     private (Music Music, long Entry, bool Exact, bool MayAdvance, bool Confirmed)? _activeIntent;
@@ -62,6 +66,68 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         _failedEntries.Clear();
         return RunSelectionAsync(token => PlayQueueCoreAsync(index, 1, false, token, manualNext: true),
             state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index), manualNext: true);
+    }
+
+    internal async Task AdvanceAfterEndAsync()
+    {
+        if (!CanAdvanceAfterEnd || DeferEndForPendingSelection() || !_autoAdvance.Request()) return;
+        do
+        {
+            if (!CanAdvanceAfterEnd)
+            {
+                _autoAdvance.Cancel();
+                return;
+            }
+            if (DeferEndForPendingSelection()) continue;
+            try { await PlayFollowingEntryAsync(); }
+            catch (OperationCanceledException) when (!CanAdvanceAfterEnd) { }
+            catch (Exception ex) { logger.LogError(ex, "曲目结束后切歌失败"); }
+        }
+        while (_autoAdvance.Complete());
+    }
+
+    private bool CanAdvanceAfterEnd => !_disposed && state.CanStartPlayback && _stopIntentVersion == _resumeStopIntentVersion;
+
+    internal long StopIntentVersion => _stopIntentVersion;
+
+    internal void ResumeAfterStop(long observedStopIntent)
+    {
+        if (observedStopIntent == _stopIntentVersion) _resumeStopIntentVersion = observedStopIntent;
+    }
+
+    internal void StopPendingSelection()
+    {
+        // A queued EOF belongs to the playback explicitly stopped by this intent.
+        _stopIntentVersion++;
+        _autoAdvance.DiscardPending();
+        CancelPendingSelection();
+    }
+
+    private bool DeferEndForPendingSelection()
+    {
+        if (state.State.Playback.PendingSelection == null || _activeSelectionVersion == _selectionVersion) return false;
+        // 仅在探活或等待交接阶段推迟末尾处理；已提交的短曲仍可再次触发自然切歌。
+        _deferredNaturalEnd = true;
+        return true;
+    }
+
+    private Task PlayFollowingEntryAsync()
+    {
+        state.StopProgressTimer();
+        switch (state.CurrentPlayMode)
+        {
+            case PlayMode.SingleLoop:
+                if (state.CurrentPlayingMusic is { } current) return PlayAsync(current);
+                break;
+            case PlayMode.ListLoop:
+            case PlayMode.RandomLoop:
+                int nextIndex = PlaybackCommands.FindCandidateIndex(state, state.GetCurrentIndex(), 1,
+                    allowSingleEntryReplay: true);
+                if (nextIndex >= 0) return PlayAtAsync(nextIndex, stopWhenUnavailable: true);
+                break;
+        }
+        player.MusicEnd();
+        return Task.CompletedTask;
     }
 
     public Task PlayAsync(Music music, long entryId = 0, bool exactVersion = false)
@@ -139,6 +205,11 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                 var failure = _deferredFailure;
                 _deferredFailure = null;
                 if (!failedExact && failure is { } deferred) OnRemoteFailed(deferred.Music, deferred.Generation, deferred.Advance);
+                if (version == _selectionVersion && _deferredNaturalEnd)
+                {
+                    _deferredNaturalEnd = false;
+                    if (!token.IsCancellationRequested) _ = AdvanceAfterEndAsync();
+                }
                 RefreshGaplessPlan();
             }
         }
@@ -146,6 +217,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
 
     public void CancelPendingSelection()
     {
+        _deferredNaturalEnd = false;
         if (CancelManualNext()) return;
         CancelGaplessPlan();
         _playingVersion = ++_selectionVersion;
@@ -345,6 +417,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         {
             if (_disposed || !state.CanStartPlayback || token.IsCancellationRequested) return;
             _supersededManualHandoff = null;
+            _deferredNaturalEnd = false;
+            _resumeStopIntentVersion = _stopIntentVersion;
             state.State.Queue.SelectEntry(entryId, music);
             _activeIntent = (music, entryId, exact, mayAdvance, false);
             _activeSelectionVersion = _selectionVersion;
@@ -414,6 +488,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         if (_disposed) return;
         StopGapless();
         _disposed = true;
+        _autoAdvance.Cancel();
         _presentation?.Cancel();
         _presentation?.Dispose();
         _presentation = null;

@@ -14,14 +14,15 @@ internal sealed class Fixture : IAsyncDisposable
     private readonly ConcurrentBag<Task> _requests = [];
     private readonly Task _accept;
     private readonly X509Certificate2? _certificate;
-    public readonly byte[] Bytes = new byte[3 * 1024 * 1024 + 137];
+    public readonly byte[] Bytes;
+    private readonly string _trackName;
     public string Root { get; }
     public int Gets, UnauthorizedRedirects;
     public string CdnETag = "\"cdn-v1\"";
     public bool CdnHasETag = true, CdnSupportsRange = true;
     public DateTimeOffset CdnModified = new(2026, 9, 25, 15, 6, 11, TimeSpan.Zero);
     public int CdnLengthDelta;
-    public Fixture(bool tls = false, bool nameMismatch = false, bool expired = false)
+    public Fixture(bool tls = false, bool nameMismatch = false, bool expired = false, byte[]? wave = null)
     {
         if (tls)
         {
@@ -35,7 +36,9 @@ internal sealed class Fixture : IAsyncDisposable
             _certificate = X509CertificateLoader.LoadPkcs12(generated.Export(X509ContentType.Pfx), null,
                 X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.Exportable);
         }
-        new Random(42).NextBytes(Bytes);
+        Bytes = wave ?? new byte[3 * 1024 * 1024 + 137];
+        _trackName = wave == null ? "tone.flac" : "tone.wav";
+        if (wave == null) new Random(42).NextBytes(Bytes);
         _listener.Start();
         Root = $"{(tls ? "https" : "http")}://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}/dav/";
         _accept = AcceptAsync();
@@ -81,7 +84,7 @@ internal sealed class Fixture : IAsyncDisposable
                     $"<d:response><d:href>{requested}</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
                     (requested == "/dav/"
                         ? "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
-                          $"<d:response><d:href>/dav/tone.flac</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>{Bytes.Length}</d:getcontentlength><d:getetag>&quot;v1&quot;</d:getetag></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>"
+                          $"<d:response><d:href>/dav/{_trackName}</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>{Bytes.Length}</d:getcontentlength><d:getetag>&quot;v1&quot;</d:getetag></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>"
                         : requested == musicFolder
                             ? "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90/live/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
                               "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90/studio/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>"

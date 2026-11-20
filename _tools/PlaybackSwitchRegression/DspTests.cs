@@ -317,17 +317,17 @@ internal static unsafe partial class Program
     private static void SetPublicArray(object target, string field, float[] values) =>
         target.GetType().GetField(field)!.SetValue(target, values);
 
-    private static void WriteLoudnessTone(string path, float amplitude, int frequency = 1000)
+    private static void WriteLoudnessTone(string path, float amplitude, int frequency = 1000, int rate = 48000)
     {
         using var writer = new BinaryWriter(File.Create(path));
-        int bytes = 48000 * 3 * 2 * sizeof(float);
+        int bytes = rate * 3 * 2 * sizeof(float);
         writer.Write("RIFF"u8); writer.Write(36 + bytes); writer.Write("WAVEfmt "u8);
-        writer.Write(16); writer.Write((short)3); writer.Write((short)2); writer.Write(48000);
-        writer.Write(48000 * 8); writer.Write((short)8); writer.Write((short)32);
+        writer.Write(16); writer.Write((short)3); writer.Write((short)2); writer.Write(rate);
+        writer.Write(rate * 8); writer.Write((short)8); writer.Write((short)32);
         writer.Write("data"u8); writer.Write(bytes);
-        for (int frame = 0; frame < 48000 * 3; frame++)
+        for (int frame = 0; frame < rate * 3; frame++)
         {
-            float sample = amplitude * (float)Math.Sin(2 * Math.PI * frequency * frame / 48000);
+            float sample = amplitude * (float)Math.Sin(2 * Math.PI * frequency * frame / rate);
             writer.Write(sample); writer.Write(sample);
         }
     }

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
-using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -21,7 +20,6 @@ namespace WinUIMusicPlayer.Services
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<BassPlayerCommandService> _logger;
         private readonly RemotePlaybackService _remote;
-        private readonly AutoAdvanceGate _autoAdvance = new();
         private bool _disposed;
         private bool CanPlay => !_disposed && AppViewModel.CanStartPlayback;
         private bool CanReceive => !_disposed && AppViewModel.CanPublishState;
@@ -30,7 +28,6 @@ namespace WinUIMusicPlayer.Services
         {
             if (_disposed) return;
             _disposed = true;
-            _autoAdvance.Cancel();
             IpcService.NotificationReceived -= IpcService_NotificationReceived;
             _remote.Ended -= RemoteEnded;
         }
@@ -73,8 +70,7 @@ namespace WinUIMusicPlayer.Services
                     var (_, total) = AppViewModel.GetTimeProgressCache();
                     AppViewModel.MarkPlaybackEnded(total);
                     AppViewModel.UpdateProgressTimerUI();
-                    // A manual Next is already resolving the actual queue occurrence and owns fallback.
-                    if (!App.Services.GetRequiredService<PlaybackCoordinator>().IsManualNextPending) _ = AutoPlayNextTrack();
+                    _ = AutoPlayNextTrack();
                 });
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
@@ -104,66 +100,9 @@ namespace WinUIMusicPlayer.Services
             IpcService.UpdateSettings();
         }
 
-        public async Task AutoPlayNextTrack()
-        {
-            if (!CanPlay || !_autoAdvance.Request()) return;
-            do
-            {
-                if (!CanPlay)
-                {
-                    _autoAdvance.Cancel();
-                    return;
-                }
-                try
-                {
-                    await AutoPlayNextTrackCoreAsync();
-                }
-                catch (OperationCanceledException) when (!CanPlay) { }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "AutoPlayNextTrack failed");
-                }
-            }
-            while (_autoAdvance.Complete());
-        }
-
-        private async Task AutoPlayNextTrackCoreAsync()
-        {
-            AppViewModel.StopProgressTimer();
-            switch (AppViewModel.CurrentPlayMode)
-            {
-                case PlayMode.SingleLoop:
-                    if (AppViewModel.CurrentPlayingMusic is { } current)
-                        await MusicBrowsePlayMusic(current);
-                    else
-                        MusicEnd();
-                    break;
-                case PlayMode.ListLoop:
-                case PlayMode.RandomLoop:
-                    // 一次性外部曲目不在列表内（index=-1）时 nextIndex=0，从播放队列第一首继续；
-                    // 队列为空（如空库下直接打开外部文件）则结束播放，避免取模零异常。
-                    var playingList = AppViewModel.CurrentPlayingList;
-                    if (playingList.Count == 0)
-                    {
-                        MusicEnd();
-                        break;
-                    }
-                    int currentIndex = AppViewModel.GetCurrentIndex();
-                    int nextIndex = PlaybackCommands.FindCandidateIndex(AppViewModel, currentIndex, 1,
-                        allowSingleEntryReplay: true);
-                    if (nextIndex >= 0) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex, stopWhenUnavailable: true);
-                    else MusicEnd();
-                    break;
-                case PlayMode.RepeatOff:
-                    MusicEnd();
-                    break;
-            }
-        }
-
-        private static async Task MusicBrowsePlayMusic(Music music)
-        {
-            await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(music);
-        }
+        public Task AutoPlayNextTrack() => CanPlay
+            ? App.Services.GetRequiredService<PlaybackCoordinator>().AdvanceAfterEndAsync()
+            : Task.CompletedTask;
 
         public void MusicEnd(bool preserveInterruptedProgress = false)
         {
@@ -218,7 +157,9 @@ namespace WinUIMusicPlayer.Services
             }
             try
             {
-                if (AppViewModel.IsPlaying) App.Services.GetRequiredService<PlaybackCoordinator>().CancelManualNext();
+                var coordinator = App.Services.GetRequiredService<PlaybackCoordinator>();
+                long stopIntent = coordinator.StopIntentVersion;
+                if (AppViewModel.IsPlaying) coordinator.CancelManualNext();
                 bool? state = await IpcService.PlayButton();
                 if (state is bool s)
                 {
@@ -226,6 +167,7 @@ namespace WinUIMusicPlayer.Services
                     await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
                         if (!CanPlay) return;
+                        if (s) coordinator.ResumeAfterStop(stopIntent);
                         AppViewModel.IsPlaying = s;
                         if (s) AppViewModel.StartProgressTimer();
                         else AppViewModel.StopProgressTimer();

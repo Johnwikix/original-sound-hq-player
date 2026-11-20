@@ -78,6 +78,7 @@ public sealed partial class PlaybackCoordinator
         _playingVersion = ++_selectionVersion;
         _manualNextVersion = 0;
         _deferredFailure = null;
+        _deferredNaturalEnd = false;
         CancelGaplessPlan();
         _presentation?.Cancel();
         SetPending(null);
@@ -557,6 +558,7 @@ public sealed partial class PlaybackCoordinator
             || (!manual && state.State.Playback.PendingSelection != null)) return;
         _lastAcceptedToken = plan.Token;
         _supersededManualHandoff = null;
+        _deferredNaturalEnd = false;
         if (manual) _manualNextVersion = 0;
         _nextPlan = null;
         _planConfirmed = false;

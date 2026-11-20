@@ -6,6 +6,13 @@ using System.Diagnostics;
 
 ffmpeg.RootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Libraries/FFmpeg/x64"));
 using var transport = new WebDavTransport();
+if (args is ["--transition-fallback", var playerPath])
+{
+    Environment.SetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE", "dav-transition-" + Guid.NewGuid().ToString("N"));
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+    await WebDavTransitionProbe.RunAsync(transport, playerPath, timeout.Token);
+    return;
+}
 if (args.Contains("--metadata-only"))
 {
     await MetadataRegression.RunAsync(transport);

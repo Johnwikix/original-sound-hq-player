@@ -2,27 +2,15 @@ using System.Diagnostics;
 using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Services.WebDav;
 
-/// <summary>Isolated real AudioPlayer decodes and seeks the production bridge without starting audible playback.</summary>
+/// <summary>Runs an isolated published AudioPlayer against the production WebDAV bridge.</summary>
 internal static class NativePlaybackProbe
 {
     public static async Task RunAsync(string executable, string location, WebDavEntry entry, CancellationToken token)
     {
-        using var alive = new AliveOwner(IpcConstants.ClientAliveMutexName);
-        using var player = new Process
+        await WithPlayerAsync(executable, async () =>
         {
-            StartInfo = new(Path.GetFullPath(executable))
-            {
-                UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardOutput = true, RedirectStandardError = true
-            }
-        };
-        player.Start();
-        var output = player.StandardOutput.ReadToEndAsync();
-        var errors = player.StandardError.ReadToEndAsync();
-        using var client = new StreamingClient();
-        var id = Guid.NewGuid();
-        try
-        {
+            using var client = new StreamingClient();
+            var id = Guid.NewGuid();
             var source = new PlaybackSource
             {
                 Kind = PlaybackSourceKind.Http, ResourceId = entry.Href, Location = location,
@@ -36,7 +24,25 @@ internal static class NativePlaybackProbe
             await WaitAsync(client, id, 1, token);
             await client.StopAsync(id, token);
             Console.WriteLine("PASS: real AudioPlayer prepared PCM and sought to 30 seconds through the OpenList bridge.");
-        }
+        });
+    }
+
+    internal static async Task WithPlayerAsync(string executable, Func<Task> scenario)
+    {
+        using var alive = new AliveOwner(IpcConstants.ClientAliveMutexName);
+        using var player = new Process
+        {
+            StartInfo = new(Path.GetFullPath(executable))
+            {
+                UseShellExecute = false, CreateNoWindow = true,
+                WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(executable))!,
+                RedirectStandardOutput = true, RedirectStandardError = true
+            }
+        };
+        player.Start();
+        var output = player.StandardOutput.ReadToEndAsync();
+        var errors = player.StandardError.ReadToEndAsync();
+        try { await scenario(); }
         finally
         {
             alive.Dispose();

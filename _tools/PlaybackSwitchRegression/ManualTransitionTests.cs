@@ -1,4 +1,5 @@
 using AudioPlayer.Playback;
+using AudioPlayer.Interop;
 using BassPlayerIpc.Shared;
 
 internal static unsafe partial class Program
@@ -12,6 +13,7 @@ internal static unsafe partial class Program
         Run("Manual next: render commit and cancellation publish one consistent identity", CheckManualCancelAtBoundary);
         Run("Manual next: standby underrun reports unavailable and retains the current track", CheckManualUnderrun);
         Run("Manual next: compact status query creates no plan and allocates no server bytes", CheckManualStatusQuery);
+        Run("ASIO PCM rate mismatch: real decoder and transition engine with a simulated device boundary", CheckAsioPcmRateMismatch);
     }
 
     private static void CheckManualTransitionWindows()
@@ -265,6 +267,84 @@ internal static unsafe partial class Program
                 && response.Payload.Span[0] == (byte)TransitionNowStatus.Preparing, "Status query changed the prepared manual attempt");
         }
         return GC.GetAllocatedBytesForCurrentThread() - before;
+    }
+
+    private static void CheckAsioPcmRateMismatch()
+    {
+        string path44 = Path.Combine(AppContext.BaseDirectory, "asio-silent-44100.wav");
+        string path48 = Path.Combine(AppContext.BaseDirectory, "asio-silent-48000.wav");
+        WriteLoudnessTone(path44, 0, rate: 44100);
+        WriteLoudnessTone(path48, 0, rate: 48000);
+        foreach (bool manual in new[] { true, false })
+        foreach (var (firstPath, nextPath, firstRate, nextRate) in new[] { (path44, path48, 44100, 48000), (path48, path44, 48000, 44100) })
+        {
+            var engine = Engine("ASIO");
+            Set(engine, "_streamLock", new object());
+            Set(engine, "_dspSettings", new DspSettings { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 2 });
+            using var first = Session.Open(engine, firstPath, RenderKind.Pcm, 88200, 0, 100)!;
+            var source = new GaplessSource(first);
+            var output = AttachSimulatedAsio(engine, first, source);
+            long outgoingEpoch = first.TimelineEpoch;
+            try
+            {
+                var samples = new double[2048];
+                Require(SpinWait.SpinUntil(() => first.ReadyFrames >= first.InitialBufferFrames, 5000), "Outgoing ASIO PCM did not prebuffer");
+                source.FillPcm(samples, 1024);
+                var plan = new GaplessRequest(outgoingEpoch, 81, nextPath);
+                if (manual) Require(engine.TryTransitionNow(plan) == TransitionNowStatus.Preparing, "ASIO manual plan was not queued");
+                else Require(engine.TryQueueNext(plan), "ASIO natural plan was not queued");
+                Require(Preloader(engine).Completion.Wait(5000) && Preloader(engine).State == GaplessPreparationState.Failed,
+                    "Wrong-rate decoder was not rejected during preparation");
+                if (manual)
+                    Require(engine.GetTransitionNowStatus(plan.Epoch, plan.Token) == TransitionNowStatus.Unavailable && engine.IsPlaying,
+                        "Failed ASIO manual candidate paused the outgoing session or committed a switch");
+                else
+                {
+                    Require(SpinWait.SpinUntil(() =>
+                    {
+                        if (first.ReadyFrames >= 1024 || first.InputEnded) source.FillPcm(samples, 1024);
+                        return first.IsDrained;
+                    }, 5000), "ASIO original PCM did not drain at natural end in the boundary simulation");
+                    Invoke(engine, "WatchdogTick");
+                    Require(!engine.IsPlaying, "ASIO natural EOF did not leave playback ready for an explicit switch");
+                }
+                Require(engine.TryQueueNext(new(0, 0, "")) && source.Pending == null && source.Current == first
+                    && engine.GetGaplessIdentity() == (0, outgoingEpoch) && output.SourceSampleRate == firstRate,
+                    "Incompatible preloading altered the old ASIO source");
+
+                // Use the same new-session open and old-output reuse decision as Play, then replace only the hardware boundary.
+                using var next = (Session)Invoke(engine, "OpenSession", nextPath, false, null)!;
+                Require(next.SampleRate == nextRate && !Reuse(engine, next) && output.SourceSampleRate == firstRate,
+                    "Ordinary Play accepted reusing old-rate ASIO buffers for the new source");
+                Invoke(engine, "DisposeSession");
+                var nextSource = new GaplessSource(next);
+                var newOutput = AttachSimulatedAsio(engine, next, nextSource);
+                Require(SpinWait.SpinUntil(() => next.ReadyFrames >= next.InitialBufferFrames, 5000), "New ASIO PCM did not prebuffer");
+                nextSource.FillPcm(samples, 1024);
+                bool gotProgress = engine.TryCaptureProgress(out var p);
+                Require(newOutput.SourceSampleRate == nextRate && gotProgress && p.Playing
+                    && p.Epoch == next.TimelineEpoch && p.Epoch != outgoingEpoch && p.CurrentMs > 0 && p.GaplessToken == 0,
+                    "New ASIO PCM did not advance at the target rate after the simulated rebuild");
+                Console.WriteLine($"ASIO simulated boundary {(manual ? "manual" : "natural")} {firstRate}->{nextRate} Hz, progress={p.CurrentMs}ms");
+                Invoke(engine, "DisposeSession");
+            }
+            finally { CloseManualFixture(engine); }
+        }
+    }
+
+    private static AsioOutput AttachSimulatedAsio(PlaybackEngine engine, Session session, GaplessSource source)
+    {
+        var output = new AsioOutput();
+        // Only driver ownership is a stub. The production output's compatibility gate and lifecycle stay in place.
+        var driver = (AsioDriver)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(AsioDriver));
+        Set(output, "_driver", driver);
+        Set(output, "_source", source);
+        Set(output, "<DeviceIndex>k__BackingField", 0);
+        Set(engine, "_output", output);
+        Set(engine, "_session", session);
+        Set(engine, "_gaplessSource", source);
+        engine.IsPlaying = true;
+        return output;
     }
 
     private static (PlaybackEngine Engine, GaplessSource Source, Session First) OpenManualFixture(TrackTransitionStyle style = TrackTransitionStyle.Smart)

@@ -336,6 +336,7 @@ internal static class Regression
         await GaplessAsync();
         await SmartTransitionsAsync();
         await ManualNextTransitionsAsync();
+        await WebDavTransitionFallbackAsync();
 
         using var responsive = new Scenario();
         responsive.State.CurrentPlayingList = [current, offline, nextLocal];
@@ -954,6 +955,191 @@ internal static class Regression
             }
         }
         finally { AppSettings.Dsp = savedSettings; }
+    }
+
+    private static async Task WebDavTransitionFallbackAsync()
+    {
+        var original = AppSettings.Dsp;
+        try
+        {
+            foreach (var style in new[] { TrackTransitionStyle.Smart, TrackTransitionStyle.Crossfade })
+            {
+                AppSettings.Dsp = original with { TransitionStyle = style, GaplessPlayback = true };
+                foreach (bool manual in new[] { false, true })
+                {
+                    await CheckFallbackAsync(style, manual, fromSource: 0, toSource: 31, skipOffline: true);
+                    await CheckFallbackAsync(style, manual, fromSource: 31, toSource: 0);
+                    await CheckFallbackAsync(style, manual, fromSource: 31, toSource: 32);
+                }
+                await CheckPendingEndAsync(style, fromSource: 0);
+                await CheckPendingEndAsync(style, fromSource: 34);
+                await CheckDeferredEndRecoveryAsync(style);
+                await CheckStoppedEndAsync(style);
+            }
+        }
+        finally { AppSettings.Dsp = original; }
+
+        static async Task CheckFallbackAsync(TrackTransitionStyle style, bool manual, int fromSource, int toSource, bool skipOffline = false)
+        {
+            using var test = new Scenario();
+            var from = new Music(215, fromSource);
+            var to = new Music(216, toSource) { IsRemoteCached = skipOffline, IsRemoteOffline = skipOffline, IsMissing = skipOffline };
+            var offline = new Music(217, toSource) { IsRemoteOffline = true };
+            var sentinel = new Music(218, 33);
+            test.State.CurrentPlayingList = skipOffline ? [to, from, offline, to, sentinel] : [to, from, to, sentinel];
+            int targetIndex = skipOffline ? 3 : 2;
+            long targetEntry = test.State.State.Queue.EntryIdAt(targetIndex);
+            test.Library.Probe = (source, _) => Task.FromResult(!skipOffline || source.Id != toSource);
+            await BeginAsync(test, 1);
+            int localBefore = test.Player.Played.Count;
+            int remoteBefore = test.Remote.Played.Count;
+            int presentations = 0;
+            test.Coordinator.TrackStarted += (music, _) => { if (music == to) presentations++; };
+            if (manual)
+            {
+                using var services = new ServiceCollection().AddSingleton(test.Player).AddSingleton(test.Coordinator).AddSingleton(test.Remote).BuildServiceProvider();
+                using var commands = new PlaybackCommands(test.Lifecycle, test.State, services);
+                commands.NextCommand.Execute(null);
+                await WaitAsync(() => test.State.CurrentPlayingMusic == to && test.State.State.Playback.PendingSelection == null);
+            }
+            else await ReportEndedAsync(test);
+
+            string context = $"{style} {(manual ? "Next" : "ended")} {(from.IsRemote ? "WebDAV" : "local")} to {(to.IsRemote ? "WebDAV" : "local")}";
+            Check(test.State.CurrentPlayingMusic == to && test.State.State.Queue.CurrentEntryId == targetEntry && presentations == 1
+                  && test.Player.Played.Count - localBefore == (to.IsRemote ? 0 : 1)
+                  && test.Remote.Played.Count - remoteBefore == (to.IsRemote ? 1 : 0),
+                $"{context}: regular start once at the correct duplicate queue occurrence");
+            Check(test.Ipc.Manual.Count == 0 && test.Ipc.ManualPolls.Count == 0 && test.Ipc.Queued.All(request => request.Path.Length == 0),
+                $"{context}: no local preload, crossfade or poll for the WebDAV edge");
+            if (skipOffline)
+                Check(test.Library.Probes.SequenceEqual([toSource]), $"{context}: failed uncached next entry once, used same-source hot cache without a probe");
+        }
+
+        static async Task CheckPendingEndAsync(TrackTransitionStyle style, int fromSource)
+        {
+            using var rapid = new Scenario();
+            var from = new Music(219, fromSource);
+            var earlier = new Music(220, 35);
+            var latest = new Music(221, 36);
+            rapid.State.CurrentPlayingList = [from, earlier, latest];
+            await BeginAsync(rapid, 0);
+            int remoteBefore = rapid.Remote.Played.Count;
+            var earlierProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var latestProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            rapid.Library.Probe = (source, token) => (source.Id == earlier.SourceId ? earlierProbe.Task : latestProbe.Task).WaitAsync(token);
+            Task first = rapid.Coordinator.PlayNextAsync();
+            await WaitAsync(() => rapid.Library.Probes.Contains(earlier.SourceId));
+            Task last = rapid.Coordinator.PlayNextAsync();
+            await WaitAsync(() => rapid.Library.Probes.Contains(latest.SourceId));
+            Task ended = ReportEndedAsync(rapid);
+            string sourceName = from.IsRemote ? "WebDAV" : "local";
+            Check(rapid.State.State.Playback.PendingSelection?.Music == latest && rapid.Remote.Played.Count == remoteBefore,
+                $"{style}: outgoing {sourceName} end keeps the newest still-probing manual Next");
+            await ended;
+            latestProbe.SetResult(true);
+            await Task.WhenAll(first, last);
+            Check(rapid.Remote.Played.Count == remoteBefore + 1 && rapid.Remote.Played.Last() == latest && rapid.State.GetCurrentIndex() == 2,
+                $"{style}: deferred {sourceName} end does not advance again after manual target starts");
+        }
+
+        static async Task CheckDeferredEndRecoveryAsync(TrackTransitionStyle style)
+        {
+            using (var exhausted = new Scenario())
+            {
+                var from = new Music(222, 37);
+                var unavailable = new Music(223, 38);
+                exhausted.State.CurrentPlayingList = [from, unavailable];
+                await BeginAsync(exhausted, 0);
+                var failedProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                exhausted.Library.Probe = (_, token) => failedProbe.Task.WaitAsync(token);
+                Task selection = exhausted.Coordinator.PlayNextAsync();
+                await WaitAsync(() => exhausted.Library.Probes.Contains(unavailable.SourceId));
+                await ReportEndedAsync(exhausted);
+                failedProbe.SetResult(false);
+                await selection;
+                await WaitAsync(() => exhausted.Player.Ends == 1);
+                Check(exhausted.Remote.Played.SequenceEqual([from]) && exhausted.State.State.Playback.PendingSelection == null,
+                    $"{style}: failed manual selection drains the deferred natural end once when the queue is exhausted");
+            }
+
+            using (var recovery = new Scenario())
+            {
+                var from = new Music(225, 40);
+                var next = new Music(226);
+                var outsideQueue = new Music(227, 41);
+                recovery.State.CurrentPlayingList = [from, next];
+                await BeginAsync(recovery, 0);
+                var failedProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                recovery.Library.Probe = (_, token) => failedProbe.Task.WaitAsync(token);
+                Task selection = recovery.Coordinator.PlayAsync(outsideQueue);
+                await WaitAsync(() => recovery.Library.Probes.Contains(outsideQueue.SourceId));
+                await ReportEndedAsync(recovery);
+                failedProbe.SetResult(false);
+                await selection;
+                await WaitAsync(() => recovery.State.CurrentPlayingMusic == next && recovery.State.State.Playback.PendingSelection == null);
+                Check(recovery.Player.Played.SequenceEqual([next]) && recovery.Remote.Played.SequenceEqual([from]),
+                    $"{style}: failed explicit selection resumes deferred natural advance to the actual next entry exactly once");
+            }
+
+            foreach (var mode in new[] { WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RepeatOff, WinUIMusicPlayer.Utils.ToolUtils.PlayMode.SingleLoop,
+                         WinUIMusicPlayer.Utils.ToolUtils.PlayMode.ListLoop, WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RandomLoop })
+            {
+                using var last = new Scenario();
+                var only = new Music(224, 39) { IsRemoteCached = true };
+                last.State.CurrentPlayingList = [only];
+                last.State.CurrentPlayMode = mode;
+                await BeginAsync(last, 0);
+                long entry = last.State.State.Queue.CurrentEntryId;
+                await ReportEndedAsync(last);
+                bool stop = mode == WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RepeatOff;
+                Check(last.Player.Ends == (stop ? 1 : 0) && last.Remote.Played.Count == (stop ? 1 : 2)
+                      && last.State.State.Queue.CurrentEntryId == entry && last.Ipc.Queued.Count == 0,
+                    $"{style} {mode}: last cached WebDAV entry follows stop or loop mode without a local transition");
+            }
+        }
+
+        static async Task BeginAsync(Scenario test, int index)
+        {
+            test.Lifecycle.TransitionTo(AppPhase.WaitingForAgreement);
+            test.Lifecycle.TransitionTo(AppPhase.Initializing);
+            test.Lifecycle.TransitionTo(AppPhase.Ready);
+            // A recent local snapshot can still be in the state pipe when WebDAV begins.
+            test.Ipc.Progress = new(1, 80, 1000, 100000, 0, true);
+            await test.Coordinator.PlayAtAsync(index);
+            test.State.IsPlaying = true;
+        }
+
+        static async Task CheckStoppedEndAsync(TrackTransitionStyle style)
+        {
+            using var stopped = new Scenario();
+            var from = new Music(228);
+            var next = new Music(229, 42) { IsRemoteCached = true };
+            stopped.State.CurrentPlayingList = [from, next];
+            await BeginAsync(stopped, 0);
+            long staleResume = stopped.Coordinator.StopIntentVersion;
+            stopped.Coordinator.StopPendingSelection();
+            stopped.Player.MusicEnd();
+            stopped.Coordinator.ResumeAfterStop(staleResume);
+            await ReportEndedAsync(stopped);
+            Check(stopped.Player.Played.SequenceEqual([from]) && stopped.Remote.Played.Count == 0,
+                $"{style}: late EOF and stale resume acknowledgement cannot restart after explicit stop");
+
+            stopped.Coordinator.ResumeAfterStop(stopped.Coordinator.StopIntentVersion);
+            await ReportEndedAsync(stopped);
+            Check(stopped.Remote.Played.SequenceEqual([next]), $"{style}: confirmed resume restores ordinary natural advance");
+
+            stopped.Lifecycle.TryBeginExit(out _);
+            stopped.State.CanStartPlayback = false;
+            await ReportEndedAsync(stopped);
+            Check(stopped.Player.Played.SequenceEqual([from]) && stopped.Remote.Played.SequenceEqual([next]),
+                $"{style}: delayed WebDAV EOF during exit starts nothing");
+        }
+
+        static Task ReportEndedAsync(Scenario test)
+        {
+            test.State.IsPlaying = false;
+            return test.Coordinator.AdvanceAfterEndAsync();
+        }
     }
 
     private static async Task SongVersionsAsync()
