@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -14,7 +15,11 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>独立的文件监视生命周期。单个消费者合并事件，扫描期间的变化留到下一轮。</summary>
 public sealed class LibraryWatcherService(MusicDatabaseService database, AppViewModel state, ILogger<LibraryWatcherService> logger)
 {
-    private readonly List<FileSystemWatcher> _watchers = [];
+    private const int MaxPendingPathsPerRoot = 256;
+    private readonly HashSet<FileSystemWatcher> _watchers = [];
+    private readonly object _pendingLock = new();
+    // A null entry asks for a root reconciliation after a buffer overflow or a large burst.
+    private Dictionary<string, HashSet<string>?> _pending = new(StringComparer.OrdinalIgnoreCase);
     private readonly Channel<bool> _changes = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
     { SingleReader = true, FullMode = BoundedChannelFullMode.DropWrite });
     private CancellationTokenSource? _stop;
@@ -31,6 +36,7 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
         if (_stopped) return Task.CompletedTask;
         if (_startupTask is not null) return _startupTask;
         state.PropertyChanged += SettingsChanged;
+        database.LocalFoldersChanged += LocalFoldersChanged;
         return _startupTask = ReconcileAsync();
     }
 
@@ -41,7 +47,13 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
         catch (Exception ex) { logger.LogError(ex, "应用目录监视设置失败"); }
     }
 
-    private async Task ReconcileAsync()
+    private async void LocalFoldersChanged()
+    {
+        try { await ReconcileAsync(reloadRoots: true); }
+        catch (Exception ex) { logger.LogError(ex, "更新监视目录失败"); }
+    }
+
+    private async Task ReconcileAsync(bool reloadRoots = false)
     {
         await _transition.WaitAsync();
         try
@@ -51,8 +63,8 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
                 await StopWatchingAsync();
                 return;
             }
-            if (_stop is not null) return;
-            _stop = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+            if (_stop is not null && !reloadRoots) return;
+            _stop ??= CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
             var token = _stop.Token;
             try
             {
@@ -63,35 +75,29 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
                     await StopWatchingAsync();
                     return;
                 }
+                var desired = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var folder in folders)
+                    if (!folder.IsExternalImport && !string.IsNullOrEmpty(folder.Path)) desired.Add(folder.Path);
+                FileSystemWatcher[] removed;
+                lock (_pendingLock)
+                {
+                    removed = _watchers.Where(watcher => !desired.Contains(watcher.Path)).ToArray();
+                    foreach (var watcher in removed)
+                    {
+                        _watchers.Remove(watcher);
+                        _pending.Remove(watcher.Path);
+                    }
+                    // Keep live watchers and their pending events while the roots change.
+                    foreach (var watcher in _watchers) desired.Remove(watcher.Path);
+                }
+                foreach (var watcher in removed) watcher.Dispose();
+                foreach (string root in desired)
                 {
                     token.ThrowIfCancellationRequested();
-                    if (string.IsNullOrEmpty(folder.Path)) continue;
-                    // 外部导入虚拟行是哨兵路径无法监视；导入行由启动对账与手动重扫维护。
-                    if (folder.IsExternalImport) continue;
-                    FileSystemWatcher? watcher = null;
-                    try
-                    {
-                        watcher = new FileSystemWatcher(folder.Path)
-                        {
-                            IncludeSubdirectories = true,
-                            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
-                        };
-                        watcher.Changed += Changed;
-                        watcher.Deleted += Changed;
-                        watcher.Created += Changed;
-                        watcher.Renamed += Changed;
-                        watcher.Error += WatcherError;
-                        watcher.EnableRaisingEvents = true;
-                        _watchers.Add(watcher);
-                    }
-                    catch (Exception ex)
-                    {
-                        watcher?.Dispose();
-                        logger.LogWarning(ex, "无法监视音乐目录 {Path}", folder.Path);
-                    }
+                    Watch(root, NotifyFilters.FileName | NotifyFilters.LastWrite);
+                    Watch(root, NotifyFilters.DirectoryName);
                 }
-                _worker = RunAsync(token);
+                _worker ??= Task.Run(() => RunAsync(token));
             }
             catch (OperationCanceledException) when (_stopped)
             {
@@ -105,15 +111,69 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
         }
         finally { _transition.Release(); }
     }
+    private void Watch(string root, NotifyFilters filter)
+    {
+        FileSystemWatcher? watcher = null;
+        try
+        {
+            watcher = new FileSystemWatcher(root) { IncludeSubdirectories = true, NotifyFilter = filter };
+            watcher.Changed += Changed;
+            watcher.Deleted += Changed;
+            watcher.Created += Changed;
+            watcher.Renamed += Changed;
+            watcher.Error += WatcherError;
+            lock (_pendingLock) _watchers.Add(watcher);
+            watcher.EnableRaisingEvents = true;
+        }
+        catch (Exception ex)
+        {
+            if (watcher is not null)
+            {
+                lock (_pendingLock) _watchers.Remove(watcher);
+                watcher.Dispose();
+            }
+            logger.LogWarning(ex, "无法监视音乐目录 {Path}", root);
+        }
+    }
+
     private void WatcherError(object sender, ErrorEventArgs e)
     {
         logger.LogWarning(e.GetException(), "文件监视器丢失事件，安排重新扫描");
-        if (!_stopped && state.IsFolderWatchEnabled) _changes.Writer.TryWrite(true);
+        QueueChange((FileSystemWatcher)sender, null);
     }
     private void Changed(object sender, FileSystemEventArgs e)
     {
-        if (!_stopped && state.IsFolderWatchEnabled && !AudioFileWriteGate.IsOwnWriteEvent(e.FullPath))
+        var watcher = (FileSystemWatcher)sender;
+        bool directoryEvent = watcher.NotifyFilter == NotifyFilters.DirectoryName;
+        QueueIfRelevant(e.FullPath);
+        if (e is RenamedEventArgs renamed) QueueIfRelevant(renamed.OldFullPath);
+
+        void QueueIfRelevant(string path)
+        {
+            // The directory-name watcher handles moved trees even when their names have no audio extension.
+            if ((directoryEvent || ToolUtils.IsMusicFile(Path.GetExtension(path))) && !AudioFileWriteGate.IsOwnWriteEvent(path))
+                QueueChange(watcher, path);
+        }
+    }
+
+    private void QueueChange(FileSystemWatcher watcher, string? path)
+    {
+        lock (_pendingLock)
+        {
+            if (_stopped || !state.IsFolderWatchEnabled || !_watchers.Contains(watcher)) return;
+            string root = watcher.Path;
+            if (path is null)
+                _pending[root] = null;
+            else
+            {
+                if (!_pending.TryGetValue(root, out var paths))
+                    _pending[root] = paths = new(StringComparer.OrdinalIgnoreCase);
+                if (paths is null) return;
+                paths.Add(path);
+                if (paths.Count > MaxPendingPathsPerRoot) _pending[root] = null;
+            }
             _changes.Writer.TryWrite(true);
+        }
     }
     private async Task RunAsync(CancellationToken token)
     {
@@ -122,14 +182,17 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
             while (await _changes.Reader.WaitToReadAsync(token))
             {
                 await Task.Delay(1000, token);
-                while (_changes.Reader.TryRead(out _)) { }
-                if (!state.IsFolderWatchEnabled) continue;
-                // ProgressCenter 自带 UI 线程转派，监视线程可直接注册/移除任务条目。
-                state.Progress.Begin(ProgressCenter.Keys.LibraryRescanning, ToolUtils.GetString("ProgressRescanning"));
-                try { await AutoRescanService.AutoScan(token); }
+                Dictionary<string, HashSet<string>?> changes;
+                lock (_pendingLock)
+                {
+                    while (_changes.Reader.TryRead(out _)) { }
+                    changes = _pending;
+                    _pending = new(StringComparer.OrdinalIgnoreCase);
+                }
+                if (changes.Count == 0 || !state.IsFolderWatchEnabled) continue;
+                try { await AutoRescanService.AutoScan(database, changes, token); }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
                 catch (Exception ex) { logger.LogError(ex, "文件变化后重新扫描失败"); }
-                finally { state.Progress.Complete(ProgressCenter.Keys.LibraryRescanning); }
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
@@ -140,6 +203,7 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
         if (_shutdownTask is not null) return _shutdownTask;
         _stopped = true;
         state.PropertyChanged -= SettingsChanged;
+        database.LocalFoldersChanged -= LocalFoldersChanged;
         _lifetime.Cancel();
         return _shutdownTask = ShutdownAsync();
     }
@@ -159,8 +223,14 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
     {
         if (_stop is null) return;
         _stop.Cancel();
-        foreach (var watcher in _watchers) watcher.Dispose();
-        _watchers.Clear();
+        FileSystemWatcher[] watchers;
+        lock (_pendingLock)
+        {
+            watchers = [.. _watchers];
+            _watchers.Clear();
+            _pending.Clear();
+        }
+        foreach (var watcher in watchers) watcher.Dispose();
         try
         {
             if (_worker is not null) await _worker;

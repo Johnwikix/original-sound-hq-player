@@ -100,7 +100,7 @@ internal static class ReviewRegression
     }
 
     private static int WatcherCount(LibraryWatcherService watcher) =>
-        ((System.Collections.ICollection)typeof(LibraryWatcherService)
+        ((ICollection<FileSystemWatcher>)typeof(LibraryWatcherService)
             .GetField("_watchers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
             .GetValue(watcher)!).Count;
 
@@ -116,18 +116,24 @@ internal static class ReviewRegression
             await watcher.StartAsync();
             Check(database.Reads == 0 && WatcherCount(watcher) == 0, "Disabled startup allocated native watchers or read folders");
             state.IsFolderWatchEnabled = true;
-            await WaitUntilAsync(() => WatcherCount(watcher) == 1);
+            await WaitUntilAsync(() => WatcherCount(watcher) == 2);
             int before = AutoRescanService.Scans;
-            await File.WriteAllTextAsync(Path.Combine(directory, "enabled.txt"), "enabled");
+            await File.WriteAllTextAsync(Path.Combine(directory, "enabled.mp3"), "enabled");
             await WaitUntilAsync(() => AutoRescanService.Scans > before);
             state.IsFolderWatchEnabled = false;
             await WaitUntilAsync(() => WatcherCount(watcher) == 0);
             before = AutoRescanService.Scans;
-            await File.WriteAllTextAsync(Path.Combine(directory, "disabled.txt"), "disabled");
+            await File.WriteAllTextAsync(Path.Combine(directory, "disabled.mp3"), "disabled");
             await Task.Delay(1200);
             Check(AutoRescanService.Scans == before, "Disabled watcher still scans");
             state.IsFolderWatchEnabled = true;
-            await WaitUntilAsync(() => WatcherCount(watcher) == 1);
+            await WaitUntilAsync(() => WatcherCount(watcher) == 2);
+            database.Folders = [];
+            database.PublishFolderChange();
+            await WaitUntilAsync(() => WatcherCount(watcher) == 0);
+            database.Folders = [new(directory)];
+            database.PublishFolderChange();
+            await WaitUntilAsync(() => WatcherCount(watcher) == 2);
             var scanStarted = new TaskCompletionSource();
             var scanCancelled = new TaskCompletionSource();
             AutoRescanService.Scan = async token =>
@@ -136,13 +142,13 @@ internal static class ReviewRegression
                 try { await Task.Delay(Timeout.Infinite, token); }
                 finally { scanCancelled.TrySetResult(); }
             };
-            await File.WriteAllTextAsync(Path.Combine(directory, "in-flight.txt"), "scanning");
+            await File.WriteAllTextAsync(Path.Combine(directory, "in-flight.mp3"), "scanning");
             await scanStarted.Task.WaitAsync(TimeSpan.FromSeconds(4));
             state.IsFolderWatchEnabled = false;
             state.IsFolderWatchEnabled = true;
             await scanCancelled.Task.WaitAsync(TimeSpan.FromSeconds(3));
             AutoRescanService.Scan = null;
-            await WaitUntilAsync(() => WatcherCount(watcher) == 1);
+            await WaitUntilAsync(() => WatcherCount(watcher) == 2);
             await watcher.StopAsync();
             state.IsFolderWatchEnabled = false;
             state.IsFolderWatchEnabled = true;

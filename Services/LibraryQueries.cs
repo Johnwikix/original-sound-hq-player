@@ -16,11 +16,14 @@ public sealed class LibraryQueries(LibraryState library)
     private readonly Dictionary<string, int> _albumSongCounts = new(capacity: 4096, StringComparer.Ordinal);
     private readonly Dictionary<int, List<Music>> _songVersions = [];
     private readonly Dictionary<int, Music> _firstVersionBySong = [];
-    private readonly Dictionary<(int Song, int Source), Music> _displayVersions = [];
+    private readonly Dictionary<(int Song, int Source, bool Browse), Music> _displayVersions = [];
     private long _indexedVersion = -1;
     private int _sourceFilter = -1;
     public void SetSourceFilter(int sourceId) { _sourceFilter = sourceId; _indexedVersion = -1; }
     public static bool MatchesSource(Music music, int sourceId) => sourceId == -1 || (sourceId == -2 ? music.IsRemote : music.SourceId == sourceId);
+    // Missing local versions retain their database identity, history and explicit playlist entries.
+    public static bool IsBrowsable(Music music) => !music.IsMissing || music.IsRemote;
+
     internal IReadOnlyDictionary<int, Music> GetIdIndex()
     {
         if (_indexedVersion != library.Version) RebuildIdIndex();
@@ -77,19 +80,21 @@ public sealed class LibraryQueries(LibraryState library)
     }
 
     /// <summary>获取范围内稳定代表版本，不探网、不跟随一次播放回退。</summary>
-    public Music? FindDisplayVersion(int songId, int sourceId = -1)
+    public Music? FindDisplayVersion(int songId, int sourceId = -1) => FindDisplayVersion(songId, sourceId, browse: false);
+
+    internal Music? FindDisplayVersion(int songId, int sourceId, bool browse)
     {
         if (_indexedVersion != library.Version) RebuildIdIndex();
-        if (_displayVersions.TryGetValue((songId, sourceId), out var cached)) return cached;
+        if (_displayVersions.TryGetValue((songId, sourceId, browse), out var cached)) return cached;
         if (!_songVersions.TryGetValue(songId, out var versions))
-            return _firstVersionBySong.TryGetValue(songId, out var only) && MatchesSource(only, sourceId) ? only : null;
+            return _firstVersionBySong.TryGetValue(songId, out var only) && MatchesSource(only, sourceId) && (!browse || IsBrowsable(only)) ? only : null;
         List<Music> available = [];
-        foreach (var version in versions) if (MatchesSource(version, sourceId)) available.Add(version);
+        foreach (var version in versions) if (MatchesSource(version, sourceId) && (!browse || IsBrowsable(version))) available.Add(version);
         if (available.Count == 0) return null;
         var selected = SongVersionPolicy.Order(available, available[0].SongPreferredMusicId)[0];
         // 全组缺失时缓存可能是唯一可播副本。下一次查询应观察最新缓存状态。
         if (!selected.IsMissing || selected.SongPreferredMusicId == selected.Id)
-            _displayVersions[(songId, sourceId)] = selected;
+            _displayVersions[(songId, sourceId, browse)] = selected;
         return selected;
     }
 
@@ -124,9 +129,9 @@ public sealed class LibraryQueries(LibraryState library)
         for (int i = 0; i < src.Count; i++)
         {
             var original = src[i];
-            if (original is null || !MatchesSource(original, _sourceFilter)) continue;
+            if (original is null || !IsBrowsable(original) || !MatchesSource(original, _sourceFilter)) continue;
             if (original.SongId > 0 && !included.Add(original.SongId)) continue;
-            var m = original.SongId > 0 ? FindDisplayVersion(original.SongId, _sourceFilter) ?? original : original;
+            var m = original.SongId > 0 ? FindDisplayVersion(original.SongId, _sourceFilter, browse: true) ?? original : original;
             if (!string.IsNullOrEmpty(m.Album))
             {
                 if (!_firstAlbumIndex.TryGetValue(m.Album, out var firstAlbum) || (firstAlbum.IsRemote && !m.IsRemote))

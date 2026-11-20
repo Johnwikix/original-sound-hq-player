@@ -96,7 +96,17 @@ namespace WinUIMusicPlayer.ViewModel
     }
     public class AppViewModel : System.ComponentModel.INotifyPropertyChanged
     {
-        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        public bool IsFolderWatchEnabled
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                PropertyChanged?.Invoke(this, new(nameof(IsFolderWatchEnabled)));
+            }
+        }
         public bool IsPlaybackEngineReady => false;
         public bool CanPublishState => true;
         public bool IsPlaying { get; set; }
@@ -105,7 +115,12 @@ namespace WinUIMusicPlayer.ViewModel
         public List<Music> SongsSource { get; } = [];
         public Music? FindById(int id) => SongsSource.Find(music => music.Id == id);
         public int SourceNotifications { get; private set; }
-        public void NotifySongsSourceChanged() => SourceNotifications++;
+        public event Action? SongsSourceChanged;
+        public void NotifySongsSourceChanged()
+        {
+            SourceNotifications++;
+            SongsSourceChanged?.Invoke();
+        }
         public event Action<IReadOnlyList<Music>>? BatchApplied;
         public void AppendSongsBatch(IReadOnlyList<Music> batch)
         {
@@ -123,14 +138,15 @@ namespace WinUIMusicPlayer.ViewModel
 }
 namespace WinUIMusicPlayer.Services
 {
-    public static class AutoRescanService
-    {
-        public static List<SubFolder> RecordInitialFolderTimes(string root, int id) =>
-            [new SubFolder { Path = root, FolderId = id }];
-    }
     public partial class MusicDatabaseService
     {
         private readonly Microsoft.Extensions.Logging.ILogger<MusicDatabaseService> _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MusicDatabaseService>.Instance;
+        internal int WatchPublications;
+        internal Task PublishLibrarySnapshotAsync(CancellationToken token, bool preserveRows)
+        {
+            Interlocked.Increment(ref WatchPublications);
+            return Task.CompletedTask;
+        }
         public SQLite.SQLiteAsyncConnection Connection => _dbConnection;
         public SQLite.SQLiteAsyncConnection GetDbConnection() => _dbConnection;
         private readonly SQLite.SQLiteAsyncConnection _dbConnection;

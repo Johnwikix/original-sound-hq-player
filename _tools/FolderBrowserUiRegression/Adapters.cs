@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.Utils
 }
 namespace WinUIMusicPlayer.Model
 {
-    public sealed class Music { public int SourceId { get; set; } public string FolderPath { get; set; } = ""; public string LastLevelFolderPath { get; set; } = ""; public string Title { get; set; } = ""; }
+    public sealed class Music { public bool IsMissing { get; set; } public int SourceId { get; set; } public string FolderPath { get; set; } = ""; public string LastLevelFolderPath { get; set; } = ""; public string Title { get; set; } = ""; }
     public sealed class Folder
     {
         public int Id { get; set; }
@@ -61,6 +61,7 @@ namespace WinUIMusicPlayer.Services
 {
     public static class LibraryQueries
     {
+        public static bool IsBrowsable(Music music) => !music.IsMissing || music.SourceId != 0;
         public static bool MatchesSource(Music music, int id) => id == -1 || (id == -2 ? music.SourceId != 0 : music.SourceId == id);
     }
     public sealed class MusicDatabaseService
@@ -99,6 +100,8 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public sealed class AppViewModel : ObservableObject
     {
+        public event Action? SongsSourceChanged;
+        public void NotifySongsSourceChanged() => SongsSourceChanged?.Invoke();
         public AppViewModel() => SelectedSortOption = SortOptions[0];
         public State.AppState State { get; } = new();
         public List<Music> SongsSource => State.Library.Songs;

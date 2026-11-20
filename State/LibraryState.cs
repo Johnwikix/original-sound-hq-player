@@ -7,10 +7,13 @@ namespace WinUIMusicPlayer.State;
 public sealed class LibraryState
 {
     public List<Music> Songs { get; private set; } = [];
+    internal long SnapshotGeneration { get; private set; }
+    internal void MarkSnapshotReplacement() => SnapshotGeneration++;
     public long Version { get; private set; }
     public void Replace(List<Music> songs)
     {
         Songs = songs;
+        MarkSnapshotReplacement();
         NotifyChanged();
     }
     public void NotifyChanged() => Version++;

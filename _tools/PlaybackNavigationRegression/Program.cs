@@ -65,6 +65,7 @@ internal static class Regression
 #endif
         await SongVersionsAsync();
         await ConfirmedStartsAsync();
+        await CheckHandoffOrderingAsync();
         await CacheSizeRegression.RunAsync();
         await SingleEntryLoopAsync();
         using var test = new Scenario();
@@ -383,6 +384,135 @@ internal static class Regression
             await Task.Delay(5);
         }
     }
+    private static async Task CheckHandoffOrderingAsync()
+    {
+        var saved = AppSettings.Dsp;
+        var a = new Music(201);
+        var b = new Music(202);
+        var c = new Music(203);
+        async Task StartAsync(Scenario test)
+        {
+            test.State.CurrentPlayingList = [a, b, c];
+            test.Ipc.Progress = new(1, 301, 1000, 120000, 0, true);
+            await test.Coordinator.PlayAtAsync(0);
+            test.State.IsPlaying = true;
+        }
+        try
+        {
+            AppSettings.Dsp = saved with { GaplessPlayback = false };
+            using (var test = new Scenario())
+            {
+                test.State.CurrentPlayingList = [a, a, c];
+                test.Ipc.Progress = new(1, 301, 1000, 120000, 0, true);
+                await test.Coordinator.PlayAtAsync(0);
+                long outgoing = test.Player.LastPlaybackId;
+                await test.Coordinator.PlayNextAsync();
+                long current = test.Player.LastPlaybackId;
+                Check(current != outgoing && test.State.State.Queue.CurrentEntryId == test.State.State.Queue.EntryIdAt(1)
+                    && !test.Coordinator.TryAcceptLocalEnd(new(outgoing, 301)),
+                    "delayed EOF from the first occurrence cannot skip a replay of the same file");
+                Check(test.Coordinator.TryAcceptLocalEnd(new(current, 302)) && !test.Coordinator.TryAcceptLocalEnd(new(current, 302)),
+                    "a short track may finish before its first progress sample and advances only once");
+                await test.Coordinator.AdvanceAfterEndAsync();
+                Check(test.State.CurrentPlayingMusic == c && test.Player.Played.SequenceEqual([a, a, c]),
+                    "the matching EOF advances exactly one queue occurrence");
+            }
+
+            using (var test = new Scenario())
+            {
+                await StartAsync(test);
+                long current = test.Player.LastPlaybackId;
+                test.Player.OnPlay = _ => throw new InvalidOperationException("IPC queue full");
+                await test.Coordinator.PlayNextAsync();
+                Check(test.State.CurrentPlayingMusic == a && test.Coordinator.TryAcceptLocalEnd(new(current, 301)),
+                    "a rejected Play command leaves EOF ownership with the playing decoder");
+            }
+            using (var test = new Scenario())
+            {
+                var remote = new Music(210, 19);
+                test.State.CurrentPlayingList = [a, remote, remote];
+                await test.Coordinator.PlayAtAsync(0);
+                var queue = test.State.State.Queue;
+                long entry = queue.EntryIdAt(1);
+                var probe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                test.Library.Probe = (_, token) => probe.Task.WaitAsync(token);
+                var click = test.Coordinator.PlayNextAsync();
+                queue.InsertNext(a, [c]);
+                await WaitAsync(() => test.Library.Probes.Count == 1);
+                test.State.CurrentPlayingList.Move(queue.IndexOfEntry(entry), 0);
+                probe.SetResult(true);
+                await click;
+                Check(queue.CurrentEntryId == entry && test.Remote.Played.SequenceEqual([remote]),
+                    "insertion before dispatch and reordering during a probe preserve the clicked duplicate occurrence");
+            }
+
+            AppSettings.Dsp = saved with { GaplessPlayback = true, TransitionStyle = TrackTransitionStyle.Crossfade };
+            using (var test = new Scenario())
+            {
+                await StartAsync(test);
+                var plan = test.Ipc.Queued.Last();
+                int starts = 0;
+                long startPositionMs = -1;
+                test.Coordinator.TrackStarted += (_, positionMs, _) => { starts++; startPositionMs = positionMs; };
+                test.Ipc.Progress = new(2, 302, 1900, 120000, 0, true, GaplessToken: plan.Token);
+                test.Ipc.Transition(plan.Token, 302, 1900);
+                await test.Coordinator.PlayNextAsync();
+                Check(test.State.CurrentPlayingMusic == b && starts == 1 && startPositionMs == 1900 && test.Player.Played.SequenceEqual([a]),
+                    "handoff before deferred Next starts publishes B once without replay");
+                Check(!test.Coordinator.TryAcceptLocalEnd(new(test.Player.LastPlaybackId, 301))
+                    && test.Coordinator.TryAcceptLocalEnd(new(plan.Token, 302)),
+                    "the adopted decoder owns the next EOF");
+            }
+            using (var test = new Scenario())
+            {
+                await StartAsync(test);
+                var plan = test.Ipc.Queued.Last();
+                test.Ipc.Progress = new(2, 301, 118500, 120000, 0, true, TransitionToken: plan.Token,
+                    TransitionEpoch: 302, TransitionCurrentMs: 200, TransitionTotalMs: 120000);
+                await WaitAsync(() => test.State.DisplayedPlaybackMusic == b);
+                var cancel = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+                test.Ipc.CancelReply = () => cancel.Task;
+                var click = test.Coordinator.PlayNextAsync();
+                await WaitAsync(() => test.Ipc.Queued.Last().Path.Length == 0);
+                test.Coordinator.CancelPendingSelection();
+                test.Ipc.Progress = new(3, 302, 1900, 120000, 0, true, GaplessToken: plan.Token);
+                cancel.SetResult(plan.Token);
+                await click;
+                await WaitAsync(() => test.State.CurrentPlayingMusic == b);
+                Check(test.State.State.Queue.CurrentEntryId == test.State.State.Queue.EntryIdAt(1)
+                    && test.Player.Played.SequenceEqual([a]), "cancelled C restores the confirmed natural handoff to B");
+            }
+            using (var test = new Scenario())
+            {
+                await StartAsync(test);
+                test.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Started);
+                var click = test.Coordinator.PlayNextAsync();
+                await WaitAsync(() => test.Ipc.Manual.Count > 0);
+                long entry = test.State.State.Queue.EntryIdAt(1);
+                var plan = test.Ipc.Manual.Single();
+                test.State.CurrentPlayingList.Add(new Music(204));
+                Check(test.State.State.Playback.PendingSelection?.EntryId == entry, "append preserves the pending Next occurrence");
+                test.Ipc.Transition(plan.Token, 302, 1900);
+                await click;
+                Check(test.State.State.Queue.CurrentEntryId == entry && test.State.CurrentPlayingMusic == b
+                    && test.Player.Played.SequenceEqual([a]), "append during overlap preserves the same decoder handoff");
+            }
+            using (var test = new Scenario())
+            {
+                await StartAsync(test);
+                test.Ipc.ManualReply = _ => Task.FromResult(TransitionNowStatus.Started);
+                var click = test.Coordinator.PlayNextAsync();
+                await WaitAsync(() => test.Ipc.Manual.Count > 0);
+                var queue = test.State.State.Queue;
+                queue.SetRequestedVersion(queue.EntryIdAt(1), c.Id);
+                await click;
+                Check(test.State.State.Playback.PendingSelection == null && test.State.CurrentPlayingMusic == a
+                    && test.Player.Played.SequenceEqual([a]), "repinning the target cancels its stale manual handoff");
+            }
+        }
+        finally { AppSettings.Dsp = saved; }
+    }
+
     private static async Task GaplessAsync()
     {
         using (var notificationFirst = new Scenario())
@@ -420,7 +550,7 @@ internal static class Regression
         Check(test.Ipc.Queued.Count == confirmedSends && test.State.CurrentIndexLookups == lookups,
             "unchanged queue ticks neither rescan entries nor resend a confirmed plan");
         int presentations = 0;
-        test.Coordinator.TrackStarted += (_, _) =>
+        test.Coordinator.TrackStarted += (_, _, _) =>
         {
             Check(App.MainWindow.DispatcherQueue.HasThreadAccess, "gapless presentation runs on UI dispatcher");
             presentations++;
@@ -620,7 +750,7 @@ internal static class Regression
             gapless.Ipc.Progress = new(1, 10, 0, 3000, 0, true);
             await gapless.Coordinator.PlayAtAsync(0);
             int presentations = 0;
-            gapless.Coordinator.TrackStarted += (_, _) => presentations++;
+            gapless.Coordinator.TrackStarted += (_, _, _) => presentations++;
             gapless.State.IsPlaying = true;
             var queued = gapless.Ipc.Queued.Last();
             gapless.Ipc.Progress = new(2, 11, 0, 3000, 0, true, 0, 1, queued.Token);
@@ -1184,7 +1314,7 @@ internal static class Regression
             int localBefore = test.Player.Played.Count;
             int remoteBefore = test.Remote.Played.Count;
             int presentations = 0;
-            test.Coordinator.TrackStarted += (music, _) => { if (music == to) presentations++; };
+            test.Coordinator.TrackStarted += (music, _, _) => { if (music == to) presentations++; };
             if (manual)
             {
                 using var services = new ServiceCollection().AddSingleton(test.Player).AddSingleton(test.Coordinator).AddSingleton(test.Remote).BuildServiceProvider();

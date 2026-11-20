@@ -418,6 +418,27 @@ static async Task RunAsync()
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     Check(list.FillCount == 1 && list[0].Title == "A", "Unchanged query must reuse its published projection.");
+    var notifications = new List<System.Collections.Specialized.NotifyCollectionChangedAction>();
+    list.CollectionChanged += (_, change) => notifications.Add(change.Action);
+    var untouched = list[0];
+    var added = new Music(88, "watch.mp3") { Title = "Watch" };
+    library.Library.Songs.Add(added);
+    library.Library.NotifyChanged();
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(list.Contains(added) && ReferenceEquals(list[0], untouched) &&
+        notifications.SequenceEqual([System.Collections.Specialized.NotifyCollectionChangedAction.Add]), "Watcher additions must publish one Add.");
+    notifications.Clear();
+    added.IsMissing = true;
+    library.Library.NotifyChanged();
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(!list.Contains(added) && queries.FindById(added.Id) == added &&
+        notifications.SequenceEqual([System.Collections.Specialized.NotifyCollectionChangedAction.Remove]), "A missing local version leaves the browse list but remains indexed.");
+    notifications.Clear();
+    library.Library.Songs[library.Library.Songs.IndexOf(untouched)] = untouched with { Path = "updated.mp3" };
+    library.Library.NotifyChanged();
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(list[0].Path == "updated.mp3" &&
+        notifications.SequenceEqual([System.Collections.Specialized.NotifyCollectionChangedAction.Replace]), "Metadata changes must replace only the affected row.");
     library.Browse.SearchText = "needle";
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     Check(list.FillCount == 2 && list.Count == 1 && list[0].Title == "needle", "Search change must invalidate projection.");
@@ -459,9 +480,9 @@ static async Task RunAsync()
     queries.SetSourceFilter(-1);
     projections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", library.LibraryViews.AlbumPageSource);
     await Task.Yield();
-    var albumGroups = (List<MusicGroup>)library.LibraryViews.AlbumPageSource.Source!;
-    Check(albumGroups.Sum(g => g.Items.Count) == 2, "Mirrored albums should produce one album card.");
-    Check(albumGroups.SelectMany(g => g.Items).Single(m => m.Album == "same album").SourceId == 0,
+    var albumGroups = (IEnumerable<MusicGroup>)library.LibraryViews.AlbumPageSource.Source!;
+    Check(albumGroups.Sum(g => g.Count) == 2, "Mirrored albums should produce one album card.");
+    Check(albumGroups.SelectMany(g => g).Single(m => m.Album == "same album").SourceId == 0,
         "The local copy should represent a mirrored album when all sources are shown.");
     Check(queries.GetAlbumSongCount("same album") == 3, "Album song counts should include tracks from every source.");
     await projections.UpdateSongCollectionsAsync(list, SongViewType.Album, m => m.Album == "same album");
@@ -549,7 +570,7 @@ static async Task RunAsync()
     yearState.Browse.SelectedSortOption = new() { Tag = "YearASC" };
     yearProjections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", yearState.LibraryViews.AlbumPageSource);
     await Task.Yield();
-    var yearAlbumCards = ((List<MusicGroup>)yearState.LibraryViews.AlbumPageSource.Source!).SelectMany(g => g.Items).Select(m => m.Album);
+    var yearAlbumCards = ((IEnumerable<MusicGroup>)yearState.LibraryViews.AlbumPageSource.Source!).SelectMany(g => g).Select(m => m.Album);
     Check(string.Join(",", yearAlbumCards) == "C album,A album,B album,D album",
         "Year ASC must also order grouped album cards and keep unknown years last.");
     await yearProjections.StopAsync();

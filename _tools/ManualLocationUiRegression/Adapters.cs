@@ -42,6 +42,7 @@ namespace WinUIMusicPlayer.Model
     {
         public bool IsMissing { get; set; }
         public int SongId { get; set; }
+        public TimeSpan Duration { get; set; }
         private int _id;
         internal static long IdentityReads;
         public int Id { get { Interlocked.Increment(ref IdentityReads); return _id; } set => _id = value; }
@@ -80,7 +81,7 @@ namespace WinUIMusicPlayer.Services
         public Task RemoveMusic(int id) => Task.CompletedTask;
     }
     public sealed class BassPlayerCommandService { public void UpdateSettings() { } }
-    public sealed class SystemMediaControlsService { }
+    public sealed class SystemMediaControlsService { public void UpdateTimelineProperties(TimeSpan position, TimeSpan duration) { } }
     public sealed class UsbDeviceService { }
     public sealed class CoverPresentationService
     {
@@ -89,14 +90,14 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed class PlaybackCoordinator
     {
-        public event Action<Music, CancellationToken>? TrackStarted;
+        public event Action<Music, long, CancellationToken>? TrackStarted;
         public Music? LastMusic;
         public long LastEntryId;
         public Task PlayAsync(Music music, long entryId = 0, bool exactVersion = false)
         {
             LastMusic = music;
             LastEntryId = entryId;
-            TrackStarted?.Invoke(music, default);
+            TrackStarted?.Invoke(music, 0, default);
             return Task.CompletedTask;
         }
     }

@@ -29,7 +29,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private readonly HashSet<long> _failedEntries = [];
     private (Music Music, long Generation, bool Advance)? _deferredFailure;
     private (Music Music, long Entry, bool Exact, bool MayAdvance, bool Confirmed)? _activeIntent;
-    private long _activeSelectionVersion;
+    private long _activeSelectionVersion, _activeLocalPlaybackId, _lastEndedEpoch;
+    private (int Version, int Scope)? _manualQueueOptions;
     private readonly HashSet<int> _attemptedVersions = [];
     private readonly HashSet<int> _probedVersionSources = [];
     private Music? _intentMusic;
@@ -37,7 +38,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private int _intentScope = -1;
     private bool _intentExact, _intentMayAdvance, _versionConfirmed;
     private long _versionDeadline;
-    public event Action<Music, CancellationToken>? TrackStarted;
+    /// <summary>Committed selection and its starting position, including audio already consumed during a handoff.</summary>
+    public event Action<Music, long, CancellationToken>? TrackStarted;
     /// <summary>UI-thread notification after the engine confirms this playback occurrence.</summary>
     public event Action<Music, BassPlayerIpc.Shared.ProgressSnapshot>? PlaybackConfirmed;
     public event Action? SelectionChanged;
@@ -64,8 +66,18 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         if (index < 0) return Task.CompletedTask;
         if (_gaplessIpc == null) StartGapless();
         _failedEntries.Clear();
-        return RunSelectionAsync(token => PlayQueueCoreAsync(index, 1, false, token, manualNext: true),
-            state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index), manualNext: true);
+        long entryId = state.State.Queue.EntryIdAt(index);
+        return RunSelectionAsync(token => PlayQueueCoreAsync(index, 1, false, token, manualEntryId: entryId),
+            state.CurrentPlayingList[index], entryId, manualNext: true);
+    }
+
+    internal bool TryAcceptLocalEnd(BassPlayerIpc.Shared.PlaybackEnded ended)
+    {
+        if (!CanAdvanceAfterEnd || state.CurrentPlayingMusic is not { IsRemote: false }
+            || ended.PlaybackId != _activeLocalPlaybackId || ended.Epoch <= _lastEndedEpoch
+            || (ipc.TryGetProgressSnapshot(out var latest) && latest.Epoch > ended.Epoch)) return false;
+        _lastEndedEpoch = ended.Epoch;
+        return true;
     }
 
     internal async Task AdvanceAfterEndAsync()
@@ -164,7 +176,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         BeginSelectionPreview(manualNext, music, entryId, version);
         BeginManualNext(manualNext, entryId, version);
         _presentation?.Cancel(); // 收到新意图即停止上一轮等待，不等 ApplicationTasks 的下一次调度。
-        SetPending(new(music, entryId));
+        SetPending(new(music, entryId), manualNext);
         RegisterPlaybackLifecycle();
         return tasks.RunAsync(stoppingToken => RunSelectionCoreAsync(operation, stoppingToken, version));
     }
@@ -180,7 +192,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
 
     private async Task RunSelectionCoreAsync(Func<CancellationToken, Task> operation, CancellationToken stoppingToken, long version)
     {
-        if (_disposed || !state.CanStartPlayback || version != _selectionVersion) return;
+        // The notification pipe may have committed the promoted decoder before this task was dispatched.
+        if (_disposed || !state.CanStartPlayback || version != _selectionVersion || version == _activeSelectionVersion) return;
         _presentation?.Cancel();
         _presentation?.Dispose();
         _presentation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
@@ -195,7 +208,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                 FinishSelectionPreview();
                 FinishManualNext(version);
                 SetPending(null);
-                ReconcileSupersededManualHandoff();
+                ReconcileSupersededHandoff();
                 bool failedExact = _intentExact && _activeSelectionVersion != version;
                 if (_activeSelectionVersion != version && _activeIntent is { } active && ReferenceEquals(state.CurrentPlayingMusic, active.Music))
                 {
@@ -228,11 +241,14 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         FinishSelectionPreview();
         _presentation?.Cancel();
         SetPending(null);
-        ReconcileSupersededManualHandoff();
+        ReconcileSupersededHandoff();
     }
 
-    private void SetPending(PlaybackSelection? selection)
+    private void SetPending(PlaybackSelection? selection, bool manualNext = false)
     {
+        var queue = state.State.Queue;
+        _manualQueueOptions = manualNext && selection != null
+            ? (queue.RequestedVersion(selection.EntryId), queue.SourceScope(selection.EntryId)) : null;
         if (state.State.Playback.PendingSelection == selection) return;
         state.State.Playback.PendingSelection = selection;
         SelectionChanged?.Invoke();
@@ -272,29 +288,36 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     }
 
     private async Task PlayQueueCoreAsync(int index, int direction, bool stopWhenUnavailable, CancellationToken token,
-        bool preserveInterruptedProgress = false, bool manualNext = false)
+        bool preserveInterruptedProgress = false, long manualEntryId = 0)
     {
+        var queue = state.State.Queue;
+        bool manualNext = manualEntryId > 0;
+        if (manualNext && queue.EntryIdAt(index) != manualEntryId) index = queue.IndexOfEntry(manualEntryId);
         var list = state.CurrentPlayingList;
         int count = list.Count;
-        long originalEntry = state.State.Queue.EntryIdAt(state.GetCurrentIndex());
+        long originalEntry = queue.EntryIdAt(state.GetCurrentIndex());
         // 最多一遍队列；跨请求的来源重试期限由 library 负责，不能在此跳过同源的缓存歌曲。
         for (int attempted = 0; attempted < count; attempted++)
         {
             token.ThrowIfCancellationRequested();
-            if (_disposed || !state.CanStartPlayback || !ReferenceEquals(list, state.CurrentPlayingList) || list.Count != count) return;
-            if (index < 0 || index >= count) return;
+            if (_disposed || !state.CanStartPlayback || (uint)index >= list.Count) return;
             var music = list[index];
-            long entryId = state.State.Queue.EntryIdAt(index);
+            long entryId = queue.EntryIdAt(index);
             if (attempted > 0 && entryId == originalEntry) break;
-            SetPending(new(music, entryId));
+            SetPending(new(music, entryId), manualNext);
             if (!_failedEntries.Contains(entryId))
             {
                 BeginVersionIntent(music, entryId, state.State.Queue.RequestedVersion(entryId) > 0, true);
                 var available = await ResolveVersionAsync(token);
                 token.ThrowIfCancellationRequested();
-                // 等待网络期间换队列、删除或重排条目时，不让旧导航请求覆盖新选择。
-                if (!ReferenceEquals(list, state.CurrentPlayingList) || list.Count != count ||
-                    state.State.Queue.EntryIdAt(index) != entryId || !ReferenceEquals(list[index], music)) return;
+                // The clicked occurrence can move while its version is being probed.
+                if (manualNext)
+                {
+                    list = state.CurrentPlayingList;
+                    if (queue.EntryIdAt(index) != entryId) index = queue.IndexOfEntry(entryId);
+                }
+                else if (!ReferenceEquals(list, state.CurrentPlayingList) || list.Count != count) return;
+                if ((uint)index >= list.Count || queue.EntryIdAt(index) != entryId || !ReferenceEquals(list[index], music)) return;
                 if (available is not null)
                 {
                     if (manualNext && await TryManualNextAsync(available, entryId, token)) return;
@@ -303,7 +326,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                     return;
                 }
             }
-            index = (index + direction + count) % count;
+            index = (index + direction + list.Count) % list.Count;
         }
         if (stopWhenUnavailable && !_disposed && state.CanStartPlayback && !token.IsCancellationRequested)
             player.MusicEnd(preserveInterruptedProgress);
@@ -415,13 +438,19 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             // 服务同步登记停止代次，后台执行可能同步 Flush(true) 的缓存收尾。
             await remote.StopAsync().WaitAsync(token);
             token.ThrowIfCancellationRequested();
-            previousEpoch = ipc.TryGetProgressSnapshot(out var before) ? before.Epoch : 0;
-            player.PlayMusic(music);
         }
         await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
         {
             if (_disposed || !state.CanStartPlayback || token.IsCancellationRequested) return;
-            _supersededManualHandoff = null;
+            if (!music.IsRemote)
+            {
+                previousEpoch = ipc.TryGetProgressSnapshot(out var before) ? before.Epoch : 0;
+                long playbackId = ++_nextToken;
+                player.PlayMusic(music, playbackId);
+                _activeLocalPlaybackId = playbackId;
+                _lastEndedEpoch = 0;
+            }
+            _supersededHandoff = null;
             _deferredNaturalEnd = false;
             _resumeStopIntentVersion = _stopIntentVersion;
             state.State.Queue.SelectEntry(entryId, music);
@@ -440,7 +469,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                 state.LoadLyricsToUI(music);
             }
             state.UpdateProgressTimerUI();
-            TrackStarted?.Invoke(music, token);
+            long positionMs = resumeInterrupted ? remote.GetProgress()?.CurrentMs ?? 0 : 0;
+            TrackStarted?.Invoke(music, positionMs, token);
             StartGapless();
         });
         // 远程准备包含 PasswordVault 和缓存文件前置工作；只有展示发布回 UI 线程。

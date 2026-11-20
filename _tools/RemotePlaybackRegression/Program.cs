@@ -141,15 +141,17 @@ static async Task RunAsync()
     Check(remote.GetProgress()?.CurrentMs == 12000, "stopping an interrupted source keeps its progress snapshot available to the UI");
     await using var recoveredOrigin = new Fixture();
     library.Root = recoveredOrigin.Root;
+    long presentedPosition = -1;
+    coordinator.TrackStarted += (_, positionMs, _) => presentedPosition = positionMs;
     Task resume = coordinator.ResumeCurrentAsync();
     Check(remote.GetProgress()?.CurrentMs == 12000, "resume request never exposes a zero progress snapshot");
     await resume;
     Check(state.State.Queue.RequestedVersion(state.State.Queue.CurrentEntryId) == 0,
         "resuming an automatic song uses the current file without pinning its future queue occurrence");
-    Check(peer.LastPreparePositionMs == 12000, "play after interrupted WebDAV session prepares at the last rendered position");
+    Check(presentedPosition == 12000 && peer.LastPreparePositionMs == 12000, "play after interrupted WebDAV session presents and prepares at the last rendered position");
     await WaitAsync(() => state.IsPlaying && !library.IsSourceOffline(10));
     await coordinator.PlayAsync(network);
-    Check(peer.LastPreparePositionMs == 0, "explicitly selecting the same song still starts from its beginning");
+    Check(presentedPosition == 0 && peer.LastPreparePositionMs == 0, "explicitly selecting the same song still starts from its beginning");
     await WaitAsync(() => remote.GetProgress()?.CurrentMs == 12000);
     await remote.SetIntentAsync(false);
     peer.SetPosition(0);

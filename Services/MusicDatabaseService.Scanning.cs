@@ -7,8 +7,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
+using FileAttributes = System.IO.FileAttributes;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Services;
 
@@ -28,7 +30,7 @@ public partial class MusicDatabaseService
             // The persisted Folder.SongCount can be stale in older databases. Count actual songs,
             // grouping once by directory rather than materializing every Music or relying on UI startup order.
             var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
-                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId = 0 AND IsDetached=0 GROUP BY FolderPath COLLATE NOCASE");
+                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId = 0 AND IsDetached=0 AND IsMissing=0 GROUP BY FolderPath COLLATE NOCASE");
             cancellationToken.ThrowIfCancellationRequested();
             // 外部导入虚拟行的计数同源现算：归属 = 分组目录不落入任何本地扫描根。
             Folder? external = null;
@@ -76,7 +78,7 @@ public partial class MusicDatabaseService
         /// <summary>提交一批扫描结果；返回新增行（供增量 UI 回调复用）与 UPDATE 命中的行数——
         /// 两者都属于数据库变更，调用方据此决定是否刷新视图。</summary>
         private async Task<(List<Music> Added, int Updated)> CommitScanBatchAsync(IReadOnlyList<(Music Music, string Lyrics)> batch,
-            Func<IReadOnlyList<Music>, Task>? onBatchInserted)
+            Func<IReadOnlyList<Music>, Task>? onBatchInserted, Action? onCommitted = null)
         {
             var parser = new WinUIMusicPlayer.Services.Lyrics.LyricsParser();
             var embedded = new Dictionary<Music, LyricsDocument>();
@@ -119,10 +121,10 @@ public partial class MusicDatabaseService
                     {
                         // Update only metadata; favorite/order/play count/lyrics offsets may change during a scan.
                         int changed = db.Execute("UPDATE Music SET Title=?, TitleFromFileName=?, Author=?, Album=?, Duration=?, FolderPath=?, LastLevelFolderPath=?, " +
-                            "Extension=?, BitDepth=?, BitRate=?, SampleRate=?, Channel=?, TrackNumber=?, DiskNumber=?, Year=?, " +
+                            "Path=?, Extension=?, BitDepth=?, BitRate=?, SampleRate=?, Channel=?, TrackNumber=?, DiskNumber=?, Year=?, " +
                             "CreateTime=?, UpdateTime=?,CodecId=?,EncodingKind=?,IsDetached=0,IsMissing=0,MetadataRevision=MetadataRevision+1 WHERE Id=?",
                             music.Title, music.TitleFromFileName, music.Author, music.Album, music.Duration, music.FolderPath, music.LastLevelFolderPath,
-                            music.Extension, music.BitDepth, music.BitRate, music.SampleRate, music.Channel,
+                            music.Path, music.Extension, music.BitDepth, music.BitRate, music.SampleRate, music.Channel,
                             music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.CodecId, music.EncodingKind, music.Id);
                         if (music.AdditionalMetadataRead)
                             MusicMetadataStorage.Save(db, music.Id, AdditionalMusicMetadata.From(music));
@@ -133,7 +135,12 @@ public partial class MusicDatabaseService
                         WinUIMusicPlayer.Services.Lyrics.LyricsRepository.AddEmbeddedInTransaction(db, music.Id, document);
                 }
             });
-            await ApplyAutomaticSongLinksAsync(added);
+            if (added.Count > 0 || updated > 0) onCommitted?.Invoke();
+            if (added.Count > 0 || updated > 0 || onCommitted is null)
+            {
+                int merged = await ApplyAutomaticSongLinksAsync(added);
+                if (merged > 0) onCommitted?.Invoke();
+            }
             if (added.Count > 0 && onBatchInserted is not null)
                 await onBatchInserted(added);
             return (added, updated);
@@ -159,6 +166,8 @@ public partial class MusicDatabaseService
                 "SELECT COUNT(*) FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,?) = ? COLLATE NOCASE",
                 root, prefix.Length, prefix);
         }
+
+        internal event Action? LocalFoldersChanged;
 
         public async Task RemoveFolder(int folderId)
         {
@@ -187,6 +196,7 @@ public partial class MusicDatabaseService
                 db.Execute("DELETE FROM SubFolder WHERE FolderId = ?", folderId);
                 db.Delete<Folder>(folderId);
             });
+            LocalFoldersChanged?.Invoke();
         }
 
         public async Task<Folder> GetFolder(int folderId)
@@ -214,6 +224,7 @@ public partial class MusicDatabaseService
                     Type = Folder.TypeLocal
                 };
                 await _dbConnection.InsertAsync(newFolder);
+                LocalFoldersChanged?.Invoke();
                 // Folder 行先落库即回调：上层可让文件夹行先出现在列表中，SongCount 随扫描批次递增
                 if (onFolderInserted is not null)
                     await onFolderInserted(newFolder);
@@ -237,8 +248,7 @@ public partial class MusicDatabaseService
 
         public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
         {
-            using var lease = LibraryOperationGate.TryEnter();
-            if (lease is null) return;
+            using var lease = await LibraryOperationGate.EnterAsync();
             try { await RescanFolderCoreAsync(folderPath, true, isSingleFolder); }
             finally
             {
@@ -249,7 +259,7 @@ public partial class MusicDatabaseService
         private async Task<int> RescanFolderCoreAsync(string folderPath, bool updateExisting, bool singleFolder,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted = null, bool onlyChanged = false,
             CancellationToken cancellationToken = default, IReadOnlyList<string>? scannedPaths = null,
-            Action<int>? onFilesChecked = null)
+            Action<int>? onFilesChecked = null, Action? onCommitted = null)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var existing = await GetSongsInFolderAsync(folderPath, !singleFolder);
@@ -264,7 +274,7 @@ public partial class MusicDatabaseService
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     remaining.Remove(path, out var old);
-                    if (old is null || old.IsDetached || old.IsMissing || (updateExisting && (!onlyChanged || File.GetLastWriteTime(path) != old.UpdateTime)))
+                    if (old is null || old.IsDetached || old.IsMissing || (updateExisting && (!onlyChanged || old.Path != path || File.GetLastWriteTime(path) != old.UpdateTime)))
                         yield return (path, old);
                     else onFilesChecked?.Invoke(1);
                 }
@@ -279,31 +289,25 @@ public partial class MusicDatabaseService
             }, async batch =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var committed = await CommitScanBatchAsync(batch, onBatchInserted);
+                var committed = await CommitScanBatchAsync(batch, onBatchInserted, onCommitted);
                 changes += committed.Added.Count + committed.Updated;
                 onFilesChecked?.Invoke(batch.Count);
             }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500), cancellationToken);
 
-            // An inaccessible/disconnected directory throws before this point. Keep its database rows intact.
+            // An inaccessible/disconnected directory is not deletion evidence. Check again if
+            // the watcher is reconciling a directory that may have vanished during enumeration.
+            if (onCommitted is not null && !Directory.Exists(folderPath)) return changes;
             var missing = new List<Music>();
             foreach (var music in remaining.Values)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!music.IsMissing && LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
+                if (!music.IsMissing && !music.IsDetached && LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
             }
             if (missing.Count > 0)
             {
-                await _dbConnection.RunInTransactionAsync(db =>
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    bool keepVersions = MusicMetadataStorage.HasSongs(db);
-                    foreach (var music in missing)
-                    {
-                        if (keepVersions) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", music.Id);
-                        else { db.Delete<Music>(music.Id); WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id); }
-                    }
-                });
-                changes += missing.Count;
+                int removed = await DeleteMusicBatchAsync(missing, cancellationToken);
+                if (removed > 0) onCommitted?.Invoke();
+                changes += removed;
             }
             return changes;
         }
@@ -313,9 +317,93 @@ public partial class MusicDatabaseService
             => RescanFolderCoreAsync(folderPath, true, false, onlyChanged: true, cancellationToken: cancellationToken,
                 scannedPaths: scannedPaths, onFilesChecked: onFilesChecked);
 
-        // Called by AutoScan while its library-operation lease is held. The count includes updates and deletions.
         public Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
             => RescanFolderCoreAsync(folderPath, false, isSingleFolder);
+
+        internal async Task ReconcileWatchedFolderAsync(string root, HashSet<string>? paths, Action onCommitted,
+            CancellationToken token)
+        {
+            // An unavailable root is never evidence of deletion, even if the watcher reported an error.
+            if ((File.GetAttributes(root) & FileAttributes.Directory) == 0) return;
+            if (paths is null)
+            {
+                await RescanFolderCoreAsync(root, true, false, onlyChanged: true, cancellationToken: token, onCommitted: onCommitted);
+                return;
+            }
+
+            HashSet<string> subtrees = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> directories = new(StringComparer.OrdinalIgnoreCase);
+            List<string> missingPaths = [];
+            foreach (string path in paths)
+            {
+                token.ThrowIfCancellationRequested();
+                try
+                {
+                    var attributes = File.GetAttributes(path);
+                    if ((attributes & FileAttributes.ReparsePoint) != 0) continue;
+                    if ((attributes & FileAttributes.Directory) != 0) subtrees.Add(path);
+                    else if (ToolUtils.IsMusicFile(Path.GetExtension(path)) && Path.GetDirectoryName(path) is { } parent)
+                        directories.Add(parent);
+                }
+                catch (FileNotFoundException) { missingPaths.Add(path); }
+                catch (DirectoryNotFoundException) { missingPaths.Add(path); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.LogWarning(ex, "无法检查监视路径 {Path}", path);
+                }
+            }
+
+            foreach (string path in subtrees)
+            {
+                if (subtrees.Any(parent => parent != path && LibraryPath.IsWithin(path, parent))) continue;
+                await ScanDirectoryAsync(path, singleFolder: false);
+            }
+            foreach (string path in directories)
+            {
+                if (subtrees.Any(parent => LibraryPath.IsWithin(path, parent))) continue;
+                await ScanDirectoryAsync(path, singleFolder: true);
+            }
+            foreach (string path in missingPaths)
+            {
+                token.ThrowIfCancellationRequested();
+                try
+                {
+                    if (!Directory.Exists(root)) return;
+                    // A removed directory has the same event shape as a removed file. Match the exact
+                    // old file path and its possible descendants, then confirm absence on disk.
+                    string prefix = Path.EndsInDirectorySeparator(path) ? path : path + Path.DirectorySeparatorChar;
+                    var missing = await _dbConnection.QueryAsync<Music>(
+                        "SELECT Id,Path FROM Music WHERE SourceId=0 AND IsMissing=0 AND IsDetached=0 AND " +
+                        "(Path=? COLLATE NOCASE OR FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,?)=? COLLATE NOCASE)",
+                        path, path, prefix.Length, prefix);
+                    missing.RemoveAll(song => !LibraryPath.IsConfirmedMissing(song.Path, root));
+                    if (missing.Count > 0 && Directory.Exists(root)) await DeletedMusicList(missing, token, onCommitted);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.LogWarning(ex, "无法核对监视路径 {Path} 是否缺失", path);
+                }
+            }
+
+            async Task ScanDirectoryAsync(string path, bool singleFolder)
+            {
+                try
+                {
+                    for (string? parent = path; parent is not null &&
+                        !string.Equals(parent, root, StringComparison.OrdinalIgnoreCase) && LibraryPath.IsWithin(parent, root);
+                        parent = Path.GetDirectoryName(parent))
+                    {
+                        if ((File.GetAttributes(parent) & FileAttributes.ReparsePoint) != 0) return;
+                    }
+                    await RescanFolderCoreAsync(path, true, singleFolder, onlyChanged: true, cancellationToken: token,
+                        onCommitted: onCommitted);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.LogWarning(ex, "无法扫描监视目录 {Path}", path);
+                }
+            }
+        }
 
         public Task AddMusicList(IEnumerable<Music> songs)
             => addFolderService.ScanPathsAsync(songs.Select(m => m.Path), batch => CommitScanBatchAsync(batch, null), TimeSpan.Zero);
@@ -328,19 +416,34 @@ public partial class MusicDatabaseService
                 return result;
             }, batch => CommitScanBatchAsync(batch, null), TimeSpan.Zero);
 
-        public async Task DeletedMusicList(IEnumerable<Music> songs, CancellationToken cancellationToken = default)
+        public async Task DeletedMusicList(IEnumerable<Music> songs, CancellationToken cancellationToken = default,
+            Action? onCommitted = null)
         {
             foreach (var batch in songs.Chunk(ScanPipeline.BatchSize))
-                await _dbConnection.RunInTransactionAsync(db =>
+            {
+                if (await DeleteMusicBatchAsync(batch, cancellationToken) > 0) onCommitted?.Invoke();
+            }
+        }
+
+        private async Task<int> DeleteMusicBatchAsync(IEnumerable<Music> songs, CancellationToken token)
+        {
+            int changed = 0;
+            await _dbConnection.RunInTransactionAsync(db =>
+            {
+                token.ThrowIfCancellationRequested();
+                bool keepVersions = MusicMetadataStorage.HasSongs(db);
+                foreach (var music in songs)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    bool keepVersions = MusicMetadataStorage.HasSongs(db);
-                    foreach (var music in batch)
+                    if (keepVersions)
+                        changed += db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=? AND IsMissing=0", music.Id);
+                    else if (db.Delete<Music>(music.Id) > 0)
                     {
-                        if (keepVersions) db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=?", music.Id);
-                        else { db.Delete<Music>(music.Id); WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id); }
+                        changed++;
+                        WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
                     }
-                });
+                }
+            });
+            return changed;
         }
 
         /// <summary>

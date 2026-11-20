@@ -97,6 +97,8 @@ namespace WinUIMusicPlayer.Services
     public sealed class MusicDatabaseService
     {
         public List<Folder> Folders = [];
+        internal event Action? LocalFoldersChanged;
+        internal void PublishFolderChange() => LocalFoldersChanged?.Invoke();
         public int Reads;
         public TaskCompletionSource<List<Folder>>? Pending;
         public Task<List<Folder>> GetFolders() { Reads++; return Pending?.Task ?? Task.FromResult(Folders); }
@@ -106,7 +108,7 @@ namespace WinUIMusicPlayer.Services
     {
         public static int Scans;
         public static Func<CancellationToken, Task>? Scan;
-        public static Task AutoScan(CancellationToken token)
+        internal static Task AutoScan(MusicDatabaseService database, Dictionary<string, HashSet<string>?> changes, CancellationToken token)
         {
             Interlocked.Increment(ref Scans);
             return Scan?.Invoke(token) ?? Task.CompletedTask;
@@ -116,7 +118,11 @@ namespace WinUIMusicPlayer.Services
 namespace Microsoft.UI.Xaml { public enum Visibility { Visible, Collapsed } }
 namespace WinUIMusicPlayer.Utils
 {
-    public static class ToolUtils { public static string GetString(string key) => key; }
+    public static class ToolUtils
+    {
+        public static string GetString(string key) => key;
+        public static bool IsMusicFile(string extension) => extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase);
+    }
 }
 namespace WinUIMusicPlayer
 {

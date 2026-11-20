@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -54,6 +55,7 @@ public partial class AddFolderViewModel : ObservableObject
         if (_started || _stopped) return;
         _started = true;
         LibraryOperationGate.Changed += OnOperationChanged;
+        _appViewModel.SongsSourceChanged += OnSongsChanged;
     }
 
     public void Activate()
@@ -79,8 +81,14 @@ public partial class AddFolderViewModel : ObservableObject
         _folderLoadVersion++;
         if (!IsScanning) _folderRead?.Cancel();
         LibraryOperationGate.Changed -= OnOperationChanged;
+        _appViewModel.SongsSourceChanged -= OnSongsChanged;
         if (_folderLoadTask is not null) await _folderLoadTask;
         await _operationTask;
+    }
+
+    private void OnSongsChanged()
+    {
+        if (_active && !IsScanning) _initialLoad = LoadFoldersAsync();
     }
 
     private void OnOperationChanged()
@@ -120,16 +128,24 @@ public partial class AddFolderViewModel : ObservableObject
                 var folders = await _database.GetFoldersWithSongCountsAsync(request.Token);
                 if (_stopped) return;
                 if (version != _folderLoadVersion) continue;
-                FolderList.Clear();
-                foreach (var folder in folders)
+                var existing = new Dictionary<int, Folder>(FolderList.Count);
+                foreach (var folder in FolderList) existing.TryAdd(folder.Id, folder);
+                for (int i = 0; i < folders.Count; i++)
                 {
+                    var folder = folders[i];
                     if (folder.IsExternalImport)
                     {
                         folder.Name = ToolUtils.GetString("ExternalImportsFolderName");
                         folder.Path = string.Empty;
                     }
-                    FolderList.Add(folder);
+                    if (existing.TryGetValue(folder.Id, out var current) &&
+                        current.Name == folder.Name && current.Path == folder.Path && current.Type == folder.Type)
+                    {
+                        current.SongCount = folder.SongCount;
+                        folders[i] = current;
+                    }
                 }
+                ObservableListUpdates.Apply(FolderList, CollectionsMarshal.AsSpan(folders));
                 SetVisualState(false);
                 return;
             }
@@ -245,8 +261,9 @@ public partial class AddFolderViewModel : ObservableObject
     private async Task RunOperationCoreAsync(Func<Task> operation)
     {
         if (_stopped) return;
-        using var lease = LibraryOperationGate.TryEnter();
-        if (lease is null) return;
+        if (IsScanning) return;
+        using var lease = await LibraryOperationGate.EnterAsync();
+        if (_stopped) return;
         _needsReconcile = false;
         try
         {

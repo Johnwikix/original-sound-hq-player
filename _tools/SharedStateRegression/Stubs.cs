@@ -9,6 +9,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsMissing { get; set; }
         public bool IsDetached { get; init; }
         public bool IsRemoteCached { get; init; }
+        public string ImageHash { get; init; } = "";
         public string CodecId { get; init; } = "";
         public int BitDepth { get; set; }
         public bool? TitleFromFileName { get; set; }
@@ -17,6 +18,7 @@ namespace WinUIMusicPlayer.Model
         public int BitRate { get; init; }
         public int Channel { get; init; }
         public int SourceId { get; init; }
+        public Music? ArtistTileSource { get; init; }
         public bool IsRemote => SourceId != 0;
         public string Author { get; init; } = "artist";
         public string Album { get; init; } = "album";

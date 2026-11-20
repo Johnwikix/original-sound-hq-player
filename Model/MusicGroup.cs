@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class MusicGroup : List<Music>
+    public class MusicGroup : ObservableCollection<Music>
     {
         public string Key { get; set; }
         public int ItemCount => Count;

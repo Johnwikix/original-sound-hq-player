@@ -62,7 +62,7 @@ namespace WinUIMusicPlayer.ViewModel
             _covers = covers;
             Playback = playback;
             _coordinator = coordinator;
-            coordinator.TrackStarted += OnTrackStarted;
+            coordinator.TrackStarted += PresentTrack;
             this.AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             UsbDeviceService = usbDeviceService;
@@ -88,11 +88,11 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task LoadPlayStateToMusicBrowsePage()
         {
-            if (AppViewModel.CurrentPlayingMusic is not null)
+            if (AppViewModel.CurrentPlayingMusic is { } music)
             {
-                _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
+                PresentTrack(music, 0, default);
                 App.MainWindow.DispatcherQueue.TryEnqueue(_clearUILyrics);
-                AppViewModel.LoadLyricsToUI(AppViewModel.CurrentPlayingMusic);
+                AppViewModel.LoadLyricsToUI(music);
             }
         }
 
@@ -134,7 +134,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _disposed = true;
             if (_addFolderVm is not null) _addFolderVm.PropertyChanged -= FolderScanChanged;
-            _coordinator.TrackStarted -= OnTrackStarted;
+            _coordinator.TrackStarted -= PresentTrack;
         }
 
         [RelayCommand]
@@ -239,9 +239,10 @@ namespace WinUIMusicPlayer.ViewModel
         public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false, long entryId = 0)
             => _coordinator.PlayAsync(music, entryId);
 
-        private void OnTrackStarted(Music music, CancellationToken token)
+        private void PresentTrack(Music music, long positionMs, CancellationToken token)
         {
             if (_disposed) return;
+            SystemMediaControlsService.UpdateTimelineProperties(TimeSpan.FromMilliseconds(positionMs), music.Duration);
             _ = UpdatePlayBar(music, token);
         }
 

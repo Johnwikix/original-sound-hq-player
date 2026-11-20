@@ -246,9 +246,11 @@ namespace WinUIMusicPlayer.Services
         public List<Music> Played { get; } = [];
         public int Ends;
         public Action<Music>? OnPlay;
-        public void PlayMusic(Music music)
+        public long LastPlaybackId { get; private set; }
+        public void PlayMusic(Music music, long playbackId)
         {
             if (!App.MainWindow.DispatcherQueue.HasThreadAccess) throw new Exception("play called outside UI thread");
+            LastPlaybackId = playbackId;
             Played.Add(music);
             OnPlay?.Invoke(music);
         }
@@ -352,6 +354,7 @@ namespace WinUIMusicPlayer.Services
         public void Confirm(Music music) => PlaybackStarted?.Invoke(music, new(1, _generation, 0, 10000, 0, true), false);
         private long _generation;
         public int PreservedStops { get; private set; }
+        public BassPlayerIpc.Shared.ProgressSnapshot? GetProgress() => null;
         public long BeginSelection(Music music, bool resumeInterrupted = false)
         {
             WantsPlay = true;

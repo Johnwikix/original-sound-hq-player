@@ -13,6 +13,7 @@
     <Compile Include="../../Services/InitialFileScan.cs" />
     <Compile Include="../../Services/LibraryPlaybackReconciler.cs" />
     <Compile Include="../../Services/LibraryOperationGate.cs" />
+    <Compile Include="../../Services/AutoRescanService.cs;../../Services/LibraryWatcherService.cs" />
     <Compile Include="../../Services/LibraryPath.cs" />
     <Compile Include="../../Services/MusicDatabaseService.Scanning.cs" />
     <Compile Include="../../Services/MusicDatabaseService.ExternalImports.cs" />
@@ -24,7 +25,7 @@
     <Compile Include="../../Services/FolderAccessService.cs" />
     <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
     <Compile Include="../../ViewModel/ProgressCenter.cs" />
-    <Compile Include="../../Model/Folder.cs" />
+    <Compile Include="../../Model/Folder.cs;../../Model/ObservableListUpdates.cs" />
     <Compile Include="../../Model/SubFolder.cs" />
     <Compile Include="../../Model/MusicLyrics.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyricsRecord.cs" />
     <Compile Include="../../Model/SongRecord.cs;../../Model/PlayListMusic.cs" />
@@ -32,7 +33,7 @@
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../AudioConverters/FFmpegMetadataProbe.cs" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
   </ItemGroup>

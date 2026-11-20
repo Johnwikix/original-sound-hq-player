@@ -280,12 +280,12 @@ namespace WinUIMusicPlayer.Services
 
         // ──────────────── Public API ────────────────
 
-        public void Play(string musicUrl)
+        public void Play(string musicUrl, long playbackId)
         {
-            var req = new PlayRequest { Url = musicUrl };
-            Span<byte> buf = stackalloc byte[BinarySerializer.PlayRequestSize];
-            int len = BinarySerializer.WritePlayRequest(buf, req);
-            Publish(CommandId.Play, buf[..len]);
+            Span<byte> buf = stackalloc byte[BinarySerializer.PlayOccurrenceSize];
+            int len = BinarySerializer.WritePlayOccurrence(buf, playbackId, musicUrl);
+            if (_transport?.Publish(CommandId.PlayOccurrence, buf[..len], coalesce: false) != true)
+                throw new InvalidOperationException("播放命令未能进入发送队列");
         }
 
         /// <summary>

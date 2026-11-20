@@ -60,17 +60,19 @@ namespace WinUIMusicPlayer.Services
                         AppViewModel.StopProgressTimer();
                 });
             }
-            else if (typeId == MessageTypeId.PlayEnded)
+            else if (typeId == MessageTypeId.PlayEnded && PlaybackEnded.TryRead(payload.Span, out var ended))
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     if (!CanReceive || _remote.IsActive) return;
+                    var coordinator = App.Services.GetRequiredService<PlaybackCoordinator>();
+                    if (!coordinator.TryAcceptLocalEnd(ended)) return;
                     AppViewModel.IsPlaying = false;
                     AppViewModel.StopProgressTimer();
                     var (_, total) = AppViewModel.GetTimeProgressCache();
                     AppViewModel.MarkPlaybackEnded(total);
                     AppViewModel.UpdateProgressTimerUI();
-                    _ = AutoPlayNextTrack();
+                    _ = coordinator.AdvanceAfterEndAsync();
                 });
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
@@ -139,10 +141,10 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }
 
-        public void PlayMusic(Music music)
+        public void PlayMusic(Music music, long playbackId)
         {
             if (!CanPlay) return;
-            IpcService.Play(music.Path);
+            IpcService.Play(music.Path, playbackId);
             AppViewModel.StartProgressTimer();
         }
 

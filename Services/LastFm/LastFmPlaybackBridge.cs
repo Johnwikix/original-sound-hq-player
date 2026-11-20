@@ -45,7 +45,7 @@ public sealed class LastFmPlaybackBridge(AppState state, PlaybackCoordinator coo
         ApplyStatus(service.Status);
     }
 
-    private void Selected(Music music, CancellationToken token)
+    private void Selected(Music music, long positionMs, CancellationToken token)
     {
         // Keep a WebDAV occurrence across an interrupted connection until its resume is confirmed.
         if (!music.IsRemote || !ReferenceEquals(music, _sessionMusic)) ResetSession();

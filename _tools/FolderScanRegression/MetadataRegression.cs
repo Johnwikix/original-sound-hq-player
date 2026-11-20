@@ -37,7 +37,7 @@ internal static class MetadataRegression
             await db.QueueMetadataWriteAsync(music, null, parser.Import("[00:01.00]new lyrics"), revision++);
             var batch = new List<(Music Music, string Lyrics)> { (new Music { Id = music.Id, Path = filePath, Title = "stale" }, "old") };
             var commit = typeof(MusicDatabaseService).GetMethod("CommitScanBatchAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-            await (Task)commit.Invoke(db, [batch, null])!;
+            await (Task)commit.Invoke(db, [batch, null, null])!;
             Check((await db.Connection.FindAsync<Music>(music.Id)).Title == "latest", "scan preserves pending edits");
         }
         await db.Connection.CloseAsync();

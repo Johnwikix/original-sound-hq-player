@@ -25,7 +25,6 @@ namespace WinUIMusicPlayer.Model
         public Music Music { get; set; } = new(1, "");
         public int PlayListOrder { get; set; }
     }
-    public sealed record MusicGroup(string Key, List<Music> Items);
     public sealed record PlaylistLink(int MusicId, int PlayListId, int Order)
     {
         public int Id { get; init; }
@@ -40,7 +39,7 @@ namespace WinUIMusicPlayer.Utils
     public static class ArtistHelper
     {
         public static string[] GetArtistNames(string name) => name.Split(';');
-        public static Model.Music CreateArtistTile(Model.Music music, string artist) => music with { Author = artist };
+        public static Model.Music CreateArtistTile(Model.Music music, string artist) => music with { Author = artist, ArtistTileSource = music };
     }
     public static class CjkStringComparer
     {

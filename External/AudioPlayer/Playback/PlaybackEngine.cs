@@ -179,14 +179,17 @@ public sealed partial class PlaybackEngine : IDisposable
 
     // ─────────────── 播放控制（IPC 面） ───────────────
 
-    public void PlayMusic(string musicUrl)
+    // MusicUrl can already name the next request while the outgoing decoder drains its fade.
+    private long _requestedPlaybackId, _activePlaybackId;
+
+    public void PlayMusic(string musicUrl, long playbackId = 0)
     {
         CancelStreams();
         lock (_streamLock)
         {
             AdoptGapless();
             CancelGapless();
-            _currentGaplessToken = 0;
+            _requestedPlaybackId = playbackId;
             MusicUrl = musicUrl;
             if (IsFadingEnabled && IsPlaying && _session is { Kind: RenderKind.Pcm } && _output is { IsFailed: false })
             {
@@ -203,6 +206,8 @@ public sealed partial class PlaybackEngine : IDisposable
 
     private void SwitchTo(string musicUrl)
     {
+        _activePlaybackId = _requestedPlaybackId;
+        _currentGaplessToken = 0;
         Interlocked.Increment(ref _playGen);
         _recovery = null;
         ResetAtmosAttempt();
@@ -225,6 +230,8 @@ public sealed partial class PlaybackEngine : IDisposable
     /// <summary>备好新会话但不起播（换曲淡出期间被暂停）：UI 已显示新曲，PlayButton 直接续播新曲。</summary>
     private void PrepareNext(string url)
     {
+        _activePlaybackId = _requestedPlaybackId;
+        _currentGaplessToken = 0;
         Interlocked.Increment(ref _playGen);
         _recovery = null;
         ResetAtmosAttempt();
@@ -1289,7 +1296,7 @@ public sealed partial class PlaybackEngine : IDisposable
                         output.Pause();
                         IsPlaying = false;
                         // 网络会话通过带 SessionId 的 status 结束，避免旧无身份通知重复切歌。
-                        if (_currentStream == Guid.Empty) _ipc.PlayBackEnded();
+                        if (_currentStream == Guid.Empty) _ipc.PlayBackEnded(new(_activePlaybackId, session.TimelineEpoch));
                     }
                 }
             }

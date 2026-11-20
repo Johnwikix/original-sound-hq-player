@@ -26,7 +26,7 @@
     <Page Include="../../View/FolderBrowsePage.xaml" Link="View/FolderBrowsePage.xaml" />
     <Page Include="../../View/AddFolderPage.xaml" Link="View/AddFolderPage.xaml" />
     <Compile Include="../../View/AddFolderPage.xaml.cs" />
-    <Compile Include="../../View/FolderBrowsePage.xaml.cs;../../ViewModel/Pages/FolderViewModel.cs;../../Services/FolderBrowserIndex.cs;../../Model/FolderLocation.cs;../../Model/FolderBrowserNode.cs;../../Model/BulkObservableCollection.cs;../../State/LibraryState.cs" />
+    <Compile Include="../../View/FolderBrowsePage.xaml.cs;../../ViewModel/Pages/FolderViewModel.cs;../../Services/FolderBrowserIndex.cs;../../Model/FolderLocation.cs;../../Model/FolderBrowserNode.cs;../../Model/BulkObservableCollection.cs;../../Model/ObservableListUpdates.cs;../../Model/MusicGroup.cs;../../State/LibraryState.cs" />
     <Compile Include="../../Behaviors/KeyDownCommandBehavior.cs;../../Behaviors/ScrollSelectedItemIntoViewBehavior.cs;../../Behaviors/SelectionChangedCommandBehavior.cs;../../Services/FolderCommands.cs" />
     <Content Include="../../Strings/en/Resources.resw" Link="browser-resources.resw" CopyToOutputDirectory="PreserveNewest" />
     <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />

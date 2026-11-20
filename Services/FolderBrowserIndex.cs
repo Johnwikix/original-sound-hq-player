@@ -15,7 +15,9 @@ public sealed class FolderBrowserIndex
         public bool Equals(FolderKey x, FolderKey y) => x.SourceId == y.SourceId && PathComparer(x.SourceId).Equals(x.Path, y.Path);
         public int GetHashCode(FolderKey key) => HashCode.Combine(key.SourceId, PathComparer(key.SourceId).GetHashCode(key.Path));
     }
-    private readonly Dictionary<FolderKey, FolderBrowserNode> _nodes = new(new FolderKeyComparer());
+    private Dictionary<FolderKey, FolderBrowserNode> _nodes = new(new FolderKeyComparer());
+    private Dictionary<FolderKey, FolderBrowserNode> _prior = new(new FolderKeyComparer());
+    private readonly List<(FolderBrowserNode Node, bool HadChildren)> _reused = [];
     public List<FolderBrowserNode> Roots { get; } = [];
     private readonly List<FolderLocation> _pending = [];
 
@@ -31,7 +33,9 @@ public sealed class FolderBrowserIndex
 
     public void Rebuild(IReadOnlyList<Music> songs, List<Folder> folders, int sourceFilter)
     {
+        (_nodes, _prior) = (_prior, _nodes);
         _nodes.Clear();
+        _reused.Clear();
         Roots.Clear();
         folders.Sort(static (a, b) => (a.Path?.Length ?? 0).CompareTo(b.Path?.Length ?? 0));
         if (sourceFilter is -1 or 0)
@@ -41,15 +45,22 @@ public sealed class FolderBrowserIndex
         // .NET 10+：每个目录只构建一次；逐曲计数复用节点，不复制各级歌曲集合。
         foreach (var music in songs)
         {
-            if (!LibraryQueries.MatchesSource(music, sourceFilter)) continue;
+            if (!LibraryQueries.IsBrowsable(music) || !LibraryQueries.MatchesSource(music, sourceFilter)) continue;
             var path = FolderLocation.Normalize(music.FolderPath, music.SourceId);
             if (path.Length == 0) continue;
             var node = EnsureDirectory(music.SourceId, path, music.LastLevelFolderPath);
-            node.DirectSongCount++;
-            for (var ancestor = node; ancestor is not null; ancestor = ancestor.Parent) ancestor.SongCount++;
+            node.PendingDirectSongCount++;
+            for (var ancestor = node; ancestor is not null; ancestor = ancestor.Parent) ancestor.PendingSongCount++;
         }
         Roots.Sort(CompareNodes);
-        foreach (var node in _nodes.Values) FinishNode(node);
+        foreach (var node in _nodes.Values)
+        {
+            node.Children.Sort(CompareNodes);
+            node.PublishCounts();
+        }
+        foreach (var (node, hadChildren) in _reused) node.NotifyChildrenChanged(hadChildren);
+        _reused.Clear();
+        _prior.Clear();
     }
 
     private void AddLocalRoot(Folder folder)
@@ -100,8 +111,18 @@ public sealed class FolderBrowserIndex
     private FolderBrowserNode Add(FolderLocation location, FolderBrowserNode? parent)
     {
         if (_nodes.TryGetValue(new(location.SourceId, location.Path), out var existing)) return existing;
-        var node = new FolderBrowserNode(location, parent);
-        _nodes.Add(new(location.SourceId, location.Path), node);
+        var key = new FolderKey(location.SourceId, location.Path);
+        FolderBrowserNode node;
+        if (_prior.TryGetValue(key, out var prior) && prior.Location == location && ReferenceEquals(prior.Parent, parent))
+        {
+            node = prior;
+            _reused.Add((node, node.HasChildren));
+            node.Children.Clear();
+            node.PendingSongCount = 0;
+            node.PendingDirectSongCount = 0;
+        }
+        else node = new FolderBrowserNode(location, parent);
+        _nodes.Add(key, node);
         if (parent is null) Roots.Add(node);
         else parent.Children.Add(node);
         return node;
@@ -112,7 +133,6 @@ public sealed class FolderBrowserIndex
         int separator = displayPath.IndexOf(" / ", StringComparison.Ordinal);
         return separator > 0 ? displayPath[..separator] : "WebDAV " + sourceId;
     }
-    private static void FinishNode(FolderBrowserNode node) => node.Children.Sort(CompareNodes);
     private static int CompareNodes(FolderBrowserNode a, FolderBrowserNode b)
         => StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name);
 }

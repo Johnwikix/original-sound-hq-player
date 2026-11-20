@@ -12,6 +12,7 @@ public static class BinarySerializer
     public const int StringHeaderSize = 2; // ushort
 
     public const int PlayRequestSize = StringHeaderSize + MaxStringBytes;
+    public const int PlayOccurrenceSize = sizeof(long) + PlayRequestSize;
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 16;
     public const int ChangeVolumeRequestSize = 8;
@@ -59,6 +60,21 @@ public static class BinarySerializer
 
     public static int WritePlayRequest(Span<byte> dest, PlayRequest req) => WriteString(dest, req.Url);
     public static PlayRequest ReadPlayRequest(ReadOnlySpan<byte> src) => new() { Url = ReadString(src, out _) };
+
+    public static int WritePlayOccurrence(Span<byte> dest, long playbackId, string url)
+    {
+        if (playbackId <= 0) throw new ArgumentOutOfRangeException(nameof(playbackId));
+        BinaryPrimitives.WriteInt64LittleEndian(dest, playbackId);
+        return sizeof(long) + WriteString(dest[sizeof(long)..], url);
+    }
+
+    public static (long PlaybackId, string Url) ReadPlayOccurrence(ReadOnlySpan<byte> src)
+    {
+        long id = BinaryPrimitives.ReadInt64LittleEndian(src);
+        string url = ReadString(src[sizeof(long)..], out int length);
+        if (id <= 0 || src.Length != sizeof(long) + length) throw new ArgumentException("Invalid playback occurrence.");
+        return (id, url);
+    }
 
     public static int WriteSetMusicUrlRequest(Span<byte> dest, SetMusicUrlRequest req) => WriteString(dest, req.Url);
     public static SetMusicUrlRequest ReadSetMusicUrlRequest(ReadOnlySpan<byte> src) => new() { Url = ReadString(src, out _) };

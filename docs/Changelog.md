@@ -1,3 +1,14 @@
+## 2026-11-20 修复切歌交接和暂停进度
+
+- `PlaybackEngine`、`BassPlayerCommandService` 按播放实例和时间线识别曲终，避免迟到或重复的通知跳过当前曲目。
+- `PlaybackCoordinator` 保留引擎已经完成的交接，避免重复起播。手动下一首按队列出现项跟踪，追加或移动其他歌曲时继续原选择。
+- `CoverPresentationService`、`MusicBrowseViewModel` 在选曲提交或恢复时同步系统媒体时间线。交叠切歌保留已播放的位置，封面回滚保留暂停位置。
+
+## 2026-11-20 文件夹监听按曲目变化更新列表
+
+- `LibraryWatcherService`、`MusicDatabaseService.Scanning` 合并文件事件，核对受影响的目录，仅在曲目实际写入、恢复或确认缺失后发布变化。
+- `LibraryProjectionService`、`FolderViewModel` 保留列表及未变化的行，逐项应用新增、移除与修改。专辑或艺术家的字母分组增删时重新绑定分组视图。本地缺失版本从浏览列表移出，保留其版本、收藏与歌单记录。
+
 ## 2026-11-20 恢复切歌时的封面动画并消除背景闪烁
 
 - `CoverPresentationService` 在下一张封面准备好前保留当前画面，快速切歌只发布最新曲目的封面；无封面曲目等默认配色就绪后切换。

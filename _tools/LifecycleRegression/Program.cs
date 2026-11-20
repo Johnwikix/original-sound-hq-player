@@ -119,12 +119,15 @@ try
     Check(database.Reads == 0, "Watcher constructor performed IO");
     await watcher.StartAsync(); await watcher.StartAsync();
     Check(database.Reads == 1, "Repeated startup created duplicate watchers");
-    await File.WriteAllTextAsync(Path.Combine(directory, "track.txt"), "changed");
+    await File.WriteAllTextAsync(Path.Combine(directory, "cover.txt"), "unrelated");
+    await Task.Delay(1200);
+    Check(AutoRescanService.Scans == 0, "Unrelated file reached the scan consumer");
+    await File.WriteAllTextAsync(Path.Combine(directory, "track.mp3"), "changed");
     for (int i = 0; i < 60 && AutoRescanService.Scans == 0; i++) await Task.Delay(50);
     Check(AutoRescanService.Scans > 0, "Real filesystem change did not reach scan consumer");
     await watcher.StopAsync(); await watcher.StopAsync();
     int scans = AutoRescanService.Scans;
-    await File.WriteAllTextAsync(Path.Combine(directory, "track.txt"), "after shutdown");
+    await File.WriteAllTextAsync(Path.Combine(directory, "track.mp3"), "after shutdown");
     await Task.Delay(1200);
     Check(AutoRescanService.Scans == scans, "Watcher continued scanning after stop");
 }

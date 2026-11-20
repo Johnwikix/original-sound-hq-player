@@ -34,9 +34,9 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed class PlaybackCoordinator
     {
-        public event Action<Model.Music, CancellationToken>? TrackStarted;
+        public event Action<Model.Music, long, CancellationToken>? TrackStarted;
         public event Action<Model.Music, ProgressSnapshot>? PlaybackConfirmed;
-        public void Select(Model.Music music) => TrackStarted?.Invoke(music, default);
+        public void Select(Model.Music music) => TrackStarted?.Invoke(music, 0, default);
         public void Confirm(Model.Music music, ProgressSnapshot snapshot) => PlaybackConfirmed?.Invoke(music, snapshot);
     }
     public sealed class RemotePlaybackService

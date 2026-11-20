@@ -17,12 +17,12 @@ public sealed partial class PlaybackCoordinator
     // SelectionVersion rejects an old user intent; Epoch rejects an old engine timeline;
     // Token identifies this exact plan, including duplicate queue entries.
     private sealed record NextPlan(long Token, long SelectionVersion, Music From, Music Next,
-        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeSeconds, bool PreserveAlbumBoundary, bool Manual = false);
+        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeSeconds, bool PreserveAlbumBoundary);
     private NextPlan? _nextPlan;
     private NextPlan? _cancellingPlan;
     private TaskCompletionSource? _gaplessCancellationSettled;
     private (long Epoch, long PositionMs) _cancellingTransition;
-    private (NextPlan Plan, long Epoch, long PositionMs)? _supersededManualHandoff;
+    private (NextPlan Plan, long Epoch, long PositionMs)? _supersededHandoff;
     private IpcService? _gaplessIpc;
     private DispatcherQueueTimer? _gaplessTimer;
     private long _nextToken, _lastAcceptedToken, _retryAfter, _outputGeneration;
@@ -124,7 +124,7 @@ public sealed partial class PlaybackCoordinator
         if (!replacingManual && _nextPlan is { } prepared && prepared.EntryId == entryId)
         {
             // Keep the natural decoder and token when Next targets the same queue occurrence.
-            _nextPlan = prepared with { SelectionVersion = version, Manual = true };
+            _nextPlan = prepared with { SelectionVersion = version };
             return;
         }
         CancelGaplessPlan();
@@ -141,7 +141,7 @@ public sealed partial class PlaybackCoordinator
     // Pause, stop and seek invalidate the pending click, while an already audible handoff still owns the track.
     internal bool CancelManualNext()
     {
-        if (_disposed || (!IsManualNextPending && !HasManualPreview)) return false;
+        if (_disposed || (!IsManualNextPending && !HasManualPreview && !_manualQueueOptions.HasValue)) return false;
         _playingVersion = ++_selectionVersion;
         _manualNextVersion = 0;
         _deferredFailure = null;
@@ -150,7 +150,7 @@ public sealed partial class PlaybackCoordinator
         CancelGaplessPlan();
         _presentation?.Cancel();
         SetPending(null);
-        ReconcileSupersededManualHandoff();
+        ReconcileSupersededHandoff();
         UpdateGaplessTimer();
         return true;
     }
@@ -179,9 +179,9 @@ public sealed partial class PlaybackCoordinator
         token.ThrowIfCancellationRequested();
         if (plan is null)
         {
-            long epoch = Math.Max(progress.Epoch, _supersededManualHandoff?.Epoch ?? 0);
+            long epoch = Math.Max(progress.Epoch, _supersededHandoff?.Epoch ?? 0);
             plan = new(++_nextToken, _selectionVersion, current, next, entryId, epoch, next.Path,
-                settings.TransitionStyle, settings.CrossfadeSeconds, PreserveAlbumBoundary(current, next), Manual: true);
+                settings.TransitionStyle, settings.CrossfadeSeconds, PreserveAlbumBoundary(current, next));
             _nextPlan = plan;
         }
 
@@ -355,7 +355,14 @@ public sealed partial class PlaybackCoordinator
     {
         if (e.PropertyName != nameof(state.State.Queue.Version)) return;
         _candidateDirty = true;
-        CancelManualNext();
+        if (_manualQueueOptions is { } options && state.State.Playback.PendingSelection is { } pending)
+        {
+            var queue = state.State.Queue;
+            int index = queue.IndexOfEntry(pending.EntryId);
+            if (index < 0 || !ReferenceEquals(state.CurrentPlayingList[index], pending.Music)
+                || options != (queue.RequestedVersion(pending.EntryId), queue.SourceScope(pending.EntryId))
+                || !PlaybackCommands.CanAttemptEntry(state, index)) CancelManualNext();
+        }
         UpdateGaplessTimer();
         RefreshGaplessPlan();
     }
@@ -574,7 +581,7 @@ public sealed partial class PlaybackCoordinator
         {
             if (committed.Token == plan.Token)
                 ReconcileCancelledPlan(plan, transition.Epoch > 0 ? transition.Epoch : committed.Epoch, transition.PositionMs);
-            ReconcileSupersededManualHandoff();
+            ReconcileSupersededHandoff();
             RefreshGaplessPlan();
         }
         catch (Exception ex) { logger.LogError(ex, "处理下一曲取消回执失败"); }
@@ -583,23 +590,23 @@ public sealed partial class PlaybackCoordinator
 
     private void ReconcileCancelledPlan(NextPlan plan, long epoch, long positionMs)
     {
-        if (!plan.Manual || plan.SelectionVersion == _selectionVersion)
+        if (plan.SelectionVersion == _selectionVersion)
         {
             AcceptCommittedGapless(plan, epoch, positionMs);
             return;
         }
         // The cancel reply proves this handoff was audible. A newer selection can still replace it.
-        if (plan.Token <= _lastAcceptedToken || plan.SelectionVersion <= _activeSelectionVersion
+        if (plan.Token <= _lastAcceptedToken || plan.SelectionVersion < _activeSelectionVersion
             || state.CurrentPlayingMusic != plan.From) return;
-        _supersededManualHandoff = (plan, epoch, positionMs);
+        _supersededHandoff = (plan, epoch, positionMs);
     }
 
-    private void ReconcileSupersededManualHandoff()
+    private void ReconcileSupersededHandoff()
     {
-        if (_supersededManualHandoff is not { } confirmed || _cancellingPlan != null
+        if (_supersededHandoff is not { } confirmed || _cancellingPlan != null
             || state.State.Playback.PendingSelection != null) return;
-        _supersededManualHandoff = null;
-        if (confirmed.Plan.SelectionVersion <= _activeSelectionVersion) return;
+        _supersededHandoff = null;
+        if (confirmed.Plan.SelectionVersion < _activeSelectionVersion) return;
         AcceptCommittedGapless(confirmed.Plan with { SelectionVersion = _selectionVersion }, confirmed.Epoch, confirmed.PositionMs);
     }
 
@@ -662,7 +669,9 @@ public sealed partial class PlaybackCoordinator
             || plan.SelectionVersion != _selectionVersion || state.CurrentPlayingMusic != plan.From
             || (!manual && state.State.Playback.PendingSelection != null)) return;
         _lastAcceptedToken = plan.Token;
-        _supersededManualHandoff = null;
+        _activeLocalPlaybackId = plan.Token;
+        _lastEndedEpoch = 0;
+        _supersededHandoff = null;
         _deferredNaturalEnd = false;
         if (manual) _manualNextVersion = 0;
         _nextPlan = null;
@@ -696,6 +705,7 @@ public sealed partial class PlaybackCoordinator
             _versionConfirmed = true;
             _activeIntent = (plan.Next, plan.EntryId, _intentExact, _intentMayAdvance, true);
             _activeSelectionVersion = _selectionVersion;
+            _playingVersion = _selectionVersion;
             state.CurrentPlayingMusic = plan.Next;
             _previewNextVersion = 0;
             state.State.Playback.TransitionPresentation = hasProgress ? null
@@ -711,7 +721,7 @@ public sealed partial class PlaybackCoordinator
                 state.LoadLyricsToUI(plan.Next);
             }
             if (hasProgress) state.UpdateProgressTimerUI();
-            TrackStarted?.Invoke(plan.Next, cancellation);
+            TrackStarted?.Invoke(plan.Next, confirmed.CurrentMs, cancellation);
             PlaybackConfirmed?.Invoke(plan.Next, confirmed);
         }
         finally
@@ -734,7 +744,7 @@ public sealed partial class PlaybackCoordinator
         CancelGaplessPlan();
         state.State.Playback.TransitionPresentation = null;
         _cancellingPlan = null;
-        _supersededManualHandoff = null;
+        _supersededHandoff = null;
         _gaplessCancellationSettled?.TrySetResult();
         _gaplessCancellationSettled = null;
         if (_gaplessTimer != null)

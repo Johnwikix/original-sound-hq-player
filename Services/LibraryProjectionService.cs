@@ -36,8 +36,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private int CurrentPlayListId => state.Browse.CurrentPlayListId;
     // 仅缓存固定页面投影的键，结果仍由绑定集合持有，不额外复制全库或保留第二份结果。
     private readonly Dictionary<object, QueryKey> _published = new();
-    private readonly record struct QueryKey(long Version, string Search, string Sort, string? Group, string ArtistSymbols, int Source);
-    private QueryKey Key(string? group = null) => new(state.Library.Version, SearchText,
+    private readonly record struct QueryKey(long Version, long SnapshotGeneration, string Search, string Sort, string? Group, string ArtistSymbols, int Source);
+    private QueryKey Key(string? group = null) => new(state.Library.Version, state.Library.SnapshotGeneration, SearchText,
         SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder", group, AppSettings.ArtistSplitSymbols, state.Browse.SourceFilterId);
     private QueryKey SongKey(SongViewType kind) => Key(kind switch
     {
@@ -95,9 +95,10 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                     {
                         HashSet<int> includedSongs = [];
                         // 在 UI 线程复制字段；后台比较器绝不读取可变 Music 属性或 UI 集合。
+                        bool browse = request.Kind != SongViewType.Favorite;
                         foreach (var music in SongsSource)
                         {
-                            if (!LibraryQueries.MatchesSource(music, key.Source)) continue;
+                            if (!LibraryQueries.MatchesSource(music, key.Source) || browse && !LibraryQueries.IsBrowsable(music)) continue;
                             if (request.Kind == SongViewType.Folder || music.SongId <= 0)
                             {
                                 if (request.Filter is not null && !request.Filter(music)) continue;
@@ -105,12 +106,12 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                                 continue;
                             }
                             if (!includedSongs.Add(music.SongId)) continue;
-                            var display = queries.FindDisplayVersion(music.SongId, key.Source) ?? music;
+                            var display = queries.FindDisplayVersion(music.SongId, key.Source, browse) ?? music;
                             if (request.Filter is not null && !request.Filter(display)) continue;
                             bool matchedOtherVersion = false;
                             if (!string.IsNullOrWhiteSpace(key.Search))
                                 foreach (var version in queries.GetVersions(music.SongId))
-                                    if (LibraryQueries.MatchesSource(version, key.Source) && MusicMatchesSearch(version, key.Search))
+                                    if ((!browse || LibraryQueries.IsBrowsable(version)) && LibraryQueries.MatchesSource(version, key.Source) && MusicMatchesSearch(version, key.Search))
                                     { matchedOtherVersion = true; break; }
                             rows[count++] = new SongRow(display) { MatchedOtherVersion = matchedOtherVersion };
                         }
@@ -126,7 +127,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                         if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
                         if (SongKey(request.Kind) == key && _requested[target].Kind == request.Kind)
                         {
-                            target.FillFrom(result.AsSpan(0, written));
+                            var visible = result.AsSpan(0, written);
+                            if (_published.TryGetValue(target, out var previous) && previous with { Version = key.Version } == key)
+                                ObservableListUpdates.Apply(target, visible);
+                            else
+                                target.FillFrom(visible);
                             _published[target] = key;
                             return;
                         }
@@ -166,7 +171,14 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             Additional.Matches(search) ||
             FileNameMatchesSearch(Path, search) ||
             (folder && (Folder?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
-        public static IComparer<SongRow> Comparer(string sort, SongViewType kind) => System.Collections.Generic.Comparer<SongRow>.Create((a, b) =>
+        public static IComparer<SongRow> Comparer(string sort, SongViewType kind) =>
+            System.Collections.Generic.Comparer<SongRow>.Create((a, b) =>
+            {
+                int comparison = Compare(a, b, sort, kind);
+                return comparison != 0 ? comparison : a.Id.CompareTo(b.Id);
+            });
+
+        private static int Compare(SongRow a, SongRow b, string sort, SongViewType kind)
         {
             int c;
             switch (sort)
@@ -191,7 +203,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                     return c != 0 ? c : a.Track.CompareTo(b.Track);
                 default: return CjkStringComparer.Compare(a.Title, b.Title);
             }
-        });
+        }
     }
 
     public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
@@ -207,8 +219,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var original = srcSpan[i];
-                if (!LibraryQueries.MatchesSource(original, state.Browse.SourceFilterId)) continue;
-                var m = original.SongId > 0 ? queries.FindDisplayVersion(original.SongId, state.Browse.SourceFilterId) ?? original : original;
+                if (!LibraryQueries.IsBrowsable(original) || !LibraryQueries.MatchesSource(original, state.Browse.SourceFilterId)) continue;
+                var m = original.SongId > 0 ? queries.FindDisplayVersion(original.SongId, state.Browse.SourceFilterId, browse: true) ?? original : original;
                 if (hasSearch && !MatchesSearchShape(m, search))
                     continue;
 
@@ -244,12 +256,18 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             bool hasSearch = !string.IsNullOrWhiteSpace(SearchText);
             var search = SearchText;
 
+            Dictionary<string, Music> existingTiles = new(StringComparer.Ordinal);
+            if (source.Source is List<MusicGroup> publishedGroups)
+                foreach (var group in publishedGroups)
+                    foreach (var tile in group)
+                        existingTiles[tile.Author] = tile;
+
             var distinctMap = new Dictionary<string, Music>(srcSpan.Length / 4 + 1);
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var original = srcSpan[i];
-                if (!LibraryQueries.MatchesSource(original, state.Browse.SourceFilterId)) continue;
-                var m = original.SongId > 0 ? queries.FindDisplayVersion(original.SongId, state.Browse.SourceFilterId) ?? original : original;
+                if (!LibraryQueries.IsBrowsable(original) || !LibraryQueries.MatchesSource(original, state.Browse.SourceFilterId)) continue;
+                var m = original.SongId > 0 ? queries.FindDisplayVersion(original.SongId, state.Browse.SourceFilterId, browse: true) ?? original : original;
                 if (string.IsNullOrWhiteSpace(m.Author)) continue;
                 if (hasSearch && !MatchesSearchShape(m, search))
                     continue;
@@ -257,8 +275,12 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 var names = ArtistHelper.GetArtistNames(m.Author);
                 for (int n = 0; n < names.Length; n++)
                 {
-                    if (!distinctMap.ContainsKey(names[n]))
-                        distinctMap[names[n]] = ArtistHelper.CreateArtistTile(m, names[n]);
+                    string name = names[n];
+                    if (!distinctMap.ContainsKey(name))
+                        distinctMap[name] = existingTiles.TryGetValue(name, out var tile) && ReferenceEquals(tile.ArtistTileSource, m) &&
+                            tile.Title == m.Title && tile.Album == m.Album && tile.Path == m.Path &&
+                            tile.Year == m.Year && tile.UpdateTime == m.UpdateTime && tile.ImageHash == m.ImageHash
+                            ? tile : ArtistHelper.CreateArtistTile(m, name);
                 }
             }
 
@@ -303,7 +325,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 "UpdateTimeDESC" => _songByUpdateTimeDesc,
                 _ => Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(distinctSelector(a), distinctSelector(b))),
             };
-            slice.Sort(comparer);
+            slice.Sort((a, b) =>
+            {
+                int comparison = comparer.Compare(a, b);
+                return comparison != 0 ? comparison : StringComparer.Ordinal.Compare(distinctSelector(a), distinctSelector(b));
+            });
 
             var groupDict = new Dictionary<string, List<Music>>(count / 4 + 1);
             for (int i = 0; i < count; i++)
@@ -317,18 +343,30 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 list.Add(buf[i]);
             }
 
-            var groups = new List<MusicGroup>(groupDict.Count);
-            foreach (var kvp in groupDict)
-                groups.Add(new MusicGroup(kvp.Key, kvp.Value));
-            groups.Sort((a, b) => string.Compare(
-                a.Key == "ZZZ" ? "#" : a.Key,
-                b.Key == "ZZZ" ? "#" : b.Key,
-                StringComparison.Ordinal));
+            var groupKeys = groupDict.Keys.ToList();
+            groupKeys.Sort(static (a, b) => string.Compare(a == "ZZZ" ? "#" : a, b == "ZZZ" ? "#" : b, StringComparison.Ordinal));
 
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || Key() != key) return;
-                source.Source = groups;
+                if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || Key() != key ||
+                    _published.TryGetValue(source, out var published) && published == key) return;
+                var groups = _published.TryGetValue(source, out published) && published with { Version = key.Version } == key
+                    ? source.Source as List<MusicGroup> : null;
+                var existingGroups = groups?.ToDictionary(group => group.Key);
+                List<MusicGroup> orderedGroups = new(groupKeys.Count);
+                foreach (string groupKey in groupKeys)
+                {
+                    var rows = groupDict[groupKey];
+                    if (existingGroups is not null && existingGroups.TryGetValue(groupKey, out var group))
+                    {
+                        ObservableListUpdates.Apply(group, CollectionsMarshal.AsSpan(rows));
+                        orderedGroups.Add(group);
+                    }
+                    else orderedGroups.Add(new MusicGroup(groupKey, rows));
+                }
+                // WinUI's grouped CollectionViewSource handles changes inside groups, but can
+                // crash on outer Add/Remove notifications. Rebind only when the groups change.
+                if (groups is null || !groups.SequenceEqual(orderedGroups)) source.Source = orderedGroups;
                 _published[source] = key;
             });
         }
@@ -354,6 +392,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         return items;
     }
 
+    private int _publishedPlaylistId;
+
     public Task RefreshPlayListSongMapping(BulkObservableCollection<PlayListMusicItem> PlayListSongs)
     {
         int playlist = CurrentPlayListId;
@@ -362,7 +402,23 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         return App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
         {
             if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || CurrentPlayListId != playlist || Key() != key) return;
-            PlayListSongs.FillFrom(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(items));
+            if (_publishedPlaylistId == playlist && _published.TryGetValue(PlayListSongs, out var previous) &&
+                previous with { Version = key.Version } == key)
+            {
+                var liveEntries = new Dictionary<int, PlayListMusicItem>(PlayListSongs.Count);
+                foreach (var row in PlayListSongs) liveEntries.TryAdd(row.EntryId, row);
+                for (int i = 0; i < items.Count; i++)
+                {
+                    var row = items[i];
+                    if (liveEntries.TryGetValue(row.EntryId, out var live) && ReferenceEquals(row.Music, live.Music) &&
+                        row.RequestedMusicId == live.RequestedMusicId && row.PlayListOrder == live.PlayListOrder)
+                        items[i] = live;
+                }
+                ObservableListUpdates.Apply(PlayListSongs, CollectionsMarshal.AsSpan(items));
+            }
+            else PlayListSongs.FillFrom(CollectionsMarshal.AsSpan(items));
+            _publishedPlaylistId = playlist;
+            _published[PlayListSongs] = key;
         });
     }
 
@@ -389,7 +445,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     }
 
     private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byPlayListOrderDesc =
-        Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
+        Comparer<PlayListMusicItem>.Create((a, b) =>
+        {
+            int comparison = b.PlayListOrder.CompareTo(a.PlayListOrder);
+            return comparison != 0 ? comparison : a.EntryId.CompareTo(b.EntryId);
+        });
     // 空标签不会变成“未知”文本或新的身份；同键以曲目 ID/路径稳定排序。
     private static int CompareMetadata(SongRow a, SongRow b, bool byGenre)
     {

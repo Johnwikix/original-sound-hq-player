@@ -113,6 +113,20 @@ namespace WinUIMusicPlayer.Model
         public DateTime CreateTime { get; set => SetProperty(ref field, value); }
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 
+        internal bool MatchesLibraryRow(Music row) =>
+            SongId == row.SongId && MetadataRevision == row.MetadataRevision && SourceId == row.SourceId &&
+            IsMissing == row.IsMissing && IsDetached == row.IsDetached && HasVersionLyrics == row.HasVersionLyrics &&
+            SongPreferredMusicId == row.SongPreferredMusicId && IsFavorite == row.IsFavorite && Order == row.Order &&
+            Path == row.Path && Title == row.Title && TitleFromFileName == row.TitleFromFileName &&
+            Author == row.Author && Album == row.Album && Duration == row.Duration && FolderPath == row.FolderPath &&
+            LastLevelFolderPath == row.LastLevelFolderPath && Extension == row.Extension &&
+            BitDepth == row.BitDepth && BitRate == row.BitRate && SampleRate == row.SampleRate && Channel == row.Channel &&
+            TrackNumber == row.TrackNumber && DiskNumber == row.DiskNumber && Year == row.Year &&
+            CreateTime == row.CreateTime && UpdateTime == row.UpdateTime && CodecId == row.CodecId && EncodingKind == row.EncodingKind &&
+            ImageHash == row.ImageHash && CoverOverridePath == row.CoverOverridePath && LyricsOffsetMs == row.LyricsOffsetMs &&
+            AdditionalMetadataRead == row.AdditionalMetadataRead &&
+            AdditionalMusicMetadata.From(this) == AdditionalMusicMetadata.From(row);
+
         [Ignore] public ICommand PlayCommand => MusicCommands.PlayCommand;
         [Ignore] public ICommand UpdateFavouriteCommand => MusicCommands.UpdateFavouriteCommand;
         [Ignore] public ICommand AddMusicToCurrentPlayListCommand => MusicCommands.AddToPlayListCommand;

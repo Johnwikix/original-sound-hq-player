@@ -166,6 +166,12 @@ public class PlayerIpcService : IDisposable
                     _engine!.PlayMusic(req.Url ?? string.Empty);
                     break;
                 }
+                case CommandId.PlayOccurrence:
+                {
+                    var (playbackId, url) = BinarySerializer.ReadPlayOccurrence(payload);
+                    _engine!.PlayMusic(url, playbackId);
+                    break;
+                }
                 case CommandId.PlayButton:
                     _engine!.PlayButton();
                     WritePlayStateResponsePayload(_engine.IsPlaying);
@@ -392,9 +398,11 @@ public class PlayerIpcService : IDisposable
         SendNotification(MessageTypeId.GaplessTransition, payload);
     }
 
-    public void PlayBackEnded()
+    public void PlayBackEnded(PlaybackEnded ended)
     {
-        SendNotification(MessageTypeId.PlayEnded, ReadOnlySpan<byte>.Empty);
+        Span<byte> payload = stackalloc byte[PlaybackEnded.Size];
+        ended.Write(payload);
+        SendNotification(MessageTypeId.PlayEnded, payload);
     }
 
     public void Dispose()

@@ -15,8 +15,23 @@ public sealed class FolderBrowserNode(FolderLocation location, FolderBrowserNode
     public string Path => Location.Path;
     public List<FolderBrowserNode> Children { get; } = [];
     public bool HasChildren => Children.Count > 0;
-    public int SongCount { get; internal set; }
-    public int DirectSongCount { get; internal set; }
+    public int SongCount { get; private set => SetProperty(ref field, value); }
+    public int DirectSongCount { get; private set => SetProperty(ref field, value); }
+    internal int PendingSongCount { get; set; }
+    internal int PendingDirectSongCount { get; set; }
+
+    internal void PublishCounts()
+    {
+        SongCount = PendingSongCount;
+        DirectSongCount = PendingDirectSongCount;
+        PendingSongCount = 0;
+        PendingDirectSongCount = 0;
+    }
+
+    internal void NotifyChildrenChanged(bool hadChildren)
+    {
+        if (HasChildren != hadChildren) OnPropertyChanged(nameof(HasChildren));
+    }
     public ICommand ToggleFolderCommand => FolderCommands.ToggleFolderCommand;
     public bool IsExpanded { get; set => SetProperty(ref field, value); }
 }

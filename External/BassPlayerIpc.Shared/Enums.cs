@@ -35,6 +35,7 @@ public enum CommandId : short
     QueueNext = 24,
     SetFftEnabled = 25,
     TransitionNow = 26,
+    PlayOccurrence = 27,
 }
 
 /// <summary>播放进程处理带曲目令牌的手动过渡请求后报告的状态。</summary>

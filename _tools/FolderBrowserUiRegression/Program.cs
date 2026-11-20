@@ -64,6 +64,52 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         for (int i = 0; i < 200; i++) { if (ready()) return; await Task.Delay(20); }
         throw new TimeoutException("UI did not settle");
     }
+    private async Task CheckIncrementalCollectionsAsync(Frame frame)
+    {
+        var first = new Music { Title = "First" };
+        var selected = new Music { Title = "Selected" };
+        var last = new Music { Title = "Last" };
+        var flatRows = new BulkObservableCollection<Music>([first, selected, last]);
+        var flat = new ListView { ItemsSource = flatRows, SelectedItem = selected };
+        var group = new MusicGroup("A", [first, selected, last]);
+        var groupSource = new List<MusicGroup> { group };
+        var source = new Microsoft.UI.Xaml.Data.CollectionViewSource { IsSourceGrouped = true, Source = groupSource };
+        var grouped = new ListView { ItemsSource = source.View, SelectedItem = selected };
+        var host = new StackPanel();
+        host.Children.Add(flat);
+        host.Children.Add(grouped);
+        frame.Content = host;
+        await Wait(() => flat.IsLoaded && grouped.IsLoaded && grouped.Items.Count == 3);
+        Check(ReferenceEquals(flat.SelectedItem, selected) && ReferenceEquals(grouped.SelectedItem, selected),
+            "Native flat and grouped lists accept the same selected row");
+
+        var added = new Music { Title = "Inserted" };
+        ObservableListUpdates.Apply(flatRows, [first, added, selected, last]);
+        ObservableListUpdates.Apply(group, [first, added, selected, last]);
+        await Wait(() => flat.Items.Count == 4 && grouped.Items.Count == 4);
+
+        var updated = new Music { Title = "Updated" };
+        ObservableListUpdates.Apply(flatRows, [updated, added, selected, last]);
+        ObservableListUpdates.Apply(group, [updated, added, selected, last]);
+        await Wait(() => ReferenceEquals(flat.Items[0], updated) && ReferenceEquals(grouped.Items[0], updated));
+
+        ObservableListUpdates.Apply(flatRows, [updated, selected, last]);
+        ObservableListUpdates.Apply(group, [updated, selected, last]);
+        await Wait(() => flat.Items.Count == 3 && grouped.Items.Count == 3);
+
+        Check(ReferenceEquals(flat.SelectedItem, selected) && ReferenceEquals(grouped.SelectedItem, selected),
+            "WinUI selection survives individual insert, replace and delete notifications in flat and grouped lists");
+
+        var extra = new MusicGroup("B", [new Music { Title = "New group" }]);
+        source.Source = new List<MusicGroup> { group, extra };
+        grouped.ItemsSource = source.View;
+        await Wait(() => grouped.Items.Count == 4);
+        source.Source = groupSource;
+        grouped.ItemsSource = source.View;
+        await Wait(() => grouped.Items.Count == 3);
+        Check(ReferenceEquals(grouped.Items[1], selected), "Group restructuring reuses surviving rows");
+    }
+
     [DynamicDependency(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor,
         "FolderBrowserUiRegression.FolderBrowserUiRegression_XamlTypeInfo.XamlMetaDataProvider", "FolderBrowserUiRegression")]
     public RegressionApp()
@@ -97,6 +143,12 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             _window.AppWindow.Resize(new(1320, 900));
             _window.AppWindow.Move(new(50, 30));
             _window.Activate();
+            await CheckIncrementalCollectionsAsync(frame);
+            if (Environment.GetCommandLineArgs().Contains("--incremental"))
+            {
+                File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "result.txt"), _results);
+                return;
+            }
             await CheckCompositionCacheAsync();
             frame.Navigate(typeof(FolderBrowsePage));
             await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsLoading && vm.Roots.Count == 2);

@@ -53,7 +53,7 @@ internal static class AutomaticLinkChecks
                 return Task.CompletedTask;
             };
             var method = typeof(MusicDatabaseService).GetMethod("CommitScanBatchAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-            await (Task)method.Invoke(database, [new List<(Music Music, string Lyrics)> { (a, ""), (b, "") }, callback])!;
+            await (Task)method.Invoke(database, [new List<(Music Music, string Lyrics)> { (a, ""), (b, "") }, callback, null])!;
             Check(published, "scan callback completes after automatic linking");
             var snapshot = await database.Versions.ReadLibraryAsync(includePlaylists: true);
             Check(snapshot.Entries.Single().SongId == snapshot.Music.Single(m => m.Id == third.Id).SongId &&

@@ -421,7 +421,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (reconcilePlayback) ReconcilePlaybackLibrary();
             SongsSourceChanged?.Invoke();
             RefreshPlayListSummaries();
-            LibraryEmptyVisibility = State.Library.Songs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            LibraryEmptyVisibility = !State.Library.Songs.Exists(LibraryQueries.IsBrowsable) ? Visibility.Visible : Visibility.Collapsed;
             if (IsInitialized)
             {
                 RefreshAllViews();
@@ -493,8 +493,24 @@ namespace WinUIMusicPlayer.ViewModel
         public Task RefreshSongsSourceAsync(CancellationToken cancellationToken = default)
             => _musicDatabaseService.PublishLibrarySnapshotAsync(cancellationToken);
 
-        internal void ApplyLibrarySnapshot(IReadOnlyList<Music> songs)
+        internal void ApplyLibrarySnapshot(List<Music> songs, bool preserveRows)
         {
+            if (preserveRows)
+            {
+                // A scan can change groups or playlist membership as well as the files it read.
+                // Reuse live rows whenever their binding and library state match the committed snapshot.
+                var existing = _libraryQueries.GetIdIndex();
+                for (int i = 0; i < songs.Count; i++)
+                {
+                    var row = songs[i];
+                    if (!existing.TryGetValue(row.Id, out var current) || !current.MatchesLibraryRow(row)) continue;
+                    current.PlayCount = row.PlayCount;
+                    current.IsKrcSearched = row.IsKrcSearched;
+                    current.IsLrcSearched = row.IsLrcSearched;
+                    songs[i] = current;
+                }
+            }
+            else State.Library.MarkSnapshotReplacement();
             SongsSource.Clear();
             SongsSource.AddRange(songs);
             PublishSongsSourceChanged(reconcilePlayback: true);

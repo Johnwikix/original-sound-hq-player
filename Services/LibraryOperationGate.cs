@@ -20,23 +20,32 @@ internal static class LibraryOperationGate
         return new Lease();
     }
 
-    public static async Task<IDisposable> EnterAsync(CancellationToken token = default)
+    public static async Task<IDisposable> EnterAsync(CancellationToken token = default, bool reportBusy = true)
     {
         await Mutex.WaitAsync(token).ConfigureAwait(false);
-        Volatile.Write(ref _busy, 1);
-        Changed?.Invoke();
-        return new Lease();
+        if (reportBusy)
+        {
+            Volatile.Write(ref _busy, 1);
+            Changed?.Invoke();
+        }
+        return new Lease(reportBusy);
     }
 
-    private sealed class Lease : IDisposable
+    private sealed class Lease(bool reportBusy = true) : IDisposable
     {
         private int _disposed;
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-            Volatile.Write(ref _busy, 0);
-            Changed?.Invoke();
-            Mutex.Release();
+            try
+            {
+                if (reportBusy)
+                {
+                    Volatile.Write(ref _busy, 0);
+                    Changed?.Invoke();
+                }
+            }
+            finally { Mutex.Release(); }
         }
     }
 }

@@ -45,6 +45,12 @@ public sealed class PlaybackQueueState : ObservableObject
     /// <summary>从原始歌单顺序取得出现项，随机遍历顺序不影响定位。</summary>
     public long SequentialEntryIdAt(int index) => index >= 0 && index < _entries.Count ? _entries[index].Id : 0;
     public long EntryIdAt(int index) => index >= 0 && index < _order.Count ? _order[index].Id : 0;
+    public int IndexOfEntry(long entryId)
+    {
+        for (int i = 0; i < _order.Count; i++)
+            if (_order[i].Id == entryId) return i;
+        return -1;
+    }
     public void SelectEntry(long id, Music music)
     {
         foreach (var entry in _order)

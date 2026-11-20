@@ -859,7 +859,7 @@ namespace WinUIMusicPlayer.Services
             finally { _libraryPublishGate.Release(); }
         }
 
-        internal async Task PublishLibrarySnapshotAsync(CancellationToken token)
+        internal async Task PublishLibrarySnapshotAsync(CancellationToken token, bool preserveRows = false)
         {
             await _libraryPublishGate.WaitAsync(token).ConfigureAwait(false);
             try
@@ -868,9 +868,9 @@ namespace WinUIMusicPlayer.Services
                 LocalizeUnknownTags(songs);
                 await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                 {
-                    if (token.IsCancellationRequested) return;
+                    if (token.IsCancellationRequested || !AppViewModel.CanPublishState) return;
                     AppData.AllPlayListMusics = entries;
-                    AppViewModel.ApplyLibrarySnapshot(songs);
+                    AppViewModel.ApplyLibrarySnapshot(songs, preserveRows);
                 }).ConfigureAwait(false);
             }
             finally { _libraryPublishGate.Release(); }

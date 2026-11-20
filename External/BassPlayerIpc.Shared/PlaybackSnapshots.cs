@@ -5,6 +5,26 @@ namespace BassPlayerIpc.Shared;
 public readonly record struct ProgressSnapshot(long Revision, long Epoch, long CurrentMs, long TotalMs, long Timestamp, bool Playing, long SeekId = 0,
     double PlaybackRate = 1, long GaplessToken = 0, long TransitionToken = 0, long TransitionEpoch = 0, long TransitionCurrentMs = 0,
     long TransitionTotalMs = 0, double TransitionPlaybackRate = 1);
+/// <summary>The local occurrence that actually drained. Epoch distinguishes seeks and restarts on the same occurrence.</summary>
+public readonly record struct PlaybackEnded(long PlaybackId, long Epoch)
+{
+    public const int Size = sizeof(long) * 2;
+
+    public void Write(Span<byte> payload)
+    {
+        BinaryPrimitives.WriteInt64LittleEndian(payload, PlaybackId);
+        BinaryPrimitives.WriteInt64LittleEndian(payload[sizeof(long)..], Epoch);
+    }
+
+    public static bool TryRead(ReadOnlySpan<byte> payload, out PlaybackEnded ended)
+    {
+        ended = default;
+        if (payload.Length != Size) return false;
+        ended = new(BinaryPrimitives.ReadInt64LittleEndian(payload), BinaryPrimitives.ReadInt64LittleEndian(payload[sizeof(long)..]));
+        return ended.PlaybackId >= 0 && ended.Epoch > 0;
+    }
+}
+
 public sealed record DspStateSnapshot(long Revision, DspState State);
 
 public static class ProgressProtocol

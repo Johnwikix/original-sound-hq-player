@@ -282,7 +282,6 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                         || !ReferenceEquals(music, state.Playback.CurrentPlayingMusic)) return;
 
                     media.UpdateSystemMediaControlsState();
-                    media.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
                     _ = media.UpdateMediaInfoFromFile(
                         music.Title,
                         music.Author,

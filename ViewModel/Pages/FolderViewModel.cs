@@ -73,6 +73,7 @@ public partial class FolderViewModel : ObservableObject
         AppViewModel.PageType = "folder";
         AppViewModel.IsBackBtnEnable = false;
         _projections.RefreshRequested += LibraryChanged;
+        AppViewModel.SongsSourceChanged += LibraryChanged;
         AppViewModel.State.Browse.PropertyChanged += BrowseChanged;
         AppViewModel.FolderSongs.CollectionChanged += SongsChanged;
         IsLoading = true;
@@ -134,6 +135,7 @@ public partial class FolderViewModel : ObservableObject
         IsLoadingSongs = false;
         _read?.Cancel();
         _projections.RefreshRequested -= LibraryChanged;
+        AppViewModel.SongsSourceChanged -= LibraryChanged;
         AppViewModel.State.Browse.PropertyChanged -= BrowseChanged;
         AppViewModel.FolderSongs.CollectionChanged -= SongsChanged;
     }
@@ -173,9 +175,11 @@ public partial class FolderViewModel : ObservableObject
             selected = _index.Find(ancestor.Location);
         for (var ancestor = selected?.Parent; ancestor is not null; ancestor = ancestor.Parent)
             ancestor.IsExpanded = true;
-        Roots.FillFrom(CollectionsMarshal.AsSpan(_index.Roots));
+        ObservableListUpdates.Apply(Roots, CollectionsMarshal.AsSpan(_index.Roots));
         RebuildVisibleNodes();
-        Navigate(selected ?? (Roots.Count > 0 ? Roots[0] : null));
+        var destination = selected ?? (Roots.Count > 0 ? Roots[0] : null);
+        if (!ReferenceEquals(SelectedNode, destination) || IsLoading)
+            Navigate(destination);
     }
 
     [RelayCommand]
@@ -252,7 +256,7 @@ public partial class FolderViewModel : ObservableObject
             rows.Add(current);
             if (current.IsExpanded) PushChildren(current, pending);
         }
-        VisibleNodes.FillFrom(CollectionsMarshal.AsSpan(rows));
+        ObservableListUpdates.Apply(VisibleNodes, CollectionsMarshal.AsSpan(rows));
     }
 
     private static void PushChildren(FolderBrowserNode node, Stack<FolderBrowserNode> pending)

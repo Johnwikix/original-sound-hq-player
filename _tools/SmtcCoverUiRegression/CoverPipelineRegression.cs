@@ -141,8 +141,17 @@ internal static class CoverPipelineRegression
                 state.Playback.TransitionPresentation = new(blocked);
                 await ToolUtils.ReadStarted!.Task.WaitAsync(TimeSpan.FromSeconds(5));
                 Check(StillOutgoing(), "A pending preview cleared the outgoing foreground or shader");
+                var pausedPosition = TimeSpan.FromSeconds(48);
+                media.UpdateTimelineProperties(pausedPosition, outgoing.Duration);
+                // Wait for rollback's asynchronous media publication, even though its title matches the old track.
+                media.SystemMediaControls.DisplayUpdater.MusicProperties.Title = "waiting for rollback";
                 state.Playback.TransitionPresentation = null;
                 ToolUtils.ContinueRead!.TrySetResult();
+                await WaitForMediaAsync(outgoing, 1536, 1536);
+                var timeline = (Windows.Media.SystemMediaTransportControlsTimelineProperties)typeof(SystemMediaControlsService)
+                    .GetField("_timelineProperties", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(media)!;
+                Check(timeline.Position == pausedPosition && timeline.EndTime == outgoing.Duration,
+                    "Rolling back a preview reset the paused SMTC timeline");
                 Check(StillOutgoing() && hashes.Count == 0 && backdropUpdates == 0, "Rollback published a placeholder or changed the outgoing scene");
 
                 ArmRead();

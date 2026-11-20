@@ -64,6 +64,7 @@ public sealed partial class PlaybackEngine
         {
             MusicUrl = request.Path;
             _currentGaplessToken = request.Token;
+            _activePlaybackId = _requestedPlaybackId = request.Token;
             _committedGaplessEpoch = rendered.Current.TimelineEpoch;
             _committedGaplessRequest = request;
             _lastProgressSeekId = 0;

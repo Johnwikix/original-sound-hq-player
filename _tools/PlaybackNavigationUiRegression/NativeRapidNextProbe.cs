@@ -39,6 +39,29 @@ internal static class NativeRapidNextProbe
             await Burst(TrackTransitionStyle.Crossfade, 25, true);
             await Burst(TrackTransitionStyle.Smart, 20, true, clicks: 23);
 
+            var shortSong = MakeSong(work, songs.Length, 1);
+            long previousEpoch = 0;
+            foreach (long id in new long[] { 1001, 1002 })
+            {
+                var completion = new TaskCompletionSource<PlaybackEnded>(TaskCreationOptions.RunContinuationsAsynchronously);
+                void OnEnd(MessageTypeId type, ReadOnlyMemory<byte> bytes)
+                {
+                    if (type == MessageTypeId.PlayEnded && PlaybackEnded.TryRead(bytes.Span, out var ended)) completion.TrySetResult(ended);
+                }
+                statePipe.NotificationReceived += OnEnd;
+                try
+                {
+                    byte[] payload = new byte[BinarySerializer.PlayOccurrenceSize];
+                    int length = BinarySerializer.WritePlayOccurrence(payload, id, shortSong.Path);
+                    await Send(CommandId.PlayOccurrence, payload[..length]);
+                    var ended = await completion.Task.WaitAsync(TimeSpan.FromSeconds(6));
+                    Require(ended.PlaybackId == id && ended.Epoch > previousEpoch, "Native EOF identified the wrong playback occurrence");
+                    previousEpoch = ended.Epoch;
+                }
+                finally { statePipe.NotificationReceived -= OnEnd; }
+            }
+            Console.WriteLine("Native EOF identified both successive occurrences of the same WAV file.");
+
             async Task<byte[]> Send(CommandId command, byte[] payload)
             {
                 var response = new byte[IpcConstants.MaxResponseSize];
@@ -65,9 +88,9 @@ internal static class NativeRapidNextProbe
 
                 host.Player.OnPlay = music =>
                 {
-                    byte[] payload = new byte[BinarySerializer.PlayRequestSize];
-                    BinarySerializer.WritePlayRequest(payload, new PlayRequest { Url = music.Path });
-                    Send(CommandId.Play, payload).GetAwaiter().GetResult();
+                    byte[] payload = new byte[BinarySerializer.PlayOccurrenceSize];
+                    int length = BinarySerializer.WritePlayOccurrence(payload, host.Player.LastPlaybackId, music.Path);
+                    Send(CommandId.PlayOccurrence, payload[..length]).GetAwaiter().GetResult();
                 };
                 host.Ipc.QueueReply = async () => { await Send(CommandId.QueueNext, host.Ipc.Queued[^1].Write()); return true; };
                 host.Ipc.CancelReply = async () => BinaryPrimitives.ReadInt64LittleEndian(
@@ -142,10 +165,10 @@ internal static class NativeRapidNextProbe
         }
     }
 
-    private static Music MakeSong(string directory, int index)
+    private static Music MakeSong(string directory, int index, int? durationSeconds = null)
     {
         string path = Path.Combine(directory, $"track-{index}.wav");
-        int seconds = 16 + index;
+        int seconds = durationSeconds ?? (16 + index);
         const int rate = 44100;
         using var stream = File.Create(path);
         using var writer = new BinaryWriter(stream);
