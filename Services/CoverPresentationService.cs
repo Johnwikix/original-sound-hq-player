@@ -36,7 +36,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
     private int _coverUpdateVersion, _defaultPaletteVersion;
     private bool _disposed, _started, _usesDefaultPalette;
     private CancellationTokenSource? _coverUpdateCts;
-    private Music? _displayMusic, _paletteMusic;
+    private Music? _displayMusic, _artworkMusic;
     private CoverPreview? _coverPreview;
     public void Start()
     {
@@ -48,9 +48,11 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 
     private void OnPlaybackChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName != nameof(state.Playback.TransitionPresentation)) return;
+        string? property = args.PropertyName;
+        if (property is not (nameof(state.Playback.TransitionPresentation) or nameof(state.Playback.DisplayedPlaybackMusic))) return;
         Music? music = state.Playback.DisplayedPlaybackMusic;
-        if (ReferenceEquals(music, _displayMusic)) return;
+        if ((property == nameof(state.Playback.DisplayedPlaybackMusic) && music is not null)
+            || ReferenceEquals(music, _displayMusic)) return;
         _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
     }
 
@@ -71,20 +73,25 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 preview.CommitToken = token;
                 return preview.Preparation;
             }
-            prepareArtwork = !ReferenceEquals(_paletteMusic, music);
+            prepareArtwork = !ReferenceEquals(_artworkMusic, music);
         }
 
         if (!ReferenceEquals(_displayMusic, music))
         {
             _displayMusic = music;
             _defaultPaletteVersion++;
-            _paletteMusic = null;
-            _usesDefaultPalette = false;
-            if (music is null || string.IsNullOrEmpty(music.ImageHash) || music.ImageHash != state.Presentation.LyricPageBackgroundHash)
+            if (music is null)
             {
+                _artworkMusic = null;
+                _usesDefaultPalette = false;
                 state.Presentation.LyricPageBackgroundHash = "";
-                state.Presentation.LyricPagePalette = null;
-                state.Presentation.LyricPageArtwork = null;
+                state.Presentation.LyricPageBackdrop = default;
+            }
+            else if (ReferenceEquals(_artworkMusic, music))
+            {
+                // 回滚发生在新封面准备完成前，屏幕上仍是原来这首的封面。
+                prepareArtwork = false;
+                if (_usesDefaultPalette) _ = RefreshDefaultPaletteAsync(token);
             }
             state.Presentation.MusicInfo = music is null ? ""
                 : $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
@@ -163,13 +170,6 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 
             if (prepareArtwork)
             {
-                // 原图缓存就绪便刷新控件，不等调色板提取或系统媒体缩图。
-                string hash = music.ImageHash ?? "";
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (CanPublishArtwork()) state.Presentation.LyricPageBackgroundHash = hash;
-                });
-
                 AnimatedWin2dControls.Impressionist.PaletteResult? palette = null;
                 if (!string.IsNullOrEmpty(music.ImageHash))
                 {
@@ -210,18 +210,19 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                     }
                 }
 
+                bool usesDefaultPalette = palette is null;
+                if (usesDefaultPalette)
+                    palette = await GetCurrentDefaultPaletteAsync(token);
                 if (token.IsCancellationRequested) return;
 
                 void PublishArtwork()
                 {
                     if (!CanPublishArtwork()) return;
                     _defaultPaletteVersion++;
-                    _paletteMusic = music;
-                    _usesDefaultPalette = palette is null;
+                    _artworkMusic = music;
+                    _usesDefaultPalette = usesDefaultPalette;
+                    state.Presentation.LyricPageBackdrop = (palette, artwork);
                     state.Presentation.LyricPageBackgroundHash = music.ImageHash ?? "";
-                    state.Presentation.LyricPagePalette = palette;
-                    if (_usesDefaultPalette) _ = RefreshDefaultPaletteAsync(token);
-                    state.Presentation.LyricPageArtwork = artwork;
                 }
 
                 // The UI sees the prepared artwork before the preview task reports completion.
@@ -333,6 +334,27 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 .ExtractFromImageBytesAsync(bytes, algorithm, ct: token);
         }, token);
 
+    private async ValueTask<AnimatedWin2dControls.Impressionist.PaletteResult?> GetCurrentDefaultPaletteAsync(CancellationToken token)
+    {
+        try
+        {
+            while (true)
+            {
+                bool isDark = state.Preferences.IsDarkMode;
+                var algorithm = state.Preferences.PaletteAlgorithm;
+                var palette = await _defaultPalettes.GetAsync(isDark, algorithm, token);
+                if (isDark == state.Preferences.IsDarkMode && algorithm == state.Preferences.PaletteAlgorithm)
+                    return palette;
+            }
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "默认封面取色失败");
+            return null;
+        }
+    }
+
     private void OnCoverSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(state.Preferences.IsDarkMode) or nameof(state.Preferences.PaletteAlgorithm))
@@ -340,6 +362,8 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         else if (e.PropertyName == nameof(state.Preferences.MusicCoverCache) && state.Playback.DisplayedPlaybackMusic is { } music)
         {
             // 根目录切换后，即使歌曲标识不变，也要重新取得原图并刷新展示控件。
+            _artworkMusic = null;
+            _defaultPaletteVersion++;
             state.Presentation.LyricPageBackgroundHash = "";
             _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
         }
@@ -351,7 +375,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
     private async Task RefreshDefaultPaletteCoreAsync(CancellationToken token)
     {
         int version = ++_defaultPaletteVersion;
-        var music = _paletteMusic;
+        var music = _artworkMusic;
         if (!_usesDefaultPalette || music is null || !ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic)) return;
         bool isDark = state.Preferences.IsDarkMode;
         var algorithm = state.Preferences.PaletteAlgorithm;
@@ -363,7 +387,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 if (!_disposed && (state.Lifecycle.Phase != AppPhase.Stopping) && !token.IsCancellationRequested && version == _defaultPaletteVersion && _usesDefaultPalette &&
                     ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic) &&
                     isDark == state.Preferences.IsDarkMode && algorithm == state.Preferences.PaletteAlgorithm)
-                    state.Presentation.LyricPagePalette = palette;
+                    state.Presentation.LyricPageBackdrop = (palette, state.Presentation.LyricPageBackdrop.Artwork);
             });
         }
         catch (OperationCanceledException) { }
@@ -382,8 +406,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         state.Preferences.PropertyChanged -= OnCoverSettingsChanged;
         state.Playback.PropertyChanged -= OnPlaybackChanged;
         _coverPreview = null;
-        _displayMusic = _paletteMusic = null;
-        state.Presentation.LyricPagePalette = null;
-        state.Presentation.LyricPageArtwork = null;
+        _displayMusic = _artworkMusic = null;
+        state.Presentation.LyricPageBackdrop = default;
     }
 }

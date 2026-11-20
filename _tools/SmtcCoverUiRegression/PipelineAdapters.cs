@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using AnimatedWin2dControls.Impressionist;
 using WinUIMusicPlayer.Helper;
@@ -36,7 +37,18 @@ namespace WinUIMusicPlayer.State
     public sealed class PlaybackState : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        public Model.Music? CurrentPlayingMusic { get; set; }
+        public Model.Music? CurrentPlayingMusic
+        {
+            get;
+            set
+            {
+                var previous = DisplayedPlaybackMusic;
+                if (ReferenceEquals(field, value)) return;
+                field = value;
+                if (!ReferenceEquals(previous, DisplayedPlaybackMusic))
+                    PropertyChanged?.Invoke(this, new(nameof(DisplayedPlaybackMusic)));
+            }
+        }
         public Model.Music? DisplayedPlaybackMusic => TransitionPresentation?.Music ?? CurrentPlayingMusic;
         public PlaybackTransitionPresentation? TransitionPresentation
         {
@@ -66,25 +78,22 @@ namespace WinUIMusicPlayer.State
         public string ThemeType => "Light";
         public string MusicCoverCache => AppContext.BaseDirectory;
         public PaletteAlgorithm PaletteAlgorithm => PaletteAlgorithm.KMeansPP;
-        public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader => default;
+        public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader { get; set; }
     }
     public sealed class PresentationState : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        public string LyricPageBackgroundHash
+        public string LyricPageBackgroundHash { get; set => Publish(ref field, value); } = "";
+        public (PaletteResult? Palette, ArtworkPixelData? Artwork) LyricPageBackdrop { get; set => Publish(ref field, value); }
+
+        private void Publish<T>(ref T current, T value, [CallerMemberName] string property = "")
         {
-            get;
-            set
-            {
-                if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
-                    throw new Exception("封面状态在非 UI 线程发布");
-                if (field == value) return;
-                field = value;
-                PropertyChanged?.Invoke(this, new(nameof(LyricPageBackgroundHash)));
-            }
-        } = "";
-        public PaletteResult? LyricPagePalette { get; set; }
-        public ArtworkPixelData? LyricPageArtwork { get; set; }
+            if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
+                throw new Exception("封面状态在非 UI 线程发布");
+            if (EqualityComparer<T>.Default.Equals(current, value)) return;
+            current = value;
+            PropertyChanged?.Invoke(this, new(property));
+        }
         public string MusicInfo { get; set; } = "";
     }
 }
@@ -136,6 +145,7 @@ namespace WinUIMusicPlayer.Utils
             Interlocked.Increment(ref RawReads);
             ReadStarted?.TrySetResult();
             if (ContinueRead is { } gate) await gate.Task.WaitAsync(token);
+            if (music.Path.Length == 0) return [];
             byte[] bytes = await File.ReadAllBytesAsync(music.Path, token);
             try { await PlaybackCoverCache.StoreAsync(FindRawCachePath(music.ImageHash), bytes, token); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

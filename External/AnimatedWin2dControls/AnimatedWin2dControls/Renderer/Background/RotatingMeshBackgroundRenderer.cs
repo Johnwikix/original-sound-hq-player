@@ -117,10 +117,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _scaleEffect = null;
                 _meshVertices = null;
                 _meshCells = null;
-                _coverBitmaps[0]?.Dispose();
-                _coverBitmaps[1]?.Dispose();
-                _coverBitmaps[0] = null;
-                _coverBitmaps[1] = null;
+                ReleaseCoverBitmaps();
 
                 // 效果绑定旧设备的已实现资源，设备重建后必须整体重建；
                 // 位图输入为设备绑定资源，重建后由 Draw 惰性重创建并重新绑定。
@@ -424,6 +421,21 @@ namespace AnimatedWin2dControls.Renderer.Background
             // 本着色器不消费 4 色参数，但无真实封面时用调色板生成兜底渐变。
             if (_realArtwork is null)
                 _pendingArtwork = BuildPaletteArtwork(palette) ?? CreateDefaultArtwork();
+        }
+
+        internal void RestoreBackdrop(PaletteResult? palette, ArtworkPixelData? artwork)
+        {
+            lock (_gate)
+            {
+                bool textureChanged = !ReferenceEquals(_realArtwork, artwork)
+                    || (artwork is null && !ReferenceEquals(CurrentPalette, palette));
+                base.SetPalette(palette);
+                if (!textureChanged) return;
+
+                // 重新显示缓存的着色器时，第一帧应已使用当前封面。
+                SetArtwork(artwork);
+                ReleaseCoverBitmaps();
+            }
         }
 
         // ── 资源装配 ─────────────────────────────────────────────────────
@@ -759,15 +771,20 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _compositeEffect?.Dispose();
                 _compositeEffect = null;
 
-                _coverBitmaps[0]?.Dispose();
-                _coverBitmaps[1]?.Dispose();
-                _coverBitmaps[0] = null;
-                _coverBitmaps[1] = null;
+                ReleaseCoverBitmaps();
                 _meshVertices = null;
                 _meshCells = null;
                 _pendingArtwork = null;
                 _realArtwork = null;
             }
+        }
+
+        private void ReleaseCoverBitmaps()
+        {
+            _coverBitmaps[0]?.Dispose();
+            _coverBitmaps[1]?.Dispose();
+            _coverBitmaps[0] = null;
+            _coverBitmaps[1] = null;
         }
     }
 }

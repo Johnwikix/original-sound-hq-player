@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public sealed class AppViewModel : ObservableObject
     {
+        public object? DisplayedPlaybackMusic { get; set => SetProperty(ref field, value); }
         public string? LyricPageBackgroundHash { get; set => SetProperty(ref field, value); }
         public int BackgroundShaderIndex { get; init; }
         public double WindowBackgroundBlurAmount => 0;

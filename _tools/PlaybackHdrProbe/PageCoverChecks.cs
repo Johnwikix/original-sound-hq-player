@@ -38,7 +38,10 @@ public sealed partial class ProbeApp
         // Neutral 32x20 SDR artwork with a white left half and 160/255 gray right half.
         const string coverPng = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAUCAIAAABj86gYAAAAIUlEQVR4nGP4TyJYQCJgGLVg1IJRC0YtGLVg1IJRC4gBAIOZFJvNh2SfAAAAAElFTkSuQmCC";
         const string backgroundPng = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFUlEQVR4nGNgYNAgEY1qGNUwbDUAAB6jKAFBrRkwAAAAAElFTkSuQmCC";
+        // Same aspect ratio with red and blue halves, giving each composed frame a clear cover identity.
+        const string nextPng = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAUCAIAAABj86gYAAAAJUlEQVR4nGN4JiBJEiJR+TOGUQtGLRi1YNSCUQtGLRi1QIAICwCpvaWfimYA+gAAAABJRU5ErkJggg==";
         string coverPath = Path.Combine(Path.GetTempPath(), $"detail-cover-{Guid.NewGuid():N}.png");
+        string nextPath = Path.Combine(Path.GetTempPath(), $"detail-next-cover-{Guid.NewGuid():N}.png");
         string backgroundPath = Path.Combine(Path.GetTempPath(), $"detail-background-{Guid.NewGuid():N}.png");
         string cachedOnly = Path.Combine(Path.GetTempPath(), $"detail-cached-cover-{Guid.NewGuid():N}.png");
         string displayCache = PlaybackCoverImage.GetCachePath(cachedOnly);
@@ -49,6 +52,7 @@ public sealed partial class ProbeApp
         {
             await File.WriteAllBytesAsync(coverPath, Convert.FromBase64String(coverPng));
             await File.WriteAllBytesAsync(backgroundPath, Convert.FromBase64String(backgroundPng));
+            await File.WriteAllBytesAsync(nextPath, Convert.FromBase64String(nextPng));
             Position(830, 530);
             window.Activate();
             ShowWindow(hwnd, 5);
@@ -70,6 +74,8 @@ public sealed partial class ProbeApp
                 Console.WriteLine("Skipping display-level HDR pixel checks on the SDR output.");
             }
             await CheckShaderSdrEntryAsync();
+            await CheckDelayedShaderCoverAsync(window, coverPath, nextPath, hdr: false, hdrOutput, output.DisplayId.Value, white, peak);
+            await CheckDelayedShaderCoverAsync(window, coverPath, nextPath, hdr: true, hdrOutput, output.DisplayId.Value, white, peak);
             await CheckSceneCoverResolutionAsync();
             await CheckPortraitResizeAsync();
             await CheckReleasedCoverBitmapsAsync(window, hwnd);
@@ -78,6 +84,7 @@ public sealed partial class ProbeApp
         finally
         {
             File.Delete(coverPath);
+            File.Delete(nextPath);
             File.Delete(backgroundPath);
             File.Delete(displayCache);
         }

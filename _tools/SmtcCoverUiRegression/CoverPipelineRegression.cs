@@ -1,3 +1,5 @@
+using AnimatedWin2dControls;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Helper;
@@ -15,8 +17,9 @@ internal static class CoverPipelineRegression
         var tasks = new ApplicationTasks(lifecycle);
         using var media = new SystemMediaControlsService(NullLogger<SystemMediaControlsService>.Instance);
         media.Initialize(new PlaybackCommands());
+        var coverLogger = new CoverLogger();
         using var covers = new CoverPresentationService(state, tasks, media,
-            new WebDavLibraryService(), NullLogger<CoverPresentationService>.Instance);
+            new WebDavLibraryService(), coverLogger);
         covers.Start();
 
         string raw = ToolUtils.FindRawCachePath("pipeline_raw");
@@ -39,21 +42,7 @@ internal static class CoverPipelineRegression
             await ShowAsync(normalMusic, 1536, 1536);
             Check(ToolUtils.RawReads == reads, "正常热缓存新增了原图数组读取");
 
-            ToolUtils.ReadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            ToolUtils.ContinueRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            state.Playback.TransitionPresentation = new(bytesMusic);
-            Check(state.Presentation.LyricPageBackgroundHash == "", "Preview should clear the outgoing cover immediately");
-            await ToolUtils.ReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            state.Playback.TransitionPresentation = new(rawMusic);
-            await WaitForDisplayedCoverAsync(rawMusic.ImageHash);
-            ToolUtils.ContinueRead.TrySetResult();
-            await Task.Delay(50);
-            Check(state.Presentation.LyricPageBackgroundHash == rawMusic.ImageHash, "A superseded preview painted its cover");
-            Check(media.SystemMediaControls.DisplayUpdater.MusicProperties.Title == normalMusic.Title,
-                "A preview changed the committed system media track");
-
-            state.Playback.TransitionPresentation = null;
-            await WaitForDisplayedCoverAsync(normalMusic.ImageHash);
+            await CheckPreviewContinuityAsync(normalMusic, rawMusic, bytesMusic);
 
             // 预览已完成后，交接只补发系统媒体封面。
             state.Playback.TransitionPresentation = new(rawMusic);
@@ -115,10 +104,105 @@ internal static class CoverPipelineRegression
             Directory.Delete(blockedRaw);
         }
 
+        async Task CheckPreviewContinuityAsync(Music outgoing, Music next, Music blocked)
+        {
+            state.Preferences.BackgroundShader = BackgroundShaderMode.RotatingMesh;
+            await ShowAsync(outgoing, 1536, 1536);
+            var presentation = state.Presentation;
+            var outgoingPalette = presentation.LyricPageBackdrop.Palette;
+            var outgoingArtwork = presentation.LyricPageBackdrop.Artwork;
+            Check(outgoingPalette is not null && outgoingArtwork is not null, "The outgoing shader fixture needs real artwork");
+
+            var hashes = new List<string>();
+            int backdropUpdates = 0;
+            bool blankPalette = false;
+            bool blankArtwork = false;
+            void TrackPublication(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+            {
+                if (args.PropertyName == nameof(presentation.LyricPageBackgroundHash))
+                    hashes.Add(presentation.LyricPageBackgroundHash);
+                else if (args.PropertyName == nameof(presentation.LyricPageBackdrop))
+                {
+                    backdropUpdates++;
+                    blankPalette |= presentation.LyricPageBackdrop.Palette is null;
+                    blankArtwork |= presentation.LyricPageBackdrop.Artwork is null;
+                }
+            }
+
+            presentation.PropertyChanged += TrackPublication;
+            try
+            {
+                var failed = new Music { Title = "failed preview", Path = raw + ".missing" };
+                state.Playback.TransitionPresentation = new(failed);
+                await coverLogger.LoadFailed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                Check(StillOutgoing(), "A failed preview cleared the outgoing foreground or shader");
+
+                ArmRead();
+                state.Playback.TransitionPresentation = new(blocked);
+                await ToolUtils.ReadStarted!.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                Check(StillOutgoing(), "A pending preview cleared the outgoing foreground or shader");
+                state.Playback.TransitionPresentation = null;
+                ToolUtils.ContinueRead!.TrySetResult();
+                Check(StillOutgoing() && hashes.Count == 0 && backdropUpdates == 0, "Rollback published a placeholder or changed the outgoing scene");
+
+                ArmRead();
+                state.Playback.TransitionPresentation = new(blocked);
+                await ToolUtils.ReadStarted!.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                state.Playback.TransitionPresentation = new(next);
+                await WaitForDisplayedCoverAsync(next.ImageHash, requirePalette: true);
+                ToolUtils.ContinueRead!.TrySetResult();
+                await Task.Delay(50);
+                Check(hashes.SequenceEqual([next.ImageHash]) && backdropUpdates == 1 && !blankPalette && !blankArtwork,
+                    "Rapid previews published a default foreground or reset the shader; only the final cover should be published");
+                Check(media.SystemMediaControls.DisplayUpdater.MusicProperties.Title == outgoing.Title,
+                    "A preview changed the committed system media track");
+
+                var nextPalette = presentation.LyricPageBackdrop.Palette;
+                var nextArtwork = presentation.LyricPageBackdrop.Artwork;
+                ArmRead();
+                state.Playback.TransitionPresentation = new(new Music { Title = "no cover" });
+                await ToolUtils.ReadStarted!.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                Check(presentation.LyricPageBackgroundHash == next.ImageHash
+                    && ReferenceEquals(presentation.LyricPageBackdrop.Palette, nextPalette)
+                    && ReferenceEquals(presentation.LyricPageBackdrop.Artwork, nextArtwork),
+                    "The shader switched to defaults before the no-cover track was resolved");
+                ToolUtils.ContinueRead!.TrySetResult();
+                await WaitForDisplayedCoverAsync("", requirePalette: true);
+                Check(hashes.SequenceEqual([next.ImageHash, ""]) && backdropUpdates == 2
+                    && !blankPalette && presentation.LyricPageBackdrop.Artwork is null,
+                    "A no-cover track must publish a ready fallback palette and clear artwork once");
+            }
+            finally
+            {
+                presentation.PropertyChanged -= TrackPublication;
+                ToolUtils.ContinueRead?.TrySetResult();
+            }
+
+            state.Playback.TransitionPresentation = null;
+            await WaitForDisplayedCoverAsync(outgoing.ImageHash, requirePalette: true);
+            state.Playback.CurrentPlayingMusic = null;
+            Check(presentation.LyricPageBackgroundHash.Length == 0 && presentation.LyricPageBackdrop.Palette is null
+                && presentation.LyricPageBackdrop.Artwork is null && presentation.MusicInfo.Length == 0,
+                "Removing the displayed track did not clear its presentation");
+            state.Preferences.BackgroundShader = default;
+            await ShowAsync(outgoing, 1536, 1536);
+
+            bool StillOutgoing() => presentation.LyricPageBackgroundHash == outgoing.ImageHash
+                && ReferenceEquals(presentation.LyricPageBackdrop.Palette, outgoingPalette)
+                && ReferenceEquals(presentation.LyricPageBackdrop.Artwork, outgoingArtwork)
+                && !blankPalette && !blankArtwork;
+        }
+
+        static void ArmRead()
+        {
+            ToolUtils.ReadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            ToolUtils.ContinueRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+
         async Task WaitForDisplayedCoverAsync(string hash, bool requirePalette = false)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            while (state.Presentation.LyricPageBackgroundHash != hash || (requirePalette && state.Presentation.LyricPagePalette is null))
+            while (state.Presentation.LyricPageBackgroundHash != hash || (requirePalette && state.Presentation.LyricPageBackdrop.Palette is null))
                 await Task.Delay(10, timeout.Token);
         }
 
@@ -142,6 +226,18 @@ internal static class CoverPipelineRegression
             var decoder = await BitmapDecoder.CreateAsync(thumbnail);
             Check(decoder.OrientedPixelWidth == width && decoder.OrientedPixelHeight == height,
                 $"{music.Title} 封面内容不符: {decoder.OrientedPixelWidth}x{decoder.OrientedPixelHeight}");
+        }
+    }
+
+    private sealed class CoverLogger : ILogger<CoverPresentationService>
+    {
+        public TaskCompletionSource LoadFailed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Error;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Error) LoadFailed.TrySetResult();
         }
     }
 

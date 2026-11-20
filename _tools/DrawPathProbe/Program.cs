@@ -86,6 +86,12 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
             window.Activate();
             await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
             _canvas.Paused = true;
+            if (Environment.GetCommandLineArgs().Contains("--check-backdrop"))
+            {
+                var result = CheckBackdropReactivation();
+                File.WriteAllText(resultPath, JsonSerializer.Serialize(new { Status = "PASS", Backdrop = result }));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--playback-hdr"))
             {
                 var result = MeasurePlaybackHdr();

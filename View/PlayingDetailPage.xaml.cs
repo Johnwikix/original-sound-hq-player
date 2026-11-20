@@ -80,9 +80,7 @@ namespace WinUIMusicPlayer.View
             App.MainWindow.Activated += MainWindow_Activated;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
-            // 首次进入也下发：null 时着色器回退内置配色，避免沿用其它页面的残留状态
-            NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
-            NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+            ApplyBackdrop(NowPlaying);
             UpdateLyricsRegion();
             UpdateHdrPresentation();
             UpdateHdrTitleRegion();
@@ -152,14 +150,9 @@ namespace WinUIMusicPlayer.View
             {
                 UpdateWindowRendering(App.MainWindow.AppWindow);
             }
-            else if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
+            else if (e.PropertyName == nameof(AppViewModel.LyricPageBackdrop))
             {
-                // null 也下发：让着色器回退内置配色，避免滞留上一首的调色板
-                NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
-            }
-            else if (e.PropertyName == nameof(AppViewModel.LyricPageArtwork))
-            {
-                NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+                ApplyBackdrop(NowPlaying);
             }
             else if (e.PropertyName == nameof(AppViewModel.LyricsMargin))
             {
@@ -169,6 +162,12 @@ namespace WinUIMusicPlayer.View
             {
                 ApplyAnimatedTextEffect();
             }
+        }
+
+        private void ApplyBackdrop(NowPlayingCanvas? canvas)
+        {
+            var (palette, artwork) = ViewModel.AppViewModel.LyricPageBackdrop;
+            canvas?.SetBackdrop(palette, artwork);
         }
 
         private void AnimatedPlayingDetailTextBlock_Loaded(object sender, RoutedEventArgs e)
@@ -248,8 +247,7 @@ namespace WinUIMusicPlayer.View
             canvas.HdrPresentationChanged -= PlaybackHdrPresentationChanged;
             canvas.HdrPresentationChanged += PlaybackHdrPresentationChanged;
 
-            canvas.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
-            canvas.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+            ApplyBackdrop(canvas);
             UpdateWindowRendering(App.MainWindow.AppWindow);
             UpdateHdrPresentation();
             ScheduleLyricsRegionUpdate();

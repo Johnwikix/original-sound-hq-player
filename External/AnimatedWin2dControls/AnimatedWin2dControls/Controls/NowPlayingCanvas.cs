@@ -1,5 +1,6 @@
 #nullable enable annotations
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Impressionist;
 using AnimatedWin2dControls.Renderer;
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Renderer.Background;
@@ -175,9 +176,9 @@ namespace AnimatedWin2dControls.Controls
         private ImageBackgroundRenderer? _imageBackground;
         private bool _imageBackgroundResourcesInitialized;
         // 缓存最近一次调色板，shader 切换 / 设备重建后用于把新 renderer 重新染上当前调色板。
-        private AnimatedWin2dControls.Impressionist.PaletteResult? _lastPalette;
+        private PaletteResult? _lastPalette;
         // 缓存最近一次封面像素，shader 切换后把新 renderer 重新染上当前封面（RotatingMesh 用）。
-        private AnimatedWin2dControls.Impressionist.ArtworkPixelData? _lastArtwork;
+        private ArtworkPixelData? _lastArtwork;
         private readonly FogRenderer _fog = new();
         private readonly SnowRenderer _snow = new();
         private readonly RaindropRenderer _raindrop = new();
@@ -390,9 +391,7 @@ namespace AnimatedWin2dControls.Controls
                     var newBg = CreateActiveBackgroundRenderer();
                     _background = newBg;
                     SyncStateFromProperties();
-                    if (_lastPalette is not null) newBg.SetPalette(_lastPalette);
-                    else newBg.RefreshColors();
-                    if (_lastArtwork is not null) newBg.SetArtwork(_lastArtwork);
+                    RestoreBackdrop(newBg);
                     bool needsResources = newBg switch
                     {
                         RotatingMeshBackgroundRenderer => !_rotatingMeshResourcesInitialized,
@@ -455,11 +454,7 @@ namespace AnimatedWin2dControls.Controls
             background.EnableLightWave = _enableLightWave;
             background.IsDark = _isDark;
             background.UseImageDominantTheme = _useImageDominantTheme;
-            if (_lastPalette is not null)
-                background.SetPalette(_lastPalette);
-            else
-                background.RefreshColors();
-            background.SetArtwork(_lastArtwork);
+            RestoreBackdrop(background);
 
             LoadRendererResources();
         }
@@ -910,13 +905,24 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 调色板 ────────────────────────────────────────────────────────────
 
-        public void SetPalette(AnimatedWin2dControls.Impressionist.PaletteResult? palette)
+        private void RestoreBackdrop(BaseBackgroundRenderer background)
+        {
+            if (background is RotatingMeshBackgroundRenderer mesh)
+                mesh.RestoreBackdrop(_lastPalette, _lastArtwork);
+            else
+            {
+                background.SetPalette(_lastPalette);
+                background.SetArtwork(_lastArtwork);
+            }
+        }
+
+        public void SetPalette(PaletteResult? palette)
         {
             try
             {
-                _lastPalette = palette;
                 lock (_cacheGate)
                 {
+                    _lastPalette = palette;
                     _background?.SetPalette(palette);
                 }
                 if (UseImageDominantTheme && palette is not null)
@@ -931,15 +937,38 @@ namespace AnimatedWin2dControls.Controls
         /// 注入当前曲目封面像素（仅封面驱动型着色器如 RotatingMesh 消费；
         /// 传 null 表示当前曲目无封面，着色器回退到调色板渐变）。
         /// </summary>
-        public void SetArtwork(AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork)
+        public void SetArtwork(ArtworkPixelData? artwork)
         {
             try
             {
-                _lastArtwork = artwork;
                 lock (_cacheGate)
                 {
+                    _lastArtwork = artwork;
                     _background?.SetArtwork(artwork);
                 }
+            }
+            catch (Exception ex) { RaiseException(ex); }
+        }
+
+        /// <summary>同一曲目的调色板和像素一并提交，避免渲染线程看到过渡中的兜底画面。</summary>
+        public void SetBackdrop(PaletteResult? palette, ArtworkPixelData? artwork)
+        {
+            try
+            {
+                bool paletteChanged;
+                lock (_cacheGate)
+                {
+                    paletteChanged = !ReferenceEquals(_lastPalette, palette);
+                    bool artworkChanged = !ReferenceEquals(_lastArtwork, artwork);
+                    _lastPalette = palette;
+                    _lastArtwork = artwork;
+                    // 有封面时先设置像素，避免旋转网格为新调色板生成多余的兜底位图。
+                    if (artworkChanged && artwork is not null) _background?.SetArtwork(artwork);
+                    if (paletteChanged) _background?.SetPalette(palette);
+                    if (artworkChanged && artwork is null) _background?.SetArtwork(null);
+                }
+                if (paletteChanged && UseImageDominantTheme && palette is not null)
+                    ThemeResolved?.Invoke(this, palette.PaletteIsDark);
             }
             catch (Exception ex) { RaiseException(ex); }
         }

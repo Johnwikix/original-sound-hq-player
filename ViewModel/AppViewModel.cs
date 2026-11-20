@@ -1,4 +1,5 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Impressionist;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -130,9 +131,7 @@ namespace WinUIMusicPlayer.ViewModel
         public List<LyricLine> UILyrics { get => State.Presentation.UILyrics; set => State.Presentation.UILyrics = value; }
         public int LastLyricIndex { get => State.Presentation.LastLyricIndex; set => State.Presentation.LastLyricIndex = value; }
         public string LyricPageBackgroundHash { get => State.Presentation.LyricPageBackgroundHash; set => State.Presentation.LyricPageBackgroundHash = value; }
-        public AnimatedWin2dControls.Impressionist.PaletteResult? LyricPagePalette { get => State.Presentation.LyricPagePalette; set => State.Presentation.LyricPagePalette = value; }
-        // 当前曲目封面像素（RotatingMesh 背景着色器消费；null 表示无封面，着色器回退调色板渐变）。
-        public AnimatedWin2dControls.Impressionist.ArtworkPixelData? LyricPageArtwork { get => State.Presentation.LyricPageArtwork; set => State.Presentation.LyricPageArtwork = value; }
+        public (PaletteResult? Palette, ArtworkPixelData? Artwork) LyricPageBackdrop => State.Presentation.LyricPageBackdrop;
         // 兼容现有设置持久化守卫；不再拥有可写的第二份就绪状态。
         public bool IsInitialized => _lifecycle.IsReady;
         private readonly AppLifecycle _lifecycle;
