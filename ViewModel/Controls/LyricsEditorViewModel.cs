@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -35,8 +36,12 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     public string TranslationText { get => _draft.TranslationText; set => _draft.TranslationText = value; }
     public string PronunciationText { get => _draft.PronunciationText; set => _draft.PronunciationText = value; }
     /// <summary>获取文本是否包含未提交修改。</summary>
-    public bool HasChanges => _loaded && (OriginalText != _savedDocument.Original.Content ||
-        TranslationText != (_savedDocument.TranslationLrc ?? "") || PronunciationText != (_savedDocument.PronunciationLrc ?? ""));
+    public bool HasChanges => _loaded && HasTextChanges(_savedDocument, OriginalText, TranslationText, PronunciationText);
+
+    private static bool HasTextChanges(LyricsDocument saved, string original, string translation, string pronunciation) =>
+        !LyricsEditDraft.TextEquals(original, saved.Original.Content) ||
+        !LyricsEditDraft.TextEquals(translation, saved.TranslationLrc ?? "") ||
+        !LyricsEditDraft.TextEquals(pronunciation, saved.PronunciationLrc ?? "");
     public string Status { get => field; private set => SetProperty(ref field, value); } = "";
     public string Error { get => field; private set => SetProperty(ref field, value); } = "";
     public bool IsBusy
@@ -219,9 +224,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         await Task.Yield();
         try
         {
-            bool lyricsChanged = snapshot.Original != snapshot.SavedDocument.Original.Content ||
-                snapshot.Translation != (snapshot.SavedDocument.TranslationLrc ?? "") ||
-                snapshot.Pronunciation != (snapshot.SavedDocument.PronunciationLrc ?? "");
+            bool lyricsChanged = HasTextChanges(snapshot.SavedDocument, snapshot.Original, snapshot.Translation, snapshot.Pronunciation);
             var document = lyricsChanged ? await Task.Run(() =>
             {
                 var imported = parser.Import(snapshot.Original, snapshot.Translation, pronunciation: snapshot.Pronunciation);
@@ -263,8 +266,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         {
             long draft = _draftVersion;
             string original = OriginalText, translation = TranslationText, pronunciation = PronunciationText;
-            bool lyricsChanged = original != _savedDocument.Original.Content || translation != (_savedDocument.TranslationLrc ?? "") ||
-                pronunciation != (_savedDocument.PronunciationLrc ?? "");
+            bool lyricsChanged = HasTextChanges(_savedDocument, original, translation, pronunciation);
             // Unknown legacy content remains authoritative when only metadata is edited.
             var document = lyricsChanged
                 ? await Task.Run(() => _parser.Import(original, translation, token: token, pronunciation: pronunciation), token)
@@ -294,9 +296,9 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
             // unchanged text snapshot as success even if that notification bumped the
             // draft counter; a real edit during the transaction still keeps the window open.
             saved = draft == _draftVersion ||
-                 (string.Equals(OriginalText, original, StringComparison.Ordinal) &&
-                 string.Equals(TranslationText, translation, StringComparison.Ordinal) &&
-                 string.Equals(PronunciationText, pronunciation, StringComparison.Ordinal));
+                 (LyricsEditDraft.TextEquals(OriginalText, original) &&
+                 LyricsEditDraft.TextEquals(TranslationText, translation) &&
+                 LyricsEditDraft.TextEquals(PronunciationText, pronunciation));
             if (!saved && !_disposed) Error = ToolUtils.GetString("LyricsEditConflict");
         });
         return saved;
@@ -451,8 +453,33 @@ internal sealed class LyricsEditDraft : ObservableObject
     internal int OwnerId;
     internal bool Loaded;
     internal Task Operation = Task.CompletedTask;
-    internal string OriginalText { get => field; set { if (SetProperty(ref field, value)) Version++; } } = "";
-    internal string TranslationText { get => field; set { if (SetProperty(ref field, value)) Version++; } } = "";
-    internal string PronunciationText { get => field; set { if (SetProperty(ref field, value)) Version++; } } = "";
+    internal string OriginalText { get => field; set => SetText(ref field, value); } = "";
+    internal string TranslationText { get => field; set => SetText(ref field, value); } = "";
+    internal string PronunciationText { get => field; set => SetText(ref field, value); } = "";
     internal bool IsBusy { get; set => SetProperty(ref field, value); }
+
+    private void SetText(ref string current, string value, [CallerMemberName] string? propertyName = null)
+    {
+        if (!TextEquals(current, value) && SetProperty(ref current, value, propertyName)) Version++;
+    }
+
+    // WinUI TextBox can write back a different CR/LF encoding for the same lyric lines.
+    internal static bool TextEquals(string left, string right)
+    {
+        if (left == right) return true;
+        var leftText = left.AsSpan();
+        var rightText = right.AsSpan();
+        while (true)
+        {
+            int lineEnd = leftText.IndexOfAny('\r', '\n');
+            if (lineEnd != rightText.IndexOfAny('\r', '\n')) return false;
+            if (lineEnd < 0) return leftText.SequenceEqual(rightText);
+            if (!leftText[..lineEnd].SequenceEqual(rightText[..lineEnd])) return false;
+            leftText = SkipLineBreak(leftText[lineEnd..]);
+            rightText = SkipLineBreak(rightText[lineEnd..]);
+        }
+    }
+
+    private static ReadOnlySpan<char> SkipLineBreak(ReadOnlySpan<char> lineBreak) =>
+        lineBreak.StartsWith("\r\n", StringComparison.Ordinal) ? lineBreak[2..] : lineBreak[1..];
 }

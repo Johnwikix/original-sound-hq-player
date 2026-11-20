@@ -128,7 +128,11 @@ internal sealed partial class RegressionApplication
             await database.InsertAsync(third);
             await database.RunInTransactionAsync(db => SongVersionStore.AttachInTransaction(db, third));
             var thirdLyrics = await data.Lyrics.GetAsync(third.Id);
-            await data.Lyrics.SaveAsync(third.Id, new(new("[00:02.00]Other timeline", LyricsFormat.Lrc), null), thirdLyrics.Revision, "User", expectedOwnerId: thirdLyrics.OwnerId);
+            await data.Lyrics.SaveAsync(third.Id, new(
+                new("[00:02.00]Other timeline\r\n[00:03.00]Next line", LyricsFormat.Lrc),
+                "[00:02.00]Translation\n[00:03.00]Next translation",
+                "[00:02.00]Pronunciation\r[00:03.00]Next pronunciation"),
+                thirdLyrics.Revision, "User", expectedOwnerId: thirdLyrics.OwnerId);
             var conflict = await data.Versions.PreviewMergeAsync(second.Id, third.Id, data.Lyrics);
             await data.Versions.MergeAsync(conflict, conflict.OtherSongId, false);
             await app.RefreshSongsSourceAsync();
@@ -145,11 +149,24 @@ internal sealed partial class RegressionApplication
             await Wait(() => model.Versions.Any(row => row.Music.Id == third.Id && row.Music.IsMissing));
             list.SelectedIndex = 2;
             await Wait(() => model.Music.Id == third.Id && !model.Editor.IsBusy);
+            Check(!model.Editor.HasChanges, "inspecting a missing version with saved multiline lyrics does not create a draft");
             Check(!remove.IsEnabled, "a draft in another version protects the group from removal");
             list.SelectedIndex = 0;
             model.Editor.Lyrics.OriginalText = savedText;
             list.SelectedIndex = 2;
             await Wait(() => remove.IsEnabled);
+            Check(model.VersionDraftHint.Length == 0 && model.SplitVersionCommand.CanExecute(null),
+                "unchanged multiline lyrics allow both removal and split after switching versions");
+            var savedLyrics = await data.Lyrics.GetAsync(third.Id);
+            var lyrics = model.Editor.Lyrics;
+            string savedPronunciation = lyrics.PronunciationText;
+            lyrics.PronunciationText += "\r";
+            Check(!remove.IsEnabled && !model.SplitVersionCommand.CanExecute(null), "adding a lyric line break is a real edit");
+            lyrics.PronunciationText = savedPronunciation;
+            Check(await lyrics.SaveAsync(), "unchanged multiline lyrics can be saved");
+            var reloadedLyrics = await data.Lyrics.GetAsync(third.Id);
+            Check(reloadedLyrics.Revision == savedLyrics.Revision && reloadedLyrics.Document == savedLyrics.Document,
+                "opening and saving untouched multiline lyrics preserves their revision and text");
             await model.RemoveMissingVersionCommand.ExecuteAsync(null);
             Check(model.Versions.Count == 2 && model.Music.Id == first.Id && app.FindById(third.Id) is null,
                 "removing the selected missing row refreshes the library and selects the best remaining version");
