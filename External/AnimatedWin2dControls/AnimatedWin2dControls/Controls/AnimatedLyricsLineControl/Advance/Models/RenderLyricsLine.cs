@@ -216,6 +216,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             int fontWeight = 700)
         {
             DisposeTextLayout();
+            RenderCharsReady = false;
 
             var format = sharedFormat ?? new CanvasTextFormat
             {
@@ -259,6 +260,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             TranslationLayer.CreateGeometry();
             PronunciationLayer.CreateGeometry();
         }
+
+        internal bool RenderCharsReady { get; private set; }
 
         public void RecreateRenderChars(int strokeWidth, bool preserveFloatTransitions = true)
         {
@@ -316,6 +319,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 syllable.ChildrenRenderLyricsChars.Add(renderChar);
                 PrimaryRenderChars.Add(renderChar);
             }
+            RenderCharsReady = true;
             _cachedPrimaryLineHeight = PrimaryRenderChars.Count > 0 ? PrimaryRenderChars[0].LayoutRect.Height : 0;
         }
 

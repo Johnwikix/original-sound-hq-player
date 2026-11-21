@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Threading;
 using Windows.Foundation;
@@ -28,21 +29,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         /// <summary>宿主设置的目标画布。用于 Invalidate / Size / 指针捕获 / DPI 换算 / 帧率设置。</summary>
         public CanvasAnimatedControl? Canvas { get; set; }
-        internal CanvasControl? TransparentCanvas { get; set; }
-        private UIElement? InputElement => (UIElement?)TransparentCanvas ?? Canvas;
+        internal UIElement? TransparentInput { get; set; }
+        private UIElement? InputElement => TransparentInput ?? Canvas;
         private Size HostSize => Canvas?.Size ?? default;
 
         private void InvalidateHost()
         {
-            if (TransparentCanvas is not { } canvas)
-            {
-                Canvas?.Invalidate();
-                return;
-            }
-            if (canvas.DispatcherQueue.HasThreadAccess)
-                canvas.Invalidate();
-            else
-                canvas.DispatcherQueue.TryEnqueue(canvas.Invalidate);
+            // The transparent image is redrawn directly by its composition clock.
+            if (TransparentInput is null) Canvas?.Invalidate();
         }
 
         /// <summary>
@@ -83,6 +77,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private readonly Lock _renderGate = new();
         private readonly Lock _pendingGate = new();
         private List<RenderLyricsLine>? _pendingLines;
+        private IList<LyricLine>? _lastSource;
+        private bool _pendingAnimate;
+        private bool _pendingClear;
+        private bool _fadingOut;
+        private bool _preparingEntrance;
+        private float _maskOpacity = 1;
+        private float _lyricsOpacity = 1;
+        private const float LyricFadeOutMs = 150;
+        private const float LyricFadeInMs = 200;
+        private readonly Windows.UI.ViewManagement.UISettings _motionSettings = new();
         private bool _layoutDirty = true;
         private volatile bool _shutdown;
         private int _currentLineIndex = -1;
@@ -191,7 +195,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             IsPlayingBus.Changed += OnIsPlayingChanged;
             OffsetMsBus.Changed += OnOffsetMsChanged;
             LyricsFontSizeBus.Changed += OnLyricsFontSizeChanged;
-            UILyricsBus.Changed += OnUILyricsChangedBus;
+            UILyricsBus.PlaybackChanged += OnUILyricsChanged;
             LyricsSettingsBus.SyncRequested += OnLyricsSettingsChanged;
             LyricsSyncRequestBus.Request();
         }
@@ -202,7 +206,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             IsPlayingBus.Changed -= OnIsPlayingChanged;
             OffsetMsBus.Changed -= OnOffsetMsChanged;
             LyricsFontSizeBus.Changed -= OnLyricsFontSizeChanged;
-            UILyricsBus.Changed -= OnUILyricsChangedBus;
+            UILyricsBus.PlaybackChanged -= OnUILyricsChanged;
             LyricsSettingsBus.SyncRequested -= OnLyricsSettingsChanged;
         }
 
@@ -236,6 +240,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 {
                     if (_shutdown) return;
                     _shutdown = true;
+                    _lastSource = null;
+                    _pendingClear = false;
+                    _fadingOut = false;
+                    _preparingEntrance = false;
+                    _lyricsOpacity = 1;
                     _pendingLines = null; // Unconsumed snapshots have no native resources.
                 }
                 Detach();
@@ -260,6 +269,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (_shutdown) return;
                 lock (_pendingGate)
                 {
+                    _lastSource = null;
+                    _pendingClear = false;
+                    _fadingOut = false;
+                    _preparingEntrance = false;
+                    _lyricsOpacity = 1;
                     _pendingLines = null;
                 }
 
@@ -293,7 +307,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             InvalidateHost();
         }
 
-        private void OnUILyricsChangedBus(IList<LyricLine>? value) => OnUILyricsChanged(value);
+
 
         private void OnLyricsSettingsChanged(LyricsSettingsBus.Settings s)
         {
@@ -341,9 +355,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             InvalidateHost();
         }
 
-        private void OnUILyricsChanged(IList<LyricLine>? newLyrics)
+        private void OnUILyricsChanged(IList<LyricLine>? newLyrics, bool animateChange)
         {
-            if (_shutdown) return;
+            lock (_pendingGate)
+            {
+                if (_shutdown || (newLyrics is not null && ReferenceEquals(newLyrics, _lastSource))) return;
+            }
+            bool animate = animateChange && _motionSettings.AnimationsEnabled;
             var newLines = new List<RenderLyricsLine>(newLyrics?.Count ?? 0);
             if (newLyrics != null && newLyrics.Count > 0)
             {
@@ -360,21 +378,44 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 if (_shutdown) return;
                 // A newer snapshot can replace an unconsumed one without disposing Win2D objects.
+                _lastSource = newLyrics;
                 _pendingLines = newLines;
+                _pendingAnimate = animate;
+                _pendingClear = animate && (_pendingClear || newLines.Count == 0);
             }
             InvalidateHost();
         }
 
         // Called only at a render callback boundary while holding _renderGate.
-        private bool ApplyPendingLyrics()
+        private bool AdvanceLyricsTransition(TimeSpan elapsed)
         {
             List<RenderLyricsLine>? next;
             lock (_pendingGate)
             {
                 next = _pendingLines;
+                if (next is null)
+                {
+                    if (!_preparingEntrance && _lyricsOpacity < 1)
+                        _lyricsOpacity = Math.Min(1, _lyricsOpacity + (float)(elapsed.TotalMilliseconds / LyricFadeInMs));
+                    return false;
+                }
+
+                // Freeze the outgoing lines at their last playback position. Later selections
+                // can replace the pending snapshot without restarting their fade.
+                if (_pendingClear && _renderLines.Count != 0 && _lyricsOpacity > 0)
+                {
+                    _fadingOut = true;
+                    _lyricsOpacity = Math.Max(0, _lyricsOpacity - (float)(elapsed.TotalMilliseconds / LyricFadeOutMs));
+                    if (_lyricsOpacity > 0) return false;
+                }
+                bool entering = next.Count != 0 && (_renderLines.Count == 0 || _fadingOut);
+                _preparingEntrance = _pendingAnimate && entering;
+                if (!_pendingAnimate || next.Count == 0) _lyricsOpacity = 1;
+                else if (entering) _lyricsOpacity = 0;
                 _pendingLines = null;
+                _pendingClear = false;
+                _fadingOut = false;
             }
-            if (next is null) return false;
 
             var previous = _renderLines;
             _renderLines = next;
@@ -456,7 +497,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     fontWeight,
                     _cachedShowTranslation,
                     _cachedShowPronunciation,
-                    _cachedCharFloatAmount > 0);
+                    _cachedCharFloatAmount > 0, deferRenderChars: true);
 
                 if (_currentLineIndex >= 0)
                 {
@@ -490,8 +531,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             lock (_renderGate)
             {
                 if (_shutdown) return;
-                ApplyPendingLyrics();
-                UpdateCore(sender, elapsedTime);
+                AdvanceLyricsTransition(elapsedTime);
+                if (!_fadingOut) UpdateCore(sender, elapsedTime);
             }
         }
 
@@ -644,6 +685,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             _cachedVisibleStart = visibleRange.Start;
             _cachedVisibleEnd = visibleRange.End;
+
+            // Row heights must be exact before a seek. Character and drawing resources are
+            // only needed for the same three overscan lines on either side as the draw pass.
+            int first = Math.Max(0, visibleRange.Start - 3);
+            int last = Math.Min(lines.Count - 1, visibleRange.End + 3);
+            if (!_preparingEntrance || !_layoutDirty)
+                PrepareVisibleLines(sender, first, last);
 
             // 动画范围需与 DrawLyricsContent 的绘制范围一致（[visibleStart-3, visibleEnd+3]），
             // 否则处于缓冲区、但仍被绘制出来的行会脱离动画器：它们携带的 transition 残留值
@@ -811,15 +859,37 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 if (_shutdown) return;
                 // Invalidate may request a draw while the animation is paused, without Update.
-                if (consumePendingLyrics && ApplyPendingLyrics()) UpdateCore(sender, TimeSpan.Zero);
-                DrawCore(sender, ds, hdr);
+                if (consumePendingLyrics && AdvanceLyricsTransition(TimeSpan.Zero)) UpdateCore(sender, TimeSpan.Zero);
+                if (_renderLines.Count > 0 && _lyricsOpacity > 0) DrawCore(sender, ds, hdr);
+            }
+        }
+
+        private void PrepareVisibleLines(ICanvasResourceCreator sender, int first, int last)
+        {
+            // While the lyric layer is still transparent, spread native cache construction
+            // across frames. Once visible, newly exposed rows are ready for this very draw.
+            long start = _preparingEntrance ? Stopwatch.GetTimestamp() : 0;
+            if ((_currentLineIndex < first || _currentLineIndex > last) && (uint)_currentLineIndex < (uint)_renderLines.Count)
+                EnsureChars(_renderLines[_currentLineIndex]);
+            for (int i = first; i <= last; i++)
+            {
+                var line = _renderLines[i];
+                EnsureChars(line);
+                if (!_preparingEntrance || line.CachedFill is not null) continue;
+                line.EnsureCaches(sender, _cachedStrokeWidth);
+                if (i < last && Stopwatch.GetElapsedTime(start).TotalMilliseconds >= 0.75) return;
+            }
+            _preparingEntrance = false;
+
+            void EnsureChars(RenderLyricsLine line)
+            {
+                if (!line.RenderCharsReady)
+                    line.RecreateRenderChars((int)_cachedStrokeWidth, _cachedCharFloatAmount > 0);
             }
         }
 
         private void DrawCore(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr)
         {
-            if (_renderLines.Count == 0) return;
-
             double rx = RegionX;
             double ry = RegionY;
             double rw = RegionW;
@@ -831,14 +901,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _cachedEdgeFadeWidth = rw;
                 _cachedEdgeFadeHeight = rh;
                 _edgeFadeMask.Update(sender, new Rect(rx, ry, rw, rh), s_edgeFadeStops, true);
+                _maskOpacity = -1;
             }
 
-            if (_edgeFadeMask.Brush != null)
+            if (_edgeFadeMask.Brush is { } mask)
             {
-                using (ds.CreateLayer(_edgeFadeMask.Brush))
+                if (_maskOpacity != _lyricsOpacity)
+                {
+                    mask.Opacity = _lyricsOpacity;
+                    _maskOpacity = _lyricsOpacity;
+                }
+                using (ds.CreateLayer(mask))
                 {
                     DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
                 }
+            }
+            else if (_lyricsOpacity < 1)
+            {
+                using var fade = ds.CreateLayer(_lyricsOpacity, new Rect(rx, ry, rw, rh));
+                DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
             }
             else
             {
@@ -1062,7 +1143,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private TimeSpan? GetTappedTime(TappedRoutedEventArgs e)
         {
-            if (_renderLines.Count == 0) return null;
+            if (_renderLines.Count == 0 || _fadingOut || Volatile.Read(ref _pendingLines) is not null) return null;
 
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;

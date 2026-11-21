@@ -98,6 +98,7 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
                 var atDpi144 = MeasureHdrDpi();
                 var frameCadence = MeasurePresentationCadence();
                 MeasureHdrSubmission();
+                var lyricSwitch = CheckLyricSwitch();
                 File.WriteAllText(resultPath, JsonSerializer.Serialize(new
                 {
                     Status = "PASS",
@@ -107,6 +108,7 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
                     result.WarmMotion,
                     Dpi144 = atDpi144,
                     FrameCadence = frameCadence,
+                    LyricSwitch = lyricSwitch,
                     ManagedSubmission = _measurements
                 }));
                 return;

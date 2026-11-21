@@ -51,8 +51,6 @@ internal static class FinalWordFloatChecks
                 var word = line.PrimaryRenderSyllables.Last();
                 if (word.Text != text || word.DurationMs < 500)
                     throw new InvalidOperationException($"The reported final word must reproduce a long syllable: {text}.");
-                var firstCharacter = word.ChildrenRenderLyricsChars.First();
-                var lastCharacter = word.ChildrenRenderLyricsChars.Last();
                 var update = Update.CreateDelegate<Action<ICanvasResourceCreator, TimeSpan>>(coordinator);
                 double before = double.NaN, after = double.NaN, lastAfter = double.NaN;
                 double glowAtEnd = 0, scaleAtEnd = 1;
@@ -62,6 +60,10 @@ internal static class FinalWordFloatChecks
                     using var drawing = target.CreateDrawingSession();
                     drawing.Clear(Microsoft.UI.Colors.Transparent);
                     coordinator.OnDraw(canvas, drawing);
+                    // Off-screen rows prepare character metrics as they approach the viewport.
+                    if (word.ChildrenRenderLyricsChars.Count == 0 && position < line.StartMs) continue;
+                    var firstCharacter = word.ChildrenRenderLyricsChars.First();
+                    var lastCharacter = word.ChildrenRenderLyricsChars.Last();
                     if (position < word.StartMs) before = firstCharacter.FloatTransition.Value;
                     if (double.IsNaN(after) && position >= word.StartMs + 460)
                         after = firstCharacter.FloatTransition.Value;

@@ -18,7 +18,8 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
     }
     private void PresentationChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (!_disposed && e.PropertyName == nameof(state.Presentation.UILyrics)) UILyricsBus.Publish(state.Presentation.UILyrics);
+        if (!_disposed && e.PropertyName == nameof(state.Presentation.UILyrics))
+            UILyricsBus.Publish(state.Presentation.UILyrics, animateChange: true);
     }
     private void SendFullLyricsSync()
     {

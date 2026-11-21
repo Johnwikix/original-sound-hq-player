@@ -16,18 +16,18 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
     private CancellationTokenSource? _request;
     private bool _disposed;
     private int _ticket;
-    public void Load(Music music) => Request(music, immediate: false);
+    public void Load(Music music) => Request(music, clearPrevious: false);
 
-    /// <summary>过渡展示换曲时立即清除旧歌词，并优先解析当前展示曲目的歌词。</summary>
-    public void ShowTransitionTrack(Music? music) => Request(music, immediate: true);
+    /// <summary>交接时立即撤销旧歌词的交互，待选曲稳定后加载当前展示曲目的歌词。</summary>
+    public void ShowTransitionTrack(Music? music) => Request(music, clearPrevious: true);
 
-    private void Request(Music? music, bool immediate)
+    private void Request(Music? music, bool clearPrevious)
     {
         if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping) return;
         var dispatcher = App.MainWindow.DispatcherQueue;
         if (!dispatcher.HasThreadAccess)
         {
-            dispatcher.TryEnqueue(() => Request(music, immediate));
+            dispatcher.TryEnqueue(() => Request(music, clearPrevious));
             return;
         }
         if (!ReferenceEquals(music, state.Playback.DisplayedPlaybackMusic)) return;
@@ -35,7 +35,7 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
         state.Presentation.LastLyricIndex = -1;
         int ticket = Interlocked.Increment(ref _ticket);
         _request?.Cancel();
-        if (immediate) state.Presentation.UILyrics = [];
+        if (clearPrevious) state.Presentation.UILyrics = [];
         if (music is null) return;
 
         var owner = new CancellationTokenSource();
@@ -58,8 +58,8 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
                     bool finalPublished = false;
                     try
                     {
-                        // 普通重载仍合并磁盘和网络查询；交接应立即尝试已缓存的歌词。
-                        if (!immediate) await Task.Delay(DebounceMilliseconds, linked.Token);
+                        // Manual selections and crossfade previews share the same cancellable quiet period.
+                        await Task.Delay(DebounceMilliseconds, linked.Token);
                         var lyrics = await Task.Run(() => parser.SetLyrics(snapshot, linked.Token, cached =>
                             dispatcher.TryEnqueue(() =>
                             {

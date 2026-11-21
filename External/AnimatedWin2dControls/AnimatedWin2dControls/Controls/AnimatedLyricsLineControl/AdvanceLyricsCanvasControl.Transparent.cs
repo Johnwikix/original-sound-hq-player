@@ -1,6 +1,9 @@
 #nullable enable
 using AnimatedWin2dControls.Interop;
-using Microsoft.Graphics.Canvas.UI;
+using Microsoft.Graphics.Canvas;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -21,11 +24,14 @@ public sealed partial class AdvanceLyricsCanvasControl
         set => SetValue(UseTransparentPresentationProperty, value);
     }
 
-    private CanvasControl? _transparentCanvas;
+    private Image? _transparentCanvas;
+    private CanvasImageSource? _transparentSource;
+    private CanvasDevice? _transparentDevice;
+    private Size _transparentSize;
+    private float _transparentDpi;
     private volatile bool _useTransparentPresentation;
     private FrameEventSubscription? _transparentClock;
     private PresentationFrameClock _transparentFrameClock;
-    private long _lastTransparentDraw;
 
     private bool CanRender => !_shutdown && _isActive && !_pausedByVisibility && !_pausedByParent && !_pausedByWindow;
 
@@ -38,7 +44,7 @@ public sealed partial class AdvanceLyricsCanvasControl
 
     private void ApplyPresentationMode()
     {
-        _coordinator.TransparentCanvas = _useTransparentPresentation ? _transparentCanvas : null;
+        _coordinator.TransparentInput = _useTransparentPresentation ? _transparentCanvas : null;
         if (_canvas is { } animated)
         {
             animated.Visibility = _useTransparentPresentation ? Visibility.Collapsed : Visibility.Visible;
@@ -59,48 +65,69 @@ public sealed partial class AdvanceLyricsCanvasControl
         if (!IsLoaded || !CanRender || !_useTransparentPresentation || _transparentCanvas is null)
         {
             StopTransparentClock();
+            ResetTransparentSurface();
             return;
         }
 
         if (_transparentClock is null)
         {
-            _lastTransparentDraw = 0;
             _transparentFrameClock = default;
-            _transparentClock = FrameEventSubscription.SubscribeRendering(InvalidateTransparentCanvas);
-            _transparentCanvas.Invalidate();
+            _transparentClock = FrameEventSubscription.SubscribeRendering(DrawTransparentFrame);
+            CompositionTarget.SurfaceContentsLost += OnSurfaceContentsLost;
         }
     }
 
     private void StopTransparentClock()
     {
-        _transparentClock?.Dispose();
+        if (_transparentClock is null) return;
+        CompositionTarget.SurfaceContentsLost -= OnSurfaceContentsLost;
+        _transparentClock.Dispose();
         _transparentClock = null;
     }
 
-    private void InvalidateTransparentCanvas()
+    private void OnSurfaceContentsLost(object? sender, object args) => ResetTransparentSurface();
+
+    private void ResetTransparentSurface()
     {
-        if (_transparentFrameClock.TryAdvance(Stopwatch.GetTimestamp(), _coordinator.TargetFrameRate, false, out _))
-            _transparentCanvas?.Invalidate();
+        if (_transparentCanvas is { } image) image.Source = null;
+        _transparentSource = null;
     }
 
-    private void TransparentCanvas_CreateResources(CanvasControl sender, CanvasCreateResourcesEventArgs args)
+    private void DrawTransparentFrame()
     {
-        if (_useTransparentPresentation)
-            _coordinator.OnCreateResources();
-    }
+        if (!CanRender || !_useTransparentPresentation || _transparentCanvas is not { XamlRoot: { } root } image
+            || !_transparentFrameClock.TryAdvance(Stopwatch.GetTimestamp(), _coordinator.TargetFrameRate, false, out var elapsed))
+            return;
 
-    private void TransparentCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
-    {
-        if (!CanRender || !_useTransparentPresentation) return;
         try
         {
-            var now = Stopwatch.GetTimestamp();
-            var elapsed = _lastTransparentDraw == 0 ? TimeSpan.Zero : Stopwatch.GetElapsedTime(_lastTransparentDraw, now);
-            _lastTransparentDraw = now;
-            _coordinator.OnUpdate(sender, elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed);
-            using var session = CanvasDrawingSessionScope.Borrow(args.DrawingSession);
-            session.Context.Clear(Colors.Transparent);
-            _coordinator.OnDraw(sender, session.Context, consumePendingLyrics: false);
+            // An Image without a source measures 0x0. The control already owns the lyric slot.
+            var size = new Size(ActualWidth, ActualHeight);
+            float dpi = (float)(96 * root.RasterizationScale);
+            if (size.Width * dpi < 96 || size.Height * dpi < 96) return;
+            var device = _transparentDevice ??= CanvasDevice.GetSharedDevice();
+            bool replace = _transparentSource is null || size != _transparentSize || dpi != _transparentDpi;
+            var surface = replace
+                ? new CanvasImageSource(device, (float)size.Width, (float)size.Height, dpi, CanvasAlphaMode.Premultiplied)
+                : _transparentSource!;
+            if (replace) _coordinator.OnCreateResources();
+            _coordinator.OnUpdate(device, elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed);
+            using (var drawing = surface.CreateDrawingSession(Colors.Transparent))
+            using (var session = CanvasDrawingSessionScope.Borrow(drawing))
+                _coordinator.OnDraw(device, session.Context, consumePendingLyrics: false);
+            if (replace)
+            {
+                image.Source = surface;
+                _transparentSource = surface;
+                _transparentSize = size;
+                _transparentDpi = dpi;
+            }
+        }
+        catch (Exception ex) when (_transparentDevice?.IsDeviceLost(ex.HResult) == true)
+        {
+            ResetTransparentSurface();
+            _transparentDevice = null;
+            _coordinator.ResetDeviceResources();
         }
         catch (Exception ex) { _coordinator.RaiseRenderError(ex); }
     }
@@ -108,12 +135,10 @@ public sealed partial class AdvanceLyricsCanvasControl
     private void ReleaseTransparentCanvas()
     {
         StopTransparentClock();
-        if (_transparentCanvas is null) return;
-        _transparentCanvas.CreateResources -= TransparentCanvas_CreateResources;
-        _transparentCanvas.Draw -= TransparentCanvas_Draw;
-        DetachPointerEvents(_transparentCanvas);
-        _transparentCanvas.RemoveFromVisualTree();
+        ResetTransparentSurface();
+        _transparentDevice = null;
+        if (_transparentCanvas is not null) DetachPointerEvents(_transparentCanvas);
         _transparentCanvas = null;
-        _coordinator.TransparentCanvas = null;
+        _coordinator.TransparentInput = null;
     }
 }

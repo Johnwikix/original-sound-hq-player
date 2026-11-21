@@ -94,11 +94,20 @@ internal static class LoaderCancellationChecks
             };
             try
             {
+                int callsBeforePreview = parser.Calls;
+                var skipped = new Music { Title = "Skipped preview" };
+                state.Playback.DisplayedPlaybackMusic = skipped;
+                loader.ShowTransitionTrack(skipped);
+                await Task.Delay(100);
+                if (parser.Calls != callsBeforePreview)
+                    throw new Exception("Preview bypassed the track-switch debounce.");
                 var preview = new Music { Title = "First preview" };
                 state.Playback.DisplayedPlaybackMusic = preview;
                 loader.ShowTransitionTrack(preview);
                 if (state.Presentation.LastLyrics.Count != 0) throw new Exception("Preview retained outgoing lyrics.");
                 await previewStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                if (parser.Calls != callsBeforePreview + 1)
+                    throw new Exception("A superseded preview reached the parser.");
                 var latest = new Music { Title = "Latest preview" };
                 state.Playback.DisplayedPlaybackMusic = latest;
                 loader.ShowTransitionTrack(latest);
@@ -111,7 +120,13 @@ internal static class LoaderCancellationChecks
 
                 var rollback = new Music { Title = "Rollback" };
                 state.Playback.DisplayedPlaybackMusic = rollback;
+                int callsBeforeRollback = parser.Calls;
                 loader.ShowTransitionTrack(rollback);
+                await Task.Delay(300);
+                loader.Load(rollback); // A valid reload from another entry restarts the same deadline.
+                await Task.Delay(300);
+                if (parser.Calls != callsBeforeRollback || state.Presentation.LastLyrics.Count != 0)
+                    throw new Exception("Rollback and same-track reload used independent debounce windows.");
                 await WaitForLyricsAsync(rollback.Title);
             }
             finally { finishPreview.TrySetResult(); }

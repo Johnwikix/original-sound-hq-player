@@ -98,8 +98,9 @@
                             x:Name="PART_Canvas"
                             ClearColor="Transparent"
                             IsHitTestVisible="True" />
-                        <canvas:CanvasControl
+                        <Image
                             x:Name="PART_TransparentCanvas"
+                            Stretch="Fill"
                             Visibility="Collapsed" />
                     </Grid>
                 </ControlTemplate>

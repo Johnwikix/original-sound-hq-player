@@ -219,13 +219,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             ReleaseTransparentCanvas();
             _canvas = GetTemplateChild("PART_Canvas") as CanvasAnimatedControl;
-            _transparentCanvas = GetTemplateChild("PART_TransparentCanvas") as CanvasControl;
+            _transparentCanvas = GetTemplateChild("PART_TransparentCanvas") as Image;
             if (_transparentCanvas is not null)
-            {
-                _transparentCanvas.CreateResources += TransparentCanvas_CreateResources;
-                _transparentCanvas.Draw += TransparentCanvas_Draw;
                 AttachPointerEvents(_transparentCanvas);
-            }
             ApplyPresentationMode();
 
             if (_canvas != null)

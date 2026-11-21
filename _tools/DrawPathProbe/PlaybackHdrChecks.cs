@@ -149,6 +149,53 @@ internal sealed partial class ProbeApplication
         return (backgrounds, new { Readback = lyrics, Sweep = spatial, HaloClipping = haloClipping, Hover = hover }, warmMotion);
     }
 
+    private object CheckLyricSwitch()
+    {
+        using var target = CreateFloatTarget(_canvas.Device, 680, 400);
+        _lyrics.LyricsRegion = new Rect(0, 0, 680, 400);
+        ConfigureLyrics(false);
+        TimeProgressBus.Publish(280);
+        IsPlayingBus.Publish(true);
+        TimeProgressBus.SetClock(static () => 280);
+        try { return MeasureSwitch(); }
+        finally { TimeProgressBus.SetClock(null); }
+
+        object MeasureSwitch()
+        {
+            for (int i = 0; i < 90; i++) _lyrics.OnUpdate(target, Delta);
+            float visible = Opacity();
+            UILyricsBus.Publish([], animateChange: true);
+            _lyrics.OnUpdate(target, TimeSpan.FromMilliseconds(75));
+            float outgoing = Opacity();
+            // A second clear while fading should not restart the outgoing transition.
+            UILyricsBus.Publish([], animateChange: true);
+            _lyrics.OnUpdate(target, TimeSpan.FromMilliseconds(75));
+            float empty = Opacity();
+            var incomingLyrics = CreateLyrics();
+            UILyricsBus.Publish(incomingLyrics, animateChange: true);
+            // Zero elapsed advances resource preparation without advancing the fade clock.
+            for (int i = 0; i < incomingLyrics.Count + 2; i++) _lyrics.OnUpdate(target, TimeSpan.Zero);
+            _lyrics.OnUpdate(target, TimeSpan.FromMilliseconds(100));
+            float incoming = Opacity();
+            UILyricsBus.Publish(incomingLyrics); // A host sync must not replay the entrance.
+            _lyrics.OnUpdate(target, TimeSpan.FromMilliseconds(100));
+            float settled = Opacity();
+            bool motion = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+            if (visible <= .1f || empty != 0 || settled <= .1f
+                || (motion && (Math.Abs(outgoing / visible - .5f) > .04f
+                    || incoming <= 0 || incoming >= settled))
+                || (!motion && outgoing != 0))
+                throw new InvalidOperationException($"Unexpected lyric switch opacity: {visible}, {outgoing}, {empty}, {incoming}, {settled}.");
+            return new { motion, visible, outgoing, empty, incoming, settled };
+        }
+
+        float Opacity()
+        {
+            DrawLyricsProbe(target, Hdr);
+            return ReadMax(target).Alpha;
+        }
+    }
+
     private void MeasureHdrSubmission()
     {
         using var target = CreateFloatTarget(_canvas.Device, 1100, 700);

@@ -22,7 +22,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             int fontWeight = 700,
             bool showTranslation = true,
             bool showPronunciation = true,
-            bool preserveFloatTransitions = true)
+            bool preserveFloatTransitions = true,
+            bool deferRenderChars = false)
         {
             if (lines == null || resourceCreator == null) return;
 
@@ -54,7 +55,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (strokeWidth > 0)
                     line.RecreateTextGeometry();
                 line.DisposeCaches();
-                line.RecreateRenderChars(strokeWidth, preserveFloatTransitions);
+                if (!deferRenderChars)
+                    line.RecreateRenderChars(strokeWidth, preserveFloatTransitions);
             }
             shareFormat.Dispose();
             ArrangeCurrentHeights(lines, originalFontSize, horizontalAlignment, lyricsWidth, layoutWidth);
