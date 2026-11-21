@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation;
 using WinUIMusicPlayer.Controls;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
 
@@ -105,6 +106,7 @@ namespace WinUIMusicPlayer.View
         internal ImageSwitcher Cover => DetailCoverSwitcher;
         internal NowPlayingCanvas? BackgroundCanvas => NowPlaying;
         internal Rect CoverSlot => _sceneCoverSlot;
+        internal PlaybackSceneCoverPresenter SceneCoverPresenter => _sceneCoverPresenter;
         internal int SceneCoverPixelWidth => _sceneCoverPresenter.RequestedArtwork?.Width ?? 0;
         internal Action<NowPlayingCanvas>? ConfigureBackgroundCanvas { get; set; }
         internal AnimatedWin2dControls.Controls.AnimatedTextBlock.AnimatedTextBlock? ProbeTitle { get; set; }

@@ -16,7 +16,7 @@ namespace WinUIMusicPlayer.Utils
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    // UI fixture only: the production pages and position owner are linked verbatim.
+    // UI fixture only: the production page code-behind is linked verbatim.
     // Playback, menu actions and database business remain isolated.
     public abstract class GroupFixtureViewModel(AppViewModel app, string kind) : ObservableObject
     {
@@ -30,7 +30,12 @@ namespace WinUIMusicPlayer.ViewModel
             else if (kind == "artist") app.CurrentArtistObj = music;
             else app.CurrentFolderObj = music;
         }
-        public void ReceiveNavigation() { IsInDetailMode = Current is not null; AppViewModel.IsBackBtnEnable = IsInDetailMode; }
+        public void ReceiveNavigation()
+        {
+            IsInDetailMode = Current is not null;
+            AppViewModel.PageType = IsInDetailMode ? kind : kind + "Browse";
+            AppViewModel.IsBackBtnEnable = IsInDetailMode;
+        }
         public void EnterDetailFromCrossLink() => ReceiveNavigation();
         public void CollapseDetail() { SetCurrent(null); IsInDetailMode = false; }
         protected void Enter(ItemClickEventArgs args) { SetCurrent((Music)args.ClickedItem); IsInDetailMode = true; }

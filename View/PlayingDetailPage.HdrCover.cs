@@ -164,7 +164,7 @@ public sealed partial class PlayingDetailPage
                 if (!resizing) ReportCoverUnavailable();
                 return;
             }
-            bool animate = _coverPreviewHidden && !_showingDefaultCover && !useDefault && IsCoverMotionEnabled;
+            bool animate = _coverPreviewHidden && !resizing && (!_showingDefaultCover || !useDefault) && IsCoverMotionEnabled;
             _sceneCoverPresenter.SetArtwork(art, DetailCoverSwitcher.SwitchType, animate, track);
             _sceneCoverDecodedTrack = track;
             _showingDefaultCover = useDefault;

@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             Focus(FocusState.Programmatic);
             Loaded += OnPageLoaded;
-            NavigationCacheMode = NavigationCacheMode.Disabled;
+            NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -55,32 +55,32 @@ namespace WinUIMusicPlayer.View
 
         private void RestoreSubPageState()
         {
+            // 外层 Frame 返回时，内层页面仍是 Content，不会再触发 OnNavigatedTo。
+            var app = ViewModel.AppViewModel;
             switch (ContentFrame.Content)
             {
                 case AlbumPage page:
                     AppData.CurrentPage = typeof(AlbumPage);
-                    if (page.ViewModel.IsInDetailMode)
-                    {
-                        ViewModel.AppViewModel.PageType = "album";
-                        ViewModel.AppViewModel.IsBackBtnEnable = true;
-                    }
+                    page.ViewModel.ReceiveNavigation();
                     break;
                 case ArtistPage page:
                     AppData.CurrentPage = typeof(ArtistPage);
-                    if (page.ViewModel.IsInDetailMode)
-                    {
-                        ViewModel.AppViewModel.PageType = "artist";
-                        ViewModel.AppViewModel.IsBackBtnEnable = true;
-                    }
+                    page.ViewModel.ReceiveNavigation();
                     break;
-                case SongListPage:
+                case SongListPage page:
                     AppData.CurrentPage = typeof(SongListPage);
+                    app.PageType = "song";
+                    page.ViewModel.ReceiveNavigation();
                     break;
-                case FavouritePlayListPage:
+                case FavouritePlayListPage page:
                     AppData.CurrentPage = typeof(FavouritePlayListPage);
+                    app.PageType = "favourite";
+                    page.ViewModel.ReceiveNavigation();
                     break;
+                default:
+                    return;
             }
-            ViewModel.AppViewModel.RefreshDataSource();
+            app.RefreshDataSource();
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)

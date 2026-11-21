@@ -305,27 +305,27 @@ internal sealed partial class TestWindow : Window
         Check(!await pending, "unloading cancels an in-flight virtualized location");
         await Task.Delay(300);
         _songPage = (SongListPage)InnerFrame.Content;
-        Check(!ReferenceEquals(_songPage, previousSong), "disabled navigation caching creates a fresh songs page");
-        Check(_songPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
-            "new song page explicitly disables navigation caching");
+        Check(ReferenceEquals(_songPage, previousSong), "rapid reentry reuses the songs page");
+        Check(_songPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
+            "songs page opts into navigation caching");
         var returned = Songs(_songPage);
         double top = (returned.ContainerFromIndex(810) as FrameworkElement)?.TransformToVisual(returned).TransformPoint(new Point()).Y ?? double.NaN;
-        _measurements.Add(new { Label = "uncached return anchor", ErrorDip = double.IsFinite(top) ? Math.Abs(top - _savedSongTop) : (double?)null });
+        _measurements.Add(new { Label = "cached return anchor", ErrorDip = double.IsFinite(top) ? Math.Abs(top - _savedSongTop) : (double?)null });
         File.WriteAllText(Path.Combine(Program.Output, "position-debug.json"), JsonSerializer.Serialize(new {
             SavedTop = _savedSongTop, CurrentTop = double.IsFinite(top) ? top : (double?)null,
-            Offset = Find<ScrollViewer>(returned).VerticalOffset, Snapshot = _app.State.Browse.Positions.Songs.Items.Bookmark
+            Offset = Find<ScrollViewer>(returned).VerticalOffset
         }, new JsonSerializerOptions { WriteIndented = true }));
-        Check(Math.Abs(top - _savedSongTop) < 1.5, "rebuilt songs page restores the previous visible anchor");
+        Check(Math.Abs(top - _savedSongTop) < 1.5, "cached songs page retains the previous visible anchor");
         Check(typeof(SongListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null
             && typeof(FavouritePlayListViewModel).GetField("LocateRequested", BindingFlags.NonPublic | BindingFlags.Instance) is null,
-            "singletons need no view location subscriptions during rebuilt page reentry");
+            "singletons need no view location subscriptions during reentry");
         _app.SelectedPlaybackMusic = new Music { Id = 700 };
     }
     private async Task VerifyReentry()
     {
         await Task.Delay(400);
-        Check(ReferenceEquals(Songs(_songPage!).SelectedItem, _app.ListSongs[699]), "manual button still selects after rapid uncached page reentry");
-        CheckCentered(Songs(_songPage!), _app.ListSongs[699], "uncached reentry manual target");
+        Check(ReferenceEquals(Songs(_songPage!).SelectedItem, _app.ListSongs[699]), "manual button still selects after rapid cached page reentry");
+        CheckCentered(Songs(_songPage!), _app.ListSongs[699], "cached reentry manual target");
     }
     private async Task CheckNavigation()
     {
@@ -347,16 +347,19 @@ internal sealed partial class TestWindow : Window
         await Task.Delay(150);
         Check(_shell.ShellFrame.Content is FolderBrowsePage && _shell.CurrentLibraryPage is null,
             "folder navigation uses the main shell Frame rather than the library child Frame");
+        _app.PageType = "folder";
+        _app.IsBackBtnEnable = true;
         _shell.NavigateToMusicBrowsePage();
         await Task.Delay(150);
-        browser = _shell.CurrentLibraryPage!;
-        _shell.ShellFrame.Navigate(typeof(EmptyPage));
+        Check(ReferenceEquals(browser, _shell.CurrentLibraryPage) && _app.PageType == "song" && !_app.IsBackBtnEnable,
+            "returning from folders reuses the browser and restores the current tab's navigation state");
+        _shell.ShellFrame.Navigate(typeof(FolderBrowsePage));
         await Task.Delay(150);
         vm.SelectBarAlbum("Album");
         await Task.Delay(150);
-        Check(!ReferenceEquals(browser, _shell.CurrentLibraryPage), "cross-link recreates the uncached outer browser");
-        Check(_shell.CurrentLibraryPage!.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
-            "outer browser explicitly disables navigation caching");
+        Check(ReferenceEquals(browser, _shell.CurrentLibraryPage), "cross-link reuses the cached outer browser");
+        Check(browser.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
+            "outer browser opts into navigation caching");
         Check(InnerFrame.Content is AlbumPage && vm.SelectedPageTag == "album", "album cross-link resolves shell without VM page field");
         vm.SelectBarArtist("Artist");
         await Task.Delay(150);

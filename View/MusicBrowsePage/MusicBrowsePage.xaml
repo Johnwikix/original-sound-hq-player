@@ -133,7 +133,7 @@
                     <Frame
                         x:Name="ContentFrame"
                         Margin="6,6,0,0"
-                        CacheSize="0"
+                        CacheSize="4"
                         IsNavigationStackEnabled="False"
                         Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(EmptyLibraryGrid.Visibility), Mode=OneWay}" />
 

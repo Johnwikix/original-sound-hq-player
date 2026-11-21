@@ -12,7 +12,7 @@ namespace WinUIMusicPlayer.View;
 // methods are linked from MainPage.LibraryNavigation.cs; the presenter, service, browser and child Frames are real.
 public sealed partial class MainPage : Page
 {
-    private readonly Frame MainFrame = new() { CacheSize = 0 };
+    private readonly Frame MainFrame = new() { CacheSize = 1 };
     private readonly Frame PlayingFrame = new() { Visibility = Visibility.Collapsed };
     private readonly NavigationView NavigationViewControl = new();
     private readonly TeachingTip CurrentPlayListTeachingTip = new();
@@ -57,8 +57,6 @@ public sealed partial class MainPage : Page
     }
 }
 public sealed class FixtureShellViewModel(AppViewModel app) { public AppViewModel AppViewModel { get; } = app; }
-// 独立文件夹的真实页面在 FolderBrowserUiRegression 中验证。
-public sealed class FolderBrowsePage : Page { }
 public sealed class HomePage : Page { public void SetExternalDetailsVisible(bool value) { } }
 public sealed class PlayListPage : Page { public FixturePlaylistState ViewModel { get; } = new(); }
 public sealed class FixturePlaylistState { public bool IsInDetailMode { get; set; } }

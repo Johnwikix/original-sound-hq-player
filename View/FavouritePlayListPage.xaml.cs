@@ -25,7 +25,6 @@ namespace WinUIMusicPlayer.View
         public FavouritePlayListViewModel ViewModel { get; }
         private readonly ListViewCentering _centering;
         private readonly PlaybackSelectionTracker _playbackSelection;
-        private readonly BrowsePositionKeeper _position;
         private readonly Music?[] _selectedBuffer = new Music?[256];
 
         public FavouritePlayListPage()
@@ -34,10 +33,9 @@ namespace WinUIMusicPlayer.View
             ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            this.NavigationCacheMode = NavigationCacheMode.Disabled;
+            NavigationCacheMode = NavigationCacheMode.Enabled;
             _centering = new ListViewCentering(MusicListView);
             _playbackSelection = new PlaybackSelectionTracker(MusicListView, ViewModel.AppViewModel);
-            _position = new BrowsePositionKeeper(this, ViewModel.State.Browse, ViewModel.State.Browse.Positions.Favorites, MusicListView);
             Unloaded += OnUnloaded;
         }
 
@@ -48,7 +46,6 @@ namespace WinUIMusicPlayer.View
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            _position.Leave();
             _centering.Cancel();
             base.OnNavigatedFrom(e);
         }

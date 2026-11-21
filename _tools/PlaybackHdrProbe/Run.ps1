@@ -1,4 +1,4 @@
-param([switch]$Inspect, [switch]$SampleDisplay, [switch]$SampleWindow, [switch]$MoveAcrossDisplays, [string]$PublishedControls, [switch]$CheckMemory, [switch]$CheckHandoff, [switch]$CheckPageCover, [switch]$CheckCoverMotion)
+param([switch]$Inspect, [switch]$SampleDisplay, [switch]$SampleWindow, [switch]$MoveAcrossDisplays, [string]$PublishedControls, [switch]$CheckMemory, [switch]$CheckHandoff, [switch]$CheckPageCover, [switch]$CheckCoverMotion, [switch]$CheckMissingCoverMotion)
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $project = Join-Path $PSScriptRoot 'PlaybackHdrProbe.csproj'
@@ -28,7 +28,8 @@ try {
     }
     $launch = @{ FilePath = (Join-Path $bin 'PlaybackHdrProbe.exe'); PassThru = $true; WindowStyle = 'Hidden'
         RedirectStandardOutput = (Join-Path $bin 'result.txt'); RedirectStandardError = (Join-Path $bin 'errors.txt') }
-    if ($CheckCoverMotion) { $launch.ArgumentList = '--check-cover-motion' }
+    if ($CheckMissingCoverMotion) { $launch.ArgumentList = '--check-missing-cover-motion' }
+    elseif ($CheckCoverMotion) { $launch.ArgumentList = '--check-cover-motion' }
     elseif ($CheckPageCover) { $launch.ArgumentList = '--check-page-cover' }
     elseif ($CheckHandoff) { $launch.ArgumentList = '--check-hdr-handoff' }
     elseif ($CheckMemory) { $launch.ArgumentList = '--check-hdr-memory' }

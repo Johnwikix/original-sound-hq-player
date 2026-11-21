@@ -237,7 +237,8 @@ namespace WinUIMusicPlayer.Helper
 namespace WinUIMusicPlayer.View.SubView { public sealed class MusicDetailsWindow(Music music) : Window { } }
 namespace WinUIMusicPlayer.View
 {
-    public sealed partial class EmptyPage : Page { public EmptyPage() => InitializeComponent(); }
+    // 夹具使用带 XAML 类型元数据的页面，让原生 Frame 通过正常入口创建目录页。
+    public sealed partial class FolderBrowsePage : Page { public FolderBrowsePage() => InitializeComponent(); }
 }
 namespace WinUIMusicPlayer.View.Controls
 {

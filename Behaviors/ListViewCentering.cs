@@ -26,7 +26,6 @@ public sealed class ListViewCentering
 
     private async Task<bool> LocateCoreAsync(object? item, int? index)
     {
-        BrowsePositionKeeper.InterruptRestore(_list);
         Cancel();
         if (item is null || !_list.IsLoaded || !_list.Items.Contains(item)) return false;
         using var request = new CancellationTokenSource();

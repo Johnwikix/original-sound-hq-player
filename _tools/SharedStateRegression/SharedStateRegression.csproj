@@ -32,7 +32,7 @@
     <Compile Include="../../Model/MusicGroup.cs;../../Model/ObservableListUpdates.cs" />
     <Compile Include="../../Services/SongVersionPolicy.cs" />
     <Compile Include="../../State/LibraryState.cs" />
-    <Compile Include="../../Model/FolderLocation.cs;../../State/BrowseState.cs;../../State/BrowsePagePosition.cs" />
+    <Compile Include="../../Model/FolderLocation.cs;../../State/BrowseState.cs" />
     <Compile Include="../../ViewModel/Pages/FolderViewModel.cs;../../Services/FolderBrowserIndex.cs;../../Model/FolderBrowserNode.cs" />
   </ItemGroup>
   <ItemGroup>

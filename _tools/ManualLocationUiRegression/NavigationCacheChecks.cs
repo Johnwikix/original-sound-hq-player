@@ -35,7 +35,7 @@ internal sealed partial class TestWindow
                 ObserveCachePage((Page)InnerFrame.Content);
             }
         }
-        _shell.ShellFrame.Navigate(typeof(EmptyPage));
+        _shell.ShellFrame.Navigate(typeof(FolderBrowsePage));
         await Task.Delay(250);
     }
 
@@ -57,6 +57,7 @@ internal sealed partial class TestWindow
             Pages = _cachePages.Select(p => p.TryGetTarget(out var page) ? page.GetType().Name : null).Where(x => x is not null).ToArray() };
         File.WriteAllText(Path.Combine(output, "memory.json"), JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }));
         Check(_foregroundViolations == 0, "cache probe stays outside the foreground");
-        if (name.Contains("after")) Check(state.Alive == 0 && state.Finalized == state.Created, "all retired library pages are collected with navigation cache disabled");
+        Check(state.Created == 5 && state.Alive == state.Created && state.Finalized == 0,
+            "repeated navigation reuses one browser and four cached tab pages");
     }
 }

@@ -52,14 +52,12 @@ internal sealed partial class TestWindow
         if (!double.IsFinite(error) || error >= 1.5)
         {
             var scroll = Find<ScrollViewer>(list);
-            var state = label.StartsWith("album") ? _app.State.Browse.Positions.Albums :
-                label.StartsWith("artist") ? _app.State.Browse.Positions.Artists : _app.State.Browse.Positions.Folders;
             File.WriteAllText(Path.Combine(Program.Output, "position-failure.json"), System.Text.Json.JsonSerializer.Serialize(new {
                 Label = label, Before = double.IsFinite(before) ? before : (double?)null, After = double.IsFinite(after) ? after : (double?)null,
-                list.IsLoaded, list.ActualHeight, scroll.VerticalOffset, scroll.ViewportHeight, scroll.ExtentHeight, State = state
+                list.IsLoaded, list.ActualHeight, scroll.VerticalOffset, scroll.ViewportHeight, scroll.ExtentHeight
             }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         }
-        Check(double.IsFinite(error) && error < 1.5, label + " restores the visible anchor within 1.5 DIP");
+        Check(double.IsFinite(error) && error < 1.5, label + " retains the visible anchor within 1.5 DIP");
     }
 
     private async Task CheckBrowsePositions()
@@ -70,9 +68,11 @@ internal sealed partial class TestWindow
             var list = (ListViewBase)page.FindName("MusicListView");
             double top = await Position(list, index);
             await Open(tag == "song" ? "favourite" : "song");
-            var rebuilt = await Open(tag);
-            Check(!ReferenceEquals(page, rebuilt), tag + " position survives actual page reconstruction");
-            CheckTop((ListViewBase)rebuilt.FindName("MusicListView"), index, top, tag + " list");
+            Check(ReferenceEquals(page, await Open(tag)), tag + " reuses the original page");
+            CheckTop(list, index, top, tag + " list after tab switch");
+            await ReturnToLibrary();
+            Check(ReferenceEquals(page, InnerFrame.Content), tag + " stays selected after returning to the library");
+            CheckTop(list, index, top, tag + " list after returning to the library");
         }
         _app.CurrentAlbumObj = _app.CurrentArtistObj = _app.CurrentFolderObj = null;
         foreach (var (tag, name) in new[] { ("album", "AlbumGridView"), ("artist", "ArtistsGridView") })
@@ -83,9 +83,8 @@ internal sealed partial class TestWindow
             Check(zoom.IsZoomedInViewActive, tag + " initially shows the detailed grid");
             double gridTop = await Position(grid, 636);
             await Open("song");
-            page = await Open(tag);
-            zoom = (SemanticZoom)page.FindName("BrowseZoom");
-            CheckTop((GridView)page.FindName(name), 636, gridTop, tag + " grouped grid");
+            Check(ReferenceEquals(page, await Open(tag)), tag + " reuses the original group page");
+            CheckTop(grid, 636, gridTop, tag + " grouped grid");
 
             zoom.IsZoomedInViewActive = false;
             await Task.Delay(250);
@@ -94,7 +93,7 @@ internal sealed partial class TestWindow
             await Open("song");
             page = await Open(tag);
             zoom = (SemanticZoom)page.FindName("BrowseZoom");
-            Check(!zoom.IsZoomedInViewActive, tag + " restores SemanticZoom's zoomed-out state");
+            Check(!zoom.IsZoomedInViewActive, tag + " retains SemanticZoom's zoomed-out state");
             CheckTop((GridView)page.FindName("ZoomedOutGridView"), 80, groupTop, tag + " semantic index");
             zoom.IsZoomedInViewActive = true;
             await Task.Delay(250);
@@ -109,48 +108,34 @@ internal sealed partial class TestWindow
             page = await Open(tag);
             detail = (WinUIMusicPlayer.View.Controls.MusicGroupDetailControl)page.FindName("DetailView");
             Check(detail.Visibility == Visibility.Visible, tag + " keeps the existing group detail navigation state");
-            CheckTop((ListViewBase)detail.FindName("MusicListView"), 817, detailTop, tag + " detail list");
+            var detailList = (ListViewBase)detail.FindName("MusicListView");
+            CheckTop(detailList, 817, detailTop, tag + " detail list");
+            await ReturnToLibrary();
+            Check(ReferenceEquals(page, InnerFrame.Content) && _app.IsBackBtnEnable,
+                tag + " keeps details selected and restores back availability after returning");
+            CheckTop(detailList, 817, detailTop, tag + " detail list after returning to the library");
             if (page is AlbumPage album) album.CollapseDetail();
             if (page is ArtistPage artist) artist.CollapseDetail();
             await Task.Delay(500);
             CheckTop((GridView)page.FindName(name), 636, beforeDetail, tag + " return from details");
             await Capture(tag + "-restored.png");
         }
-        var songsPage = await Open("song");
-        await Position((ListViewBase)songsPage.FindName("MusicListView"), 570);
-        await Open("favourite");
-        var saved = _app.State.Browse.Positions.Songs.Items.Bookmark!.Value;
-        var reversed = _all.Reverse().ToArray();
-        await _app.ListSongs.ReplaceAllAsync(reversed);
-        songsPage = await Open("song");
-        int movedIndex = Array.FindIndex(reversed, song => song.Id.ToString() == saved.AnchorKey);
-        CheckTop((ListViewBase)songsPage.FindName("MusicListView"), movedIndex, saved.Y, "reordered song anchor");
-
         await Open("favourite");
         await _app.ListSongs.ReplaceAllAsync([]);
-        songsPage = await Open("song");
-        Check(((ListView)songsPage.FindName("MusicListView")).Items.Count == 0, "empty source waits without restoring a nonexistent row");
+        var songs = (ListView)(await Open("song")).FindName("MusicListView");
+        Check(songs.Items.Count == 0, "cached songs page observes a collection cleared while away");
         await _app.ListSongs.ReplaceAllAsync(_all);
-        await Task.Delay(700);
-        int restoredIndex = Array.FindIndex(_all.ToArray(), song => song.Id.ToString() == saved.AnchorKey);
-        CheckTop((ListViewBase)songsPage.FindName("MusicListView"), restoredIndex, saved.Y, "late populated song anchor");
+        await Wait(() => songs.Items.Count == _all.Count);
+        Check(ReferenceEquals(songs.Items[0], _all[0]), "cached songs page observes a late collection update");
+    }
 
-        await Open("favourite");
-        var withoutAnchor = _all.Where(song => song.Id.ToString() != saved.AnchorKey).ToArray();
-        await _app.ListSongs.ReplaceAllAsync(withoutAnchor);
-        songsPage = await Open("song");
-        var fallback = Find<ScrollViewer>((ListView)songsPage.FindName("MusicListView"));
-        Check(double.IsFinite(fallback.VerticalOffset) && fallback.VerticalOffset <= fallback.ScrollableHeight,
-            "removed anchor falls back to a valid nearby position");
-        await Open("favourite");
-        await _app.ListSongs.ReplaceAllAsync(_all);
-
-        // A different query must not reuse the old query's bookmark.
-        await Open("favourite");
-        _app.State.Browse.SearchText = "different query";
-        var reset = await Open("song");
-        Check(Find<ScrollViewer>((ListView)reset.FindName("MusicListView")).VerticalOffset < 1,
-            "different filter context starts at the top");
-        _app.State.Browse.SearchText = "";
+    private async Task ReturnToLibrary()
+    {
+        _shell.ShellFrame.Navigate(typeof(FolderBrowsePage));
+        await Task.Delay(150);
+        _app.IsBackBtnEnable = false;
+        _shell.NavigateToMusicBrowsePage();
+        await Wait(() => InnerFrame.Content is Page { IsLoaded: true });
+        await Task.Delay(400);
     }
 }

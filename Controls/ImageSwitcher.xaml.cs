@@ -210,7 +210,7 @@ namespace WinUIMusicPlayer.Controls
                 token.ThrowIfCancellationRequested();
                 if (!_loadState.IsCurrent(version)) return;
 
-                bool animate = !usesDefault && _presentedHash is not null && AlbumArtImage.Source is not null;
+                bool animate = imageSource is not null && AlbumArtImage.Source is not null && _loadState.CanAnimateTo(usesDefault);
                 if (!animate)
                     SetSourceImmediately(imageSource);
                 else if (SwitchType == ImageSwitchType.Slide)
