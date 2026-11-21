@@ -86,22 +86,6 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(FadeImageBehavior),
                 new PropertyMetadata(null, OnImageHashChanged));
 
-        public bool IsDark
-        {
-            get => (bool)GetValue(IsDarkProperty);
-            set => SetValue(IsDarkProperty, value);
-        }
-
-        public static readonly DependencyProperty IsDarkProperty =
-            DependencyProperty.Register(nameof(IsDark), typeof(bool), typeof(FadeImageBehavior),
-                new PropertyMetadata(true, OnIsDarkChanged));
-
-        private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not FadeImageBehavior behavior) return;
-            _ = behavior.UpdateSourceAsync();
-        }
-
         private static void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not FadeImageBehavior behavior) return;
@@ -120,12 +104,12 @@ namespace WinUIMusicPlayer.Behaviors
 
         private async Task UpdateSourceAsync()
         {
-            if (!Enable || AssociatedObject is null) return;
+            if (!Enable || AssociatedObject is not { IsLoaded: true } image) return;
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
             string? hash = ImageHash;
-            bool isDark = IsDark;
+            bool isDark = image.ActualTheme == ElementTheme.Dark;
             if (!_loadState.Begin(hash, isDark, out int version)) return;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -166,7 +150,13 @@ namespace WinUIMusicPlayer.Behaviors
                     if (!token.IsCancellationRequested && _loadState.IsCurrent(version))
                     {
                         bool hasSource = source is not null;
-                        TransitionToNewSource(source);
+                        if (hasSource && _loadState.CanAnimateTo(usesDefault))
+                            TransitionToNewSource(source);
+                        else
+                        {
+                            StopAndCleanup();
+                            SetSource(source);
+                        }
                         if (IsSourceOwned(source))
                             source = null;
                         if (hasSource && source is null) _loadState.Commit(version, hash, usesDefault, isDark);
@@ -265,6 +255,7 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 AssociatedObject.Unloaded += OnUnloaded;
                 AssociatedObject.Loaded += OnLoaded;
+                AssociatedObject.ActualThemeChanged += OnActualThemeChanged;
                 if (Enable)
                     _ = UpdateSourceAsync();
                 else
@@ -274,12 +265,15 @@ namespace WinUIMusicPlayer.Behaviors
 
         private void OnLoaded(object sender, RoutedEventArgs e) => _ = UpdateSourceAsync();
 
+        private void OnActualThemeChanged(FrameworkElement sender, object args) => _ = UpdateSourceAsync();
+
         protected override void OnDetaching()
         {
             if (AssociatedObject != null)
             {
                 AssociatedObject.Unloaded -= OnUnloaded;
                 AssociatedObject.Loaded -= OnLoaded;
+                AssociatedObject.ActualThemeChanged -= OnActualThemeChanged;
             }
             _cts?.Cancel();
             _cts?.Dispose();

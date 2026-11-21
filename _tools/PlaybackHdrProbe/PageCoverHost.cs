@@ -21,6 +21,15 @@ namespace WinUIMusicPlayer
     }
 }
 
+namespace WinUIMusicPlayer.Helper
+{
+    internal static class CoverLoadQueue
+    {
+        internal const int CoverSize = 150;
+        internal static string GetThumbCachePath(string hash, int size) => hash + ".thumb";
+    }
+}
+
 namespace WinUIMusicPlayer.Utils
 {
     internal static partial class ToolUtils

@@ -74,6 +74,12 @@ public sealed partial class ProbeApp : Application
         try
         {
             VerifyPublishedControls();
+            if (Environment.GetCommandLineArgs().Contains("--check-playbar-cover"))
+            {
+                window = new Window { Title = "Playback bar cover check" };
+                await CheckPlaybackBarCoverAsync(window);
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--check-missing-cover-motion"))
             {
                 window = new Window { Title = "Playback missing cover motion check" };

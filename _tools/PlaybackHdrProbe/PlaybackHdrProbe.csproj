@@ -37,6 +37,8 @@
     <Compile Include="../../Model/FontInfo.cs" />
     <Compile Include="../../View/PlayingDetailPage.HdrCover.cs;../../View/PlayingDetailPage.HdrEntrance.cs;../../View/PlayingDetailPage.Layout.cs" />
     <Compile Include="../../ViewModel/Pages/PlayingDetailViewModel.Presentation.cs" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
+    <Compile Include="../../Behaviors/FadeImageBehavior.cs" />
     <Compile Include="../../Controls/ImageSwitcher.xaml.cs;../../Controls/ShadowImage.xaml.cs" />
     <Compile Include="../../Helper/CoverLoadState.cs;../../Helper/ImageHelper.cs;../../Helper/TransitionCache.cs" />
     <Page Include="../../Controls/ImageSwitcher.xaml" Link="Controls/ImageSwitcher.xaml" />

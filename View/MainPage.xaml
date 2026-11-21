@@ -144,7 +144,6 @@
                                             <interactivity:Interaction.Behaviors>
                                                 <behaviors:FadeImageBehavior
                                                     ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
-                                                    IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                                                     Duration="00:00:1" />
                                             </interactivity:Interaction.Behaviors>
                                         </Image>
