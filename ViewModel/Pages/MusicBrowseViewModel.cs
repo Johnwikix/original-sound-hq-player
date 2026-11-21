@@ -41,7 +41,6 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref field, value)) NavigateSelectedPage();
             }
         } = string.Empty;
-        public int PreviousSelectedIndex { get; set; } = 0;
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private readonly LibraryNavigationService _navigation;
@@ -202,8 +201,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void NavigateSelectedPage()
         {
-            int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPageTag);
-
             // 各 tab 的 detail 状态(CurrentXxxObj)在切换时保留,切回时由
             // ReceiveNavigation/RefreshFromAppState 按 PageType 恢复;退出详情
             // 由各页返回按钮(CollapseDetail)显式清空。
@@ -231,9 +228,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             AppViewModel.RefreshDataSource();
-            var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            _navigation.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
-            PreviousSelectedIndex = currentSelectedIndex;
+            _navigation.NavigatePage(AppData.CurrentPage);
         }
 
         public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false, long entryId = 0)
@@ -306,14 +301,5 @@ namespace WinUIMusicPlayer.ViewModel
             => _navigation.NavigatePage(pageType, parameter, navigationTransitionInfo);
 
         public void BackButton() => _navigation.Back();
-
-        private static int GetSelectorBarItemIndex(string tag) => tag switch
-        {
-            "song" => 0,
-            "album" => 1,
-            "artist" => 2,
-            "favourite" => 3,
-            _ => -1
-        };
     }
 }

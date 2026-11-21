@@ -333,12 +333,16 @@ internal sealed partial class TestWindow : Window
         var vm = browser.ViewModel;
         foreach (var (tag, type) in new[] { ("album", typeof(AlbumPage)), ("artist", typeof(ArtistPage)), ("favourite", typeof(FavouritePlayListPage)), ("song", typeof(SongListPage)) })
         {
-            browser.SelectBarItem(tag);
+            Selector.SelectedItem = Selector.Items.Single(item => Equals(item.Tag, tag));
             await Task.Delay(100);
             Check(InnerFrame.Content.GetType() == type, "tag navigation maps " + tag);
             Check(Selector.SelectedItem?.Tag?.ToString() == tag, "selector highlights " + tag);
             Check(!InnerFrame.IsNavigationStackEnabled, "native Frame keeps the configured stack behavior for " + tag);
         }
+        var presenter = Find<ContentPresenter>(InnerFrame);
+        Check(presenter.ContentTransitions is { Count: 1 } transitions
+            && transitions[0] is Microsoft.UI.Xaml.Media.Animation.PopupThemeTransition,
+            "native Frame presents the selected tab with a single PopupThemeTransition");
         vm.SelectedPageTag = "folder";
         await Task.Delay(150);
         Check(_shell.ShellFrame.Content is FolderBrowsePage && _shell.CurrentLibraryPage is null,
