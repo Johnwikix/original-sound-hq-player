@@ -1,14 +1,15 @@
 using System.Buffers.Binary;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace BassPlayerIpc.Shared;
 
 /// <summary>保存 PCM 音效的用户偏好；位流旁路不修改这些偏好。</summary>
 public sealed record DspSettings
 {
-    public const int MinCrossfadeSeconds = 1;
-    public const int MaxCrossfadeSeconds = 5;
-    public const int DefaultCrossfadeSeconds = 2;
+    public const int MinCrossfadeMilliseconds = 300;
+    public const int MaxCrossfadeMilliseconds = 3000;
+    public const int DefaultCrossfadeMilliseconds = 1000;
 
     /// <summary>获取或设置 DSP 总开关；默认开启以保留旧版音效偏好。</summary>
     public bool IsEnabled { get; init; } = true;
@@ -28,8 +29,20 @@ public sealed record DspSettings
     public bool GaplessPlayback { get; init; } = true;
     /// <summary>启用自动过渡时使用的方式。旧偏好仍使用无缝衔接。</summary>
     public TrackTransitionStyle TransitionStyle { get; init; }
-    /// <summary>固定交叉淡化时长或智能过渡的时长上限，单位为秒。</summary>
-    public int CrossfadeSeconds { get; init; } = DefaultCrossfadeSeconds;
+    /// <summary>固定交叉淡化时长或智能过渡的时长上限，单位为毫秒。</summary>
+    public int CrossfadeMilliseconds { get; init; } = DefaultCrossfadeMilliseconds;
+
+    // Legacy settings files specify whole seconds. New files write only the millisecond property.
+    [JsonPropertyName("CrossfadeSeconds")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LegacyCrossfadeSeconds
+    {
+        get => null;
+        init
+        {
+            if (value is int seconds) CrossfadeMilliseconds = FromLegacyCrossfadeSeconds(seconds);
+        }
+    }
     public double PlaybackRate { get; init; } = 1;
     public bool CompressorEnabled { get; init; }
     public double CompressorThresholdDb { get; init; } = -18;
@@ -90,17 +103,17 @@ public sealed record DspSettings
         double width = Finite(StereoWidth, 0, 1.5, 1);
         double rate = Finite(PlaybackRate, 0.25, 5, 1);
         var transitionStyle = NormalizeTransitionStyle(TransitionStyle);
-        int crossfadeSeconds = NormalizeCrossfadeSeconds(CrossfadeSeconds);
+        int crossfadeMilliseconds = NormalizeCrossfadeMilliseconds(CrossfadeMilliseconds);
         double threshold = Finite(CompressorThresholdDb, -40, -3, -18);
         double ratio = Finite(CompressorRatio, 1, 20, 4);
         double makeup = Finite(CompressorMakeupDb, 0, 18, 6);
         if (ResampleMode == mode && ResampleTargetRate == targetRate && TruePeakCeilingDb == ceiling && CrossfeedCutoffHz == cutoff
             && TargetLufs == target && HeadroomDb == headroom && Balance == balance
-            && TransitionStyle == transitionStyle && CrossfadeSeconds == crossfadeSeconds
+            && TransitionStyle == transitionStyle && CrossfadeMilliseconds == crossfadeMilliseconds
             && PlaybackRate == rate && CompressorThresholdDb == threshold && CompressorRatio == ratio && CompressorMakeupDb == makeup
             && Crossfeed == crossfeed && StereoWidth == width && ConvolutionTrimDb == trim && ImpulsePath == path && CurvePoints == curve && ConvolutionSource == source) return this;
         return this with { ResampleMode = mode, ResampleTargetRate = targetRate, TruePeakCeilingDb = ceiling, CrossfeedCutoffHz = cutoff, TargetLufs = target, HeadroomDb = headroom, Balance = balance,
-            TransitionStyle = transitionStyle, CrossfadeSeconds = crossfadeSeconds,
+            TransitionStyle = transitionStyle, CrossfadeMilliseconds = crossfadeMilliseconds,
             PlaybackRate = rate, CompressorThresholdDb = threshold, CompressorRatio = ratio, CompressorMakeupDb = makeup,
             Crossfeed = crossfeed, StereoWidth = width, ConvolutionTrimDb = trim, ImpulsePath = path, CurvePoints = curve, ConvolutionSource = source };
     }
@@ -108,8 +121,11 @@ public sealed record DspSettings
     internal static TrackTransitionStyle NormalizeTransitionStyle(TrackTransitionStyle value) =>
         Enum.IsDefined(value) ? value : TrackTransitionStyle.Gapless;
 
-    internal static int NormalizeCrossfadeSeconds(int value) =>
-        Math.Clamp(value, MinCrossfadeSeconds, MaxCrossfadeSeconds);
+    public static int NormalizeCrossfadeMilliseconds(int value) =>
+        Math.Clamp(value, MinCrossfadeMilliseconds, MaxCrossfadeMilliseconds);
+
+    internal static int FromLegacyCrossfadeSeconds(int value) =>
+        (int)Math.Clamp((long)value * 1000, MinCrossfadeMilliseconds, MaxCrossfadeMilliseconds);
 
     private static double Finite(double value, double min, double max, double fallback) =>
         double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
@@ -155,8 +171,9 @@ public readonly record struct DspState(byte RenderKind, bool EqualizerActive, in
 public static class DspProtocol
 {
     /// <summary>设置载荷字节数。</summary>
-    public const int SettingsSize = SettingsV7Size + 2;
+    public const int SettingsSize = SettingsV7Size + 3;
     internal const int SettingsV7Size = 1654;
+    internal const int SettingsV8Size = SettingsV7Size + 2;
     /// <summary>状态载荷字节数。</summary>
     public const int StateSize = 320;
 
@@ -164,9 +181,10 @@ public static class DspProtocol
     public static void WriteSettings(Span<byte> data, DspSettings settings)
     {
         data[..SettingsSize].Clear();
-        data[0] = 8;
+        data[0] = 9;
         data[SettingsV7Size] = (byte)DspSettings.NormalizeTransitionStyle(settings.TransitionStyle);
-        data[SettingsV7Size + 1] = (byte)DspSettings.NormalizeCrossfadeSeconds(settings.CrossfadeSeconds);
+        BinaryPrimitives.WriteUInt16LittleEndian(data[(SettingsV7Size + 1)..],
+            (ushort)DspSettings.NormalizeCrossfadeMilliseconds(settings.CrossfadeMilliseconds));
         data[1630] = (byte)settings.ResampleMode;
         data[1631] = settings.TruePeakLimiterEnabled ? (byte)1 : (byte)0;
         data[1632] = settings.DitherEnabled ? (byte)1 : (byte)0;
@@ -210,7 +228,8 @@ public static class DspProtocol
         bool legacy = data.Length == 44 && data[0] == 1;
         bool v2 = data.Length == 45 && data[0] == 2;
         bool v3 = data.Length == 1080 && data[0] == 3;
-        bool v8 = data.Length == SettingsSize && data[0] == 8;
+        bool v9 = data.Length == SettingsSize && data[0] == 9;
+        bool v8 = data.Length == SettingsV8Size && data[0] == 8 || v9;
         bool v7 = (data.Length == SettingsV7Size && data[0] == 7) || v8;
         if (v7 && (data[1630] > 2 || data[1631] > 1 || data[1632] > 1 || data[1633] != 0))
             throw new ArgumentException("Invalid PCM DSP settings.");
@@ -246,7 +265,8 @@ public static class DspProtocol
             CrossfeedCutoffHz = v7 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1646..]) : 700,
             GaplessPlayback = !v6 || data[1596] != 0,
             TransitionStyle = v8 ? (TrackTransitionStyle)data[SettingsV7Size] : TrackTransitionStyle.Gapless,
-            CrossfadeSeconds = v8 ? data[SettingsV7Size + 1] : DspSettings.DefaultCrossfadeSeconds,
+            CrossfadeMilliseconds = v9 ? BinaryPrimitives.ReadUInt16LittleEndian(data[(SettingsV7Size + 1)..])
+                : v8 ? DspSettings.FromLegacyCrossfadeSeconds(data[SettingsV7Size + 1]) : DspSettings.DefaultCrossfadeMilliseconds,
             CompressorEnabled = v6 && data[1597] != 0,
             PlaybackRate = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1598..]) : 1,
             CompressorThresholdDb = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1606..]) : -18,

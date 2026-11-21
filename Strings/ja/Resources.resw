@@ -1223,7 +1223,7 @@
     <value>スマート</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>クロスフェード時間（秒）</value>
+    <value>クロスフェード時間（ミリ秒）</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>曲の終わりまで再生した場合、アルバム内の連続する曲はギャップレスでつなぎます。クロスフェードは曲の長さと次の曲の冒頭の音量に応じて調整し、設定時間を上限とします。</value>
@@ -2812,13 +2812,8 @@ SHA-256: {5}
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>コピー済みのファイルは保持されますが、転送記録を完全に更新できませんでした。</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>転送先のパスが競合するか、ファイルの対応を確認できません。上書きを避けるためスキップしました：{0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>再生ページの HDR</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>Windows で HDR を有効にし、シェーダー背景またはカスタム背景画像を使用する必要があります。</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>基準白の輝度</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>ハイライトのピーク輝度</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR 再生ページでは、歌詞の発光強度 0、5、10 で基準白からそれぞれ 0%、50%、100% 明るくなります。上限は HDR のピーク輝度です。</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR はオフです</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>このディスプレイは SDR です</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>ウィンドウ素材 · 前景は SDR</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR を表示できないため SDR を使用中</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>再生ページの HDR 準備完了</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR 表示中 · 基準白 {0:0} nit · ピーク {1:0} nit</value></data>
 </root>

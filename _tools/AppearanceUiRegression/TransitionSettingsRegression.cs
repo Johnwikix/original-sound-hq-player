@@ -25,35 +25,38 @@ internal static class TransitionSettingsRegression
             var expander = (SettingsExpander)view.FindName("TransitionExpander");
             expander.IsExpanded = true;
             var mode = (ComboBox)view.FindName("TransitionMode");
-            var duration = (ComboBox)view.FindName("Duration");
+            var duration = (Slider)view.FindName("Duration");
             var durationCard = (SettingsCard)view.FindName("DurationCard");
             var manual = (ToggleSwitch)view.FindName("ManualFades");
             Check(mode.Items.Count == 4 && mode.SelectedIndex == 3, "The four-mode selector did not restore Smart.");
-            Check(duration.Items.Count == 5 && duration.SelectedIndex == 1 && durationCard.Visibility == Visibility.Visible,
-                "Smart did not show five durations and default to two seconds.");
-            for (int index = 0; index < duration.Items.Count; index++)
-                Check(duration.Items[index] as string == (index + 1).ToString(), "Duration must offer only whole seconds from one to five.");
-            Check(durationCard.Description is string { Length: > 0 } && manual.IsOn, "Smart help or saved manual fades were lost.");
+            Check(duration is { Minimum: 300, Maximum: 3000, StepFrequency: 100, Value: 1000 }
+                && durationCard.Visibility == Visibility.Visible, "Smart did not show the millisecond range and default.");
+            var description = durationCard.Description as string;
+            Check(description is { Length: > 0 } && manual.IsOn, "Smart help or saved manual fades were lost.");
 
             mode.SelectedIndex = 0;
             Check(!AppSettings.Dsp.GaplessPlayback && durationCard.Visibility == Visibility.Collapsed
-                && AppSettings.Dsp.CrossfadeSeconds == 2 && manual.IsOn, "Normal modified independent settings or exposed duration.");
+                && AppSettings.Dsp.CrossfadeMilliseconds == 1000 && manual.IsOn, "Normal modified independent settings or exposed duration.");
             mode.SelectedIndex = 1;
             Check(AppSettings.Dsp is { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Gapless }
                 && durationCard.Visibility == Visibility.Collapsed, "Gapless exposed duration or did not activate.");
             mode.SelectedIndex = 2;
             Check(AppSettings.Dsp.TransitionStyle == TrackTransitionStyle.Crossfade && durationCard.Visibility == Visibility.Visible
-                && duration.SelectedIndex == 1, "Fixed crossfade failed to restore duration.");
-            duration.SelectedIndex = 4;
-            Check(AppSettings.Dsp.CrossfadeSeconds == 5 && AppSettings.Dsp.CompressorEnabled && manual.IsOn,
-                "Choosing five seconds lost an independent preference.");
+                && duration.Value == 1000, "Fixed crossfade failed to restore duration.");
+            Check(durationCard.Description is "", "The Smart description was shown in Fixed mode.");
+            duration.Value = 1300;
+            Check(AppSettings.Dsp.CrossfadeMilliseconds == 1300 && AppSettings.Dsp.CompressorEnabled && manual.IsOn,
+                "Choosing 1300 ms did not reach settings or lost an independent preference.");
+            duration.Value = 3000;
+            Check(AppSettings.Dsp.CrossfadeMilliseconds == 3000, "The slider maximum did not reach settings.");
             manual.IsOn = false;
-            Check(!view.IsFadeEnabled && AppSettings.Dsp.CrossfadeSeconds == 5, "Manual fade toggle modified the automatic transition.");
-            AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 1 };
-            Check(mode.SelectedIndex == 3 && duration.SelectedIndex == 0, "External preference restoration did not update both controls.");
+            Check(!view.IsFadeEnabled && AppSettings.Dsp.CrossfadeMilliseconds == 3000, "Manual fade toggle modified the automatic transition.");
+            AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeMilliseconds = 300 };
+            Check(mode.SelectedIndex == 3 && duration.Value == 300 && Equals(durationCard.Description, description),
+                "External preference restoration did not update both controls and the Smart description.");
             expander.IsExpanded = false;
             expander.IsExpanded = true;
-            Check(mode.SelectedIndex == 3 && duration.SelectedIndex == 0, "Reopening the expander modified the restored values.");
+            Check(mode.SelectedIndex == 3 && duration.Value == 300, "Reopening the expander modified the restored values.");
         }
         finally
         {

@@ -81,7 +81,7 @@ internal static class NativeRapidNextProbe
                 using var commands = new PlaybackCommands(host.Lifecycle, host.State, services);
                 host.State.CurrentPlayMode = clicks < songs.Length ? PlayMode.RepeatOff : PlayMode.ListLoop;
                 host.State.CurrentPlayingList = new(songs);
-                AppSettings.Dsp = AppSettings.Dsp with { GaplessPlayback = true, TransitionStyle = style, CrossfadeSeconds = 2 };
+                AppSettings.Dsp = AppSettings.Dsp with { GaplessPlayback = true, TransitionStyle = style, CrossfadeMilliseconds = 2000 };
                 byte[] dsp = new byte[DspProtocol.SettingsSize];
                 DspProtocol.WriteSettings(dsp, AppSettings.Dsp);
                 await Send(CommandId.UpdateDsp, dsp);

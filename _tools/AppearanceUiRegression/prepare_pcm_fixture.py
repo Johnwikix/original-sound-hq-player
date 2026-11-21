@@ -47,7 +47,7 @@ mode, duration, manual = expander.find(c + "SettingsExpander.Items").findall(c +
 expander.set(x + "Name", "TransitionExpander")
 mode.find(ns + "ComboBox").set(x + "Name", "TransitionMode")
 duration.set(x + "Name", "DurationCard")
-duration.find(ns + "ComboBox").set(x + "Name", "Duration")
+duration.find(".//" + ns + "Slider").set(x + "Name", "Duration")
 toggle = manual.find(ns + "ToggleSwitch")
 toggle.set(x + "Name", "ManualFades")
 toggle.set("IsOn", toggle.get("IsOn").replace("ViewModel.AppViewModel.IsFadeEnabled", "IsFadeEnabled"))

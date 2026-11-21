@@ -17,7 +17,7 @@ public sealed partial class PlaybackCoordinator
     // SelectionVersion rejects an old user intent; Epoch rejects an old engine timeline;
     // Token identifies this exact plan, including duplicate queue entries.
     private sealed record NextPlan(long Token, long SelectionVersion, Music From, Music Next,
-        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeSeconds, bool PreserveAlbumBoundary);
+        long EntryId, long Epoch, string Path, TrackTransitionStyle Style, int CrossfadeMilliseconds, bool PreserveAlbumBoundary);
     private NextPlan? _nextPlan;
     private NextPlan? _cancellingPlan;
     private TaskCompletionSource? _gaplessCancellationSettled;
@@ -181,7 +181,7 @@ public sealed partial class PlaybackCoordinator
         {
             long epoch = Math.Max(progress.Epoch, _supersededHandoff?.Epoch ?? 0);
             plan = new(++_nextToken, _selectionVersion, current, next, entryId, epoch, next.Path,
-                settings.TransitionStyle, settings.CrossfadeSeconds, PreserveAlbumBoundary(current, next));
+                settings.TransitionStyle, settings.CrossfadeMilliseconds, PreserveAlbumBoundary(current, next));
             _nextPlan = plan;
         }
 
@@ -235,8 +235,8 @@ public sealed partial class PlaybackCoordinator
                 started = true;
                 // Completion uses GaplessTransition or progress. Poll less often once the mix is audible.
                 statusTimer.Period = TimeSpan.FromMilliseconds(500);
-                int seconds = Math.Max(settings.CrossfadeSeconds, AppSettings.Dsp.CrossfadeSeconds);
-                deadline = Environment.TickCount64 + Math.Clamp(seconds, DspSettings.MinCrossfadeSeconds, DspSettings.MaxCrossfadeSeconds) * 1000L + 2000;
+                int durationMs = Math.Max(settings.CrossfadeMilliseconds, AppSettings.Dsp.CrossfadeMilliseconds);
+                deadline = Environment.TickCount64 + Math.Clamp(durationMs, DspSettings.MinCrossfadeMilliseconds, DspSettings.MaxCrossfadeMilliseconds) + 2000;
             }
             await statusTimer.WaitForNextTickAsync(token);
         }
@@ -508,7 +508,7 @@ public sealed partial class PlaybackCoordinator
         bool preserveAlbumBoundary = _candidatePreserveAlbumBoundary;
         if (plan is not null && ((hasProgress && plan.Epoch != progress.Epoch) || plan.EntryId != _candidateEntry
             || plan.From != current || plan.Next != next || plan.SelectionVersion != _selectionVersion || plan.Path != next.Path
-            || plan.Style != settings.TransitionStyle || plan.CrossfadeSeconds != settings.CrossfadeSeconds
+            || plan.Style != settings.TransitionStyle || plan.CrossfadeMilliseconds != settings.CrossfadeMilliseconds
             || plan.PreserveAlbumBoundary != preserveAlbumBoundary))
         {
             CancelGaplessPlan();
@@ -518,7 +518,7 @@ public sealed partial class PlaybackCoordinator
         if (plan is null)
         {
             plan = new(++_nextToken, _selectionVersion, current, next, _candidateEntry, progress.Epoch, next.Path,
-                settings.TransitionStyle, settings.CrossfadeSeconds, preserveAlbumBoundary);
+                settings.TransitionStyle, settings.CrossfadeMilliseconds, preserveAlbumBoundary);
             _nextPlan = plan;
             _planConfirmed = false;
             _planSending = false;

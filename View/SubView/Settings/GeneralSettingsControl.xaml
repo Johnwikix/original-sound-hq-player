@@ -162,9 +162,16 @@
                         <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionDuration')}"
                             Description="{x:Bind PlaybackTransitions.CrossfadeDescription, Mode=OneWay}"
                             Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(PlaybackTransitions.CrossfadeVisible), Mode=OneWay}">
-                            <ComboBox MinWidth="80" ItemsSource="{x:Bind PlaybackTransitions.DurationOptions}"
-                                SelectedIndex="{x:Bind PlaybackTransitions.DurationIndex, Mode=TwoWay}"
-                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionDuration')}" />
+                            <Grid Width="200" ColumnDefinitions="*,44" ColumnSpacing="12">
+                                <Slider Minimum="{x:Bind PlaybackTransitions.MinimumDuration}"
+                                    Maximum="{x:Bind PlaybackTransitions.MaximumDuration}"
+                                    StepFrequency="100" SmallChange="100" LargeChange="500"
+                                    VerticalAlignment="Center"
+                                    Value="{x:Bind PlaybackTransitions.DurationMilliseconds, Mode=TwoWay}"
+                                    AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('PlaybackTransitionDuration')}" />
+                                <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Text="{x:Bind PlaybackTransitions.DurationText, Mode=OneWay}" />
+                            </Grid>
                         </controls:SettingsCard>
                         <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('ManualPlaybackFades')}"
                             Description="{x:Bind tool:ToolUtils.GetString('ManualPlaybackFadesDescription')}">

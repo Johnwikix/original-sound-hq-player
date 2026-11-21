@@ -50,7 +50,7 @@ internal static unsafe partial class Program
         }
         if (args.Length == 2 && args[0] == "--test-published-pcm-player")
         {
-            Run("NativeAOT player: DSP v7 handshake, settings, state and orderly shutdown", () => CheckPublishedPcmPlayer(args[1]));
+            Run("NativeAOT player: DSP v9 and v8 settings, state and orderly shutdown", () => CheckPublishedPcmPlayer(args[1]));
             return _failures == 0 ? 0 : 1;
         }
         if (args.Length == 1 && args[0] == "--test-pcm-dsp-upgrade")

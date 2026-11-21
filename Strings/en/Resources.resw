@@ -1223,7 +1223,7 @@
     <value>Smart</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>Crossfade duration (seconds)</value>
+    <value>Crossfade duration (ms)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>Consecutive album tracks stay gapless when played to the end. Track lengths and the next track's opening volume set the overlap, up to the selected duration.</value>
@@ -2812,13 +2812,8 @@ See the log for full details.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Copied files are retained, but their transfer records could not be fully updated.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Target path conflict or unconfirmed ownership. Skipped to avoid overwriting: {0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>Playback page HDR</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>Requires HDR to be enabled in Windows and a shader or custom image background.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Reference white brightness</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Highlight peak brightness</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>On the HDR playback page, lyric glow levels 0, 5, and 10 add 0%, +50%, and +100% to reference white, up to the HDR peak.</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR is off</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>This display is using SDR</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Window material · SDR foreground</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR unavailable · SDR fallback</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>Ready for HDR on the playback page</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR active · reference white {0:0} nit · peak {1:0} nit</value></data>
 </root>

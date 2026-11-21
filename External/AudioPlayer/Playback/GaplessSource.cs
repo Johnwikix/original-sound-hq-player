@@ -57,13 +57,13 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     }
 
     internal bool Queue(Session next, long token, TrackTransitionStyle style = TrackTransitionStyle.Gapless,
-        int seconds = DspSettings.DefaultCrossfadeSeconds, bool transitionNow = false)
+        int durationMs = DspSettings.DefaultCrossfadeMilliseconds, bool transitionNow = false)
     {
         lock (_gate)
         {
             if (_next != null || next.Kind != Kind || next.SampleRate != SampleRate
                 || next.Channels != Channels || next.ChannelMask != ChannelMask) return false;
-            SetTransition(style, seconds);
+            SetTransition(style, durationMs);
             _manualRequested = transitionNow;
             next.ShareOutputGain(_current);
             _next = next;
@@ -72,7 +72,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         }
     }
 
-    internal TransitionNowStatus RequestTransitionNow(long epoch, long token, TrackTransitionStyle style, int seconds)
+    internal TransitionNowStatus RequestTransitionNow(long epoch, long token, TrackTransitionStyle style, int durationMs)
     {
         lock (_gate)
         {
@@ -87,7 +87,7 @@ internal sealed class GaplessSource(Session current) : IRenderSource
             }
             if (!_manualRequested)
             {
-                SetTransition(style, seconds);
+                SetTransition(style, durationMs);
                 _manualRequested = true;
             }
             // Decoder EOF provides an exact frame count for a short or unlabelled track.
@@ -96,19 +96,19 @@ internal sealed class GaplessSource(Session current) : IRenderSource
         }
     }
 
-    internal void UpdateTransition(TrackTransitionStyle style, int seconds)
+    internal void UpdateTransition(TrackTransitionStyle style, int durationMs)
     {
         lock (_gate)
         {
-            if (_next != null && !_manualRequested) SetTransition(style, seconds);
+            if (_next != null && !_manualRequested) SetTransition(style, durationMs);
         }
     }
 
-    private void SetTransition(TrackTransitionStyle style, int seconds)
+    private void SetTransition(TrackTransitionStyle style, int durationMs)
     {
         _style = style;
         _overlapLimit = style is TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart
-            ? Math.Clamp(seconds, DspSettings.MinCrossfadeSeconds, DspSettings.MaxCrossfadeSeconds) * SampleRate : 0;
+            ? (int)((long)DspSettings.NormalizeCrossfadeMilliseconds(durationMs) * SampleRate / 1000) : 0;
         if (_overlapLimit > 0) _mixBuffer ??= new double[(MixBlockFrames + 1) * Channels];
     }
 

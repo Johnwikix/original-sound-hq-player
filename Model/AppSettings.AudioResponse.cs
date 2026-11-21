@@ -16,7 +16,7 @@ public static partial class AppSettings
         {
             if (field == value) return;
             bool transitionsChanged = field.GaplessPlayback != value.GaplessPlayback
-                || field.TransitionStyle != value.TransitionStyle || field.CrossfadeSeconds != value.CrossfadeSeconds;
+                || field.TransitionStyle != value.TransitionStyle || field.CrossfadeMilliseconds != value.CrossfadeMilliseconds;
             field = value;
             if (transitionsChanged) PlaybackTransitionsChanged?.Invoke(null, EventArgs.Empty);
             AudioResponseChanged?.Invoke(null, EventArgs.Empty);

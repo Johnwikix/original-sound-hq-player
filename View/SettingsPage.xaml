@@ -10,140 +10,148 @@
     mc:Ignorable="d">
 
     <Grid>
-        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
-<Grid RowDefinitions="Auto,*">
+        <ContentControl
+            x:Name="MusicDetailsSource"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False">
+            <Grid RowDefinitions="Auto,*">
 
-        <Grid Grid.Row="0">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock
-                    x:Uid="Settings"
-                    Margin="16,16,16,16"
-                    VerticalAlignment="Center"
-                    FontSize="28" />
-                <SelectorBar
-                    x:Name="SectionSelector"
-                    VerticalAlignment="Center">
-                    <SelectorBarItem
-                        x:Uid="SettingsSectionGeneral"
-                        FontSize="18"
-                        Tag="General"
-                        IsSelected="True" />
-                    <SelectorBarItem
-                        x:Uid="SettingsSectionShortcuts"
-                        FontSize="18"
-                        Tag="Shortcuts" />
-                    <SelectorBarItem x:Uid="SettingsSectionDsp" FontSize="18" Tag="Dsp" />
-                    <SelectorBarItem
-                        x:Uid="SettingsSectionCoverBackground"
-                        FontSize="18"
-                        Tag="CoverBackground" />
-                    <SelectorBarItem
-                        x:Uid="SettingsSectionLyrics"
-                        FontSize="18"
-                        Tag="Lyrics" />
-                    <SelectorBarItem
-                        x:Uid="SettingsSectionAbout"
-                        FontSize="18"
-                        Tag="About" />
-                </SelectorBar>
-            </StackPanel>
-        </Grid>
+                <Grid Grid.Row="0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            x:Uid="Settings"
+                            Margin="16,16,16,16"
+                            VerticalAlignment="Center"
+                            FontSize="28" />
+                        <SelectorBar x:Name="SectionSelector" VerticalAlignment="Center">
+                            <SelectorBarItem
+                                x:Uid="SettingsSectionGeneral"
+                                FontSize="18"
+                                IsSelected="True"
+                                Tag="General" />
+                            <SelectorBarItem
+                                x:Uid="SettingsSectionShortcuts"
+                                FontSize="18"
+                                Tag="Shortcuts" />
+                            <SelectorBarItem
+                                x:Uid="SettingsSectionDsp"
+                                FontSize="18"
+                                Tag="Dsp" />
+                            <SelectorBarItem
+                                x:Uid="SettingsSectionCoverBackground"
+                                FontSize="18"
+                                Tag="CoverBackground" />
+                            <SelectorBarItem
+                                x:Uid="SettingsSectionLyrics"
+                                FontSize="18"
+                                Tag="Lyrics" />
+                            <SelectorBarItem
+                                x:Uid="SettingsSectionAbout"
+                                FontSize="18"
+                                Tag="About" />
+                        </SelectorBar>
+                    </StackPanel>
+                </Grid>
 
-        <!-- Only the selected presenter applies its template; inactive sections stay uncreated. -->
-        <controls:SwitchPresenter
-            Grid.Row="1"
-            Value="{x:Bind SectionSelector.SelectedItem.Tag, Mode=OneWay}">
-            <controls:SwitchPresenter.ContentTransitions>
-                <TransitionCollection>
-                    <PopupThemeTransition />
-                </TransitionCollection>
-            </controls:SwitchPresenter.ContentTransitions>
+                <!--  Only the selected presenter applies its template; inactive sections stay uncreated.  -->
+                <controls:SwitchPresenter Grid.Row="1" Value="{x:Bind SectionSelector.SelectedItem.Tag, Mode=OneWay}">
+                    <controls:SwitchPresenter.ContentTransitions>
+                        <TransitionCollection>
+                            <PopupThemeTransition />
+                        </TransitionCollection>
+                    </controls:SwitchPresenter.ContentTransitions>
 
-            <!--  功能设置（含音频、外观）  -->
-            <controls:Case Value="General">
-                <ContentControl
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    IsTabStop="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <sub:GeneralSettingsControl />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </controls:Case>
-            <controls:Case Value="Dsp">
-                <ContentControl
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    IsTabStop="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <sub:DspSettingsControl />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </controls:Case>
+                    <!--  功能设置（含音频、外观）  -->
+                    <controls:Case Value="General">
+                        <ContentControl
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate>
+                                    <sub:GeneralSettingsControl />
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </controls:Case>
+                    <controls:Case Value="Dsp">
+                        <ContentControl
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate>
+                                    <sub:DspSettingsControl />
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </controls:Case>
 
-            <!--  快捷键设置  -->
-            <controls:Case Value="Shortcuts">
-                <ContentControl
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    IsTabStop="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <sub:ShortcutsSettingsControl />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </controls:Case>
+                    <!--  快捷键设置  -->
+                    <controls:Case Value="Shortcuts">
+                        <ContentControl
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate>
+                                    <sub:ShortcutsSettingsControl />
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </controls:Case>
 
-            <!--  封面与着色器背景  -->
-            <controls:Case Value="CoverBackground">
-                <ContentControl
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    IsTabStop="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <sub:CoverBackgroundSettingsControl />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </controls:Case>
+                    <!--  封面与着色器背景  -->
+                    <controls:Case Value="CoverBackground">
+                        <ContentControl
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate>
+                                    <sub:CoverBackgroundSettingsControl />
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </controls:Case>
 
-            <!--  歌词与桌面歌词  -->
-            <controls:Case Value="Lyrics">
-                <ContentControl
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    IsTabStop="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <sub:LyricsSettingsControl />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </controls:Case>
+                    <!--  歌词与桌面歌词  -->
+                    <controls:Case Value="Lyrics">
+                        <ContentControl
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate>
+                                    <sub:LyricsSettingsControl />
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </controls:Case>
 
-            <!--  关于（含音频可视化）  -->
-            <controls:Case Value="About">
-                <ContentControl
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    IsTabStop="False">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <sub:AboutSettingsControl />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </controls:Case>
-        </controls:SwitchPresenter>
-    </Grid>
+                    <!--  关于（含音频可视化）  -->
+                    <controls:Case Value="About">
+                        <ContentControl
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate>
+                                    <sub:AboutSettingsControl />
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </controls:Case>
+                </controls:SwitchPresenter>
+            </Grid>
         </ContentControl>
-        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
+        <ContentControl
+            x:Name="MusicDetailsOverlay"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False"
+            TabFocusNavigation="Cycle"
+            Visibility="Collapsed" />
     </Grid>
 </Page>

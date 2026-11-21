@@ -1,12 +1,10 @@
 using System;
-using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.ViewModel;
 
 public partial class AppViewModel
 {
     private double _displayPeakNits;
-    private bool _hdrPresentationFailed;
 
     public bool PlaybackHdrEnabled
     {
@@ -32,20 +30,6 @@ public partial class AppViewModel
     public double PlaybackHdrEffectivePeakNits => Math.Min(_displayPeakNits, PlaybackHdrPeakNits);
     public bool PlaybackHdrActive { get; private set; }
 
-    public string PlaybackHdrStatusText
-    {
-        get
-        {
-            if (!PlaybackHdrEnabled) return ToolUtils.GetString("PlaybackHdrOff");
-            if (!PlaybackHdrDisplayAvailable) return ToolUtils.GetString("PlaybackHdrDisplaySdr");
-            if (!IsFluidBackgroundEnabled && string.IsNullOrWhiteSpace(WindowBackgroundImagePath))
-                return ToolUtils.GetString("PlaybackHdrBackdropSdr");
-            if (_hdrPresentationFailed) return ToolUtils.GetString("PlaybackHdrFallback");
-            if (!PlaybackHdrActive) return ToolUtils.GetString("PlaybackHdrReady");
-            return string.Format(ToolUtils.GetString("PlaybackHdrOutput"), PlaybackHdrWhiteNits, PlaybackHdrEffectivePeakNits);
-        }
-    }
-
     public string FormatPlaybackHdrNits(double nits) => $"{nits:0} nit";
 
     internal void SetPlaybackHdrDisplay(ulong displayId, double peakNits)
@@ -60,19 +44,13 @@ public partial class AppViewModel
         if (wasAvailable != PlaybackHdrDisplayAvailable) OnPropertyChanged(nameof(PlaybackHdrDisplayAvailable));
         OnPropertyChanged(nameof(PlaybackHdrWhiteNits));
         OnPropertyChanged(nameof(PlaybackHdrEffectivePeakNits));
-        OnPropertyChanged(nameof(PlaybackHdrStatusText));
     }
 
     public void ReportPlaybackHdrPresentation(bool active, bool failed)
     {
-        active &= PlaybackHdrEnabled && PlaybackHdrDisplayAvailable;
-        if (PlaybackHdrActive == active && _hdrPresentationFailed == failed) return;
-        _hdrPresentationFailed = failed;
-        if (PlaybackHdrActive != active)
-        {
-            PlaybackHdrActive = active;
-            OnPropertyChanged(nameof(PlaybackHdrActive));
-        }
-        OnPropertyChanged(nameof(PlaybackHdrStatusText));
+        active = active && !failed && PlaybackHdrEnabled && PlaybackHdrDisplayAvailable;
+        if (PlaybackHdrActive == active) return;
+        PlaybackHdrActive = active;
+        OnPropertyChanged(nameof(PlaybackHdrActive));
     }
 }

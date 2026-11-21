@@ -32,9 +32,15 @@ internal static unsafe partial class Program
                     "NativeAOT player rejected long Unicode cache location");
                 byte[] payload = new byte[DspProtocol.SettingsSize];
                 DspProtocol.WriteSettings(payload, new() { ResampleMode = PcmResampleMode.IntegerMultiple,
-                    ResampleTargetRate = 192000, TruePeakLimiterEnabled = true, DitherEnabled = true, CrossfeedCutoffHz = 1200 });
+                    ResampleTargetRate = 192000, TruePeakLimiterEnabled = true, DitherEnabled = true, CrossfeedCutoffHz = 1200,
+                    TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeMilliseconds = 1300 });
                 Require(client.RequestAsync(CommandId.UpdateDsp, payload, response).GetAwaiter().GetResult().Type == MessageTypeId.Success,
-                    "NativeAOT player rejected DSP v7");
+                    "NativeAOT player rejected DSP v9");
+                var legacyPayload = payload.AsSpan(0, payload.Length - 1).ToArray();
+                legacyPayload[0] = 8;
+                legacyPayload[^1] = 2;
+                Require(client.RequestAsync(CommandId.UpdateDsp, legacyPayload, response).GetAwaiter().GetResult().Type == MessageTypeId.Success,
+                    "NativeAOT player rejected DSP v8");
                 var state = client.RequestAsync(CommandId.GetDspState, [], response).GetAwaiter().GetResult();
                 Require(state.Type == MessageTypeId.DspState && DspProtocol.ReadState(response.AsSpan(0, state.Length)).IsEnabled,
                     "NativeAOT player state query failed");

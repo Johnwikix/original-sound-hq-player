@@ -829,7 +829,7 @@ internal static class Regression
             await CheckReplacementAsync(() => second.Album = "Actual album", true, "missing album artist falls back to known track artist");
             await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { TransitionStyle = TrackTransitionStyle.Crossfade }, true,
                 "crossfade preference replaces an already confirmed Smart plan for the same track");
-            await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 4 }, true,
+            await CheckReplacementAsync(() => AppSettings.Dsp = AppSettings.Dsp with { CrossfadeMilliseconds = 1300 }, true,
                 "crossfade duration replaces an already confirmed plan for the same track");
 
             var crossfade = AppSettings.Dsp;
@@ -842,7 +842,7 @@ internal static class Regression
 
             var progress = test.Ipc.Progress;
             test.Ipc.Progress = null;
-            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 5 };
+            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeMilliseconds = 1700 };
             await WaitAsync(() => test.Ipc.Queued.Last().Path.Length == 0);
             test.Ipc.Progress = progress;
             await WaitAsync(() => test.Ipc.Queued.Last().Path == second.Path);
@@ -1035,7 +1035,7 @@ internal static class Regression
                 Task selection = adjusting.Coordinator.PlayNextAsync();
                 await WaitAsync(() => adjusting.Ipc.Manual.Count > 0);
                 var pending = adjusting.Ipc.Manual[0];
-                AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = 4 };
+                AppSettings.Dsp = AppSettings.Dsp with { CrossfadeMilliseconds = 1300 };
                 await Task.Yield();
                 Check(adjusting.State.State.Playback.PendingSelection?.Music == second, "editing crossfade duration keeps an explicit Next pending");
                 adjusting.Ipc.Transition(pending.Token, 201, 1200);

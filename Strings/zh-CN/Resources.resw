@@ -1222,7 +1222,7 @@
     <value>智能</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>交叉淡化时长（秒）</value>
+    <value>交叉淡化时长（毫秒）</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>自然曲终时，专辑内连续曲目保持无缝。交叉淡化时，按曲目时长和下一首开头的音量调整重叠，最长为所选时长。</value>
@@ -2814,13 +2814,8 @@ SHA-256：{5}
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>已复制的文件会保留，但发送记录未能完整更新。</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>目标路径冲突或无法确认文件归属，已跳过以避免覆盖：{0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>播放页 HDR</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>使用着色器背景或自定义背景图时，播放页可呈现 HDR。需要先在 Windows 中开启 HDR。</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>参考白点亮度</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>高光峰值亮度</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>在 HDR 播放页，歌词发光强度 0、5、10 分别在参考白基础上提亮 0%、50%、100%，受 HDR 峰值限制。</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR 已关闭</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>当前显示器使用 SDR</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>窗口材质 · SDR 前景</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR 呈现失败 · 已使用 SDR</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>播放页 HDR 就绪</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR 已生效 · 参考白点 {0:0} nit · 峰值 {1:0} nit</value></data>
 </root>

@@ -1078,7 +1078,7 @@ public sealed partial class PlaybackEngine : IDisposable
             _previewSettings = null;
             _dspSettings = normalized;
             if (_gaplessPreloader?.Request is { } plan)
-                _gaplessSource?.UpdateTransition(ResolveTransitionStyle(plan, normalized), normalized.CrossfadeSeconds);
+                _gaplessSource?.UpdateTransition(ResolveTransitionStyle(plan, normalized), normalized.CrossfadeMilliseconds);
             if (rateChanged || topologyChanged || enhancementChanged) ChangingSetting();
             ApplyDspToSessions();
             QueueDspState();

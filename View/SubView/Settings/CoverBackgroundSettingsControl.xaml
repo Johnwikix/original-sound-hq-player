@@ -101,7 +101,7 @@
 
                 <controls:SettingsExpander
                     Header="{x:Bind tool:ToolUtils.GetString('PlaybackHdr')}"
-                    Description="{x:Bind ViewModel.AppViewModel.PlaybackHdrStatusText, Mode=OneWay}">
+                    Description="{x:Bind tool:ToolUtils.GetString('PlaybackHdrDescription')}">
                     <ToggleSwitch
                         MinWidth="0"
                         VerticalAlignment="Center"

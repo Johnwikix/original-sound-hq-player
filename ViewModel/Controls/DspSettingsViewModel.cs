@@ -309,7 +309,7 @@ public partial class DspSettingsViewModel : ObservableObject
         {
             GaplessPlayback = saved.GaplessPlayback,
             TransitionStyle = saved.TransitionStyle,
-            CrossfadeSeconds = saved.CrossfadeSeconds
+            CrossfadeMilliseconds = saved.CrossfadeMilliseconds
         };
         AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(defaults, saved, _license.RestrictedFeatures);
         LoadValues();

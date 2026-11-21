@@ -6,6 +6,7 @@ internal static unsafe partial class Program
     private static void RunTrackTransitionTests()
     {
         Run("Crossfade: aligned dual PCM lanes, exact boundary, sequential handoffs and no callback allocations", CheckFixedCrossfade);
+        Run("Crossfade: subsecond durations reach the exact PCM frame boundary", CheckSubsecondCrossfade);
         Run("Crossfade: streams both rings through a fade larger than either ring", CheckStreamingCrossfade);
         Run("Crossfade: independent normalization, one continuous limiter and shared master volume", CheckCrossfadeDsp);
         Run("Smart transition: incoming energy and shortest track constrain the overlap", CheckSmartCrossfade);
@@ -24,7 +25,7 @@ internal static unsafe partial class Program
         using var next = TransitionSession(engine, 1000, 3000, -0.25, 0.75);
         using var third = TransitionSession(engine, 1000, 3000, 0.125, 0.375);
         var source = new GaplessSource(first);
-        Require(source.Queue(next, 20, TrackTransitionStyle.Crossfade, 1), "Initial plan rejected");
+        Require(source.Queue(next, 20, TrackTransitionStyle.Crossfade, 1000), "Initial plan rejected");
         var output = new double[3000 * 2];
         source.FillPcm(output, 1999);
         Require(next.FramesPlayed == 0 && source.CompletedToken == 0, "Incoming consumed before overlap");
@@ -36,7 +37,7 @@ internal static unsafe partial class Program
         Require(source.Current == next && source.CompletedToken == 20 && next.FramesPlayed == 1000
             && next.CurrentMs == 1000 && source.SubmittedFrames == 3000, "Wrong timing or identity at exact boundary");
 
-        Require(source.Queue(third, 21, TrackTransitionStyle.Crossfade, 1), "Second plan rejected");
+        Require(source.Queue(third, 21, TrackTransitionStyle.Crossfade, 1000), "Second plan rejected");
         source.FillPcm(output, 1100);
         long before = GC.GetAllocatedBytesForCurrentThread();
         source.FillPcm(output, 1000);
@@ -48,6 +49,23 @@ internal static unsafe partial class Program
             && source.SubmittedFrames == 5100, "Second handoff replayed overlap or counted media frames twice");
     }
 
+    private static void CheckSubsecondCrossfade()
+    {
+        const int rate = 44_100, durationMs = 300, overlap = rate * durationMs / 1000, length = rate;
+        var engine = Engine("WasapiShared");
+        using var first = TransitionSession(engine, rate, length, 1, 1);
+        using var next = TransitionSession(engine, rate, length, 0, 0);
+        var source = new GaplessSource(first);
+        Require(source.Queue(next, 41, TrackTransitionStyle.Crossfade, durationMs), "Subsecond plan rejected");
+        var buffer = new double[length * 2];
+        source.FillPcm(buffer, length);
+        CheckStereo(buffer, length - overlap - 1, 1, 1);
+        CheckStereo(buffer, length - overlap, 1 - 1.0 / overlap, 1 - 1.0 / overlap);
+        CheckStereo(buffer, length - 1, 0, 0);
+        Require(next.FramesPlayed == overlap && next.CurrentMs == durationMs && source.CompletedToken == 41,
+            "The incoming track did not advance by exactly 300 ms before handoff.");
+    }
+
     private static void CheckStreamingCrossfade()
     {
         var engine = Engine("WasapiShared");
@@ -55,7 +73,7 @@ internal static unsafe partial class Program
         using var first = TransitionSession(engine, rate, length, 0, 0, ended: false, capacity: capacity);
         using var next = TransitionSession(engine, rate, length, 0, 0, ended: false, capacity: capacity);
         var source = new GaplessSource(first);
-        Require(source.Queue(next, 22, TrackTransitionStyle.Crossfade, 2), "Stream plan rejected");
+        Require(source.Queue(next, 22, TrackTransitionStyle.Crossfade, 2000), "Stream plan rejected");
         double[] outgoing = StereoFrames(capacity, 0.6, -0.4);
         double[] incoming = StereoFrames(capacity, -0.2, 0.8);
         double[] output = new double[block * 2];
@@ -96,7 +114,7 @@ internal static unsafe partial class Program
         next.ConfigureDsp(settings);
         first.Gain!.SetImmediately(.9);
         var source = new GaplessSource(first);
-        Require(source.Queue(next, 23, TrackTransitionStyle.Crossfade, 1), "DSP plan rejected");
+        Require(source.Queue(next, 23, TrackTransitionStyle.Crossfade, 1000), "DSP plan rejected");
         double normalizedIncoming = Math.Pow(10, .3);
         var expectedPcm = StereoFrames(length * 2 - overlap, 0, 0);
         for (int frame = 0; frame < expectedPcm.Length / 2; frame++)
@@ -131,7 +149,7 @@ internal static unsafe partial class Program
             using var next = TransitionSession(engine, 1000, length, 0.1, 0.1);
             Set(next, "_introMeanSquare", energy);
             var source = new GaplessSource(first);
-            Require(source.Queue(next, 24, TrackTransitionStyle.Smart, 3), "Smart plan rejected");
+            Require(source.Queue(next, 24, TrackTransitionStyle.Smart, 3000), "Smart plan rejected");
             double[] output = new double[24000];
             source.FillPcm(output, 12000);
             CheckStereo(output, 12000 - expected - 1, .9, .9);
@@ -148,7 +166,7 @@ internal static unsafe partial class Program
         {
             Set(first, "<TotalMs>k__BackingField", 0L);
             var source = new GaplessSource(first);
-            Require(source.Queue(next, 25, TrackTransitionStyle.Crossfade, 1), "Unknown-duration plan rejected");
+            Require(source.Queue(next, 25, TrackTransitionStyle.Crossfade, 1000), "Unknown-duration plan rejected");
             var output = new double[900];
             source.FillPcm(output, 400);
             Require(next.FramesPlayed == 0, "Estimated an overlap without duration or decoded EOF");
@@ -165,7 +183,7 @@ internal static unsafe partial class Program
             Set(first, "<TotalMs>k__BackingField", 2000L);
             Set(next, "<TotalMs>k__BackingField", 2000L);
             var source = new GaplessSource(first);
-            Require(source.Queue(next, 26, TrackTransitionStyle.Crossfade, 1), "Recovery plan rejected");
+            Require(source.Queue(next, 26, TrackTransitionStyle.Crossfade, 1000), "Recovery plan rejected");
             double[] output = new double[4000];
             source.FillPcm(output, 1100);
             Require(next.FramesPlayed == 100, "Fixture never entered overlap");
@@ -189,7 +207,7 @@ internal static unsafe partial class Program
             capacity: 400, frames: 400, prebuffer: 300);
         using var next = TransitionSession(engine, 1000, 500, .2, .2);
         var source = new GaplessSource(first);
-        Require(source.Queue(next, 28, TrackTransitionStyle.Crossfade, 1), "Prebuffer plan rejected");
+        Require(source.Queue(next, 28, TrackTransitionStyle.Crossfade, 1000), "Prebuffer plan rejected");
         var output = new double[800];
         source.FillPcm(output, 300);
         CheckStereo(output, 299, 0, 0);
@@ -218,7 +236,7 @@ internal static unsafe partial class Program
             Set(first, "<TotalMs>k__BackingField", 2000L);
             Set(next, "<TotalMs>k__BackingField", 2000L);
             var source = new GaplessSource(first);
-            Require(source.Queue(next, 29, TrackTransitionStyle.Crossfade, 1), "Withdrawal plan rejected");
+            Require(source.Queue(next, 29, TrackTransitionStyle.Crossfade, 1000), "Withdrawal plan rejected");
             var output = new double[3600];
             source.FillPcm(output, 1800);
             CheckStereo(output, 1799, .64, outgoingRight * .2 - .32);
@@ -248,7 +266,7 @@ internal static unsafe partial class Program
         {
             var engine = Engine("WasapiShared");
             Set(engine, "_streamLock", new object());
-            var settings = new DspSettings { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 1 };
+            var settings = new DspSettings { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeMilliseconds = 1000 };
             Set(engine, "_dspSettings", preserveAlbum ? settings with { TransitionStyle = TrackTransitionStyle.Gapless } : settings);
             var first = TransitionSession(engine, 48000, 192000, .3, .3);
             var source = new GaplessSource(first);
@@ -269,7 +287,7 @@ internal static unsafe partial class Program
                 if (preserveAlbum)
                 {
                     // Settings can reach the engine before the coordinator refreshes its existing queue plan.
-                    engine.UpdateDsp(settings with { TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeSeconds = 2 });
+                    engine.UpdateDsp(settings with { TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeMilliseconds = 2000 });
                     engine.UpdateDsp(settings);
                     Require(source.Pending == next && Preloader(engine).Request == request,
                         "Changing transition settings detached a still-valid album plan");
@@ -321,7 +339,7 @@ internal static unsafe partial class Program
         Set(engine, "_gaplessSource", source);
         Set(engine, "_output", new CorrectionOutput("preview-delay", pendingAudioMs));
         engine.IsPlaying = true;
-        Require(source.Queue(next, 42, TrackTransitionStyle.Crossfade, 1, transitionNow: true), "Queue rejected");
+        Require(source.Queue(next, 42, TrackTransitionStyle.Crossfade, 1000, transitionNow: true), "Queue rejected");
         var output = new double[rate / 5 * 2];
         source.FillPcm(output, rate / 50);
         Require(engine.TryCaptureProgress(out var initially) && initially.TransitionToken == 42 && initially.TransitionCurrentMs == 0,

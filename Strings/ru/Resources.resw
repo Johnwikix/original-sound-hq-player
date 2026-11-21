@@ -1223,7 +1223,7 @@
     <value>Умный</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>Длительность сведения (с)</value>
+    <value>Длительность сведения (мс)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>При естественном окончании соседние треки альбома звучат без пауз. Длительность треков и громкость вступления следующего трека определяют перекрытие в пределах выбранного времени.</value>
@@ -2812,13 +2812,8 @@ SHA-256: {5}
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Скопированные файлы сохранены, но записи об их передаче обновлены не полностью.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Конфликт пути назначения или не удалось подтвердить принадлежность файла. Перезапись пропущена: {0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>HDR на странице воспроизведения</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>Требуется включить HDR в Windows и использовать шейдерный фон или собственное фоновое изображение.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Яркость опорного белого</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Пиковая яркость бликов</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>На странице воспроизведения HDR уровни свечения текста песни 0, 5 и 10 повышают яркость опорного белого на 0 %, 50 % и 100 % в пределах пика HDR.</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR выключен</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Этот дисплей работает в SDR</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Материал окна · передний план в SDR</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR недоступен · используется SDR</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>HDR готов для страницы воспроизведения</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR активен · опорный белый {0:0} нит · пик {1:0} нит</value></data>
 </root>

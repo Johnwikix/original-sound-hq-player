@@ -317,7 +317,7 @@ if (args.Contains("--gapless") || args.Contains("--crossfade") || args.Contains(
             args.Contains("--crossfade") ? TrackTransitionStyle.Crossfade : TrackTransitionStyle.Gapless;
         bool preserveAlbumBoundary = args.Contains("--album-boundary");
         DspProtocol.WriteSettings(dsp, new DspSettings { PlaybackRate = rate, CompressorEnabled = true,
-            TransitionStyle = style, CrossfadeSeconds = 2,
+            TransitionStyle = style, CrossfadeMilliseconds = 2000,
             ConvolutionEnabled = impulsePath != null, ConvolutionSource = ConvolutionSource.Wave, ImpulsePath = impulsePath ?? "",
             AutoPreamp = impulsePath == null ? null : false, TruePeakLimiterEnabled = impulsePath != null });
         if (Send(CommandId.UpdateDsp, dsp, out _) != MessageTypeId.Success)

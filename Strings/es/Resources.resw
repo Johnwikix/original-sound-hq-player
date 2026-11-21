@@ -1223,7 +1223,7 @@
     <value>Inteligente</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>Duración del fundido (segundos)</value>
+    <value>Duración del fundido (ms)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>Las pistas consecutivas de un álbum se enlazan sin pausas si se reproducen hasta el final. La duración de las pistas y el volumen al inicio de la siguiente determinan el solapamiento hasta el límite elegido.</value>
@@ -2812,13 +2812,8 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Los archivos copiados se conservan, pero no se pudo actualizar por completo su registro de transferencia.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Ruta de destino en conflicto o pertenencia del archivo sin confirmar. Se ha omitido para evitar sobrescrituras: {0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>HDR en la página de reproducción</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>Requiere activar HDR en Windows y usar un fondo de sombreador o una imagen de fondo personalizada.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Brillo del blanco de referencia</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Brillo máximo de las luces</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>En reproducción HDR, los niveles de resplandor de la letra 0, 5 y 10 aumentan el blanco de referencia un 0 %, 50 % y 100 %, hasta el pico HDR.</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR desactivado</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Esta pantalla usa SDR</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Material de ventana · primer plano SDR</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR no disponible · se usa SDR</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>HDR listo para la página de reproducción</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR activo · blanco de referencia {0:0} nit · pico {1:0} nit</value></data>
 </root>

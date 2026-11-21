@@ -1223,7 +1223,7 @@
     <value>Intelligent</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>Überblenddauer (Sekunden)</value>
+    <value>Überblenddauer (ms)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>Aufeinanderfolgende Albumtitel gehen am natürlichen Titelende lückenlos ineinander über. Titellängen und die Anfangslautstärke des nächsten Titels bestimmen die Überblendung bis zur gewählten Dauer.</value>
@@ -2812,13 +2812,8 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopierte Dateien bleiben erhalten, aber ihre Übertragungsdaten konnten nicht vollständig aktualisiert werden.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Konflikt im Zielpfad oder unklare Dateizuordnung. Zum Schutz vor Überschreiben übersprungen: {0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>HDR auf der Wiedergabeseite</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>Erfordert aktiviertes HDR in Windows und einen Shader-Hintergrund oder ein eigenes Hintergrundbild.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Helligkeit des Referenzweiß</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Spitzenhelligkeit der Glanzlichter</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>Auf der HDR-Wiedergabeseite erhöhen die Leuchtstufen des Liedtexts 0, 5 und 10 das Referenzweiß um 0 %, 50 % und 100 %. Die HDR-Spitzenhelligkeit begrenzt die Verstärkung.</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR ist ausgeschaltet</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Diese Anzeige verwendet SDR</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Fenstermaterial · SDR-Vordergrund</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR nicht verfügbar · SDR aktiv</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>HDR für die Wiedergabeseite bereit</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR aktiv · Referenzweiß {0:0} nit · Spitze {1:0} nit</value></data>
 </root>

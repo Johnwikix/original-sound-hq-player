@@ -27,8 +27,8 @@ internal static unsafe partial class Program
             var output = new double[16000];
             int playedBefore = 8000 - available;
             source.FillPcm(output, playedBefore);
-            Require(source.Queue(next, 31, TrackTransitionStyle.Crossfade, 1), "Queue rejected");
-            var status = source.RequestTransitionNow(first.TimelineEpoch, 31, TrackTransitionStyle.Crossfade, 1);
+            Require(source.Queue(next, 31, TrackTransitionStyle.Crossfade, 1000), "Queue rejected");
+            var status = source.RequestTransitionNow(first.TimelineEpoch, 31, TrackTransitionStyle.Crossfade, 1000);
             if (available == 50)
             {
                 Require(status == TransitionNowStatus.Unavailable, "Less than the minimum overlap was accepted");
@@ -54,12 +54,12 @@ internal static unsafe partial class Program
         using var first = TransitionSession(engine, 1000, 3000, .6, -.4);
         using var next = TransitionSession(engine, 1000, 3000, -.2, .8);
         var source = new GaplessSource(first);
-        Require(source.Queue(next, 32, TrackTransitionStyle.Crossfade, 1), "Queue rejected");
+        Require(source.Queue(next, 32, TrackTransitionStyle.Crossfade, 1000), "Queue rejected");
         var output = new double[4400];
         source.FillPcm(output, 2200);
         Require(next.FramesPlayed == 200, "Natural overlap never started");
         CheckStereo(output, 2199, .6 * .8 - .2 * .2, -.4 * .8 + .8 * .2);
-        Require(source.RequestTransitionNow(first.TimelineEpoch, 32, TrackTransitionStyle.Crossfade, 3) == TransitionNowStatus.Started,
+        Require(source.RequestTransitionNow(first.TimelineEpoch, 32, TrackTransitionStyle.Crossfade, 3000) == TransitionNowStatus.Started,
             "Manual poll did not recognize audible natural overlap");
         source.FillPcm(output, 800);
         CheckStereo(output, 0, .6 * .799 - .2 * .201, -.4 * .799 + .8 * .201);
@@ -135,7 +135,7 @@ internal static unsafe partial class Program
                 "Manual request accepted an invalid epoch or a relative path");
             engine.UpdateDsp(new DspSettings { TransitionStyle = TrackTransitionStyle.Gapless });
             Require(engine.TryTransitionNow(initial) == TransitionNowStatus.Unavailable, "Gapless-only mode accepted manual overlap");
-            engine.UpdateDsp(new DspSettings { TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeSeconds = 1 });
+            engine.UpdateDsp(new DspSettings { TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeMilliseconds = 1000 });
             Require(engine.TryTransitionNow(initial) == TransitionNowStatus.Preparing, "Initial attempt not queued");
             WaitManualReady(engine, source);
             var output = new double[960];
@@ -204,15 +204,15 @@ internal static unsafe partial class Program
         using var next = TransitionSession(engine, 1000, 300, .2, .2, ended: false);
         Set(next, "<TotalMs>k__BackingField", 4000L);
         var source = new GaplessSource(first);
-        Require(source.Queue(next, 37, TrackTransitionStyle.Crossfade, 1, transitionNow: true), "Underrun fixture rejected");
+        Require(source.Queue(next, 37, TrackTransitionStyle.Crossfade, 1000, transitionNow: true), "Underrun fixture rejected");
         var output = new double[800];
         source.FillPcm(output, 300);
-        Require(source.RequestTransitionNow(first.TimelineEpoch, 37, TrackTransitionStyle.Crossfade, 1) == TransitionNowStatus.Started,
+        Require(source.RequestTransitionNow(first.TimelineEpoch, 37, TrackTransitionStyle.Crossfade, 1000) == TransitionNowStatus.Started,
             "Prepared decoder did not start before underrun");
         source.FillPcm(output, 400);
         CheckStereo(output, 0, .6 * .715 + .2 * .285, .6 * .715 + .2 * .285);
         CheckStereo(output, 19, .6, .6);
-        Require(source.RequestTransitionNow(first.TimelineEpoch, 37, TrackTransitionStyle.Crossfade, 1) == TransitionNowStatus.Unavailable
+        Require(source.RequestTransitionNow(first.TimelineEpoch, 37, TrackTransitionStyle.Crossfade, 1000) == TransitionNowStatus.Unavailable
             && source.Current == first && next.FramesPlayed == 300 && source.CompletedToken == 0,
             "Underrun re-armed or committed an incomplete transition");
     }
@@ -284,7 +284,7 @@ internal static unsafe partial class Program
         {
             var engine = Engine("ASIO");
             Set(engine, "_streamLock", new object());
-            Set(engine, "_dspSettings", new DspSettings { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeSeconds = 2 });
+            Set(engine, "_dspSettings", new DspSettings { TransitionStyle = TrackTransitionStyle.Smart, CrossfadeMilliseconds = 2000 });
             using var first = Session.Open(engine, firstPath, RenderKind.Pcm, 88200, 0, 100)!;
             var source = new GaplessSource(first);
             var output = AttachSimulatedAsio(engine, first, source);
@@ -355,7 +355,7 @@ internal static unsafe partial class Program
     {
         var engine = Engine("WasapiShared");
         Set(engine, "_streamLock", new object());
-        Set(engine, "_dspSettings", new DspSettings { TransitionStyle = style, CrossfadeSeconds = 1 });
+        Set(engine, "_dspSettings", new DspSettings { TransitionStyle = style, CrossfadeMilliseconds = 1000 });
         var first = TransitionSession(engine, 48000, 192000, .3, .3, ended: false);
         Set(first, "<TotalMs>k__BackingField", 30000L);
         var source = new GaplessSource(first);

@@ -172,7 +172,7 @@ public sealed partial class PlaybackEngine
             case GaplessPreparationState.Preparing:
                 return TransitionNowStatus.Preparing;
             case GaplessPreparationState.Ready:
-                var status = source.RequestTransitionNow(request.Epoch, request.Token, settings.TransitionStyle, settings.CrossfadeSeconds);
+                var status = source.RequestTransitionNow(request.Epoch, request.Token, settings.TransitionStyle, settings.CrossfadeMilliseconds);
                 if (status != TransitionNowStatus.Unavailable) return status;
                 break;
         }
@@ -207,7 +207,7 @@ public sealed partial class PlaybackEngine
             double leadTimeMs = GaplessLeadTimeMs;
             if (style is TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart)
             {
-                leadTimeMs = Math.Max(leadTimeMs, (_dspSettings.CrossfadeSeconds + 3) * 1000);
+                leadTimeMs = Math.Max(leadTimeMs, _dspSettings.CrossfadeMilliseconds + 3000);
                 position = current.CurrentMs;
             }
             if (duration > 0 && (duration - position) / current.PlaybackRate > leadTimeMs) return;
@@ -246,7 +246,7 @@ public sealed partial class PlaybackEngine
             : ResolveTransitionStyle(preparation.Request, _dspSettings);
         if (_manualTransitionPending && style == TrackTransitionStyle.Gapless) return false;
         return preparation.Source.Queue(next, preparation.Request.Token, style,
-            _dspSettings?.CrossfadeSeconds ?? DspSettings.DefaultCrossfadeSeconds, _manualTransitionPending);
+            _dspSettings?.CrossfadeMilliseconds ?? DspSettings.DefaultCrossfadeMilliseconds, _manualTransitionPending);
     }
 
     private static TrackTransitionStyle ResolveTransitionStyle(GaplessRequest request, DspSettings? settings) =>

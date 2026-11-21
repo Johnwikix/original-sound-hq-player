@@ -69,7 +69,7 @@ internal static class RateMismatchFallbackProbe
             {
                 GaplessPlayback = true,
                 TransitionStyle = TrackTransitionStyle.Smart,
-                CrossfadeSeconds = 2,
+                CrossfadeMilliseconds = 2000,
                 ResampleMode = PcmResampleMode.Source,
             });
             Send(CommandId.UpdateDsp, dspSettings);

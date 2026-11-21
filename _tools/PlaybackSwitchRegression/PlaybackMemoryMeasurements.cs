@@ -61,7 +61,7 @@ internal static unsafe partial class Program
 
         static void Measure(int rate, int channels, int frames, bool limiter, string label, bool queued, bool overlap)
         {
-            const int warmup = 100, blocksPerRun = 300, runs = 3, blocks = blocksPerRun * runs;
+            const int warmup = 100, blocksPerRun = 150, runs = 3, blocks = blocksPerRun * runs;
             var engine = Engine("WasapiShared");
             var settings = new DspSettings { TruePeakLimiterEnabled = limiter };
             var output = new double[frames * channels];
@@ -69,7 +69,7 @@ internal static unsafe partial class Program
             for (int i = 0; i < signal.Length; i++) signal[i] = Math.Sin(i * 0.025) * 0.65;
             var times = new long[blocks];
             long allocated = 0;
-            Require((warmup + blocksPerRun) * frames < DspSettings.MaxCrossfadeSeconds * rate, "Benchmark must stop before handoff");
+            Require((warmup + blocksPerRun) * frames < DspSettings.MaxCrossfadeMilliseconds * rate / 1000, "Benchmark must stop before handoff");
             for (int run = 0; run < runs; run++)
             {
                 using var first = Source(engine, RenderKind.Pcm, rate, channels);
@@ -83,7 +83,7 @@ internal static unsafe partial class Program
                 first.ConfigureDsp(settings);
                 next.ConfigureDsp(settings);
                 var source = new GaplessSource(first);
-                if (queued) Require(source.Queue(next, 1, TrackTransitionStyle.Crossfade, DspSettings.MaxCrossfadeSeconds, transitionNow: overlap), "Benchmark plan rejected");
+                if (queued) Require(source.Queue(next, 1, TrackTransitionStyle.Crossfade, DspSettings.MaxCrossfadeMilliseconds, transitionNow: overlap), "Benchmark plan rejected");
                 if (queued && !overlap) nextRing.Push(signal, frames, static () => false);
                 for (int block = -warmup; block < blocksPerRun; block++)
                 {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using BassPlayerIpc.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using WinUIMusicPlayer.Model;
@@ -49,16 +48,19 @@ public sealed class PlaybackTransitionsViewModel : ObservableObject, IDisposable
     public bool CrossfadeVisible => ModeIndex is 2 or 3;
     public string CrossfadeDescription => ModeIndex == 3 ? ToolUtils.GetString("PlaybackTransitionSmartDescription") : "";
 
-    public IReadOnlyList<string> DurationOptions { get; } = (string[])["1", "2", "3", "4", "5"];
+    public double MinimumDuration => DspSettings.MinCrossfadeMilliseconds;
+    public double MaximumDuration => DspSettings.MaxCrossfadeMilliseconds;
+    public string DurationText => AppSettings.Dsp.CrossfadeMilliseconds.ToString();
 
-    public int DurationIndex
+    public double DurationMilliseconds
     {
-        get => AppSettings.Dsp.CrossfadeSeconds - DspSettings.MinCrossfadeSeconds;
+        get => AppSettings.Dsp.CrossfadeMilliseconds;
         set
         {
-            // 初始化和隐藏时可能清除选择；这些通知不应改写已保存时长。
-            if ((uint)value >= (uint)DurationOptions.Count || value == DurationIndex) return;
-            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeSeconds = value + DspSettings.MinCrossfadeSeconds };
+            if (!double.IsFinite(value) || value < MinimumDuration || value > MaximumDuration) return;
+            int durationMs = (int)Math.Round(value);
+            if (durationMs == AppSettings.Dsp.CrossfadeMilliseconds) return;
+            AppSettings.Dsp = AppSettings.Dsp with { CrossfadeMilliseconds = durationMs };
         }
     }
 
@@ -67,7 +69,8 @@ public sealed class PlaybackTransitionsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ModeIndex));
         OnPropertyChanged(nameof(CrossfadeVisible));
         OnPropertyChanged(nameof(CrossfadeDescription));
-        OnPropertyChanged(nameof(DurationIndex));
+        OnPropertyChanged(nameof(DurationMilliseconds));
+        OnPropertyChanged(nameof(DurationText));
     }
 
     public void Dispose() => AppSettings.PlaybackTransitionsChanged -= OnTransitionsChanged;

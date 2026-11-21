@@ -1223,7 +1223,7 @@
     <value>Akıllı</value>
   </data>
   <data name="PlaybackTransitionDuration" xml:space="preserve">
-    <value>Çapraz geçiş süresi (saniye)</value>
+    <value>Çapraz geçiş süresi (ms)</value>
   </data>
   <data name="PlaybackTransitionSmartDescription" xml:space="preserve">
     <value>Albümdeki ardışık parçalar sonuna kadar çalındığında boşluksuz geçer. Örtüşme, seçilen süreyi aşmadan parça sürelerine ve sonraki parçanın girişindeki ses düzeyine göre ayarlanır.</value>
@@ -2812,13 +2812,8 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="UsbExportStatusFailed" xml:space="preserve"><value>Kopyalanan dosyalar korunur ancak aktarım kayıtları tam olarak güncellenemedi.</value></data>
   <data name="UsbExportPathConflict" xml:space="preserve"><value>Hedef yol çakışıyor veya dosyanın kaynağı doğrulanamadı. Üzerine yazılmaması için atlandı: {0}</value></data>
   <data name="PlaybackHdr" xml:space="preserve"><value>Oynatma sayfasında HDR</value></data>
+  <data name="PlaybackHdrDescription" xml:space="preserve"><value>Windows'ta HDR'nin açık olması ve gölgelendirici arka plan veya özel arka plan resmi kullanılması gerekir.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Referans beyaz parlaklığı</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Vurguların tepe parlaklığı</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR oynatma sayfasında şarkı sözlerinin 0, 5 ve 10 parlama düzeyleri referans beyazın parlaklığını sırasıyla %0, %50 ve %100 artırır. Üst sınır HDR tepe parlaklığıdır.</value></data>
-  <data name="PlaybackHdrOff" xml:space="preserve"><value>HDR kapalı</value></data>
-  <data name="PlaybackHdrDisplaySdr" xml:space="preserve"><value>Bu ekran SDR kullanıyor</value></data>
-  <data name="PlaybackHdrBackdropSdr" xml:space="preserve"><value>Pencere malzemesi · SDR ön plan</value></data>
-  <data name="PlaybackHdrFallback" xml:space="preserve"><value>HDR kullanılamıyor · SDR etkin</value></data>
-  <data name="PlaybackHdrReady" xml:space="preserve"><value>Oynatma sayfası için HDR hazır</value></data>
-  <data name="PlaybackHdrOutput" xml:space="preserve"><value>HDR etkin · referans beyazı {0:0} nit · tepe {1:0} nit</value></data>
 </root>

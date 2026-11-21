@@ -125,7 +125,7 @@ namespace WinUIMusicPlayer.Model
             set
             {
                 bool changed = field.GaplessPlayback != value.GaplessPlayback || field.TransitionStyle != value.TransitionStyle
-                    || field.CrossfadeSeconds != value.CrossfadeSeconds;
+                    || field.CrossfadeMilliseconds != value.CrossfadeMilliseconds;
                 field = value;
                 if (changed) PlaybackTransitionsChanged?.Invoke(null, EventArgs.Empty);
             }
