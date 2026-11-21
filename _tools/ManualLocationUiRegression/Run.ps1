@@ -55,7 +55,7 @@ function Invoke-Button([string]$Id) {
 try {
     $state = Wait-State 'ready' 0
     $script:hwnd = $state.Hwnd
-    $actions = if ($OnlyActions) { $OnlyActions } else { @('PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges','ImportSelection','CrossDetails') }
+    $actions = if ($OnlyActions) { $OnlyActions } else { @('TabEntrance','PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges','ImportSelection','CrossDetails') }
     foreach ($action in $actions) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence

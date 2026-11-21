@@ -98,6 +98,7 @@ internal sealed partial class TestWindow : Window
         AddAction(actions, "VerifyReentry", VerifyReentry);
         AddAction(actions, "Navigation", CheckNavigation);
         AddAction(actions, "Positions", CheckBrowsePositions);
+        AddAction(actions, "TabEntrance", CheckTabEntrance);
         AddAction(actions, "Edges", CheckEdges);
         AddAction(actions, "ImportSelection", CheckSelectionBatch);
         AddAction(actions, "DoubleTapSelection", CheckDoubleTapSelectionAsync);
@@ -339,10 +340,6 @@ internal sealed partial class TestWindow : Window
             Check(Selector.SelectedItem?.Tag?.ToString() == tag, "selector highlights " + tag);
             Check(!InnerFrame.IsNavigationStackEnabled, "native Frame keeps the configured stack behavior for " + tag);
         }
-        var presenter = Find<ContentPresenter>(InnerFrame);
-        Check(presenter.ContentTransitions is { Count: 1 } transitions
-            && transitions[0] is Microsoft.UI.Xaml.Media.Animation.PopupThemeTransition,
-            "native Frame presents the selected tab with a single PopupThemeTransition");
         vm.SelectedPageTag = "folder";
         await Task.Delay(150);
         Check(_shell.ShellFrame.Content is FolderBrowsePage && _shell.CurrentLibraryPage is null,

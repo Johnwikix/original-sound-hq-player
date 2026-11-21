@@ -13,13 +13,7 @@
             <SelectorBarItem Tag="artist" Text="Artists" />
             <SelectorBarItem Tag="favourite" Text="Favorites" />
         </SelectorBar>
-        <Frame CacheSize="4" x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False">
-            <Frame.ContentTransitions>
-                <TransitionCollection>
-                    <PopupThemeTransition />
-                </TransitionCollection>
-            </Frame.ContentTransitions>
-        </Frame>
+        <Frame CacheSize="4" x:Name="ContentFrame" Grid.Row="1" IsNavigationStackEnabled="False" />
         <Grid x:Name="DropOverlay" Visibility="Collapsed" />
     </Grid>
     </ContentControl>

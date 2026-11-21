@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.View
 
         public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
         {
-            ContentFrame.Navigate(pageType, parameter, navigationTransitionInfo);
+            ContentFrame.Navigate(pageType, parameter, navigationTransitionInfo ?? new EntranceNavigationTransitionInfo());
         }
 
         private bool _syncingSelectorBar;
