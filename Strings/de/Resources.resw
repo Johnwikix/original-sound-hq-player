@@ -2817,4 +2817,43 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Spitzenhelligkeit der Glanzlichter</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>Auf der HDR-Wiedergabeseite erhöhen die Leuchtstufen des Liedtexts 0, 5 und 10 das Referenzweiß um 0 %, 50 % und 100 %. Die HDR-Spitzenhelligkeit begrenzt die Verstärkung.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Mehrere CUE-Titel verwenden diese Audiodatei. Speichere Änderungen in der Bibliothek.</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>Wortweise Animation</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>Automatisch</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>Nie</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>Immer</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>Liedtext an den Rändern ausblenden</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>Fächerförmiger Liedtext</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>Fächerwinkel (°)</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>Parallaxenneigung</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>Zeiger folgen</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>X-Drehung (°)</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Y-Drehung (°)</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Z-Drehung (°)</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>Perspektivtiefe</value>
+  </data>
 </root>

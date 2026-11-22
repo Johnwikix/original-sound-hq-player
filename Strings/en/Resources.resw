@@ -2817,4 +2817,43 @@ See the log for full details.</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Highlight peak brightness</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>On the HDR playback page, lyric glow levels 0, 5, and 10 add 0%, +50%, and +100% to reference white, up to the HDR peak.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>This audio file is shared by CUE tracks. Save your changes to the library.</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>Word-by-word animation</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>Always</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>Fade lyrics at edges</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>Fan-shaped lyrics</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>Fan angle (°)</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>Parallax tilt</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>Follow pointer</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>X rotation (°)</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Y rotation (°)</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Z rotation (°)</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>Perspective depth</value>
+  </data>
 </root>

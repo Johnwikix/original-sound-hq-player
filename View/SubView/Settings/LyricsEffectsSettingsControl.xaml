@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.LyricsEffectsSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:tool="using:WinUIMusicPlayer.Utils">
+    <StackPanel Spacing="4">
+        <controls:SettingsCard x:Uid="LyricsWordAnimation">
+            <ComboBox SelectedIndex="{x:Bind ViewModel.WordByWordEffectModeIndex, Mode=TwoWay}">
+                <ComboBoxItem x:Uid="LyricsWordAnimationAuto" />
+                <ComboBoxItem x:Uid="LyricsWordAnimationNever" />
+                <ComboBoxItem x:Uid="LyricsWordAnimationAlways" />
+            </ComboBox>
+        </controls:SettingsCard>
+
+        <controls:SettingsCard x:Uid="LyricsEdgeFeathering">
+            <ToggleSwitch MinWidth="0" VerticalAlignment="Center" IsOn="{x:Bind ViewModel.IsLyricsEdgeFeatheringEffectEnabled, Mode=TwoWay}" />
+        </controls:SettingsCard>
+
+        <controls:SettingsExpander x:Uid="LyricsFan">
+            <ToggleSwitch MinWidth="0" VerticalAlignment="Center" IsOn="{x:Bind ViewModel.IsFanLyricsEnabled, Mode=TwoWay}" />
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard x:Uid="LyricsFanAngle" IsEnabled="{x:Bind ViewModel.IsFanLyricsEnabled, Mode=OneWay}">
+                    <Grid Width="230" ColumnDefinitions="*,48" ColumnSpacing="8">
+                        <Slider
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind ViewModel.FanLyricsAngle, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.FanLyricsAngle), Mode=OneWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
+
+        <controls:SettingsExpander x:Uid="LyricsParallaxTilt">
+            <ToggleSwitch MinWidth="0" VerticalAlignment="Center" IsOn="{x:Bind ViewModel.Is3DLyricsEnabled, Mode=TwoWay}" />
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard x:Uid="LyricsTiltAuto">
+                    <ToggleSwitch MinWidth="0" VerticalAlignment="Center" IsEnabled="{x:Bind ViewModel.Is3DLyricsEnabled, Mode=OneWay}" IsOn="{x:Bind ViewModel.IsAuto3DLyricsEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard x:Uid="LyricsTiltXAngle" IsEnabled="{x:Bind ViewModel.Is3DLyricsAdjustable, Mode=OneWay}">
+                    <Grid Width="230" ColumnDefinitions="*,48" ColumnSpacing="8">
+                        <Slider
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind ViewModel.Lyrics3DXAngle, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.Lyrics3DXAngle), Mode=OneWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+                <controls:SettingsCard x:Uid="LyricsTiltYAngle" IsEnabled="{x:Bind ViewModel.Is3DLyricsAdjustable, Mode=OneWay}">
+                    <Grid Width="230" ColumnDefinitions="*,48" ColumnSpacing="8">
+                        <Slider
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind ViewModel.Lyrics3DYAngle, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.Lyrics3DYAngle), Mode=OneWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+                <controls:SettingsCard x:Uid="LyricsTiltZAngle" IsEnabled="{x:Bind ViewModel.Is3DLyricsAdjustable, Mode=OneWay}">
+                    <Grid Width="230" ColumnDefinitions="*,48" ColumnSpacing="8">
+                        <Slider
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind ViewModel.Lyrics3DZAngle, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.Lyrics3DZAngle), Mode=OneWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+                <controls:SettingsCard x:Uid="LyricsTiltDepth" IsEnabled="{x:Bind ViewModel.Is3DLyricsAdjustable, Mode=OneWay}">
+                    <Grid Width="230" ColumnDefinitions="*,48" ColumnSpacing="8">
+                        <Slider
+                            Maximum="1000"
+                            Minimum="100"
+                            SnapsTo="Ticks"
+                            TickFrequency="10"
+                            Value="{x:Bind ViewModel.Lyrics3DDepth, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.Lyrics3DDepth), Mode=OneWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
+    </StackPanel>
+</UserControl>

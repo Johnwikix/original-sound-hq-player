@@ -60,6 +60,16 @@ public sealed partial class SettingsSnapshotFactory(AppState state)
         newSettings.GlobalFontSize = state.Preferences.GlobalFontSize;
         newSettings.IsGlobalFontSizeEnabled = state.Preferences.IsGlobalFontSizeEnabled;
         newSettings.MusicCoverCache = state.Preferences.MusicCoverCache;
+        newSettings.IsLyricsEdgeFeatheringEffectEnabled = state.Preferences.IsLyricsEdgeFeatheringEffectEnabled;
+        newSettings.IsFanLyricsEnabled = state.Preferences.IsFanLyricsEnabled;
+        newSettings.FanLyricsAngle = state.Preferences.FanLyricsAngle;
+        newSettings.Is3DLyricsEnabled = state.Preferences.Is3DLyricsEnabled;
+        newSettings.IsAuto3DLyricsEnabled = state.Preferences.IsAuto3DLyricsEnabled;
+        newSettings.Lyrics3DXAngle = state.Preferences.Lyrics3DXAngle;
+        newSettings.Lyrics3DYAngle = state.Preferences.Lyrics3DYAngle;
+        newSettings.Lyrics3DZAngle = state.Preferences.Lyrics3DZAngle;
+        newSettings.Lyrics3DDepth = state.Preferences.Lyrics3DDepth;
+        newSettings.WordByWordEffectMode = state.Preferences.WordByWordEffectMode;
         newSettings.LyricsBlurAmount = state.Preferences.LyricsBlurAmount;
         newSettings.UseImageDominantTheme = state.Preferences.UseImageDominantTheme;
         newSettings.EnableLightWave = state.Preferences.EnableLightWave;

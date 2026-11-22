@@ -2,6 +2,7 @@ using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -12,6 +13,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Dispatching;
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Behaviors;
@@ -35,6 +37,8 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         public MainViewModel QueueViewModel { get; }
         private readonly Windows.UI.ViewManagement.UISettings _motionSettings = new();
+        private readonly PointerEventHandler _parallaxPointerMoved;
+        private readonly PointerEventHandler _parallaxPointerExited;
         private AnimatedTextEffect? _appliedTextEffect;
         private bool IsCoverMotionEnabled => _motionSettings.AnimationsEnabled;
         private readonly ListViewCentering _queueCentering;
@@ -44,6 +48,8 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = viewModel;
             QueueViewModel = App.Services.GetRequiredService<MainViewModel>();
+            _parallaxPointerMoved = PlaybackParallaxPointerMoved;
+            _parallaxPointerExited = PlaybackParallaxPointerExited;
             this.InitializeComponent();
             InitializeSceneCover();
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
@@ -68,6 +74,8 @@ namespace WinUIMusicPlayer.View
         {
             if (_isLoaded || _disposed) return;
             _isLoaded = true;
+            AddHandler(PointerMovedEvent, _parallaxPointerMoved, true);
+            AddHandler(PointerExitedEvent, _parallaxPointerExited, true);
             _hdrXamlRoot = XamlRoot;
             _hdrRasterizationScale = _hdrXamlRoot?.RasterizationScale ?? 1;
             if (_hdrXamlRoot is not null)
@@ -95,6 +103,9 @@ namespace WinUIMusicPlayer.View
             CancelHdrEntrance();
             if (!_isLoaded) return;
             _isLoaded = false;
+            RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
+            RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
+            SetLyricsParallaxPointer(null);
             if (_hdrXamlRoot is { } root)
                 root.Changed -= PlaybackXamlRootChanged;
             _hdrXamlRoot = null;
@@ -110,10 +121,38 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private bool IsAutomaticLyricsParallaxEnabled =>
+            ViewModel.AppViewModel.Is3DLyricsEnabled && ViewModel.AppViewModel.IsAuto3DLyricsEnabled;
+
+        private void PlaybackParallaxPointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (!IsAutomaticLyricsParallaxEnabled || ActualWidth <= 0 || ActualHeight <= 0) return;
+            using var point = PointerPointScope.GetCurrentPoint(e, this);
+            var position = point.Position;
+            bool inside = position.X >= 0 && position.X < ActualWidth && position.Y >= 0 && position.Y < ActualHeight;
+            SetLyricsParallaxPointer(inside
+                ? new Vector2((float)(2 * position.X / ActualWidth - 1), (float)(2 * position.Y / ActualHeight - 1))
+                : null);
+        }
+
+        private void PlaybackParallaxPointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            // Handled exits can originate from child controls; keep tracking during transitions within the page.
+            PlaybackParallaxPointerMoved(sender, e);
+        }
+
+        private void SetLyricsParallaxPointer(Vector2? position)
+        {
+            NowPlaying?.SetLyricsParallaxPointer(position);
+            LyricsView?.SetLyricsParallaxPointer(position);
+        }
+
         private void Presentation_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(PlayingDetailViewModel.UseHdrPresentation))
                 UpdateHdrPresentation();
+            else if (e.PropertyName == nameof(PlayingDetailViewModel.UseAcrylicLyricsPresentation))
+                ScheduleLyricsRegionUpdate();
         }
 
         private void PlaybackXamlRootChanged(XamlRoot sender, XamlRootChangedEventArgs args)
@@ -133,6 +172,9 @@ namespace WinUIMusicPlayer.View
             if (e.PropertyName is null or ""
                 or nameof(AppViewModel.IsFluidBackgroundEnabled)
                 or nameof(AppViewModel.WindowBackgroundImagePath)
+                or nameof(AppViewModel.IsPortraitLayout)
+                or nameof(AppViewModel.IsFanLyricsEnabled)
+                or nameof(AppViewModel.Is3DLyricsEnabled)
                 or nameof(AppViewModel.PlaybackHdrEnabled)
                 or nameof(AppViewModel.PlaybackHdrDisplayAvailable))
             {
@@ -154,6 +196,10 @@ namespace WinUIMusicPlayer.View
             else if (e.PropertyName == nameof(AppViewModel.LyricPageBackdrop))
             {
                 ApplyBackdrop(NowPlaying);
+            }
+            else if (e.PropertyName is nameof(AppViewModel.Is3DLyricsEnabled) or nameof(AppViewModel.IsAuto3DLyricsEnabled))
+            {
+                if (!IsAutomaticLyricsParallaxEnabled) SetLyricsParallaxPointer(null);
             }
             else if (e.PropertyName == nameof(AppViewModel.LyricsMargin))
             {
@@ -232,7 +278,10 @@ namespace WinUIMusicPlayer.View
             => UpdateWindowRendering(App.MainWindow.AppWindow);
 
         private void PlaybackLyrics_Loaded(object sender, RoutedEventArgs args)
-            => UpdateWindowRendering(App.MainWindow.AppWindow);
+        {
+            ScheduleLyricsRegionUpdate();
+            UpdateWindowRendering(App.MainWindow.AppWindow);
+        }
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
@@ -518,18 +567,23 @@ namespace WinUIMusicPlayer.View
 
         private void UpdateLyricsRegion()
         {
-            if (NowPlaying is null || LyricsRegionHost is null) return;
-            if (LyricsRegionHost.ActualWidth <= 0 || LyricsRegionHost.ActualHeight <= 0) return;
+            if (LyricsRegionHost is null || LyricsRegionHost.ActualWidth <= 0 || LyricsRegionHost.ActualHeight <= 0)
+                return;
+
             try
             {
-                var transform = LyricsRegionHost.TransformToVisual(NowPlaying);
-                var origin = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
                 var margin = ViewModel.AppViewModel.LyricsMargin;
-                NowPlaying.LyricsRegion = new Windows.Foundation.Rect(
-                    origin.X + margin.Left,
-                    origin.Y + 32,
-                    LyricsRegionHost.ActualWidth - margin.Left - margin.Right,
-                    LyricsRegionHost.ActualHeight - 32);
+                UpdateStandaloneLyricsRegion();
+
+                if (NowPlaying is { } scene)
+                {
+                    var origin = LyricsRegionHost.TransformToVisual(scene).TransformPoint(default);
+                    var paneWidth = LyricsRegionHost.ActualWidth;
+                    var left = Math.Clamp(margin.Left, 0, Math.Max(0, paneWidth - 1));
+                    var right = Math.Clamp(margin.Right, 0, Math.Max(0, paneWidth - left - 1));
+                    scene.LyricsRegion = new Windows.Foundation.Rect(origin.X + left, origin.Y,
+                        paneWidth - left - right, LyricsRegionHost.ActualHeight);
+                }
             }
             catch(Exception ex)
             {

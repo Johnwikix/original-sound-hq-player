@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Messages;
@@ -22,7 +23,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
     /// 面向外部传入的 <see cref="CanvasAnimatedControl"/> 与 <see cref="CanvasDrawingSession"/> 工作。
     /// 既被 AdvanceLyricsCanvasControl（独立场景）使用，也被合成宿主 NowPlayingCanvas（单 canvas）使用。
     /// </summary>
-    public sealed class LyricsRenderCoordinator
+    public sealed partial class LyricsRenderCoordinator
     {
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
@@ -45,6 +46,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// 合成宿主（全屏画布）通过设置此区域把歌词限制在右栏。
         /// </summary>
         public Rect LyricsRegion { get; set; }
+
+        /// <summary>
+        /// 可选的完整绘制表面，坐标与歌词区域相同。变换可以越过排版栏，最终裁剪仍使用此表面。
+        /// </summary>
+        public Rect LyricsViewport { get; set; }
 
         private double RegionX => LyricsRegion.Width > 0 ? LyricsRegion.X : 0;
         private double RegionY => LyricsRegion.Height > 0 ? LyricsRegion.Y : 0;
@@ -82,7 +88,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _pendingClear;
         private bool _fadingOut;
         private bool _preparingEntrance;
-        private float _maskOpacity = 1;
         private float _lyricsOpacity = 1;
         private const float LyricFadeOutMs = 150;
         private const float LyricFadeInMs = 200;
@@ -121,7 +126,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public double WheelScrollPixels = 80.0;
 
         private int _hoveredLineIndex = -1;
-        private bool _isMouseInLyricsArea;
+        private bool _isPointerOnSurface;
         private Point _lastMousePos;
         private bool _hoverDirty;
         private bool _isDarkTheme;
@@ -131,8 +136,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private int _cachedVisibleStart;
         private int _cachedVisibleEnd;
-        private double _cachedEdgeFadeWidth;
-        private double _cachedEdgeFadeHeight;
+        private Rect _edgeFadeBounds;
 
         /// <summary>
         /// 单调递增的帧版本号。每帧 <see cref="OnUpdate"/> 自增后传入
@@ -163,6 +167,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedTranslatedOpacity = 0.6;
         private bool _cachedShowTranslation = true;
         private bool _cachedShowPronunciation = true;
+        private bool _cachedIsLyricsEdgeFeatheringEffectEnabled = true;
+        private bool _cachedIsFanLyricsEnabled;
+        private int _cachedFanLyricsAngle = 30;
+        private bool _cachedIs3DLyricsEnabled;
+        private bool _cachedIsAuto3DLyricsEnabled;
+        private int _cachedLyrics3DXAngle;
+        private int _cachedLyrics3DYAngle;
+        private int _cachedLyrics3DZAngle;
+        private int _cachedLyrics3DDepth = 800;
+        private WordByWordEffectMode _cachedWordByWordEffectMode;
         private double _cachedStrokeWidth;
         private int _cachedFontWeight = 700;
         private EasingType _cachedScrollEasingType = EasingType.FlowWave;
@@ -214,10 +228,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnCreateResources()
         {
-            if (_shutdown) return;
-            _layoutDirty = true;
-            _cachedEdgeFadeWidth = -1;
-            _cachedEdgeFadeHeight = -1;
+            lock (_renderGate)
+            {
+                if (_shutdown) return;
+                _edgeFadeMask.Reset();
+                _edgeFadeBounds = default;
+                ReleaseLyricsPerspective();
+                _layoutDirty = true;
+            }
         }
 
         internal void ResetDeviceResources()
@@ -226,7 +244,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 DisposeRenderLines();
                 _lineRenderer.ClearSharedResources();
-                _edgeFadeMask.Reset();
                 ReleaseHoverBrush();
                 OnCreateResources();
             }
@@ -253,6 +270,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _lineRenderer.Line = null;
                 _lineRenderer.ClearSharedResources();
                 _edgeFadeMask.Dispose();
+                ReleaseLyricsPerspective();
                 ReleaseHoverBrush();
                 Canvas = null;
             }
@@ -282,11 +300,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _renderLines = [];
                 _lineRenderer.Line = null;
                 _edgeFadeMask.Reset();
+                _edgeFadeBounds = default;
+                ReleaseLyricsPerspective();
                 ReleaseHoverBrush();
                 Canvas = null;
                 _layoutDirty = true;
-                _cachedEdgeFadeWidth = -1;
-                _cachedEdgeFadeHeight = -1;
+
                 _currentLineIndex = -1;
                 _lastCurrentLineIndex = -1;
             }
@@ -325,6 +344,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedTranslatedOpacity = s.TranslatedOpacity;
             _cachedShowTranslation = s.ShowTranslation;
             _cachedShowPronunciation = s.ShowPronunciation;
+            _cachedIsLyricsEdgeFeatheringEffectEnabled = s.IsLyricsEdgeFeatheringEffectEnabled;
+            _cachedIsFanLyricsEnabled = s.IsFanLyricsEnabled;
+            _cachedFanLyricsAngle = s.FanLyricsAngle;
+            _cachedIs3DLyricsEnabled = s.Is3DLyricsEnabled;
+            _cachedIsAuto3DLyricsEnabled = s.IsAuto3DLyricsEnabled;
+            _cachedLyrics3DXAngle = s.Lyrics3DXAngle;
+            _cachedLyrics3DYAngle = s.Lyrics3DYAngle;
+            _cachedLyrics3DZAngle = s.Lyrics3DZAngle;
+            _cachedLyrics3DDepth = s.Lyrics3DDepth;
+            _cachedWordByWordEffectMode = s.WordByWordEffectMode;
             _cachedStrokeWidth = s.StrokeWidth;
             _cachedFontWeight = s.FontWeight;
             _cachedScrollEasingType = s.ScrollEasingType;
@@ -679,9 +708,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     isScrollSeek,
                     isSecondaryLayoutAnimating && !_userScrolling);
 
-            var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
-                lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor,
-                UsesLineScroll, _mouseYScrollTransition.Value);
+            bool projectionChanged = UpdateLyricsProjection(elapsedTime);
+            var visibleRange = CalculateVisibleLyricsRange(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
 
             _cachedVisibleStart = visibleRange.Start;
             _cachedVisibleEnd = visibleRange.End;
@@ -736,11 +764,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 scrollTiming,
                 isScrollSeek,
                 _cachedScrollEasingMode == EaseMode.FlowWave && !_userScrolling,
-                isSecondaryLayoutAnimating);
+                isSecondaryLayoutAnimating,
+                wordByWordEffectMode: _cachedWordByWordEffectMode);
+
+            if (_cachedIsFanLyricsEnabled)
+            {
+                UpdateFanAngles(first, last, canvasHeight, playingLineTopOffsetFactor, scrollTiming,
+                    elapsedTime, isScrollSeek || _layoutDirty || isSecondaryLayoutAnimating);
+            }
 
             _layoutDirty = false;
             _isUserScrollingChanged = false;
 
+            _hoverDirty |= projectionChanged || HasTransformedLyrics;
             HandleHoverUpdates(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
         }
 
@@ -819,29 +855,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
-            if (_isMouseInLyricsArea)
+            if (_isPointerOnSurface)
             {
-                var regionLocalMouse = new Point(_lastMousePos.X - RegionX, _lastMousePos.Y - RegionY);
-                var newHovered = LyricsLayoutManager.FindMouseHoverLineIndex(
-                    lines, true, regionLocalMouse, combinedScroll,
-                    canvasHeight, playingLineTopOffsetFactor, UsesLineScroll, _mouseYScrollTransition.Value);
-                _hoveredLineIndex = newHovered;
+                _hoveredLineIndex = FindHoveredLyricsLine(_lastMousePos, combinedScroll, canvasHeight,
+                    playingLineTopOffsetFactor);
             }
             else
             {
                 _hoveredLineIndex = -1;
             }
         }
-
-        private static readonly CanvasGradientStop[] s_edgeFadeStops = new CanvasGradientStop[]
-        {
-            new() { Position = 0.00f, Color = Colors.Transparent },
-            new() { Position = 0.05f, Color = Colors.White },
-            new() { Position = 0.35f, Color = Colors.White },
-            new() { Position = 0.65f, Color = Colors.White },
-            new() { Position = 0.95f, Color = Colors.White },
-            new() { Position = 1.00f, Color = Colors.Transparent },
-        };
 
         // ── Draw（不负责清屏，由宿主决定清屏色） ─────────────────────────────────
 
@@ -890,41 +913,74 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void DrawCore(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr)
         {
-            double rx = RegionX;
-            double ry = RegionY;
             double rw = RegionW;
             double rh = RegionH;
             if (rw <= 0 || rh <= 0) return;
 
-            if (Math.Abs(_cachedEdgeFadeWidth - rw) > 0.5f || Math.Abs(_cachedEdgeFadeHeight - rh) > 0.5f)
+            var layout = new Rect(RegionX, RegionY, rw, rh);
+            var viewport = GetLyricsPaintBounds(layout);
+            var sourceBounds = GetLyricsSourceBounds(layout, viewport);
+            using var clip = ds.CreateLayer(_lyricsOpacity, _lyricsProjection.IsIdentity ? sourceBounds : viewport);
+            if (_lyricsProjection.IsIdentity)
             {
-                _cachedEdgeFadeWidth = rw;
-                _cachedEdgeFadeHeight = rh;
-                _edgeFadeMask.Update(sender, new Rect(rx, ry, rw, rh), s_edgeFadeStops, true);
-                _maskOpacity = -1;
+                DrawFeatheredLyrics(sender, ds, layout, sourceBounds, hdr);
+                return;
             }
 
-            if (_edgeFadeMask.Brush is { } mask)
+            if (!_hasInverseLyricsProjection) return;
+
+            // Keep the source plane finite while allowing it to span the
+            // surface. The original lyric column only defines the layout.
+            using var commands = new CanvasCommandList(sender);
+            using (var session = commands.CreateDrawingSession())
+            using (var scope = CanvasDrawingSessionScope.Borrow(session))
             {
-                if (_maskOpacity != _lyricsOpacity)
+                var source = scope.Context;
+                using var sourceClip = source.CreateLayer(1, sourceBounds);
+                DrawFeatheredLyrics(sender, source, layout, sourceBounds, hdr);
+            }
+
+            var effect = _lyricsPerspectiveEffect ??= new Microsoft.Graphics.Canvas.Effects.Transform3DEffect();
+            effect.TransformMatrix = _lyricsProjection;
+            effect.Source = commands;
+            try
+            {
+                ds.DrawImage(effect);
+            }
+            finally
+            {
+                effect.Source = null;
+            }
+        }
+
+        private void DrawFeatheredLyrics(ICanvasResourceCreator sender, CanvasDrawContext ds,
+            Rect layout, Rect bounds, PlaybackHdrColor hdr)
+        {
+            if (_cachedIsLyricsEdgeFeatheringEffectEnabled)
+            {
+                if (_edgeFadeBounds != bounds)
                 {
-                    mask.Opacity = _lyricsOpacity;
-                    _maskOpacity = _lyricsOpacity;
+                    float stop = Math.Min(0.5f, 16f / (float)bounds.Height);
+                    CanvasGradientStop[] stops =
+                    [
+                        new() { Color = Colors.Transparent },
+                        new() { Position = stop, Color = Colors.White },
+                        new() { Position = 1 - stop, Color = Colors.White },
+                        new() { Position = 1, Color = Colors.Transparent }
+                    ];
+                    _edgeFadeMask.Update(sender, bounds, stops, true);
+                    _edgeFadeBounds = bounds;
                 }
-                using (ds.CreateLayer(mask))
+
+                if (_edgeFadeMask.Brush is { } mask)
                 {
-                    DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
+                    using var feather = ds.CreateLayer(mask);
+                    DrawLyricsContent(sender, ds, layout.X, layout.Y, layout.Width, layout.Height, hdr);
+                    return;
                 }
             }
-            else if (_lyricsOpacity < 1)
-            {
-                using var fade = ds.CreateLayer(_lyricsOpacity, new Rect(rx, ry, rw, rh));
-                DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
-            }
-            else
-            {
-                DrawLyricsContent(sender, ds, rx, ry, rw, rh, hdr);
-            }
+
+            DrawLyricsContent(sender, ds, layout.X, layout.Y, layout.Width, layout.Height, hdr);
         }
 
         private void DrawLyricsContent(ICanvasResourceCreator sender, CanvasDrawContext ds, double rx, double ry, double rw, double rh, PlaybackHdrColor hdr)
@@ -950,7 +1006,23 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 double hoveredY = UsesLineScroll
                     ? lineOrigin + hovered.ScrollMotion.Value + _mouseYScrollTransition.Value
                     : yOffsetBase;
-                DrawHoverBackground(sender, ds, hovered, rx, rw, hoveredY, hdr);
+                if (HasTransformedLyrics)
+                {
+                    var originalTransform = ds.Transform;
+                    try
+                    {
+                        ds.Transform = CreateLineTransform(hovered, rx, hoveredY, rw) * originalTransform;
+                        DrawHoverBackground(sender, ds, hovered, 0, rw, 0, hdr);
+                    }
+                    finally
+                    {
+                        ds.Transform = originalTransform;
+                    }
+                }
+                else
+                {
+                    DrawHoverBackground(sender, ds, hovered, rx, rw, hoveredY, hdr);
+                }
             }
 
             for (int i = startIdx; i <= endIdx; i++)
@@ -977,10 +1049,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 var prevTransform = ds.Transform;
                 // Render caches are recorded at Cached*Position. Height transitions
                 // move the logical row without forcing per-frame Win2D cache rebuilds.
-                float lineScale = (float)line.ScaleTransition.Value;
-                ds.Transform *= Matrix3x2.CreateScale(lineScale, line.CenterPosition);
-                ds.Transform *= Matrix3x2.CreateTranslation((float)rx, (float)yOffset);
-                ds.Transform *= Matrix3x2.CreateTranslation(0, (float)(line.LayoutOffsetY * lineScale));
+                var layoutOffset = Matrix3x2.CreateTranslation(0, (float)line.LayoutOffsetY);
+                ds.Transform = layoutOffset * CreateLineTransform(line, rx, yOffset, rw) * prevTransform;
 
                 _lineRenderer.IsPlaying = isPlayingLine;
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
@@ -989,9 +1059,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _lineRenderer.UnplayedFillColor = _unplayedColor;
                 _lineRenderer.IsScaleEnabled = _cachedCharScaleAmount > 0;
                 _lineRenderer.IsFloatEnabled = _cachedCharFloatAmount > 0;
+                _lineRenderer.WordByWordEffectMode = _cachedWordByWordEffectMode;
 
-                _lineRenderer.Draw(sender, ds);
-                ds.Transform = prevTransform;
+                try
+                {
+                    _lineRenderer.Draw(sender, ds);
+                }
+                finally
+                {
+                    ds.Transform = prevTransform;
+                }
             }
         }
 
@@ -1084,7 +1161,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_renderLines.Count == 0) return;
             // 同一事件使用一个有作用域的原生快照，避免 PointerPoint/Properties 投影。
             using var point = PointerPointScope.GetCurrentPoint(e, InputElement);
-            if (!IsPointerInLyricsRegion(point.Position)) return;
+            if (!IsPointerInLyricsRegion(point.Position)
+                && (!HasTransformedLyrics || FindHoveredLyricsLine(point.Position, _smoothedScrollY + _mouseYScrollTransition.Value,
+                    RegionH, _cachedPlayingLineTopOffset) < 0)) return;
             double delta = point.MouseWheelDelta * WheelScrollPixels * _cachedScrollSensitivity / 120.0;
             _pendingMouseScrollY += delta;
             _mouseYScrollTransition.Start(_pendingMouseScrollY);
@@ -1102,30 +1181,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var pos = point.Position;
             _lastMousePos = pos;
             _hoverDirty = true;
-            // 持续追踪：_isMouseInLyricsArea 跟随当前指针位置更新，不依赖
-            // OnPointerEntered/Exited 的一次性信号（画布内的"背景↔歌词"互转不发 enter/exit）。
-            _isMouseInLyricsArea = IsPointerInLyricsRegion(pos);
+            _isPointerOnSurface = true;
 
             e.Handled = true;
         }
 
         public void OnPointerExited(object sender, PointerRoutedEventArgs e)
         {
-            _isMouseInLyricsArea = false;
+            _isPointerOnSurface = false;
             _hoverDirty = true;
         }
 
         public void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            // 兜底：刚跨进画布时 _isMouseInLyricsArea 还没被 OnPointerMoved 刷新过
-            // （跨进画布后的第一帧 OnPointerMoved 在 Entered 之后才到）。真正的持续追踪
-            // 在 OnPointerMoved 里。
+            _isPointerOnSurface = InputElement is not null;
             if (InputElement is { } canvas)
             {
                 using var point = PointerPointScope.GetCurrentPoint(e, canvas);
-                _isMouseInLyricsArea = IsPointerInLyricsRegion(point.Position);
+                _lastMousePos = point.Position;
             }
-            else _isMouseInLyricsArea = false;
             _hoverDirty = true;
         }
 
@@ -1147,13 +1221,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
-            var tapPosition = UsesLineScroll ? e.GetPosition(InputElement) : _lastMousePos;
-            if (UsesLineScroll && !IsPointerInLyricsRegion(tapPosition)) return null;
-            var regionLocalMouse = new Point(tapPosition.X - RegionX, tapPosition.Y - RegionY);
-            int hovered = LyricsLayoutManager.FindMouseHoverLineIndex(
-                _renderLines, true, regionLocalMouse, combinedScroll,
-                RegionH > 0 ? RegionH : HostSize.Height, playingLineTopOffsetFactor,
-                UsesLineScroll, _mouseYScrollTransition.Value);
+            var tapPosition = e.GetPosition(InputElement);
+            int hovered = FindHoveredLyricsLine(tapPosition, combinedScroll, RegionH, playingLineTopOffsetFactor);
 
             if (hovered >= 0 && hovered < _renderLines.Count)
             {

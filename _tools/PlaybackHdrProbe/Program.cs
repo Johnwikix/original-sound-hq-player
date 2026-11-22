@@ -74,6 +74,12 @@ public sealed partial class ProbeApp : Application
         try
         {
             VerifyPublishedControls();
+            if (Environment.GetCommandLineArgs().Contains("--check-lyrics-acrylic"))
+            {
+                window = new Window { Title = "Playback lyrics acrylic check" };
+                await CheckLyricsAcrylicAsync(window);
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--check-playbar-cover"))
             {
                 window = new Window { Title = "Playback bar cover check" };

@@ -9,6 +9,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public class LyricsLayoutManager
     {
+        private static double GetHorizontalPadding(double lyricsWidth)
+            => Math.Clamp((lyricsWidth - 1) / 2, 0, 20);
+
         public static void MeasureAndArrange(
             ICanvasResourceCreator resourceCreator,
             IList<RenderLyricsLine>? lines,
@@ -27,8 +30,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         {
             if (lines == null || resourceCreator == null) return;
 
-            const float horizontalPadding = 20f;
-            double layoutWidth = lyricsWidth - horizontalPadding * 2;
+            double horizontalPadding = GetHorizontalPadding(lyricsWidth);
+            double layoutWidth = Math.Max(0, lyricsWidth - horizontalPadding * 2);
 
             var shareFormat = new CanvasTextFormat
             {
@@ -59,7 +62,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     line.RecreateRenderChars(strokeWidth, preserveFloatTransitions);
             }
             shareFormat.Dispose();
-            ArrangeCurrentHeights(lines, originalFontSize, horizontalAlignment, lyricsWidth, layoutWidth);
+            ArrangeCurrentHeights(lines, originalFontSize, horizontalAlignment, lyricsWidth, horizontalPadding);
         }
 
         public static void ArrangeCurrentHeights(
@@ -69,9 +72,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double lyricsWidth)
         {
             if (lines == null) return;
-            const float horizontalPadding = 20f;
             ArrangeCurrentHeights(lines, originalFontSize, horizontalAlignment, lyricsWidth,
-                lyricsWidth - horizontalPadding * 2);
+                GetHorizontalPadding(lyricsWidth));
         }
 
         private static void ArrangeCurrentHeights(
@@ -79,9 +81,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             int originalFontSize,
             CanvasHorizontalAlignment horizontalAlignment,
             double lyricsWidth,
-            double layoutWidth)
+            double horizontalPadding)
         {
-            const float horizontalPadding = 20f;
+            double layoutWidth = Math.Max(0, lyricsWidth - horizontalPadding * 2);
             double currentX = horizontalPadding;
             double currentY = 0;
 

@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -17,6 +18,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public ValueTransition<double> BlurAmountTransition { get; set; }
         public ValueTransition<double> ScaleTransition { get; set; }
+        internal ValueTransition<double>? FanAngleTransition { get; set; }
+        internal int FanAngleAnimationVersion { get; set; }
+        internal double FanAngleTarget { get; set; }
 
         public ValueTransition<double> PlayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
@@ -87,9 +91,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// <summary>fade 带的最大宽度（像素），与 <see cref="BandFillCommandList"/> 同步录制。</summary>
         public float FadeBandWidthMax { get; private set; }
 
-        /// <summary>整行（无逐字时间）路径的 fade 带宽度占行宽的比例。</summary>
-        public const float FullLineFadeFraction = 0.05f;
-
         private static readonly CanvasGradientStop[] s_rampStops =
         {
             new() { Position = 0f, Color = Microsoft.UI.Colors.White },
@@ -100,6 +101,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private double _cachedPrimaryLineHeight;
 
         public bool IsPrimaryHasRealSyllableInfo { get; set; }
+        internal bool WasWordAnimationEnabled { get; set; }
+
+        internal bool UsesWordAnimation(WordByWordEffectMode mode) => mode switch
+        {
+            WordByWordEffectMode.Always => true,
+            WordByWordEffectMode.Never => false,
+            _ => IsPrimaryHasRealSyllableInfo,
+        };
 
         /// <summary>Gets the display highlight boundary without extending word or line playback progress.</summary>
         public double? HighlightEndMs { get; private set; }
@@ -180,7 +189,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (word.DurationMs > 0)
                     hasRealSyllable = true;
             }
-            IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && hasRealSyllable;
+            IsPrimaryHasRealSyllableInfo = lyricLine.HasRealWordTiming ?? hasRealSyllable;
+            if (lyricLine.HasRealWordTiming == false && !hasRealSyllable && totalLen > 0 && EndMs > StartMs)
+            {
+                // A line-only projection may have no positive word spans after timing compensation.
+                // Give Always mode a sweep over the line's own interval without extending its highlight.
+                double msPerCharacter = DurationMs / totalLen;
+                foreach (var syllable in PrimaryRenderSyllables)
+                {
+                    syllable.StartMs = StartMs + syllable.StartIndex * msPerCharacter;
+                    syllable.EndMs = StartMs + (syllable.StartIndex + syllable.Length) * msPerCharacter;
+                }
+            }
         }
 
         public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation)
@@ -411,11 +431,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 maxX = Math.Max(maxX, (float)(r.X + r.Width));
                 maxY = Math.Max(maxY, (float)(r.Y + r.Height));
 
-                // fade 带宽上限：子行路径 = 半字符宽（fadeInRegion*rW，见 LyricsLineRenderer）；
-                // 整行路径 = FullLineFadeFraction * W。取各 region 最大值。
-                float regionFadeMax = IsPrimaryHasRealSyllableInfo
-                    ? 0.5f * (float)r.Width / Math.Max(1, PrimaryTextRegions[i].CharacterCount)
-                    : FullLineFadeFraction * w;
+                // 任一时刻都可切到逐字模式，预先覆盖各折行半个字符的淡出带。
+                float regionFadeMax = 0.5f * (float)r.Width / Math.Max(1, PrimaryTextRegions[i].CharacterCount);
                 fadeWMax = Math.Max(fadeWMax, regionFadeMax);
             }
             if (maxX <= minX || maxY <= minY) return;

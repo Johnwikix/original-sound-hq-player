@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
@@ -6,6 +6,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
     public partial class LyricLine : ObservableObject
     {
         public List<LyricWord> Words { get => field; set => SetProperty(ref field, value); } = [];
+        /// <summary>Indicates whether the source supplied word timing. A null value lets direct callers infer it from the word durations.</summary>
+        public bool? HasRealWordTiming { get; set; }
+
         public string TransLateText
         {
             get => field;

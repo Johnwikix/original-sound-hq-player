@@ -2817,4 +2817,43 @@ SHA-256: {5}
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Пиковая яркость бликов</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>На странице воспроизведения HDR уровни свечения текста песни 0, 5 и 10 повышают яркость опорного белого на 0 %, 50 % и 100 % в пределах пика HDR.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Несколько дорожек CUE используют этот аудиофайл. Сохраните изменения в медиатеке.</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>Анимация по словам</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>Автоматически</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>Никогда</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>Всегда</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>Затухание текста песни по краям</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>Текст песни веером</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>Угол веера (°)</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>Наклон с параллаксом</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>Следовать за указателем</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>Поворот по оси X (°)</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Поворот по оси Y (°)</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Поворот по оси Z (°)</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>Глубина перспективы</value>
+  </data>
 </root>

@@ -55,6 +55,22 @@ public sealed partial class PlayingDetailPage
         ApplyAspectRatioLayout(portrait, topHeight);
     }
 
+    private void UpdateStandaloneLyricsRegion()
+    {
+        if (LyricsView is not { } lyrics || LyricsRegionHost.ActualWidth <= 0 || LyricsRegionHost.ActualHeight <= 0)
+            return;
+
+        Grid.SetColumnSpan(lyrics, _isPortraitLayout ? 1 : 2);
+        var origin = LyricsRegionHost.TransformToVisual(PlayingDetail).TransformPoint(default);
+        var bounds = new Windows.Foundation.Rect(origin.X, origin.Y,
+            LyricsRegionHost.ActualWidth, LyricsRegionHost.ActualHeight);
+        var (surfaceMargin, layoutRegion) = PlaybackLyricsLayout.Calculate(
+            bounds, ViewModel.AppViewModel.LyricsMargin, _isPortraitLayout, ViewModel.HasTransformedLyrics);
+        if (lyrics.Margin != surfaceMargin) lyrics.Margin = surfaceMargin;
+        lyrics.SetLyricsLayoutRegion(layoutRegion);
+        if (lyrics.Visibility != Visibility.Visible) lyrics.Visibility = Visibility.Visible;
+    }
+
     private void ApplyAspectRatioLayout(bool portrait, double topHeight)
     {
         if (portrait)
@@ -69,10 +85,6 @@ public sealed partial class PlayingDetailPage
 
         if (portrait)
         {
-            // Z-order: LyricsRegionHost 最底层，LeftControlPanel 浮在上面（不用 Remove/Insert 避免 Unloaded 触发 PrepareForShutdown）
-            Canvas.SetZIndex(LyricsRegionHost, 0);
-            Canvas.SetZIndex(LeftControlPanel, 2);
-
             PlayingDetail.RowDefinitions.Clear();
             PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             PlayingDetail.ColumnDefinitions.Clear();
@@ -83,7 +95,6 @@ public sealed partial class PlayingDetailPage
             Grid.SetColumn(LyricsRegionHost, 0);
             Grid.SetRowSpan(LyricsRegionHost, 1);
             Grid.SetColumnSpan(LyricsRegionHost, 1);
-            LyricsRegionHost.Margin = new Thickness(0, 60, 0, 0);
 
             // LeftControlPanel 固定在顶部，浮在 lyrics 之上
             LeftControlPanel.VerticalAlignment = VerticalAlignment.Top;
@@ -120,10 +131,6 @@ public sealed partial class PlayingDetailPage
             PlayingDetail.ColumnDefinitions.Clear();
             PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            // 还原 Z-order
-            LyricsRegionHost.ClearValue(Canvas.ZIndexProperty);
-            LeftControlPanel.ClearValue(Canvas.ZIndexProperty);
 
             LeftControlPanel.ClearValue(FrameworkElement.HeightProperty);
             LeftControlPanel.ClearValue(FrameworkElement.VerticalAlignmentProperty);
@@ -163,7 +170,6 @@ public sealed partial class PlayingDetailPage
             Grid.SetColumn(LyricsRegionHost, 1);
             Grid.SetRowSpan(LyricsRegionHost, 1);
             Grid.SetColumnSpan(LyricsRegionHost, 1);
-            LyricsRegionHost.Margin = new Thickness(0, 40, 0, 40);
         }
 
         ScheduleLyricsRegionUpdate();

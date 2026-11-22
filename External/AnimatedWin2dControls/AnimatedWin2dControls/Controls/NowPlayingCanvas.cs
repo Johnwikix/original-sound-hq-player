@@ -184,6 +184,9 @@ namespace AnimatedWin2dControls.Controls
         private readonly RaindropRenderer _raindrop = new();
         private readonly LyricsRenderCoordinator _coordinator = new();
 
+        public void SetLyricsParallaxPointer(System.Numerics.Vector2? normalizedPosition)
+            => _coordinator.SetLyricsParallaxPointer(normalizedPosition);
+
         private bool _advanced = true;
         private bool _isActive = true;
         private bool _coordinatorAttached;
@@ -834,6 +837,7 @@ namespace AnimatedWin2dControls.Controls
             // 频谱按画布帧率更新，背景的半帧率缓存不保存音频图层。
             DrawSpectrum(frame, ds);
             if (_advanced)
+                _coordinator.LyricsViewport = new Rect(0, 0, frame.Size.Width, frame.Size.Height);
                 _coordinator.OnDraw(frame.Device, ds, frame.Hdr, consumePendingLyrics: !frame.Hdr.IsEnabled);
         }
 

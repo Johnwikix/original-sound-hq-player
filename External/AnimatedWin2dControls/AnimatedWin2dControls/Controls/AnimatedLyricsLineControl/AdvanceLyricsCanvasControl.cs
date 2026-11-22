@@ -42,6 +42,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private FrameEventSubscription? _drawSubscription;
         private readonly LyricsRenderCoordinator _coordinator = new();
 
+        public void SetLyricsParallaxPointer(System.Numerics.Vector2? normalizedPosition)
+            => _coordinator.SetLyricsParallaxPointer(normalizedPosition);
+
         private bool _pausedByVisibility;
         private bool _pausedByParent;
         private bool _pausedByWindow;
@@ -288,9 +291,26 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _coordinator.OnDraw(sender, ds);
         }
 
-        private void OnControlSizeChanged(object sender, SizeChangedEventArgs e)
+        private Windows.Foundation.Rect _lyricsLayoutRegion;
+
+        /// <summary>Sets the text layout bounds relative to the standalone surface, in DIPs.</summary>
+        public void SetLyricsLayoutRegion(Windows.Foundation.Rect region)
         {
-            _coordinator.LyricsRegion = new Windows.Foundation.Rect(0, 0, e.NewSize.Width, e.NewSize.Height);
+            if (_lyricsLayoutRegion == region) return;
+            _lyricsLayoutRegion = region;
+            UpdateLyricsViewport(ActualWidth, ActualHeight);
+        }
+
+        private void OnControlSizeChanged(object sender, SizeChangedEventArgs e)
+            => UpdateLyricsViewport(e.NewSize.Width, e.NewSize.Height);
+
+        private void UpdateLyricsViewport(double width, double height)
+        {
+            var viewport = new Windows.Foundation.Rect(0, 0, width, height);
+            _coordinator.LyricsRegion = _lyricsLayoutRegion.Width > 0 && _lyricsLayoutRegion.Height > 0
+                ? _lyricsLayoutRegion
+                : viewport;
+            _coordinator.LyricsViewport = viewport;
             _coordinator.OnSizeChanged();
         }
 

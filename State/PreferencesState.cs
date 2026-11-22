@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
@@ -105,6 +106,17 @@ public sealed class PreferencesState : ObservableObject
     public string MusicCoverCache { get => General.MusicCoverCache; set => General.MusicCoverCache = value; }
     public bool IsFadeEnabled { get => Audio.IsFadeEnabled; set => Audio.IsFadeEnabled = value; }
     public int DsdPcmFreq { get => Audio.DsdPcmFreq; set => Audio.DsdPcmFreq = value; }
+    public bool IsLyricsEdgeFeatheringEffectEnabled { get => Lyrics.IsLyricsEdgeFeatheringEffectEnabled; set => Lyrics.IsLyricsEdgeFeatheringEffectEnabled = value; }
+    public bool IsFanLyricsEnabled { get => Lyrics.IsFanLyricsEnabled; set => Lyrics.IsFanLyricsEnabled = value; }
+    public int FanLyricsAngle { get => Lyrics.FanLyricsAngle; set => Lyrics.FanLyricsAngle = value; }
+    public bool Is3DLyricsEnabled { get => Lyrics.Is3DLyricsEnabled; set => Lyrics.Is3DLyricsEnabled = value; }
+    public bool IsAuto3DLyricsEnabled { get => Lyrics.IsAuto3DLyricsEnabled; set => Lyrics.IsAuto3DLyricsEnabled = value; }
+    public int Lyrics3DXAngle { get => Lyrics.Lyrics3DXAngle; set => Lyrics.Lyrics3DXAngle = value; }
+    public int Lyrics3DYAngle { get => Lyrics.Lyrics3DYAngle; set => Lyrics.Lyrics3DYAngle = value; }
+    public int Lyrics3DZAngle { get => Lyrics.Lyrics3DZAngle; set => Lyrics.Lyrics3DZAngle = value; }
+    public int Lyrics3DDepth { get => Lyrics.Lyrics3DDepth; set => Lyrics.Lyrics3DDepth = value; }
+    public WordByWordEffectMode WordByWordEffectMode { get => Lyrics.WordByWordEffectMode; set => Lyrics.WordByWordEffectMode = value; }
+
     public float LyricsBlurAmount { get => Lyrics.LyricsBlurAmount; set => Lyrics.LyricsBlurAmount = value; }
     public double CharFloatAmount { get => Lyrics.CharFloatAmount; set => Lyrics.CharFloatAmount = value; }
     public double CharScaleAmount { get => Lyrics.CharScaleAmount; set => Lyrics.CharScaleAmount = value; }

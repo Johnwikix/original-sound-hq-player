@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
@@ -65,6 +66,17 @@ public sealed class LyricsPreferencesState : ObservableObject
     public bool IsGlobalFontSizeEnabled { get; set => SetProperty(ref field, value); } = false;
     public double GlobalFontSize { get; set => SetProperty(ref field, value); } = 32f;
     public double LyricsFontSize { get; set => SetProperty(ref field, value); } = 32;
+    public bool IsLyricsEdgeFeatheringEffectEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsFanLyricsEnabled { get; set => SetProperty(ref field, value); }
+    public int FanLyricsAngle { get; set => SetProperty(ref field, Math.Clamp(value, -90, 90)); } = 30;
+    public bool Is3DLyricsEnabled { get; set => SetProperty(ref field, value); }
+    public bool IsAuto3DLyricsEnabled { get; set => SetProperty(ref field, value); }
+    public int Lyrics3DXAngle { get; set => SetProperty(ref field, Math.Clamp(value, -90, 90)); }
+    public int Lyrics3DYAngle { get; set => SetProperty(ref field, Math.Clamp(value, -90, 90)); }
+    public int Lyrics3DZAngle { get; set => SetProperty(ref field, Math.Clamp(value, -90, 90)); }
+    public int Lyrics3DDepth { get; set => SetProperty(ref field, Math.Clamp(value, 100, 1000)); } = 800;
+    public WordByWordEffectMode WordByWordEffectMode { get; set => SetProperty(ref field, Enum.IsDefined(value) ? value : WordByWordEffectMode.Auto); }
+
     public float LyricsBlurAmount { get; set => SetProperty(ref field, value); } = 5f;
     public double CharFloatAmount { get; set => SetProperty(ref field, value); } = 5.0;
     public double CharScaleAmount { get; set => SetProperty(ref field, value); } = 110.0;

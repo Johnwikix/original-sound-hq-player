@@ -1,5 +1,5 @@
 // CPU-only fixtures for the GPU-owned text layouts. Tests execute the shipping
-// LyricsLayoutManager visibility/hit-test methods; font measurement is never called.
+// LyricsLayoutManager geometry; the text fixture records the width passed to Win2D.
 using System.Numerics;
 
 namespace Windows.Foundation
@@ -13,6 +13,7 @@ namespace Windows.UI.Text
 namespace Microsoft.Graphics.Canvas
 {
     public interface ICanvasResourceCreator { }
+    public sealed class CanvasResourceFixture : ICanvasResourceCreator { }
 }
 namespace Microsoft.Graphics.Canvas.Text
 {
@@ -49,9 +50,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation) { }
         public void RecreateTextLayout(ICanvasResourceCreator r, int a, int b, string f,
             double w, double h, CanvasHorizontalAlignment alignment, CanvasTextFormat format)
-            => throw new NotSupportedException("GPU font measurement is outside these tests.");
+            => RequestedLayoutWidth = w;
+        public double RequestedLayoutWidth { get; private set; }
         public void RecreateTextGeometry() => throw new NotSupportedException();
-        public void DisposeCaches() => throw new NotSupportedException();
+        public void DisposeCaches() { }
         public void RecreateRenderChars(int width, bool preserveFloatTransitions) => throw new NotSupportedException();
     }
     public sealed class LayerFixture

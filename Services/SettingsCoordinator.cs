@@ -482,6 +482,16 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     AppSettings.OnOutputSettingsUpdated();
                 }
                 break;
+            case nameof(state.Preferences.IsLyricsEdgeFeatheringEffectEnabled):
+            case nameof(state.Preferences.IsFanLyricsEnabled):
+            case nameof(state.Preferences.FanLyricsAngle):
+            case nameof(state.Preferences.Is3DLyricsEnabled):
+            case nameof(state.Preferences.IsAuto3DLyricsEnabled):
+            case nameof(state.Preferences.Lyrics3DXAngle):
+            case nameof(state.Preferences.Lyrics3DYAngle):
+            case nameof(state.Preferences.Lyrics3DZAngle):
+            case nameof(state.Preferences.Lyrics3DDepth):
+            case nameof(state.Preferences.WordByWordEffectMode):
             case nameof(state.Preferences.LyricsBlurAmount):
                 if (state.Lifecycle.IsReady)
                 {

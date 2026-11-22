@@ -110,6 +110,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (e.PropertyName is nameof(State.Preferences.IsDesktopLyricsTranslationEnabled)
                 or nameof(State.Preferences.IsDesktopLyricsPronunciationEnabled)
+                or nameof(State.Preferences.WordByWordEffectMode)
                 or nameof(State.Preferences.UseIndependentDesktopLyricsFont)
                 || (e.PropertyName == nameof(State.Preferences.ApplicationFontFamily) && !State.Preferences.UseIndependentDesktopLyricsFont)
                 || (e.PropertyName == nameof(State.Preferences.DesktopLyricsFontFamily) && State.Preferences.UseIndependentDesktopLyricsFont))
@@ -216,6 +217,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppSettings.DesktopLyricsCharFloatAmount,
             AppSettings.DesktopLyricsCharScaleAmount,
             AppSettings.IsDesktopLyricsCustomColorEnabled,
-            AppSettings.DesktopLyricsShadowAmount);
+            AppSettings.DesktopLyricsShadowAmount,
+            State.Preferences.WordByWordEffectMode);
     }
 }

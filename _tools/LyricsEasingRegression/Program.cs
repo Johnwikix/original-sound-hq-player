@@ -264,6 +264,23 @@ Check(LyricsLayoutManager.FindMouseHoverLineIndex(layoutRows, true, new Point(10
 Check(LyricsLayoutManager.FindMouseHoverLineIndex(layoutRows, false, new Point(100, 40), 0, 100, 0, true) == -1,
     "Pointer outside lyrics must not select a row.");
 
+var resource = new Microsoft.Graphics.Canvas.CanvasResourceFixture();
+foreach (var (paneWidth, expectedPadding, expectedTextWidth) in new (double, double, double)[]
+    { (0.5, 0, 0.5), (1, 0, 1), (20, 9.5, 1), (40, 19.5, 1), (90, 20, 50) })
+{
+    var row = new RenderLyricsLine();
+    LyricsLayoutManager.MeasureAndArrange(resource, [row], 36, 20, "Segoe UI",
+        Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left,
+        paneWidth, 200, 0, deferRenderChars: true);
+    Check(row.RequestedLayoutWidth == expectedTextWidth && row.PrimaryPosition.X == expectedPadding,
+        $"Measurement must reserve usable width in a {paneWidth} DIP lyric pane.");
+
+    LyricsLayoutManager.ArrangeCurrentHeights([row], 36,
+        Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left, paneWidth);
+    Check(row.PrimaryPosition.X == expectedPadding,
+        "Repeat arrangement must reuse the inset chosen by measurement.");
+}
+
 var options = new JsonSerializerOptions();
 options.Converters.Add(new WinUIMusicPlayer.Model.LyricsEasingTypeJsonConverter());
 options.Converters.Add(new WinUIMusicPlayer.Model.LyricsEaseModeJsonConverter());

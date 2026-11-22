@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using System;
 using System.Collections.Generic;
 
@@ -46,7 +47,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             LyricScrollTiming? scrollTiming = null,
             bool isSeek = false,
             bool useFlowWaveWordExit = false,
-            bool isLayoutAnimating = false)
+            bool isLayoutAnimating = false,
+            WordByWordEffectMode wordByWordEffectMode = WordByWordEffectMode.Auto)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
@@ -73,7 +75,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 var lineHeight = line.PrimaryLineHeight;
                 if (lineHeight == null || lineHeight <= 0) continue;
 
-                bool isWordAnimationEnabled = line.IsPrimaryHasRealSyllableInfo;
+                bool isWordAnimationEnabled = line.UsesWordAnimation(wordByWordEffectMode);
+                bool wordAnimationChanged = line.WasWordAnimationEnabled != isWordAnimationEnabled;
+                line.WasWordAnimationEnabled = isWordAnimationEnabled;
 
                 double targetCharFloat = lyricsFloatAnimationAmount > 0 ? lyricsFloatAnimationAmount : lineHeight.Value * 0.1;
                 double targetCharGlow = lyricsGlowEffectAmount > 0 ? lyricsGlowEffectAmount : lineHeight.Value * 0.2;
@@ -85,7 +89,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 bool isSecondaryLinePlayingChanged = line.IsPlayingLastFrame != isSecondaryLinePlaying;
                 line.IsPlayingLastFrame = isSecondaryLinePlaying;
 
-                bool resetWordEffects = (useFlowWaveWordExit && isSeek) || (line.IsWordEffectsRetiring && (isSeek || isLayoutChanged || isMouseScrollingChanged
+                bool resetWordEffects = wordAnimationChanged || (isWordAnimationEnabled && useFlowWaveWordExit && isSeek)
+                    || (line.IsWordEffectsRetiring && (isSeek || isLayoutChanged || isMouseScrollingChanged
                     || isSecondaryLinePlaying || line.LastProcessedVersion < animationVersion - 1));
                 if (resetWordEffects)
                     ResetWordEffects(line);

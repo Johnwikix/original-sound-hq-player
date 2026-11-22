@@ -1,6 +1,7 @@
 using System.Reflection;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
+using AnimatedWin2dControls.Enums;
 using AnimatedWin2dControls.Messages;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
@@ -41,7 +42,7 @@ internal static class FinalWordFloatChecks
                 coordinator.OnCreateResources();
                 LyricsSettingsBus.Publish(new("Segoe UI", CanvasHorizontalAlignment.Left, false, 1, 0,
                     5, 5, 110, 500, false, false, 0.3, 0.5, 0, EasingType.Sine, mode,
-                    0.33, 120, false, Microsoft.UI.Colors.White));
+                    0.33, 120, false, Microsoft.UI.Colors.White, wordByWordEffectMode: WordByWordEffectMode.Always));
                 UILyricsBus.Publish(lyrics);
                 IsPlayingBus.Publish(true);
                 using var target = new CanvasRenderTarget(canvas.Device, 600, 400, 96);

@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Shaders;
 using ComputeSharp.D2D1.WinUI;
@@ -31,6 +32,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrUnplayed;
 
         public bool IsPlaying { get; set; }
+        public WordByWordEffectMode WordByWordEffectMode { get; set; }
         public double CurrentProgressMs { get; set; }
         public RenderLyricsLine? Line { get; set; }
 
@@ -59,7 +61,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
         {
             DrawSecondaryText(resourceCreator, ds);
-            DrawPrimaryText(resourceCreator, ds);
+            DrawPrimaryText(ds);
         }
 
         public void ClearSharedResources()
@@ -102,7 +104,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color, _hdr);
         }
 
-        private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
+        private void DrawPrimaryText(CanvasDrawContext ds)
         {
             if (Line?.PrimaryTextLayout == null || Line.PrimaryTextRegions == null) return;
             if (Line.UnplayedComposite == null) return;
@@ -146,41 +148,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (double.IsNaN(playedOpacity) || double.IsNaN(unplayedOpacity)) return;
             if (playedOpacity <= 0 && unplayedOpacity <= 0) return;
 
-            if (!Line.IsPrimaryHasRealSyllableInfo)
-            {
-                DrawFullLineRegion(ds);
-            }
-            else
-            {
-                DrawSubLineRegions(resourceCreator, ds);
-            }
+            DrawPrimaryRegions(ds, Line.UsesWordAnimation(WordByWordEffectMode));
         }
 
-        private void DrawFullLineRegion(CanvasDrawContext ds)
-        {
-            if (Line?.PrimaryTextLayout == null || Line.RenderLyricsRegions == null) return;
-
-            var bounds = Line.PrimaryTextLayout.LayoutBounds;
-            Rect fullRect = new(
-                bounds.X + Line.CachedPrimaryPosition.X,
-                bounds.Y + Line.CachedPrimaryPosition.Y,
-                bounds.Width, bounds.Height);
-            if (fullRect.Width <= 0 || fullRect.Height <= 0) return;
-
-            float progress = Math.Clamp((float)Line.GetPlayProgress(CurrentProgressMs), 0f, 1f);
-
-            var region = Line.RenderLyricsRegions[0];
-            if (region == null) return;
-
-            // 矩阵脏检查每 line 只做一次（同一 line 的所有 region 必须看到相同的
-            // lineFillChanged，否则只有循环中第一个 region 能消费到 true，后续
-            // region 的 ColorMatrix 会停留在首次赋值的旧值）。
-            bool lineFillChanged = UpdateLineFillMatrices();
-            UpdateRegionFill(region, fullRect, progress, RenderLyricsLine.FullLineFadeFraction, lineFillChanged);
-            ds.DrawImage(region.FinalFillEffect);
-        }
-
-        private void DrawSubLineRegions(ICanvasResourceCreator resourceCreator, CanvasDrawContext ds)
+        private void DrawPrimaryRegions(CanvasDrawContext ds, bool useWordAnimation)
         {
             if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
 
@@ -209,24 +180,26 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     subRect.Y + Line.CachedPrimaryPosition.Y,
                     subRect.Width, subRect.Height);
 
-                double playedWidth = ComputeRegionPlayedWidth(subLineRegion);
-                float progressInRegion = Math.Clamp((float)(playedWidth / subRect.Width), 0f, 1f);
-                if (float.IsNaN(progressInRegion)) progressInRegion = 0f;
-                float fadeInRegion = 1f / subLineRegion.CharacterCount * 0.5f;
-                float firstCharProgress = 1f;
-                if (subLineRegion.CharacterIndex < primaryChars.Count)
-                    firstCharProgress = Math.Clamp(
-                        (float)primaryChars[subLineRegion.CharacterIndex].GetPlayProgress(CurrentProgressMs), 0f, 1f);
-                // Keep malformed timing values from reaching CropEffect's SourceRectangle.
-                if (float.IsNaN(firstCharProgress)) firstCharProgress = 0f;
-                float fade = fadeInRegion * firstCharProgress;
-                if (float.IsNaN(fade)) fade = 0f;
-
+                float progressInRegion = 1f;
+                float fade = 0f;
+                if (useWordAnimation)
+                {
+                    double playedWidth = ComputeRegionPlayedWidth(subLineRegion);
+                    progressInRegion = Math.Clamp((float)(playedWidth / subRect.Width), 0f, 1f);
+                    if (float.IsNaN(progressInRegion)) progressInRegion = 0f;
+                    if (subLineRegion.CharacterCount > 0 && subLineRegion.CharacterIndex < primaryChars.Count)
+                    {
+                        float firstCharProgress = Math.Clamp(
+                            (float)primaryChars[subLineRegion.CharacterIndex].GetPlayProgress(CurrentProgressMs), 0f, 1f);
+                        if (!float.IsNaN(firstCharProgress))
+                            fade = 0.5f * firstCharProgress / subLineRegion.CharacterCount;
+                    }
+                }
                 UpdateRegionFill(renderRegion, subLineRect, progressInRegion, fade, lineFillChanged);
 
                 ICanvasImage finalOutputImage = renderRegion.FinalFillEffect;
 
-                if (!IsFloatEnabled && !IsGlowEnabled && !IsScaleEnabled)
+                if (!useWordAnimation || (!IsFloatEnabled && !IsGlowEnabled && !IsScaleEnabled))
                 {
                     ds.DrawImage(finalOutputImage);
                 }
@@ -398,15 +371,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             {
                 if (ci >= Line.PrimaryRenderChars.Count) break;
                 var ch = Line.PrimaryRenderChars[ci];
-                if (ch.IsPlayingLastFrame)
-                {
-                    playedWidth += ch.LayoutRect.Width * ch.GetPlayProgress(CurrentProgressMs);
-                    break;
-                }
-                if (ch.GetPlayProgress(CurrentProgressMs) >= 1)
-                    playedWidth += ch.LayoutRect.Width;
-                else
-                    break;
+                double progress = ch.GetPlayProgress(CurrentProgressMs);
+                if (!double.IsFinite(progress)) break;
+                playedWidth += ch.LayoutRect.Width * progress;
+                if (progress < 1) break;
             }
             return playedWidth;
         }

@@ -2817,4 +2817,43 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Vurguların tepe parlaklığı</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR oynatma sayfasında şarkı sözlerinin 0, 5 ve 10 parlama düzeyleri referans beyazın parlaklığını sırasıyla %0, %50 ve %100 artırır. Üst sınır HDR tepe parlaklığıdır.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Bu ses dosyasını birden fazla CUE parçası kullanıyor. Değişiklikleri kitaplığa kaydedin.</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>Kelime kelime animasyon</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>Hiçbir zaman</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>Her zaman</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>Şarkı sözlerini kenarlarda soldur</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>Yelpaze biçimli şarkı sözleri</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>Yelpaze açısı (°)</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>Paralaks eğimi</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>İşaretçiyi izle</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>X ekseninde dönüş (°)</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Y ekseninde dönüş (°)</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Z ekseninde dönüş (°)</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>Perspektif derinliği</value>
+  </data>
 </root>

@@ -144,7 +144,10 @@ extern "C" __declspec(dllexport) HWND ShowBackdrop(HWND hdrHost) {
 }
 
 extern "C" __declspec(dllexport) void ChangeBackdrop(HWND behind) {
-    SetWindowLongPtrW(behind, GWLP_USERDATA, RGB(24, 32, 240));
+    const COLORREF red = RGB(240, 32, 24);
+    const COLORREF blue = RGB(24, 32, 240);
+    const auto current = static_cast<COLORREF>(GetWindowLongPtrW(behind, GWLP_USERDATA));
+    SetWindowLongPtrW(behind, GWLP_USERDATA, current == red ? blue : red);
     InvalidateRect(behind, nullptr, TRUE);
     UpdateWindow(behind);
     DwmFlush();

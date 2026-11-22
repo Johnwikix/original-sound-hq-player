@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using BassPlayerIpc.Shared;
 using System.Text.Json;
 using WinUIMusicPlayer.Helper;
@@ -72,6 +73,28 @@ try
         && lyricsRoundTrip.DesktopLyricsTaskbarLyricsWidth == 1024 && !lyricsRoundTrip.IsDesktopLyricsPronunciationEnabled,
         "Lyrics source, format priorities, taskbar lyrics width, and desktop pronunciation must survive restart.");
     Console.WriteLine("PASS: lyrics priority compatibility defaults and JSON persistence.");
+    Check(!defaults.IsFanLyricsEnabled && defaults.FanLyricsAngle == 30
+        && !defaults.Is3DLyricsEnabled && !defaults.IsAuto3DLyricsEnabled && defaults.Lyrics3DXAngle == 0
+        && defaults.Lyrics3DYAngle == 0 && defaults.Lyrics3DZAngle == 0 && defaults.Lyrics3DDepth == 800
+        && defaults.IsLyricsEdgeFeatheringEffectEnabled && defaults.WordByWordEffectMode == WordByWordEffectMode.Auto,
+        "Existing profiles must get the default lyrics effects.");
+    lyricsSettings.IsFanLyricsEnabled = true;
+    lyricsSettings.FanLyricsAngle = -40;
+    lyricsSettings.Is3DLyricsEnabled = true;
+    lyricsSettings.IsAuto3DLyricsEnabled = true;
+    lyricsSettings.Lyrics3DXAngle = 10;
+    lyricsSettings.Lyrics3DYAngle = -20;
+    lyricsSettings.Lyrics3DZAngle = 30;
+    lyricsSettings.Lyrics3DDepth = 400;
+    lyricsSettings.IsLyricsEdgeFeatheringEffectEnabled = false;
+    lyricsSettings.WordByWordEffectMode = WordByWordEffectMode.Never;
+    lyricsRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(lyricsSettings, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
+    Check(lyricsRoundTrip.IsFanLyricsEnabled && lyricsRoundTrip.FanLyricsAngle == -40
+        && lyricsRoundTrip.Is3DLyricsEnabled && lyricsRoundTrip.IsAuto3DLyricsEnabled && lyricsRoundTrip.Lyrics3DXAngle == 10
+        && lyricsRoundTrip.Lyrics3DYAngle == -20 && lyricsRoundTrip.Lyrics3DZAngle == 30 && lyricsRoundTrip.Lyrics3DDepth == 400
+        && !lyricsRoundTrip.IsLyricsEdgeFeatheringEffectEnabled && lyricsRoundTrip.WordByWordEffectMode == WordByWordEffectMode.Never,
+        "Lyrics effects must survive restart.");
+
     Check(defaults.WindowBackgroundImagePath == string.Empty && defaults.WindowBackgroundBlurAmount == 20,
         "Old settings must keep the original backdrop without an image.");
     var imageSettings = new SaveSettings { WindowBackgroundImagePath = @"C:\Pictures\背景.png", WindowBackgroundBlurAmount = 37 };

@@ -67,7 +67,10 @@ namespace WinUIMusicPlayer.ViewModel
         public bool PlaybackHdrFailed { get; private set; }
         public const double PortraitLyricsScale = 1;
         public int LyricsFontSize { get; set; }
-        public bool IsPortraitLayout { get; set; }
+        public bool IsPortraitLayout { get; set => SetProperty(ref field, value); }
+        public bool IsFanLyricsEnabled { get; set => SetProperty(ref field, value); }
+        public bool Is3DLyricsEnabled { get; set => SetProperty(ref field, value); }
+        public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
 
         public void ReportPlaybackHdrPresentation(bool active, bool failed)
         {
@@ -113,6 +116,9 @@ namespace WinUIMusicPlayer.View
 
         public PlayingDetailViewModel ViewModel { get; }
         internal ImageSwitcher Cover => DetailCoverSwitcher;
+        internal AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.AdvanceLyricsCanvasControl StandaloneLyrics => LyricsView;
+        internal Rect LyricsPane => LyricsRegionHost.TransformToVisual(this).TransformBounds(
+            new Rect(0, 0, LyricsRegionHost.ActualWidth, LyricsRegionHost.ActualHeight));
         internal NowPlayingCanvas? BackgroundCanvas => NowPlaying;
         internal Rect CoverSlot => _sceneCoverSlot;
         internal PlaybackSceneCoverPresenter SceneCoverPresenter => _sceneCoverPresenter;
@@ -153,9 +159,13 @@ namespace WinUIMusicPlayer.View
         private void UpdatePresentation(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(PlayingDetailViewModel.UseHdrPresentation)) UpdateHdrPresentation();
+            else if (e.PropertyName == nameof(PlayingDetailViewModel.UseAcrylicLyricsPresentation)) ScheduleLyricsRegionUpdate();
         }
 
-        private void ScheduleLyricsRegionUpdate() { }
+        private void ScheduleLyricsRegionUpdate()
+            => DispatcherQueue.TryEnqueue(UpdateStandaloneLyricsRegion);
+        private void LyricsRegionHost_SizeChanged(object sender, SizeChangedEventArgs args) => ScheduleLyricsRegionUpdate();
+        private void PlaybackLyrics_Loaded(object sender, RoutedEventArgs args) => ScheduleLyricsRegionUpdate();
         private void UpdateSceneRegions() { }
 
         public void Dispose()
@@ -166,6 +176,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.PropertyChanged -= RefreshPresentation;
             ViewModel.PropertyChanged -= UpdatePresentation;
             DisposeSceneCover();
+            LyricsView?.PrepareForShutdown();
             if (NowPlaying is not { } canvas) return;
             canvas.HdrPresentationChanged -= PlaybackHdrPresentationChanged;
             canvas.Dispose();

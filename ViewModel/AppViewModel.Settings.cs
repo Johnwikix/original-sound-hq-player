@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using CommunityToolkit.Mvvm.Input;
@@ -231,6 +232,30 @@ namespace WinUIMusicPlayer.ViewModel
         } = [44100, 88200, 176400, 352800];
 
         public int DsdPcmFreq { get => State.Preferences.DsdPcmFreq; set => State.Preferences.DsdPcmFreq = value; }
+
+        public bool IsLyricsEdgeFeatheringEffectEnabled { get => State.Preferences.IsLyricsEdgeFeatheringEffectEnabled; set => State.Preferences.IsLyricsEdgeFeatheringEffectEnabled = value; }
+        public bool IsFanLyricsEnabled { get => State.Preferences.IsFanLyricsEnabled; set => State.Preferences.IsFanLyricsEnabled = value; }
+        public int FanLyricsAngle { get => State.Preferences.FanLyricsAngle; set => State.Preferences.FanLyricsAngle = value; }
+        public bool Is3DLyricsEnabled { get => State.Preferences.Is3DLyricsEnabled; set => State.Preferences.Is3DLyricsEnabled = value; }
+        public bool IsAuto3DLyricsEnabled { get => State.Preferences.IsAuto3DLyricsEnabled; set => State.Preferences.IsAuto3DLyricsEnabled = value; }
+        public int Lyrics3DXAngle { get => State.Preferences.Lyrics3DXAngle; set => State.Preferences.Lyrics3DXAngle = value; }
+        public int Lyrics3DYAngle { get => State.Preferences.Lyrics3DYAngle; set => State.Preferences.Lyrics3DYAngle = value; }
+        public int Lyrics3DZAngle { get => State.Preferences.Lyrics3DZAngle; set => State.Preferences.Lyrics3DZAngle = value; }
+        public int Lyrics3DDepth { get => State.Preferences.Lyrics3DDepth; set => State.Preferences.Lyrics3DDepth = value; }
+        public WordByWordEffectMode WordByWordEffectMode { get => State.Preferences.WordByWordEffectMode; set => State.Preferences.WordByWordEffectMode = value; }
+
+        public int WordByWordEffectModeIndex
+        {
+            get => (int)WordByWordEffectMode;
+            set
+            {
+                var mode = (WordByWordEffectMode)value;
+                if (Enum.IsDefined(mode))
+                    WordByWordEffectMode = mode;
+            }
+        }
+
+        public bool Is3DLyricsAdjustable => Is3DLyricsEnabled && !IsAuto3DLyricsEnabled;
 
         public float LyricsBlurAmount { get => State.Preferences.LyricsBlurAmount; set => State.Preferences.LyricsBlurAmount = value; }
 

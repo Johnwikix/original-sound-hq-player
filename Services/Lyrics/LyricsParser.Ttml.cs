@@ -238,7 +238,8 @@ public sealed partial class LyricsParser
             double? end = XmlTime((string?)p.Attribute("end"));
             var words = ImmutableArray.CreateBuilder<Model.ParsedLyricWord>();
             var text = new System.Text.StringBuilder();
-            Collect(p, start, end, words, text, token);
+            XElement? previousTimingSpan = null;
+            Collect(p, start, end, null, ref previousTimingSpan, words, text, token);
             string lineText = text.ToString();
             if (string.IsNullOrWhiteSpace(lineText)) continue;
             start ??= words.Count > 0 ? words[0].StartMs : null;
@@ -253,6 +254,7 @@ public sealed partial class LyricsParser
     }
 
     private static void Collect(XElement element, double? inheritedStart, double? inheritedEnd,
+        XElement? timingSpan, ref XElement? previousTimingSpan,
         ImmutableArray<Model.ParsedLyricWord>.Builder words, System.Text.StringBuilder text, CancellationToken token)
     {
         foreach (var node in element.Nodes())
@@ -261,18 +263,31 @@ public sealed partial class LyricsParser
             if (node is XText value)
             {
                 text.Append(value.Value);
-                if (words.Count > 0 && string.IsNullOrWhiteSpace(value.Value))
+                if (words.Count > 0 && (string.IsNullOrWhiteSpace(value.Value)
+                    || (timingSpan != null && ReferenceEquals(timingSpan, previousTimingSpan))))
+                {
                     words[^1] = words[^1] with { Text = words[^1].Text + value.Value };
-                else if (inheritedStart is { } start && element.Name == Tt + "span")
+                }
+                else if (timingSpan != null && inheritedStart is { } start)
+                {
                     words.Add(new(value.Value, start, inheritedEnd ?? start));
+                    previousTimingSpan = timingSpan;
+                }
                 continue;
             }
             if (node is not XElement child) continue;
             string? role = (string?)child.Attribute(Metadata + "role") ?? (string?)child.Attribute("role");
             if (role is "x-translation" or "x-roman" or "x-bg") continue;
             if (child.Name == Tt + "br") { text.Append(' '); continue; }
-            Collect(child, XmlTime((string?)child.Attribute("begin")) ?? inheritedStart,
-                XmlTime((string?)child.Attribute("end")) ?? inheritedEnd, words, text, token);
+            double? childStart = XmlTime((string?)child.Attribute("begin"));
+            double? childEnd = XmlTime((string?)child.Attribute("end"));
+            // Formatting spans inherit line timing for layout. A timed span also owns the
+            // lyrics in its untimed descendants, so nested formatting cannot split a syllable.
+            var childTimingSpan = child.Name == Tt + "span" && (childStart.HasValue || childEnd.HasValue)
+                ? child
+                : timingSpan;
+            Collect(child, childStart ?? inheritedStart, childEnd ?? inheritedEnd,
+                childTimingSpan, ref previousTimingSpan, words, text, token);
         }
     }
 

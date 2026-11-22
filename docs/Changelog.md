@@ -1,3 +1,14 @@
+## 2026-11-22 放宽播放页的歌词动效绘制范围
+
+- `View/PlayingDetailPage.xaml`、`View/PlaybackLyricsLayout.cs` 保留歌词原有排版宽度和锚点，横屏扇形与视差可越过中线绘制。使用亚克力背景时为歌词分配局部透明表面，竖屏保留窗口两侧的亚克力边缘。
+- `AdvanceLyricsCanvasControl.cs`、`LyricsRenderCoordinator.cs` 分开计算歌词排版范围、绘制边界和变换后的命中范围。歌词切为当前行的当帧恢复为水平，其他行的流波延迟继续推进。
+
+## 2026-11-22 播放页歌词动效
+
+- `View/PlayingDetailPage*`、`LyricsRenderCoordinator` 将横竖屏的歌词区域延伸至上下边界，背景画布与亚克力独立画布共用硬裁剪和可关闭的 16 DIP 上下羽化。扇形与视差叠加时按实际画面命中歌词行。
+- `View/SubView/Settings/LyricsEffectsSettingsControl.xaml` 为普通歌词设置和播放页快捷设置提供视差斜视、扇形歌词、边缘渐隐开关及逐字动画策略。各选项会在重启后恢复。
+- `Services/LyricsRefreshService.cs`、`DesktopLyrics/CanvasLyricsRenderer.cs` 区分真实逐字计时与估算计时。普通 LRC 在默认自动策略下按整行高亮，选择始终可恢复估算逐字动画。桌面 Win2D 歌词采用同一策略。
+
 ## 2026-11-22 扩展本地 CUE 分轨格式并修复跨曲过渡
 
 - `Services/CueSheetReader.cs`、`External/AudioPlayer/Decode` 新增 PCM AIFF/AIFC、ALAC M4A、可定位 APE 和无损 PCM WavPack 整轨，按源采样计算每轨区间，并以实际编码和位深参与版本排序。格式不支持的新清单保留普通歌曲入口。

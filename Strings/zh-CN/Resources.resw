@@ -2819,4 +2819,43 @@ SHA-256：{5}
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>高光峰值亮度</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>在 HDR 播放页，歌词发光强度 0、5、10 分别在参考白基础上提亮 0%、50%、100%，受 HDR 峰值限制。</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>多个 CUE 音轨共用此音频文件。请将更改保存到曲库。</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>逐字动画</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>自动</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>从不</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>始终</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>歌词边缘渐隐</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>扇形歌词</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>扇形角度（°）</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>视差斜视</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>跟随指针</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>X 轴旋转（°）</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Y 轴旋转（°）</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Z 轴旋转（°）</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>透视深度</value>
+  </data>
 </root>

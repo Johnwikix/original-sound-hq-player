@@ -8,6 +8,7 @@
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     CornerRadius="10"
     mc:Ignorable="d">
@@ -43,7 +44,7 @@
                 Padding="4,0,4,16"
                 ColumnDefinitions="250,250,250"
                 ColumnSpacing="16"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                 RowSpacing="8">
 
                 <!--  Row 0: 输出设备 | 目标帧率 | 歌词字号  -->
@@ -618,6 +619,7 @@
                         </ComboBox>
                     </Grid>
                 </StackPanel>
+                <settings:LyricsEffectsSettingsControl Grid.Row="8" Grid.ColumnSpan="3" />
             </Grid>
         </ScrollViewer>
     </Grid>

@@ -1,4 +1,5 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+﻿using AnimatedWin2dControls.Enums;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using Microsoft.Graphics.Canvas;
@@ -77,6 +78,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _showPronunciation = true;
         private bool _glow = true;
         private bool _charFloat = true;
+        private WordByWordEffectMode _wordByWordEffectMode;
         private bool _charScale = true;
         private double _longSyllableThreshold = 700;
         private double _glowAmountPx = 5.0;
@@ -142,6 +144,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _showPronunciation = style.ShowPronunciation;
             _glow = style.Glow;
             _charFloat = style.CharFloat;
+            _wordByWordEffectMode = style.WordByWordEffectMode;
             _charScale = style.CharScale;
             _longSyllableThreshold = Math.Clamp(style.LongSyllableThreshold, 0, 5000);
             _glowAmountPx = Math.Clamp(style.GlowAmount, 0, 10);
@@ -280,7 +283,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
                 // 逐字动效（发光/字浮/字缩）、逐字符"正在播放"标记与透明度过渡统一交给
                 // LyricsAnimator 驱动（触发语义与主界面一致）：单元素列表 = 当前播放行。
-                // 字符标记缺失会让 ComputeRegionPlayedWidth 丢失字符内分数进度（扫光按整字符跳变）。
                 if (_renderLineList.Count > 0)
                 {
                     _animationVersion++;
@@ -316,7 +318,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
                         isLayoutChanged: _lineJustRebuilt,
                         isPrimaryPlayingLineChanged: lineChanged,
                         currentPositionMs: currentTimeMs,
-                        animationVersion: _animationVersion);
+                        animationVersion: _animationVersion,
+                        wordByWordEffectMode: _wordByWordEffectMode);
                 }
                 _lineJustRebuilt = false;
             }
@@ -376,6 +379,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _lineRenderer.IsGlowEnabled = _glow;
                 _lineRenderer.IsScaleEnabled = _charScale;
                 _lineRenderer.IsFloatEnabled = _charFloat;
+                _lineRenderer.WordByWordEffectMode = _wordByWordEffectMode;
 
                 _lineRenderer.Draw(sender, ds);
                 ds.Transform = prevTransform;

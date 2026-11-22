@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using Microsoft.Graphics.Canvas.Text;
@@ -45,6 +46,17 @@ namespace WinUIMusicPlayer.Model
         public uint LyricsCustomColorRgb { get; set; } = 0x00FFFFFFu;
         public bool IsCustomLyricsColorEnabled { get; set; } = false;
         public string AppTheme { get; set; } = "Default";
+        public bool IsLyricsEdgeFeatheringEffectEnabled { get; set; } = true;
+        public bool IsFanLyricsEnabled { get; set; }
+        public int FanLyricsAngle { get; set; } = 30;
+        public bool Is3DLyricsEnabled { get; set; }
+        public bool IsAuto3DLyricsEnabled { get; set; }
+        public int Lyrics3DXAngle { get; set; }
+        public int Lyrics3DYAngle { get; set; }
+        public int Lyrics3DZAngle { get; set; }
+        public int Lyrics3DDepth { get; set; } = 800;
+        public WordByWordEffectMode WordByWordEffectMode { get; set; }
+
         public float LyricsBlurAmount { get; set; } = 5f;
         public bool IsRunningBackend { get; set; } = true;
         public string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";

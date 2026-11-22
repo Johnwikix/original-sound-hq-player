@@ -257,6 +257,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
             var line = new LyricLine
             {
                 StartMs = source.StartMs,
+                HasRealWordTiming = source.Words.Length > 0,
                 EndMs = preserveExplicitTiming ? source.EndMs : highlightEnd,
                 HighlightEndMs = preserveExplicitTiming ? Math.Max(source.EndMs, highlightEnd) : highlightEnd,
                 TransLateText = source.Translation,

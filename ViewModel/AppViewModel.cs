@@ -296,6 +296,8 @@ namespace WinUIMusicPlayer.ViewModel
                 nameof(BackgroundShader) => nameof(BackgroundShaderIndex),
                 nameof(ScrollEasingType) => nameof(ScrollEasingTypeIndex),
                 nameof(ScrollEasingMode) => nameof(ScrollEasingModeIndex),
+                nameof(WordByWordEffectMode) => nameof(WordByWordEffectModeIndex),
+                nameof(Is3DLyricsEnabled) or nameof(IsAuto3DLyricsEnabled) => nameof(Is3DLyricsAdjustable),
                 nameof(PlayingDetailAlignment) or nameof(UsePlayingDetailAlignmentInPortrait) or nameof(IsPortraitLayout) => nameof(EffectivePlayingDetailAlignment),
                 nameof(AtmosEndpointId) => nameof(SelectedAtmosDevice),
                 _ => null

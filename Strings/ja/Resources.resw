@@ -2817,4 +2817,43 @@ SHA-256: {5}
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>ハイライトのピーク輝度</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR 再生ページでは、歌詞の発光強度 0、5、10 で基準白からそれぞれ 0%、50%、100% 明るくなります。上限は HDR のピーク輝度です。</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>複数の CUE トラックがこの音声ファイルを使用しています。変更はライブラリに保存してください。</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>単語ごとのアニメーション</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>自動</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>使用しない</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>常に使用</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>端の歌詞をフェード</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>扇形の歌詞</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>扇形の角度（°）</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>パララックス傾斜</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>ポインターに追従</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>X 軸回転（°）</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Y 軸回転（°）</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Z 軸回転（°）</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>遠近の深さ</value>
+  </data>
 </root>

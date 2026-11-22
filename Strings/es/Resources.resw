@@ -2817,4 +2817,43 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Brillo máximo de las luces</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>En reproducción HDR, los niveles de resplandor de la letra 0, 5 y 10 aumentan el blanco de referencia un 0 %, 50 % y 100 %, hasta el pico HDR.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Varias pistas CUE comparten este archivo de audio. Guarda los cambios en la biblioteca.</value></data>
+  <data name="LyricsWordAnimation.Header" xml:space="preserve">
+    <value>Animación palabra por palabra</value>
+  </data>
+  <data name="LyricsWordAnimationAuto.Content" xml:space="preserve">
+    <value>Automática</value>
+  </data>
+  <data name="LyricsWordAnimationNever.Content" xml:space="preserve">
+    <value>Nunca</value>
+  </data>
+  <data name="LyricsWordAnimationAlways.Content" xml:space="preserve">
+    <value>Siempre</value>
+  </data>
+  <data name="LyricsEdgeFeathering.Header" xml:space="preserve">
+    <value>Desvanecer la letra en los bordes</value>
+  </data>
+  <data name="LyricsFan.Header" xml:space="preserve">
+    <value>Letra en abanico</value>
+  </data>
+  <data name="LyricsFanAngle.Header" xml:space="preserve">
+    <value>Ángulo del abanico (°)</value>
+  </data>
+  <data name="LyricsParallaxTilt.Header" xml:space="preserve">
+    <value>Inclinación con paralaje</value>
+  </data>
+  <data name="LyricsTiltAuto.Header" xml:space="preserve">
+    <value>Seguir el puntero</value>
+  </data>
+  <data name="LyricsTiltXAngle.Header" xml:space="preserve">
+    <value>Rotación X (°)</value>
+  </data>
+  <data name="LyricsTiltYAngle.Header" xml:space="preserve">
+    <value>Rotación Y (°)</value>
+  </data>
+  <data name="LyricsTiltZAngle.Header" xml:space="preserve">
+    <value>Rotación Z (°)</value>
+  </data>
+  <data name="LyricsTiltDepth.Header" xml:space="preserve">
+    <value>Profundidad de perspectiva</value>
+  </data>
 </root>

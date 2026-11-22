@@ -18,6 +18,7 @@ $left = Find-Node 'LeftControlPanel'
 $cover = Find-Node 'CoverContainer'
 $title = Find-Node 'AnimatedTextBlock'
 $lyrics = Find-Node 'LyricsRegionHost'
+$lyricsView = Find-Node 'LyricsView'
 
 # Keep the production background/cover bindings and all their layout parents. The
 # stand-ins for title and lyrics retain their grid placement for the page layout code.
@@ -25,14 +26,16 @@ foreach ($node in @($root.Elements())) {
     if ($node -ne $background -and $node -ne $layout) { $node.Remove() }
 }
 foreach ($node in @($layout.Elements())) {
-    if ($node -ne $left -and $node -ne $lyrics) { $node.Remove() }
+    if ($node -ne $left -and $node -ne $lyrics -and $node -ne $lyricsView) { $node.Remove() }
 }
 foreach ($node in @($left.Elements())) {
     if ($node -ne $cover -and $node -ne $title) { $node.Remove() }
 }
 $title.RemoveNodes()
 $lyrics.RemoveNodes()
-$lyrics.SetAttributeValue('SizeChanged', $null)
+foreach ($attribute in @('RenderError', 'LyricLineClicked')) {
+    $lyricsView.SetAttributeValue($attribute, $null)
+}
 foreach ($attribute in @('SpectrumOptions', 'SpectrumSource', 'EnableLightWave', 'ExceptionOccurred', 'IsFogEnabled', 'IsRaindropEnabled',
     'IsSnowEnabled', 'LyricLineClicked', 'RenderError', 'ThemeResolved', 'UseImageDominantTheme')) {
     $background.SetAttributeValue($attribute, $null)

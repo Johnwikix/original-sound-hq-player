@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using System;
 using Windows.UI;
 
@@ -22,7 +23,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         double CharFloatAmount,
         double CharScaleAmount,
         bool UseCustomColor,
-        double ShadowAmount);
+        double ShadowAmount,
+        WordByWordEffectMode WordByWordEffectMode = WordByWordEffectMode.Auto);
 
     /// <summary>文字软阴影的共享参数与颜色规则，两个渲染器（Composition / Win2D）同一套观感：
     /// 阴影色 = 文字色 RGB 反相（自适应黑/白与自定义颜色都成立：白字黑影、黑字白影、红字青影），

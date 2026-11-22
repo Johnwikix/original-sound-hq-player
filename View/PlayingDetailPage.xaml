@@ -48,6 +48,21 @@
             Margin="0"
             ColumnDefinitions="*,*">
             <Grid
+                x:Name="LyricsRegionHost"
+                Grid.Column="1"
+                IsHitTestVisible="False"
+                SizeChanged="LyricsRegionHost_SizeChanged" />
+            <lyrics:AdvanceLyricsCanvasControl
+                x:Name="LyricsView"
+                Grid.ColumnSpan="2"
+                Visibility="Collapsed"
+                Loaded="PlaybackLyrics_Loaded"
+                x:Load="{x:Bind ViewModel.IsLyricsCreated, Mode=OneWay}"
+                IsActive="{x:Bind ViewModel.IsLyricsActive, Mode=OneWay}"
+                RenderError="LyricsView_ExceptionInteracted"
+                LyricLineClicked="LyricsView_LyricInteracted"
+                UseTransparentPresentation="{x:Bind ViewModel.UseAcrylicLyricsPresentation, Mode=OneWay}" />
+            <Grid
                 x:Name="LeftControlPanel"
                 Grid.Column="0"
                 Margin="0"
@@ -120,22 +135,6 @@
                         </Border>
                     </StackPanel>
                 </Grid>
-            </Grid>
-            <Grid
-                x:Name="LyricsRegionHost"
-                Grid.Row="1"
-                Grid.Column="1"
-                Margin="0,40,0,40"
-                SizeChanged="LyricsRegionHost_SizeChanged">
-                <lyrics:AdvanceLyricsCanvasControl
-                    x:Name="LyricsView"
-                    Loaded="PlaybackLyrics_Loaded"
-                    x:Load="{x:Bind ViewModel.IsLyricsCreated, Mode=OneWay}"
-                    IsActive="{x:Bind ViewModel.IsLyricsActive, Mode=OneWay}"
-                    RenderError="LyricsView_ExceptionInteracted"
-                    LyricLineClicked="LyricsView_LyricInteracted"
-                    Margin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}"
-                    UseTransparentPresentation="{x:Bind ViewModel.UseAcrylicLyricsPresentation, Mode=OneWay}" />
             </Grid>
         </Grid>
         <StackPanel

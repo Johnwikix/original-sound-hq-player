@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
@@ -211,6 +212,8 @@
                         SpinButtonPlacementMode="Inline"
                         Value="{x:Bind ViewModel.AppViewModel.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
                 </controls:SettingsCard>
+
+                <settings:LyricsEffectsSettingsControl />
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>

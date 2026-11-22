@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Enums;
 using System;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using Microsoft.Graphics.Canvas.Text;
@@ -32,6 +33,16 @@ public static class LyricsSettingsBus
         public readonly int FontWeight;
         public readonly bool ShowTranslation;
         public readonly bool ShowPronunciation;
+        public readonly bool IsLyricsEdgeFeatheringEffectEnabled;
+        public readonly bool IsFanLyricsEnabled;
+        public readonly int FanLyricsAngle;
+        public readonly bool Is3DLyricsEnabled;
+        public readonly bool IsAuto3DLyricsEnabled;
+        public readonly int Lyrics3DXAngle;
+        public readonly int Lyrics3DYAngle;
+        public readonly int Lyrics3DZAngle;
+        public readonly int Lyrics3DDepth;
+        public readonly WordByWordEffectMode WordByWordEffectMode;
 
         public Settings(
             string fontFamilyName,
@@ -56,7 +67,17 @@ public static class LyricsSettingsBus
             Color lyricsCustomColor,
             int fontWeight = 700,
             bool showTranslation = true,
-            bool showPronunciation = true)
+            bool showPronunciation = true,
+            bool isLyricsEdgeFeatheringEffectEnabled = true,
+            bool isFanLyricsEnabled = false,
+            int fanLyricsAngle = 30,
+            bool is3DLyricsEnabled = false,
+            bool isAuto3DLyricsEnabled = false,
+            int lyrics3DXAngle = 0,
+            int lyrics3DYAngle = 0,
+            int lyrics3DZAngle = 0,
+            int lyrics3DDepth = 800,
+            WordByWordEffectMode wordByWordEffectMode = WordByWordEffectMode.Auto)
         {
             FontFamilyName = fontFamilyName;
             LyricsTextAlignment = lyricsTextAlignment;
@@ -81,6 +102,16 @@ public static class LyricsSettingsBus
             FontWeight = fontWeight;
             ShowTranslation = showTranslation;
             ShowPronunciation = showPronunciation;
+            IsLyricsEdgeFeatheringEffectEnabled = isLyricsEdgeFeatheringEffectEnabled;
+            IsFanLyricsEnabled = isFanLyricsEnabled;
+            FanLyricsAngle = fanLyricsAngle;
+            Is3DLyricsEnabled = is3DLyricsEnabled;
+            IsAuto3DLyricsEnabled = isAuto3DLyricsEnabled;
+            Lyrics3DXAngle = lyrics3DXAngle;
+            Lyrics3DYAngle = lyrics3DYAngle;
+            Lyrics3DZAngle = lyrics3DZAngle;
+            Lyrics3DDepth = lyrics3DDepth;
+            WordByWordEffectMode = wordByWordEffectMode;
         }
     }
 

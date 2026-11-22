@@ -1200,6 +1200,16 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.RestoreOutputPreferences(audio);
                 AppViewModel.AtmosEndpointId = audio.AtmosEndpointId ?? "";
                 AppViewModel.IsFadeEnabled = audio.IsFadeEnabled;
+                AppViewModel.IsLyricsEdgeFeatheringEffectEnabled = settings.IsLyricsEdgeFeatheringEffectEnabled;
+                AppViewModel.IsFanLyricsEnabled = settings.IsFanLyricsEnabled;
+                AppViewModel.FanLyricsAngle = settings.FanLyricsAngle;
+                AppViewModel.Is3DLyricsEnabled = settings.Is3DLyricsEnabled;
+                AppViewModel.IsAuto3DLyricsEnabled = settings.IsAuto3DLyricsEnabled;
+                AppViewModel.Lyrics3DXAngle = settings.Lyrics3DXAngle;
+                AppViewModel.Lyrics3DYAngle = settings.Lyrics3DYAngle;
+                AppViewModel.Lyrics3DZAngle = settings.Lyrics3DZAngle;
+                AppViewModel.Lyrics3DDepth = settings.Lyrics3DDepth;
+                AppViewModel.WordByWordEffectMode = settings.WordByWordEffectMode;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;

@@ -79,7 +79,17 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
             lyricsCustomColor: state.Preferences.LyricsCustomColor,
             fontWeight: state.Preferences.LyricsFontWeight,
             showTranslation: state.Preferences.IsLyricsTranslationEnabled,
-            showPronunciation: state.Preferences.IsLyricsPronunciationEnabled));
+            showPronunciation: state.Preferences.IsLyricsPronunciationEnabled,
+            isLyricsEdgeFeatheringEffectEnabled: state.Preferences.IsLyricsEdgeFeatheringEffectEnabled,
+            isFanLyricsEnabled: state.Preferences.IsFanLyricsEnabled,
+            fanLyricsAngle: state.Preferences.FanLyricsAngle,
+            is3DLyricsEnabled: state.Preferences.Is3DLyricsEnabled,
+            isAuto3DLyricsEnabled: state.Preferences.IsAuto3DLyricsEnabled,
+            lyrics3DXAngle: state.Preferences.Lyrics3DXAngle,
+            lyrics3DYAngle: state.Preferences.Lyrics3DYAngle,
+            lyrics3DZAngle: state.Preferences.Lyrics3DZAngle,
+            lyrics3DDepth: state.Preferences.Lyrics3DDepth,
+            wordByWordEffectMode: state.Preferences.WordByWordEffectMode));
     }
 
     public void SendLyricsFontSize()
