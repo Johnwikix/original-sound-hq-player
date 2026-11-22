@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
@@ -66,15 +65,6 @@ internal static class UiLayoutDiagnostics
         var element = (FrameworkElement)sender;
         if (Elements.TryGetValue(element, out var info)) info.Name = element.Name;
         Record(element, "Loaded", element.ActualWidth, element.ActualHeight);
-        if (element is Page or UserControl)
-        {
-            try
-            {
-                int visited = 0;
-                TrackTree(element, 0, ref visited);
-            }
-            catch (Exception error) { SafeLog("UI diagnostic tracking incomplete: " + error.GetType().Name); }
-        }
     }
     private static void Unloaded(object sender, RoutedEventArgs args) => Record((FrameworkElement)sender, "Unloaded", 0, 0);
     private static void SizeChanged(object sender, SizeChangedEventArgs args) => Record((FrameworkElement)sender,
@@ -91,14 +81,6 @@ internal static class UiLayoutDiagnostics
             _count = Math.Min(Capacity, _count + 1);
         }
     }
-    private static void TrackTree(DependencyObject node, int depth, ref int visited)
-    {
-        if (depth > 24 || visited++ >= MaxNodes) return;
-        if (node is FrameworkElement element && (element.Name.Length > 0 || element is UserControl or Page or Frame or ScrollViewer)) Track(element);
-        int count = VisualTreeHelper.GetChildrenCount(node);
-        for (int i = 0; i < count && visited < MaxNodes; i++) TrackTree(VisualTreeHelper.GetChild(node, i), depth + 1, ref visited);
-    }
-
     /// <summary>在 UI 异常边界同步捕获值，后台写盘；最多每 30 秒一次、每进程六次。</summary>
     internal static void Capture(Exception exception)
     {

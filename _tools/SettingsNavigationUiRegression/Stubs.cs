@@ -1,3 +1,4 @@
+using CommunityToolkit.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -29,10 +30,15 @@ namespace WinUIMusicPlayer.View.SubView.Settings
         public static List<ProbeSection> Created { get; } = [];
         public int Loads { get; private set; }
         public int Unloads { get; private set; }
-        protected ProbeSection()
+        internal SettingsExpander Expander { get; } = new() { Header = "Fixture expander" };
+        internal ScrollViewer Scroll { get; } = new();
+        protected ProbeSection(bool expanded = false)
         {
             Created.Add(this);
-            Content = new TextBlock { Text = GetType().Name };
+            Expander.IsExpanded = expanded;
+            Expander.Items.Add(new SettingsCard { Header = "Fixture nested card" });
+            Scroll.Content = new StackPanel { Children = { Expander, new Border { Height = 2400 } } };
+            Content = Scroll;
             Loaded += (_, _) => Loads++;
             Unloaded += (_, _) => Unloads++;
         }
@@ -42,5 +48,5 @@ namespace WinUIMusicPlayer.View.SubView.Settings
     public sealed class DspSettingsControl : ProbeSection { }
     public sealed class CoverBackgroundSettingsControl : ProbeSection { }
     public sealed class LyricsSettingsControl : ProbeSection { }
-    public sealed class AboutSettingsControl : ProbeSection { }
+    public sealed class AboutSettingsControl() : ProbeSection(expanded: true) { }
 }

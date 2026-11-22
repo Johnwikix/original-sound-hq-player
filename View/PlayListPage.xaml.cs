@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using WinRT;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -21,6 +22,9 @@ namespace WinUIMusicPlayer.View
         private readonly ConnectedAnimationScope _coverAnimation;
         public PlayListViewModel ViewModel { get; }
         private readonly HashSet<Grid> _hoveredPlaylistCards = [];
+        private bool _isCurrent;
+        private bool _viewHandlersAttached;
+        private bool _resetScrollOnEntry;
 
         public PlayListPage()
         {
@@ -28,20 +32,56 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             _coverAnimation = new ConnectedAnimationScope(this, "PlaylistCover");
             DataContext = this;
-            this.NavigationCacheMode = NavigationCacheMode.Disabled;
+            NavigationCacheMode = NavigationCacheMode.Enabled;
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e) => AttachViewHandlers();
+
+        private void AttachViewHandlers()
+        {
+            if (!_isCurrent || _viewHandlersAttached) return;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             PlayListGridView.SelectionChanged += PlayListGridView_SelectionChanged;
-            Unloaded += OnUnloaded;
+            _viewHandlersAttached = true;
+            ApplyEditMode();
+            if (_resetScrollOnEntry)
+            {
+                ListViewCentering.ResetScrollPosition(PlayListGridView);
+                DetailView.ResetScrollPosition();
+                _resetScrollOnEntry = false;
+            }
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            if (_isCurrent && IsLoaded)
+            {
+                DispatcherQueue.TryEnqueue(CheckUnloaded);
+                return;
+            }
+            DetachViewHandlers();
+        }
+
+        private void CheckUnloaded()
+        {
+            if (!IsLoaded || !_isCurrent) DetachViewHandlers();
+        }
+
+        private void DetachViewHandlers()
+        {
             _coverAnimation.Cancel();
             DetailView.ViewModel.IsClosingForTransition = false;
-            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            PlayListGridView.SelectionChanged -= PlayListGridView_SelectionChanged;
+            if (_viewHandlersAttached)
+            {
+                ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+                PlayListGridView.SelectionChanged -= PlayListGridView_SelectionChanged;
+                _viewHandlersAttached = false;
+            }
+            foreach (var grid in _hoveredPlaylistCards)
+                SetActionButtonsVisibility(grid, Visibility.Collapsed);
             _hoveredPlaylistCards.Clear();
-            Unloaded -= OnUnloaded;
         }
 
         private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -60,10 +100,12 @@ namespace WinUIMusicPlayer.View
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            _isCurrent = true;
             DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.ReceiveNavigation();
             ViewModel.SetEditMode(false);
             ApplyEditMode();
+            if (IsLoaded) AttachViewHandlers();
         }
 
         private void ApplyEditMode()
@@ -167,8 +209,9 @@ namespace WinUIMusicPlayer.View
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            _coverAnimation.Cancel();
-            DetailView.ViewModel.IsClosingForTransition = false;
+            _isCurrent = false;
+            _resetScrollOnEntry = true;
+            DetachViewHandlers();
             base.OnNavigatedFrom(e);
         }
 

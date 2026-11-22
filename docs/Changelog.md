@@ -1,3 +1,10 @@
+## 2026-11-23 减少曲库页面切换和歌单重访的重复工作
+
+- `View/MainPage.xaml`、`View/FolderBrowsePage.xaml.cs`、`View/PlayListPage.xaml.cs` 在曲库外层预留四个缓存槽位，复用曲库、目录、歌单和设置页面。目录和歌单重入时恢复滚动初始位置。快速重入后，目录选择、方向键及歌单编辑仍可使用。
+- `View/SettingsPage.xaml`、`View/SettingsPage.xaml.cs` 保持设置分区按需加载。再次进入设置时返回常规分区，各分区恢复默认展开和滚动位置。
+- `ViewModel/Controls/PlaylistDetailViewModel.cs`、`Services/LibraryProjectionService.cs`、`Model/BulkObservableCollection.cs` 跳过内容与顺序等价的歌单发布，保留行实例。排序、歌曲版本或来源变化仍更新可见行。
+- `Services/UiLayoutDiagnostics.cs` 移除页面加载时的递归追踪注册，保留显式诊断入口与异常时的有界快照。
+
 ## 2026-11-22 修复 HDR 着色器背景上的视差歌词缺字
 
 - `LyricsLineRenderer.cs`、`RenderLyricsLine.cs` 为 HDR 主文缓存逐行保留绘制输入，修复开启指针视差后非当前行主文消失、译文仍显示的问题。

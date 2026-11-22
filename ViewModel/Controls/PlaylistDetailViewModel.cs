@@ -139,11 +139,23 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void RefreshFromAppState()
         {
+            var dispatcher = App.MainWindow.DispatcherQueue;
+            if (!dispatcher.HasThreadAccess)
+            {
+                // 回到 UI 后读取当前歌单，避免离页时发布旧的投影。
+                dispatcher.TryEnqueue(() =>
+                {
+                    if (_active && !IsClosingForTransition) RefreshFromAppState();
+                });
+                return;
+            }
+            if (!AppViewModel.CanPublishState) return;
+
             DisplayedPlayList = AppViewModel.CurrentPlayList;
             if (DisplayedPlayList is { } pl)
             {
                 var musics = _db.GetMusicByPlayListIdFromMem(pl.Id, AppViewModel.SearchText, AppViewModel.State.Browse.SourceFilterId);
-                _ = AppViewModel.PlayListSongs.ReplaceAllAsync(musics);
+                _ = AppViewModel.PlayListSongs.ReplaceAllIfChangedAsync(musics, LibraryProjectionService.SamePlaylistRows);
                 Music? cover = null;
                 foreach (var item in musics)
                 {

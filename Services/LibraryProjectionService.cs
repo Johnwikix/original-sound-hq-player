@@ -392,16 +392,34 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         return items;
     }
 
+    private static bool SamePlaylistOccurrence(PlayListMusicItem current, PlayListMusicItem desired) =>
+        current.EntryId == desired.EntryId && ReferenceEquals(current.Music, desired.Music) &&
+        current.RequestedMusicId == desired.RequestedMusicId && current.PlayListOrder == desired.PlayListOrder;
+
+    internal static bool SamePlaylistRows(IReadOnlyList<PlayListMusicItem> current, IReadOnlyList<PlayListMusicItem> desired)
+    {
+        if (current.Count != desired.Count) return false;
+        for (int i = 0; i < current.Count; i++)
+            if (!SamePlaylistOccurrence(current[i], desired[i])) return false;
+        return true;
+    }
+
     private int _publishedPlaylistId;
 
     public Task RefreshPlayListSongMapping(BulkObservableCollection<PlayListMusicItem> PlayListSongs)
     {
         int playlist = CurrentPlayListId;
         var key = Key();
-        var items = GetPlaylistItems(playlist, key.Search, key.Source);
         return App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
         {
             if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || CurrentPlayListId != playlist || Key() != key) return;
+            var items = GetPlaylistItems(playlist, key.Search, key.Source);
+            if (SamePlaylistRows(PlayListSongs, items))
+            {
+                _publishedPlaylistId = playlist;
+                _published[PlayListSongs] = key;
+                return;
+            }
             if (_publishedPlaylistId == playlist && _published.TryGetValue(PlayListSongs, out var previous) &&
                 previous with { Version = key.Version } == key)
             {
@@ -410,8 +428,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 for (int i = 0; i < items.Count; i++)
                 {
                     var row = items[i];
-                    if (liveEntries.TryGetValue(row.EntryId, out var live) && ReferenceEquals(row.Music, live.Music) &&
-                        row.RequestedMusicId == live.RequestedMusicId && row.PlayListOrder == live.PlayListOrder)
+                    if (liveEntries.TryGetValue(row.EntryId, out var live) && SamePlaylistOccurrence(live, row))
                         items[i] = live;
                 }
                 ObservableListUpdates.Apply(PlayListSongs, CollectionsMarshal.AsSpan(items));

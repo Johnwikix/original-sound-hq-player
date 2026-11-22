@@ -14,12 +14,6 @@ namespace WinUIMusicPlayer.View.SubView.Settings
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
-            Unloaded += OnUnloaded;
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e)
-        {
-            Unloaded -= OnUnloaded;
         }
     }
 }

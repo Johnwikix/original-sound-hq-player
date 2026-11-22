@@ -73,6 +73,8 @@ namespace WinUIMusicPlayer.View.Controls
             this.Unloaded += OnUnloaded;
         }
 
+        internal void ResetScrollPosition() => ListViewCentering.ResetScrollPosition(MusicListView);
+
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             ViewModel.Activate();

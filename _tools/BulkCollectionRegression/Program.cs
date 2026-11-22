@@ -126,6 +126,7 @@ internal static class Program
                 Throws<InvalidOperationException>(() => c.InsertRange(0, new[] { "bad" }));
                 Throws<InvalidOperationException>(() => c.RemoveRange(new[] { "a" }));
                 Throws<InvalidOperationException>(() => c.FillFrom(new[] { "bad" }));
+                Throws<InvalidOperationException>(() => Await(c.ReplaceAllIfChangedAsync(new[] { "bad" }, static (_, _) => true)));
                 Throws<InvalidOperationException>(() => c.SortInPlace(StringComparer.Ordinal));
             };
             c.Add("c");
@@ -198,6 +199,38 @@ internal static class Program
             dispatcher.Drain();
             Await(task);
             Equal(c, "a", "b");
+        });
+        Test("conditional replacement compares the live list on the owner queue", () =>
+        {
+            var dispatcher = DispatcherQueue.GetForCurrentThread()!;
+            var c = New("a");
+            int resets = 0;
+            c.CollectionChanged += (_, args) =>
+            {
+                Check(dispatcher.HasThreadAccess);
+                if (args.Action == NotifyCollectionChangedAction.Reset) resets++;
+            };
+            bool Equivalent(IReadOnlyList<string> current, IReadOnlyList<string> desired)
+            {
+                Check(dispatcher.HasThreadAccess);
+                return current.SequenceEqual(desired);
+            }
+
+            var deferred = Task.Run(() => c.ReplaceAllIfChangedAsync(new[] { "a" }, Equivalent));
+            Check(SpinWait.SpinUntil(() => dispatcher.PendingCount > 0, 5000));
+            c[0] = "b";
+            dispatcher.Drain();
+            Await(deferred);
+            Equal(c, "a");
+            Check(resets == 1);
+
+            deferred = Task.Run(() => c.ReplaceAllIfChangedAsync(new[] { "b" }, Equivalent));
+            Check(SpinWait.SpinUntil(() => dispatcher.PendingCount > 0, 5000));
+            c[0] = "b";
+            dispatcher.Drain();
+            Await(deferred);
+            Equal(c, "b");
+            Check(resets == 1);
         });
         Test("queued callback failure completes task without modification", () =>
         {

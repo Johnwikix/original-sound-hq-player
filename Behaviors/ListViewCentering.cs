@@ -81,6 +81,13 @@ public sealed class ListViewCentering
         }
     }
 
+    internal static void ResetScrollPosition(ListViewBase list)
+    {
+        if (FindScrollViewer(list) is { } viewer &&
+            (viewer.HorizontalOffset != 0 || viewer.VerticalOffset != 0))
+            viewer.ChangeView(0, 0, null, disableAnimation: true);
+    }
+
     private static ScrollViewer? FindScrollViewer(DependencyObject root)
     {
         if (root is ScrollViewer viewer) return viewer;

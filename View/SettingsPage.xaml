@@ -26,6 +26,7 @@
                             FontSize="28" />
                         <SelectorBar x:Name="SectionSelector" VerticalAlignment="Center">
                             <SelectorBarItem
+                                x:Name="GeneralSection"
                                 x:Uid="SettingsSectionGeneral"
                                 FontSize="18"
                                 IsSelected="True"
@@ -70,7 +71,7 @@
                             IsTabStop="False">
                             <ContentControl.ContentTemplate>
                                 <DataTemplate>
-                                    <sub:GeneralSettingsControl />
+                                    <sub:GeneralSettingsControl Loaded="OnSectionLoaded" />
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>
                         </ContentControl>
@@ -82,7 +83,7 @@
                             IsTabStop="False">
                             <ContentControl.ContentTemplate>
                                 <DataTemplate>
-                                    <sub:DspSettingsControl />
+                                    <sub:DspSettingsControl Loaded="OnSectionLoaded" />
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>
                         </ContentControl>
@@ -96,7 +97,7 @@
                             IsTabStop="False">
                             <ContentControl.ContentTemplate>
                                 <DataTemplate>
-                                    <sub:ShortcutsSettingsControl />
+                                    <sub:ShortcutsSettingsControl Loaded="OnSectionLoaded" />
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>
                         </ContentControl>
@@ -110,7 +111,7 @@
                             IsTabStop="False">
                             <ContentControl.ContentTemplate>
                                 <DataTemplate>
-                                    <sub:CoverBackgroundSettingsControl />
+                                    <sub:CoverBackgroundSettingsControl Loaded="OnSectionLoaded" />
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>
                         </ContentControl>
@@ -124,7 +125,7 @@
                             IsTabStop="False">
                             <ContentControl.ContentTemplate>
                                 <DataTemplate>
-                                    <sub:LyricsSettingsControl />
+                                    <sub:LyricsSettingsControl Loaded="OnSectionLoaded" />
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>
                         </ContentControl>
@@ -138,7 +139,7 @@
                             IsTabStop="False">
                             <ContentControl.ContentTemplate>
                                 <DataTemplate>
-                                    <sub:AboutSettingsControl />
+                                    <sub:AboutSettingsControl Loaded="OnSectionLoaded" />
                                 </DataTemplate>
                             </ContentControl.ContentTemplate>
                         </ContentControl>

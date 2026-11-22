@@ -66,7 +66,8 @@
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
                     </NavigationView.MenuItems>
-                    <Frame CacheSize="1" x:Name="MainFrame" Background="Transparent" />
+                    <!-- The library, folders, playlists and settings each use one cache entry. -->
+                    <Frame CacheSize="4" x:Name="MainFrame" Background="Transparent" />
                 </NavigationView>
             </Grid>
             <Grid

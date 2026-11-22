@@ -16,9 +16,10 @@
   <ItemGroup>
     <Page Include="../../View/SettingsPage.xaml" Link="View/SettingsPage.xaml" />
     <Compile Include="../../View/SettingsPage.xaml.cs" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.7.0" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
     <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />
   </ItemGroup>

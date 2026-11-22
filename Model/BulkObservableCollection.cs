@@ -27,6 +27,13 @@ namespace WinUIMusicPlayer.Model
         public Task ReplaceAllAsync(IEnumerable<T> items) =>
             items is null ? Task.CompletedTask : DispatchAsync(() => ExecuteReplaceAll(items));
 
+        internal Task ReplaceAllIfChangedAsync(IReadOnlyList<T> items, Func<IReadOnlyList<T>, IReadOnlyList<T>, bool> equivalent) =>
+            DispatchAsync(() =>
+            {
+                using var mutation = BeginMutation();
+                if (!equivalent(this, items)) ReplaceAllCore(items);
+            });
+
         public Task AddRangeAsync(IEnumerable<T> items) =>
             items is null ? Task.CompletedTask : DispatchAsync(() => AddRange(items));
 
@@ -62,6 +69,11 @@ namespace WinUIMusicPlayer.Model
         private void ExecuteReplaceAll(IEnumerable<T> items)
         {
             using var mutation = BeginMutation();
+            ReplaceAllCore(items);
+        }
+
+        private void ReplaceAllCore(IEnumerable<T> items)
+        {
             var source = PrepareItems(items);
             if (_itemsList.Count == 0 && source.Count == 0) return;
             // 枚举和扩容均在 Clear 前完成，输入失败不会丢失旧内容。

@@ -521,6 +521,61 @@ static async Task RunAsync()
     var scopedItems = groupedProjection.GetPlaylistItems(25, null, 9);
     Check(scopedItems.Select(item => item.EntryId).SequenceEqual([81, 83]) && scopedItems.All(item => item.Music.Id == 702),
         "a filtered playlist resolves ordinary occurrences in scope and hides out-of-scope fixed files");
+    groupedState.Browse.CurrentPlayListId = 25;
+    var projectedPlaylist = new BulkObservableCollection<PlayListMusicItem>();
+    int playlistNotifications = 0;
+    projectedPlaylist.CollectionChanged += (_, _) => playlistNotifications++;
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    var initialOccurrences = projectedPlaylist.ToArray();
+    Check(initialOccurrences.Select(item => item.EntryId).SequenceEqual([81, 82, 83]),
+        "Automatic and fixed occurrences stay distinct in playlist order.");
+    playlistNotifications = 0;
+    groupedState.Browse.SearchText = "versions";
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(playlistNotifications == 0 && projectedPlaylist.Zip(initialOccurrences).All(pair => ReferenceEquals(pair.First, pair.Second)),
+        "A changed query key must not reset an equivalent ordered playlist projection.");
+
+    groupedState.Browse.SourceFilterId = 9;
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(projectedPlaylist.Select(item => item.EntryId).SequenceEqual([81, 83]) &&
+        projectedPlaylist.All(item => item.Music.Id == 702), "Source changes must update fixed and automatic occurrences.");
+    groupedState.Browse.SourceFilterId = -1;
+    groupedState.Browse.SearchText = "missing playlist term";
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(projectedPlaylist.Count == 0, "A new search must clear nonmatching playlist rows.");
+    groupedState.Browse.SearchText = "";
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(projectedPlaylist.Select(item => item.EntryId).SequenceEqual([81, 82, 83]), "Clearing search restores all occurrences.");
+
+    var originalLink = AppData.AllPlayListMusics.Single(item => item.Id == 81);
+    int originalLinkIndex = AppData.AllPlayListMusics.IndexOf(originalLink);
+    AppData.AllPlayListMusics[originalLinkIndex] = originalLink with { Order = 0, RequestedMusicId = 701 };
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(projectedPlaylist.Select(item => item.EntryId).SequenceEqual([82, 83, 81]) &&
+        projectedPlaylist[^1].RequestedMusicId == 701,
+        "A playlist-only relationship edit and reorder must publish without a library version change.");
+    AppData.AllPlayListMusics.RemoveAt(originalLinkIndex);
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(projectedPlaylist.Select(item => item.EntryId).SequenceEqual([82, 83]), "Relationship deletion drops its own occurrence.");
+    AppData.AllPlayListMusics.Insert(originalLinkIndex, originalLink);
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(projectedPlaylist.Select(item => item.EntryId).SequenceEqual([81, 82, 83]), "Restoring a distinct occurrence updates the list.");
+    var originalMusic = projectedPlaylist[0].Music;
+    int modelChanges = 0;
+    originalMusic.PropertyChanged += (_, _) => modelChanges++;
+    originalMusic.IsExistOnDevice = 1;
+    playlistNotifications = 0;
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(modelChanges == 1 && playlistNotifications == 0 && ReferenceEquals(projectedPlaylist[0].Music, originalMusic),
+        "An in-place Music notification remains visible without resetting the playlist.");
+    var replacementMusic = originalMusic with { Title = "New playlist title" };
+    groupedState.Library.Replace([replacementMusic, groupedState.Library.Songs[1], groupedState.Library.Songs[2]]);
+    groupedQueries.Invalidate();
+    await groupedProjection.RefreshPlayListSongMapping(projectedPlaylist);
+    Check(ReferenceEquals(projectedPlaylist[0].Music, replacementMusic) && ReferenceEquals(projectedPlaylist[1].Music, replacementMusic),
+        "A replacement Music instance with the same database ID updates both occurrences.");
+    Console.WriteLine("PASS: playlist equality, relationship edits, duplicates, search, source, and Music identity.");
+
     var localVersion = groupedState.Library.Songs[0];
     var remoteVersion = groupedState.Library.Songs[1];
     var versionQueue = new PlaybackQueueState();

@@ -41,17 +41,22 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Resources.MergedDictionaries.Add(new XamlControlsResources());
             using var provider = new ServiceCollection().AddSingleton<SettingsViewModel>().BuildServiceProvider();
             WinUIMusicPlayer.App.Services = provider;
-            var frame = new Frame();
+            var frame = new Frame { CacheSize = 4 };
             window = new Window { Content = frame };
             window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 900));
             window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
-            window.Activate();
+            window.AppWindow.Show(false);
             frame.Navigate(typeof(SettingsPage));
             frame.BackStack.Clear();
             await Settle(frame);
             Check(ProbeSection.Created.Count == 1 && ProbeSection.Created[0] is GeneralSettingsControl,
                 $"First entry creates only General (actual: {string.Join(", ", ProbeSection.Created.Select(c => c.GetType().Name))})");
             Check(ProbeSection.Created[0].ActualWidth >= frame.ActualWidth - 4, "Deferred content stretches across the page");
+            var general = ProbeSection.Created[0];
+            general.Expander.IsExpanded = true;
+            general.Scroll.ChangeView(null, 300, null, disableAnimation: true);
+            await Settle(frame);
+            Check(general.Expander.IsExpanded && general.Scroll.VerticalOffset > 0, "General can expand and scroll");
             var page = (SettingsPage)frame.Content;
             var selector = (SelectorBar)page.FindName("SectionSelector");
             for (int i = 1; i < selector.Items.Count; i++)
@@ -62,6 +67,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
                 Check(ProbeSection.Created[^1].Loads == 1, "Selected section loads once");
                 Check(ProbeSection.Created[^1].ActualWidth >= frame.ActualWidth - 4, "Selected section keeps the existing full width layout");
             }
+            var about = ProbeSection.Created.OfType<AboutSettingsControl>().Single();
+            Check(about.Expander.IsExpanded, "About opens with its shipped expanded state");
+            about.Expander.IsExpanded = false;
             var dsp = ProbeSection.Created.OfType<DspSettingsControl>().Single();
             Check(dsp.Unloads == 1, "Leaving DSP raises Unloaded for session cleanup");
             selector.SelectedItem = selector.Items[2];
@@ -74,38 +82,42 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             frame.Navigate(typeof(SettingsPage));
             frame.BackStack.Clear();
             await Settle(frame);
-            Check(!ReferenceEquals(page, frame.Content), "Repeated entry creates a fresh settings page");
+            Check(ReferenceEquals(page, frame.Content), "Repeated entry reuses the settings page");
             var currentPage = (SettingsPage)frame.Content;
             var currentSelector = (SelectorBar)currentPage.FindName("SectionSelector");
-            Check(currentPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled,
-                "Settings explicitly disables page caching");
+            Check(currentPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
+                "Settings participates in the bounded Frame cache");
             Check(currentSelector.SelectedItem == currentSelector.Items[0], "Repeated entry keeps the General default");
-            Check(ProbeSection.Created.Count == 7 && ProbeSection.Created[^1] is GeneralSettingsControl,
-                "Repeated entry creates only General instead of recreating all visited sections");
+            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
+                "Repeated entry reattaches General and creates no sections");
             Check(currentPage.ViewModel.AppViewModel.RefreshCount == 2, "Every entry still refreshes output devices");
+            Check(!general.Expander.IsExpanded && general.Scroll.VerticalOffset < 1, "General restores its collapsed state and top scroll position");
+            currentSelector.SelectedItem = currentSelector.Items[5];
+            await Settle(frame);
+            Check(about.IsLoaded && about.Expander.IsExpanded, "Cached About restores its expanded default on the next visit");
             currentSelector.SelectedItem = currentSelector.Items[4];
             await Settle(frame);
-            Check(ProbeSection.Created.Count == 8 && ProbeSection.Created[^1] is LyricsSettingsControl,
-                "Selector binding creates a new section only when selected on the fresh page");
+            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created.OfType<LyricsSettingsControl>().Single().IsLoaded,
+                "Selector binding reattaches an already visited section");
             frame.Navigate(typeof(Page));
             await Settle(frame);
             frame.GoBack();
             await Settle(frame);
             var historyPage = (SettingsPage)frame.Content;
             var historySelector = (SelectorBar)historyPage.FindName("SectionSelector");
-            Check(!ReferenceEquals(currentPage, historyPage) && historySelector.SelectedItem == historySelector.Items[0],
-                "History reentry creates a fresh settings page with General selected");
-            Check(ProbeSection.Created.Count == 9 && ProbeSection.Created[^1] is GeneralSettingsControl,
-                "History reentry creates only General");
+            Check(ReferenceEquals(currentPage, historyPage) && historySelector.SelectedItem == historySelector.Items[0],
+                "History reentry restores General on the cached page");
+            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
+                "History reentry restores the existing General section only");
             Check(historyPage.ViewModel.AppViewModel.RefreshCount == 3, "History reentry still refreshes devices");
             frame.GoForward();
             await Settle(frame);
             Check(frame.Content is Page and not SettingsPage, "Forward navigation leaves Settings");
             frame.GoBack();
             await Settle(frame);
-            Check(!ReferenceEquals(historyPage, frame.Content), "Back after forward also creates a fresh settings page");
-            Check(ProbeSection.Created.Count == 10 && ProbeSection.Created[^1] is GeneralSettingsControl,
-                "Back after forward still creates only General");
+            Check(ReferenceEquals(historyPage, frame.Content), "Back after forward keeps the cached settings page");
+            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
+                "Back after forward reuses General");
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), string.Join("\r\n", _results) + "\r\n");
         }
         catch (Exception error)

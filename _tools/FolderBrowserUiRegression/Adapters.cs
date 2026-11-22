@@ -69,8 +69,10 @@ namespace WinUIMusicPlayer.Services
         public List<Folder> Roots { get; set; } = [];
         public TaskCompletionSource<List<Folder>>? Pending { get; set; }
         public bool Fail { get; set; }
+        public int FolderReadCount { get; private set; }
         public async Task<List<Folder>> GetFolders()
         {
+            FolderReadCount++;
             await Task.Yield();
             if (Pending is { } pending) return await pending.Task;
             await Task.Delay(20);
@@ -132,6 +134,7 @@ namespace WinUIMusicPlayer.View.Controls
     // 页面集成测试仅替换歌曲控件；生产控件的播放/菜单逻辑由主项目编译及现有回归覆盖。
     public sealed partial class MusicGroupDetailControl : UserControl
     {
+        internal void ResetScrollPosition() { }
         public SongCommands ViewModel { get; } = new();
         public string DetailKind { get; set; } = "";
         public string PlaySourceTag { get; set; } = "";

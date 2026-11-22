@@ -3,9 +3,7 @@
     x:Class="WinUIMusicPlayer.View.FolderBrowsePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:controls="using:WinUIMusicPlayer.View.Controls"
-    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
     xmlns:tools="using:WinUIMusicPlayer.Utils">
@@ -65,19 +63,9 @@
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             ScrollViewer.HorizontalScrollMode="Disabled"
                             SelectedItem="{x:Bind ViewModel.SelectedNode, Mode=OneWay}"
+                            KeyDown="FolderTree_KeyDown"
+                            SelectionChanged="FolderTree_SelectionChanged"
                             SelectionMode="Single">
-                            <interactivity:Interaction.Behaviors>
-                                <behaviors:SelectionChangedCommandBehavior Command="{x:Bind ViewModel.SelectFolderCommand}" />
-                                <behaviors:KeyDownCommandBehavior
-                                    Key="Right"
-                                    Command="{x:Bind ViewModel.NavigateIntoFolderCommand}"
-                                    CommandParameter="{x:Bind ViewModel.SelectedNode, Mode=OneWay}" />
-                                <behaviors:KeyDownCommandBehavior
-                                    Key="Left"
-                                    Command="{x:Bind ViewModel.NavigateOutOfFolderCommand}"
-                                    CommandParameter="{x:Bind ViewModel.SelectedNode, Mode=OneWay}" />
-                                <behaviors:ScrollSelectedItemIntoViewBehavior />
-                            </interactivity:Interaction.Behaviors>
                             <ListView.ItemContainerTransitions>
                                 <TransitionCollection>
                                     <RepositionThemeTransition IsStaggeringEnabled="True" />

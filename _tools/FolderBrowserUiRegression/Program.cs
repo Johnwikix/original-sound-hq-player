@@ -116,6 +116,45 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
     {
         UnhandledException += (_, args) => File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "unhandled.txt"), args.Exception.ToString());
     }
+    private async Task CheckCachedNavigationAsync(Frame frame, FolderViewModel vm, LibraryProjectionService projection, MusicDatabaseService db)
+    {
+        frame.Navigate(typeof(FolderBrowsePage));
+        await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsBusy && vm.SelectedNode is not null);
+        var folder = (FolderBrowsePage)frame.Content;
+        frame.Navigate(typeof(Page));
+        frame.Navigate(typeof(FolderBrowsePage));
+        await Wait(() => folder.IsLoaded && !vm.IsBusy);
+        Check(ReferenceEquals(frame.Content, folder), "Rapid A-B-A returns to the same cached folder page");
+        var prior = vm.SelectedNode;
+        int reads = db.FolderReadCount;
+        projection.RequestRefresh();
+        await Wait(() => db.FolderReadCount > reads && !vm.IsBusy);
+        Check(vm.SelectedNode?.Path == prior?.Path, "Reentry resumes refresh subscriptions and retains folder selection");
+
+        _window.Content = new Grid();
+        await Wait(() => !folder.IsLoaded);
+        reads = db.FolderReadCount;
+        projection.RequestRefresh();
+        await Task.Delay(250);
+        Check(db.FolderReadCount == reads, "Detaching the window content pauses the cached folder view");
+
+        _window.Content = frame;
+        await Wait(() => folder.IsLoaded && !vm.IsBusy && db.FolderReadCount > reads);
+        Check(ReferenceEquals(frame.Content, folder) && vm.SelectedNode?.Path == prior?.Path,
+            "Reattaching the current route resumes the same cached folder view");
+
+        var tree = (ListView)folder.FindName("FolderTree");
+        var root = vm.Roots.First();
+        vm.ExpandFolder(root);
+        var child = root.Children[0];
+        await Wait(() => tree.ContainerFromItem(child) is ListViewItem);
+        SelectNativeRow(tree, child);
+        await Wait(() => ReferenceEquals(vm.SelectedNode, child) && !vm.IsBusy);
+        Check(ReferenceEquals(tree.SelectedItem, child), "Native list selection reaches the ViewModel after cached reattach");
+        Check(folder.TryNavigateFolderKey(VirtualKey.Left), "The same cached page handles left-arrow navigation after reattach");
+        await Wait(() => ReferenceEquals(vm.SelectedNode, root) && !vm.IsBusy);
+    }
+
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         try
@@ -138,9 +177,17 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             var vm = services.GetRequiredService<FolderViewModel>();
             var projection = services.GetRequiredService<LibraryProjectionService>();
             _window = new Window { Title = "Folder browser regression" };
-            var frame = new Frame { RequestedTheme = ElementTheme.Dark, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)) };
+            var frame = new Frame { CacheSize = 4, RequestedTheme = ElementTheme.Dark, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32)) };
             _window.Content = frame;
             _window.AppWindow.Resize(new(1320, 900));
+            if (Environment.GetCommandLineArgs().Contains("--cached-navigation"))
+            {
+                _window.AppWindow.Move(new(-20000, -20000));
+                _window.AppWindow.Show(false);
+                await CheckCachedNavigationAsync(frame, vm, projection, db);
+                File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "result.txt"), _results);
+                return;
+            }
             _window.AppWindow.Move(new(50, 30));
             _window.Activate();
             await CheckIncrementalCollectionsAsync(frame);
@@ -181,7 +228,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Check(app.FolderSongs.Count == 0 && !vm.HasSongs, "Changing selection hides old playable rows during asynchronous publication");
             await Wait(() => vm.SelectedNode == album && !vm.IsBusy && app.FolderSongs.Count == 2);
             Check(!app.IsBackBtnEnable && tree.SelectedItem == album, "Nested folders remain selected without enabling a back command");
-            await CheckKeyboardNavigationAsync(tree, vm, artist, album);
+            await CheckKeyboardNavigationAsync(page, tree, vm, artist, album);
             await CheckTreeMotionAsync(page, tree, vm, root, artist, album);
             page.UpdateLayout();
             var treePane = (Grid)page.FindName("TreePane");
@@ -234,15 +281,16 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Check(app.State.Browse.CurrentFolder?.Path == root.Path, "Leaving the page preserves the selected folder");
             frame.Navigate(typeof(FolderBrowsePage));
             await Wait(() => frame.Content is FolderBrowsePage { IsLoaded: true } && !vm.IsBusy);
-            Check(vm.SelectedNode?.Path == root.Path && !app.IsBackBtnEnable, "Recreated page restores tree selection without back navigation");
+            Check(ReferenceEquals(frame.Content, page), "Reentry reuses one cached folder browser");
+            Check(vm.SelectedNode?.Path == root.Path && !app.IsBackBtnEnable, "Cached page restores tree selection without back navigation");
             var restoredColumns = (Grid)((FolderBrowsePage)frame.Content).FindName("BrowserColumns");
             Check(restoredColumns.ColumnDefinitions[0].Width.Equals(savedFolderWidth)
                 && restoredColumns.ColumnDefinitions[2].Width.Equals(savedSongsWidth),
-                "Recreated pages retain the dragged split ratio for the session");
+                "The cached page retains the dragged split ratio for the session");
             app.IsBackBtnEnable = true;
-            var previousRoot = vm.SelectedNode;
+            int readsBeforeRefresh = db.FolderReadCount;
             projection.RequestRefresh();
-            await Wait(() => !ReferenceEquals(vm.SelectedNode, previousRoot) && !vm.IsBusy);
+            await Wait(() => db.FolderReadCount > readsBeforeRefresh && !vm.IsBusy);
             Check(app.IsBackBtnEnable, "A background folder refresh preserves the song detail presenter back state");
             app.IsBackBtnEnable = false;
             db.Roots.RemoveAt(1);
@@ -290,7 +338,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         catch (Exception exception)
         {
             Environment.ExitCode = 1;
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), "FAIL: " + exception);
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "result.txt"), [.. _results, "FAIL: " + exception]);
         }
         finally { _window?.Close(); Exit(); }
     }
@@ -836,9 +884,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         await Wait(() => vm.SelectedNode == root && !vm.IsBusy);
         vm.CollapseFolder(root);
         vm.ExpandFolder(root);
-        var previousRoot = root;
+        int readsBeforeRefresh = db.FolderReadCount;
         projection.RequestRefresh();
-        await Wait(() => !ReferenceEquals(vm.Roots.Single(n => n.Path == @"D:\music"), previousRoot) && !vm.IsBusy);
+        await Wait(() => db.FolderReadCount > readsBeforeRefresh && !vm.IsBusy);
         root = vm.Roots.Single(n => n.Path == @"D:\music");
         gundam = root.Children.Single(n => n.Name == "高达");
         arknight = root.Children.Single(n => n.Name == "arknight");
@@ -986,8 +1034,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         Check(vm.CurrentPath == last.Path && app.FolderSongs[0].Title == last.Name + " track",
             "Rapid native selections publish only the latest folder's songs");
         var selectedLocation = vm.SelectedNode!.Location;
+        int readsBeforeRefresh = db.FolderReadCount;
         projection.RequestRefresh();
-        await Wait(() => !ReferenceEquals(vm.SelectedNode, last) && !vm.IsBusy);
+        await Wait(() => db.FolderReadCount > readsBeforeRefresh && !vm.IsBusy);
         bool restored = false;
         for (var i = 0; i < 100 && !restored; i++)
         {
@@ -1010,37 +1059,32 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         await Capture(page, "selection-aligned.png");
     }
 
-    private async Task CheckKeyboardNavigationAsync(ListView tree, FolderViewModel vm,
+    private async Task CheckKeyboardNavigationAsync(FolderBrowsePage page, ListView tree, FolderViewModel vm,
         FolderBrowserNode artist, FolderBrowserNode album)
     {
-        var behaviors = Microsoft.Xaml.Interactivity.Interaction.GetBehaviors(tree)
-            .OfType<KeyDownCommandBehavior>().ToDictionary(behavior => behavior.Key);
-        Check(behaviors.Count == 2, "XAML attaches left and right key command behaviors");
-        var left = behaviors[VirtualKey.Left];
-        var right = behaviors[VirtualKey.Right];
-        Check(!left.TryExecute(VirtualKey.Right) && vm.SelectedNode == album,
-            "A key behavior ignores unrelated keys without executing its command");
-        Check(!right.TryExecute(VirtualKey.Right) && vm.SelectedNode == album,
+        Check(!page.TryNavigateFolderKey(VirtualKey.Up) && vm.SelectedNode == album,
+            "The key handler ignores unrelated keys without executing a command");
+        Check(!page.TryNavigateFolderKey(VirtualKey.Right) && vm.SelectedNode == album,
             "Right key remains unhandled for a folder without children");
 
-        Check(left.TryExecute(VirtualKey.Left), "Left key behavior executes for a nested folder");
+        Check(page.TryNavigateFolderKey(VirtualKey.Left), "Left key handler executes for a nested folder");
         await Wait(() => vm.SelectedNode == artist && tree.SelectedItem == artist && !vm.IsBusy);
         Check(vm.CurrentPath == artist.Path, "Left key selects the parent through the ViewModel command");
 
-        Check(right.TryExecute(VirtualKey.Right), "Right key behavior executes for an expanded folder");
+        Check(page.TryNavigateFolderKey(VirtualKey.Right), "Right key handler executes for an expanded folder");
         await Wait(() => vm.SelectedNode == album && tree.SelectedItem == album && !vm.IsBusy);
         Check(vm.CurrentPath == album.Path, "Right key selects the first child through the ViewModel command");
 
-        left.TryExecute(VirtualKey.Left);
+        page.TryNavigateFolderKey(VirtualKey.Left);
         await Wait(() => vm.SelectedNode == artist && !vm.IsBusy);
-        Check(left.TryExecute(VirtualKey.Left), "Left key behavior executes for an expanded folder");
+        Check(page.TryNavigateFolderKey(VirtualKey.Left), "Left key handler executes for an expanded folder");
         await Wait(() => !artist.IsExpanded && !vm.VisibleNodes.Contains(album));
         Check(vm.SelectedNode == artist, "Left key collapses the selected expanded folder");
 
-        Check(right.TryExecute(VirtualKey.Right), "Right key behavior executes for a collapsed folder");
+        Check(page.TryNavigateFolderKey(VirtualKey.Right), "Right key handler executes for a collapsed folder");
         await Wait(() => artist.IsExpanded && vm.VisibleNodes.Contains(album));
         Check(vm.SelectedNode == artist, "Right key expands the selected collapsed folder");
-        Check(right.TryExecute(VirtualKey.Right), "Repeated right key behavior enters the expanded folder");
+        Check(page.TryNavigateFolderKey(VirtualKey.Right), "Repeated right key handler enters the expanded folder");
         await Wait(() => vm.SelectedNode == album && tree.SelectedItem == album && !vm.IsBusy);
         Check(vm.CurrentPath == album.Path, "Repeated right key enters the newly expanded folder");
     }
