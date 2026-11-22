@@ -1,7 +1,6 @@
 using AnimatedWin2dControls.Enums;
 using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Shaders;
-using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -29,7 +28,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         }
 
         private PlaybackHdrColor _lastHdr;
-        private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrUnplayed;
 
         public bool IsPlaying { get; set; }
         public WordByWordEffectMode WordByWordEffectMode { get; set; }
@@ -66,10 +64,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void ClearSharedResources()
         {
-            _hdrUnplayed?.Dispose();
-            _hdrUnplayed = null;
-            // 自 3-slice 重构起播放行填充不再持有可复用的共享 CommandList：
-            // 全部资源挂在 RenderLyricsLine/RenderLyricsRegion 上，随布局重建，此方法保留仅为 API 兼容。
+            _lastFillLine = null;
         }
 
         private static readonly float CropHorizonPadding = 10f;
@@ -130,10 +125,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     var output = srcRect.ExtendForGaussianBlur(blur);
                     if (_hdr.IsEnabled)
                     {
-                        _hdrUnplayed ??= new PixelShaderEffect<ScRgbPlaybackEffect>();
-                        _hdrUnplayed.Sources[0] = opacityFx;
-                        _hdrUnplayed.ConstantBuffer = new ScRgbPlaybackEffect(_hdr.White);
-                        ds.DrawImage(_hdrUnplayed, output, output);
+                        ds.DrawImage(Line.GetHdrUnplayed(opacityFx, _hdr.White), output, output);
                     }
                     else
                     {

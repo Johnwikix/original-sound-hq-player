@@ -16,6 +16,8 @@ public sealed partial class LyricsRenderCoordinator
     private bool _hasExternalParallaxInput;
     private Vector2? _externalParallaxPointer;
     private int _fanAnimationVersion;
+    private static readonly Func<double, double, double, double> s_fanFocusInterpolator =
+        EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Sine, EaseMode.Out);
 
     internal void SetLyricsParallaxPointer(Vector2? normalizedPosition)
     {
@@ -147,21 +149,37 @@ public sealed partial class LyricsRenderCoordinator
                 : LyricsViewportTransform.GetFanAngle(_cachedFanLyricsAngle, distance,
                     height * (index < _currentLineIndex ? anchor : 1 - anchor));
             var transition = line.FanAngleTransition ??= new(0, _canvasYScrollTransition.Interpolator);
-            // Focus changes must put the new line flat immediately. Scroll
-            // motion and the optional whole-plane tilt keep their own timing.
-            if (isFocused || jump || line.FanAngleAnimationVersion != _fanAnimationVersion - 1)
+            if (jump || line.FanAngleAnimationVersion != _fanAnimationVersion - 1)
             {
                 transition.JumpTo(target);
             }
-            else if (target != line.FanAngleTarget)
+            else if (target != line.FanAngleTarget || (isFocused && _lastCurrentLineIndex != _currentLineIndex))
             {
                 // The active keyframe can still be a hold at the starting angle.
                 // Retarget only when the requested destination has changed.
                 var (duration, delay) = timing?.GetLineTiming(index)
                     ?? (_canvasYScrollTransition.DurationSeconds, 0);
-                transition.SetDuration(duration);
-                transition.SetDelay(delay);
-                transition.SetInterpolator(_canvasYScrollTransition.Interpolator);
+                if (isFocused)
+                {
+                    // Start from the rendered angle now. A separate wave hold
+                    // would keep the new row tilted after playback has moved on.
+                    double settleSeconds = Math.Clamp(duration, 0.12, 0.24);
+                    if (index + 1 < _renderLines.Count)
+                    {
+                        double interval = (_renderLines[index + 1].StartMs - line.StartMs) / 1000.0;
+                        if (interval > 0)
+                            settleSeconds = Math.Min(settleSeconds, Math.Max(0.08, interval * 0.85));
+                    }
+                    transition.SetDuration(settleSeconds);
+                    transition.SetDelay(0);
+                    transition.SetInterpolator(s_fanFocusInterpolator);
+                }
+                else
+                {
+                    transition.SetDuration(duration);
+                    transition.SetDelay(delay);
+                    transition.SetInterpolator(_canvasYScrollTransition.Interpolator);
+                }
                 if (target == transition.Value)
                     transition.JumpTo(target);
                 else

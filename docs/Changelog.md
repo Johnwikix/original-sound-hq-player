@@ -1,3 +1,8 @@
+## 2026-11-22 修复 HDR 着色器背景上的视差歌词缺字
+
+- `LyricsLineRenderer.cs`、`RenderLyricsLine.cs` 为 HDR 主文缓存逐行保留绘制输入，修复开启指针视差后非当前行主文消失、译文仍显示的问题。
+- `LyricsRenderCoordinator.Geometry.cs` 让扇形歌词切入当前行时立即开始平滑回正，流波中其他行的延迟继续推进。
+
 ## 2026-11-22 放宽播放页的歌词动效绘制范围
 
 - `View/PlayingDetailPage.xaml`、`View/PlaybackLyricsLayout.cs` 保留歌词原有排版宽度和锚点，横屏扇形与视差可越过中线绘制。使用亚克力背景时为歌词分配局部透明表面，竖屏保留窗口两侧的亚克力边缘。

@@ -27,7 +27,9 @@ internal static class ViewportTransformChecks
         VerifyViewport(canvas);
         VerifyRightPaneOverflow(canvas);
         VerifyAutomaticPointerOverflow(canvas);
-        VerifyFlowWaveFocus(canvas);
+        VerifyFanFocus(canvas, EasingType.FlowWave, EaseMode.FlowWave);
+        VerifyFanFocus(canvas, EasingType.Sine, EaseMode.Out);
+        VerifyFanFocus(canvas, EasingType.Linear, EaseMode.Continuous);
     }
 
     private static void VerifyViewport(CanvasAnimatedControl canvas)
@@ -342,7 +344,7 @@ internal static class ViewportTransformChecks
             TimeProgressBus.SetClock(null);
         }
     }
-    private static void VerifyFlowWaveFocus(CanvasAnimatedControl canvas)
+    private static void VerifyFanFocus(CanvasAnimatedControl canvas, EasingType easing, EaseMode easeMode)
     {
         const int nextRow = 4;
         long position = 3984;
@@ -354,14 +356,14 @@ internal static class ViewportTransformChecks
             coordinator.OnCreateResources();
             LyricsFontSizeBus.Publish(36);
             LyricsSettingsBus.Publish(new("Segoe UI", CanvasHorizontalAlignment.Left, true, 1, 0,
-                0, 0, 0, 500, false, false, 1, 1, 0, EasingType.FlowWave, EaseMode.FlowWave,
+                0, 0, 0, 500, false, false, 1, 1, 0, easing, easeMode,
                 0.5, 60, false, Colors.White, showTranslation: false, showPronunciation: false,
                 isLyricsEdgeFeatheringEffectEnabled: false, isFanLyricsEnabled: true, fanLyricsAngle: 30));
             var source = Enumerable.Range(0, 9).Select(i =>
             {
-                // Row five follows shortly after row four to exercise a second target while the wave is in flight.
-                int start = i == 5 ? 4496 : i * 1000;
-                int end = i == 4 ? 4496 : (i + 1) * 1000;
+                // The 120 ms row must settle before the very next entrance.
+                int start = i switch { 5 => 4496, 6 => 4616, 7 => 4672, _ => i * 1000 };
+                int end = i switch { 4 => 4496, 5 => 4616, 6 => 4672, _ => (i + 1) * 1000 };
                 var line = new LyricLine { StartMs = start, EndMs = end };
                 line.Words.Add(new() { Word = "Fan wave row " + i, StartMs = start, DurationMs = end - start });
                 return line;
@@ -396,15 +398,32 @@ internal static class ViewportTransformChecks
             DrawFrame();
             var timing = (LyricScrollTiming)timingField.GetValue(coordinator)!;
             double delay = timing.GetLineTiming(nextRow).Delay;
-            Check(Focus() == nextRow && delay > frame.TotalSeconds
-                  && Math.Abs(Angle(nextRow)) < 0.001,
-                $"The new current row must be horizontal on its first frame inside the delayed flow wave. Focus={Focus()}, delay={delay:F3}s, angle={Angle(nextRow):F3}.");
+            double firstFocusedAngle = Angle(nextRow);
+            Check(Focus() == nextRow && (easing != EasingType.FlowWave || delay > frame.TotalSeconds)
+                  && Math.Sign(firstFocusedAngle) == Math.Sign(incomingAngle)
+                  && Math.Abs(firstFocusedAngle) < Math.Abs(incomingAngle)
+                  && Math.Abs(firstFocusedAngle) > Math.Abs(incomingAngle) * 0.7,
+                $"{easing}/{easeMode}: Focus must start turning without a snap or wave delay. Angle before={incomingAngle:F4}, first frame={firstFocusedAngle:F4} rad, flow delay={delay:F3}s.");
             IsPlayingBus.Publish(false);
-            for (int i = 0; i < 160; i++)
+            int intermediateStates = 0;
+            double previousAngle = Math.Abs(firstFocusedAngle);
+
+            for (int i = 0; i < 40; i++)
             {
                 DrawFrame();
-                Check(Math.Abs(Angle(nextRow)) < 0.001, "The paused current row must remain horizontal.");
+                double angle = Angle(nextRow);
+
+                Check(Math.Abs(angle) <= previousAngle + 0.0001
+                      && (angle == 0 || Math.Sign(angle) == Math.Sign(incomingAngle)),
+                    "The focused row must ease monotonically to horizontal while paused.");
+                if (Math.Abs(angle) > 0.001 && previousAngle - Math.Abs(angle) > 0.0001)
+                    intermediateStates++;
+                previousAngle = Math.Abs(angle);
             }
+
+            Check(intermediateStates >= 3 && Math.Abs(Angle(nextRow)) < 0.001,
+                "The paused current row must show multiple intermediate angles and become horizontal within 320 ms.");
+            for (int i = 0; i < 120; i++) DrawFrame();
             Check(Math.Abs(Angle(nextRow - 1)) > 0.01,
                 "The old current row must settle at its angled target after its own delay.");
 
@@ -412,20 +431,51 @@ internal static class ViewportTransformChecks
             position = 2100;
             DrawFrame();
             Check(Focus() == 2 && Math.Abs(Angle(2)) < 0.001, "A backward seek must settle the current row immediately.");
+            position = 6500;
+            DrawFrame();
+            Check(Focus() == 7 && Math.Abs(Angle(7)) < 0.001, "A forward seek must settle the current row immediately.");
             position = 3984;
             DrawFrame();
             IsPlayingBus.Publish(true);
-            while (position < 4496)
+            while (position < 4488)
+            {
+                position += 8;
+                DrawFrame();
+            }
+            double nextIncomingAngle = Math.Abs(Angle(nextRow + 1));
+            position += 8;
+            DrawFrame();
+            double quickFocusAngle = Math.Abs(Angle(nextRow + 1));
+            Check(Focus() == nextRow + 1 && quickFocusAngle > nextIncomingAngle * 0.7 && quickFocusAngle < nextIncomingAngle,
+                "A second entrance must rotate immediately from its current angle without snapping.");
+            while (position < 4608)
             {
                 position += 8;
                 DrawFrame();
             }
             Check(Focus() == nextRow + 1 && Math.Abs(Angle(nextRow + 1)) < 0.001,
-                "The next closely spaced entrance must also become horizontal on its first frame.");
+                "A 120 ms current row must be horizontal before the following entrance.");
+            while (position < 4664)
+            {
+                position += 8;
+                DrawFrame();
+            }
+            int veryShortRow = nextRow + 2;
+            double interrupted = Angle(veryShortRow);
+            double followingIncoming = Angle(veryShortRow + 1);
+            Check(Focus() == veryShortRow && Math.Abs(interrupted) > 0.001,
+                "The 56 ms row must still be rotating when the next one is about to enter.");
+            position += 8;
+            DrawFrame();
+            double followingFirstFrame = Angle(veryShortRow + 1);
+            Check(Focus() == veryShortRow + 1 && followingFirstFrame > followingIncoming * 0.7
+                  && followingFirstFrame < followingIncoming
+                  && Math.Abs(Angle(veryShortRow) - interrupted) < 0.05,
+                "Interrupting the short turn must preserve both rows' current angles when retargeting.");
             IsPlayingBus.Publish(false);
             for (int i = 0; i < 160; i++) DrawFrame();
-            Check(Math.Abs(Angle(nextRow + 1)) < 0.001 && Math.Abs(Angle(nextRow)) > 0.01,
-                "A second entrance during the flow wave must settle the newest row and retarget the outgoing row.");
+            Check(Math.Abs(Angle(veryShortRow + 1)) < 0.001 && Math.Abs(Angle(veryShortRow)) > 0.01,
+                "After quick entrances the newest row must settle flat and the outgoing row reach its own angle.");
         }
         finally
         {

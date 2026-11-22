@@ -1,4 +1,6 @@
 using AnimatedWin2dControls.Enums;
+using AnimatedWin2dControls.Shaders;
+using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -124,6 +126,28 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public CropEffect? CachedCropEffect { get; private set; }
         public GaussianBlurEffect? CachedBlurEffect { get; private set; }
         public OpacityEffect? CachedOpacityEffect { get; private set; }
+        private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrUnplayed;
+        private float _hdrUnplayedWhite;
+
+        internal ICanvasImage GetHdrUnplayed(OpacityEffect opacity, float white)
+        {
+            if (_hdrUnplayed is null)
+            {
+                // A projected command list replays all rows after recording. The shader's
+                // source must stay bound to this row until that replay has completed.
+                _hdrUnplayed = new PixelShaderEffect<ScRgbPlaybackEffect>();
+                _hdrUnplayed.Sources[0] = opacity;
+                _hdrUnplayedWhite = float.NaN;
+            }
+
+            if (_hdrUnplayedWhite != white)
+            {
+                _hdrUnplayed.ConstantBuffer = new ScRgbPlaybackEffect(white);
+                _hdrUnplayedWhite = white;
+            }
+
+            return _hdrUnplayed;
+        }
 
         /// <summary>
         /// 上一次被 <see cref="LyricsAnimator.UpdateLines"/> 处理的 animationVersion。
@@ -483,6 +507,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             CachedFill?.Dispose();
             CachedCropEffect?.Dispose();
             CachedBlurEffect?.Dispose();
+            _hdrUnplayed?.Dispose();
+            _hdrUnplayed = null;
             CachedOpacityEffect?.Dispose();
 
             UnplayedComposite = null;

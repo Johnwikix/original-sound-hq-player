@@ -1,4 +1,4 @@
-param([switch]$Inspect, [switch]$SampleDisplay, [switch]$SampleWindow, [switch]$MoveAcrossDisplays, [string]$PublishedControls, [switch]$CheckMemory, [switch]$CheckHandoff, [switch]$CheckPageCover, [switch]$CheckCoverMotion, [switch]$CheckMissingCoverMotion, [switch]$CheckLyricsAcrylic)
+param([switch]$Inspect, [switch]$SampleDisplay, [switch]$SampleWindow, [switch]$MoveAcrossDisplays, [string]$PublishedControls, [switch]$CheckMemory, [switch]$CheckHandoff, [switch]$CheckPageCover, [switch]$CheckCoverMotion, [switch]$CheckMissingCoverMotion, [switch]$CheckLyricsAcrylic, [switch]$CheckLyricsParallax, [switch]$ReplayLyricsParallax, [switch]$ParallaxSdrOnly)
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $project = Join-Path $PSScriptRoot 'PlaybackHdrProbe.csproj'
@@ -28,7 +28,12 @@ try {
     }
     $launch = @{ FilePath = (Join-Path $bin 'PlaybackHdrProbe.exe'); PassThru = $true; WindowStyle = 'Hidden'
         RedirectStandardOutput = (Join-Path $bin 'result.txt'); RedirectStandardError = (Join-Path $bin 'errors.txt') }
-    if ($CheckLyricsAcrylic) { $launch.ArgumentList = @('--check-lyrics-acrylic', '--sample-window') }
+    if ($CheckLyricsParallax) {
+        $launch.ArgumentList = @('--check-lyrics-parallax', '--sample-window')
+        if ($ReplayLyricsParallax) { $launch.ArgumentList += '--replay-parallax' }
+        if ($ParallaxSdrOnly) { $launch.ArgumentList += '--sdr-only' }
+    }
+    elseif ($CheckLyricsAcrylic) { $launch.ArgumentList = @('--check-lyrics-acrylic', '--sample-window') }
     elseif ($CheckMissingCoverMotion) { $launch.ArgumentList = '--check-missing-cover-motion' }
     elseif ($CheckCoverMotion) { $launch.ArgumentList = '--check-cover-motion' }
     elseif ($CheckPageCover) { $launch.ArgumentList = '--check-page-cover' }

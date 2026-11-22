@@ -74,6 +74,12 @@ public sealed partial class ProbeApp : Application
         try
         {
             VerifyPublishedControls();
+            if (Environment.GetCommandLineArgs().Contains("--check-lyrics-parallax"))
+            {
+                window = new Window { Title = "Isolated playback lyric pointer check" };
+                await CheckLyricsParallaxAsync(window);
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--check-lyrics-acrylic"))
             {
                 window = new Window { Title = "Playback lyrics acrylic check" };

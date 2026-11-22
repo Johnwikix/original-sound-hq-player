@@ -2,7 +2,6 @@ using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
-using AnimatedWin2dControls.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -13,7 +12,6 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Dispatching;
 using System;
 using System.Diagnostics;
-using System.Numerics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Behaviors;
@@ -119,32 +117,6 @@ namespace WinUIMusicPlayer.View
                 window.Activated -= MainWindow_Activated;
                 window.AppWindow.Changed -= AppWindow_Changed;
             }
-        }
-
-        private bool IsAutomaticLyricsParallaxEnabled =>
-            ViewModel.AppViewModel.Is3DLyricsEnabled && ViewModel.AppViewModel.IsAuto3DLyricsEnabled;
-
-        private void PlaybackParallaxPointerMoved(object sender, PointerRoutedEventArgs e)
-        {
-            if (!IsAutomaticLyricsParallaxEnabled || ActualWidth <= 0 || ActualHeight <= 0) return;
-            using var point = PointerPointScope.GetCurrentPoint(e, this);
-            var position = point.Position;
-            bool inside = position.X >= 0 && position.X < ActualWidth && position.Y >= 0 && position.Y < ActualHeight;
-            SetLyricsParallaxPointer(inside
-                ? new Vector2((float)(2 * position.X / ActualWidth - 1), (float)(2 * position.Y / ActualHeight - 1))
-                : null);
-        }
-
-        private void PlaybackParallaxPointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            // Handled exits can originate from child controls; keep tracking during transitions within the page.
-            PlaybackParallaxPointerMoved(sender, e);
-        }
-
-        private void SetLyricsParallaxPointer(Vector2? position)
-        {
-            NowPlaying?.SetLyricsParallaxPointer(position);
-            LyricsView?.SetLyricsParallaxPointer(position);
         }
 
         private void Presentation_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
