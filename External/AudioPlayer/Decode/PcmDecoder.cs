@@ -76,6 +76,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
                     fmt = _network.AllocateContext(&options);
                     _fmt = fmt;
                 }
+                if (sampleRange is not null)
+                    CuePcmSource.SetInputOptions(&options);
                 or = ffmpeg.avformat_open_input(&fmt, path, null, &options);
                 _fmt = fmt;
             }
@@ -92,7 +94,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             AVCodecParameters* par = _fmt->streams[si]->codecpar;
             if (sampleRange is { } range)
             {
-                _sampleClip = new(range, _fmt, _fmt->streams[si], CanSeek && source?.Kind != PlaybackSourceKind.Http);
+                _sampleClip = new(range, _fmt, _fmt->streams[si], path, CanSeek && source?.Kind != PlaybackSourceKind.Http);
                 if (range.StartSample != 0 && !_sampleClip.Seek(_fmt, si, range.StartSample))
                     throw new IOException("Could not seek to the start of the audio range.");
                 _sampleRange = range;

@@ -93,11 +93,11 @@ public sealed partial class PlaybackCoordinator
             state.State.Playback.TransitionPresentation = null;
     }
 
-    private void FinishTrackPresentation(Music music, long entryId, long previousEpoch, bool hadPreview)
+    private void FinishTrackPresentation(Music music, long entryId, long previousEpoch, bool keepTargetClock)
     {
         _previewNextVersion = 0;
-        // An ordinary manual fallback still waits for a new engine epoch before it can show live progress.
-        state.State.Playback.TransitionPresentation = (hadPreview || music.IsCueTrack) && !music.IsRemote
+        // Hold the target clock through a manual fallback or a switch involving a CUE range.
+        state.State.Playback.TransitionPresentation = keepTargetClock && !music.IsRemote
             ? new PlaybackTransitionPresentation(music, entryId, Epoch: previousEpoch,
                 DurationMs: (long)music.Duration.TotalMilliseconds, IsCommitted: true)
             : null;
@@ -107,12 +107,16 @@ public sealed partial class PlaybackCoordinator
     {
         if (state.State.Playback.TransitionPresentation is not { IsCommitted: true } shown) return;
         bool synchronized = shown.Token > 0 ? progress.GaplessToken == shown.Token
-            : progress.Playing && progress.Epoch > 0 && progress.Epoch != shown.Epoch
-                && (!shown.Music.IsCueTrack || progress.PlaybackId == _activeLocalPlaybackId);
+            : IsLocalStartProgress(shown.Music, _activeLocalPlaybackId, shown.Epoch, progress);
         if (!synchronized) return;
         state.State.Playback.TransitionPresentation = null;
         UpdateGaplessTimer();
     }
+
+    private static bool IsLocalStartProgress(Music music, long playbackId, long previousEpoch, ProgressSnapshot progress)
+        // The playback ID extension is present only for a ranged source.
+        => progress.Playing && progress.Epoch > 0 && progress.Epoch != previousEpoch
+            && progress.PlaybackId == (music.IsCueTrack ? playbackId : 0);
 
     private void BeginManualNext(bool requested, long entryId, long version)
     {

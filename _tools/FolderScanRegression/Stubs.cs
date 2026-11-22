@@ -156,7 +156,7 @@ namespace WinUIMusicPlayer.Utils
         public static Task<byte[]?> GetRawImage(Model.Music song) => Task.FromResult<byte[]?>(null);
         public static bool ScanCueSources;
         public static bool IsMusicFile(string extension) => extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
-            ScanCueSources && extension.ToLowerInvariant() is ".wav" or ".flac";
+            ScanCueSources && extension.ToLowerInvariant() is ".wav" or ".flac" or ".aiff" or ".aif" or ".aifc" or ".m4a" or ".ape" or ".wv";
         public static async Task<(Model.Music?, string?)> GetMusicInfo(Windows.Storage.StorageFile file)
         {
             if (file.Name.StartsWith("slow"))
@@ -171,7 +171,9 @@ namespace WinUIMusicPlayer.Utils
                 Path = file.Path, Title = file.Name, FolderPath = global::System.IO.Path.GetDirectoryName(file.Path)!,
                 LastLevelFolderPath = new DirectoryInfo(global::System.IO.Path.GetDirectoryName(file.Path)!).Name,
                 UpdateTime = File.GetLastWriteTime(file.Path), Duration = TimeSpan.FromSeconds(2),
-                SampleRate = Path.GetExtension(file.Path).Equals(".flac", StringComparison.OrdinalIgnoreCase) ? 44_100 : 48_000
+                BitDepth = ScanCueSources ? 48 : 0, EncodingKind = ScanCueSources ? 2 : 0,
+                CodecId = ScanCueSources && file.FileType.Equals(".m4a", StringComparison.OrdinalIgnoreCase) ? "MPEG-4" : "",
+                SampleRate = Path.GetExtension(file.Path).Equals(".flac", StringComparison.OrdinalIgnoreCase) ? 0 : 48_000
             }, "[00:01.00]lyrics");
         }
     }

@@ -23,6 +23,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsCueTrack => CueTrackNo > 0;
         public string CuePath { get; set; } = "";
         public int CueTrackNo { get; set; }
+        public int BitDepth { get; set; }
         public int SampleRate { get; set; }
         public long StartSample { get; set; }
         public long EndSample { get; set; }

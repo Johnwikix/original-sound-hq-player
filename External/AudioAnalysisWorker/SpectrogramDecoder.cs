@@ -39,6 +39,8 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
             if (_format == null) throw new OutOfMemoryException();
             _format->interrupt_callback = new AVIOInterruptCB { callback = Interrupt, opaque = (void*)GCHandle.ToIntPtr(_handle) };
             ffmpeg.av_dict_set(&options, "protocol_whitelist", "file", 0);
+            if (input.SampleRange is not null)
+                CuePcmSource.SetInputOptions(&options);
             fixed (AVFormatContext** format = &_format) Check(ffmpeg.avformat_open_input(format, input.Path, null, &options));
             Check(ffmpeg.avformat_find_stream_info(_format, null));
             _stream = ffmpeg.av_find_best_stream(_format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
@@ -69,7 +71,7 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
             if (_packet == null || _frame == null) throw new OutOfMemoryException();
             if (input.SampleRange is { } range)
             {
-                _crop = new(range, _format, stream, _format->pb != null && (_format->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
+                _crop = new(range, _format, stream, input.Path, _format->pb != null && (_format->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
                 if (range.StartSample != 0 && !_crop.Seek(_format, _stream, range.StartSample))
                     throw new InvalidDataException("Audio range seek failed.");
                 Duration = range.FrameCount / (double)range.SampleRate;

@@ -24,7 +24,7 @@ await work;
 
 #endif
 
-internal static class Regression
+internal static partial class Regression
 {
     private static async Task ConfirmedStartsAsync()
     {
@@ -66,6 +66,7 @@ internal static class Regression
         await SongVersionsAsync();
         await ConfirmedStartsAsync();
         await CueRangesAsync();
+        await CheckCueTransitionsAsync();
         await CheckHandoffOrderingAsync();
         await CacheSizeRegression.RunAsync();
         await SingleEntryLoopAsync();

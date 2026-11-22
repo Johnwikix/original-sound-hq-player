@@ -7,6 +7,7 @@
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
 
     <Content Include="Fixtures/Tone.mp3" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../FolderScanRegression/Fixtures/Image.*" Link="CueFixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Services/AudioAnalysis/Core/Spectrogram*.cs;../../Services/AudioAnalysis/SpectrogramWorkerClient.cs" />
     <Compile Include="../../Services/ISpectrogramService.cs;../../Services/SpectrogramService.cs;../../Services/AudioAnalysis/AnalysisWorkerClient.cs;../../Services/AudioAnalysis/Core/AnalysisProtocol.cs" />
     <Compile Include="../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs" />

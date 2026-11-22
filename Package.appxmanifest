@@ -78,6 +78,7 @@
               <uap:FileType>.oga</uap:FileType>
               <uap:FileType>.aiff</uap:FileType>
               <uap:FileType>.aif</uap:FileType>
+              <uap:FileType>.aifc</uap:FileType>
               <uap:FileType>.m4a</uap:FileType>
               <uap:FileType>.dsf</uap:FileType>
               <uap:FileType>.dff</uap:FileType>

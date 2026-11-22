@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -37,7 +38,7 @@ internal static class CueFolderChecks
         int before = ToolUtils.Reads;
         await database.ScanChangedFolderAsync(directory);
         var first = (await database.GetMusicByPhysicalPathAsync(source)).Where(track => track.IsCueTrack).OrderBy(track => track.CueTrackNo).ToArray();
-        Check(ToolUtils.Reads == before + 1 && first.Length == 2 && first[0].EndSample == 48_000 &&
+        Check(ToolUtils.Reads == before + 1 && first.Length == 2 && first.All(track => track.BitDepth == 16) && first[0].EndSample == 48_000 &&
             first[1].StartSample == 48_000 && first[1].EndSample == sampleCount && first[1].Year == 2011 &&
             first[0].Genre == "J-Pop / Utaite / Doujin" && first[1].Duration == TimeSpan.FromTicks((sampleCount - 48_000L) * TimeSpan.TicksPerSecond / 48_000),
             "one exact source probe supplies both tracks, REM fields and the final sample");
@@ -176,6 +177,126 @@ internal static class CueFolderChecks
             afterRemoval.Where(track => track.IsCueTrack).All(track => track.IsMissing), "retirement creates the replacement whole in one commit and keeps child history");
     }
 
+    internal static async Task CheckAdditionalFormatsAsync(string fixture)
+    {
+        // The encoded fixtures use synthetic mono PCM pulses at 48 kHz. Each lossless
+        // fixture has 144137 samples, including a partial final packet.
+        const int samples = 144_137;
+        string directory = Directory.CreateDirectory(Path.Combine(fixture, "CUE source formats")).FullName;
+        string alac = Path.Combine(directory, "整轨.m4a");
+        string aiff = Path.Combine(directory, "disc.aiff");
+        string aifc = Path.Combine(directory, "disc.aifc");
+        string floatAifc = Path.Combine(directory, "float64.aifc");
+        string wave = Path.Combine(directory, "packed20.wav");
+        WriteAiff(aiff, samples, ""u8, 20);
+        WriteAiff(aifc, samples, "sowt"u8);
+        WriteAiff(floatAifc, samples, "fl64"u8, 64);
+        WriteWave(wave, samples, 24, validBits: 20);
+        string flac = CopyFixture("Packed20.flac", "packed20.flac");
+        byte[] editedAlac = File.ReadAllBytes(FixturePath("Image.m4a"));
+        int editList = editedAlac.AsSpan().IndexOf("elst"u8);
+        Check(editList >= 4 && editedAlac[editList + 4] == 0, "ALAC fixture contains a version-zero edit list");
+        BinaryPrimitives.WriteUInt32BigEndian(editedAlac.AsSpan(editList + 12), 2000);
+        BinaryPrimitives.WriteUInt32BigEndian(editedAlac.AsSpan(editList + 16), 4800);
+        File.WriteAllBytes(alac, editedAlac);
+        string ape = CopyFixture("Image.ape", "disc.ape");
+        string wv = CopyFixture("Image.wv", "disc.wv");
+        string packedWv = CopyFixture("Packed20.wv", "packed20.wv");
+        string floatWv = CopyFixture("Float32.wv", "float32.wv");
+        string aac = CopyFixture("Lossy.m4a", "lossy.m4a");
+        string hybrid = CopyFixture("Hybrid.wv", "hybrid.wv");
+        string unknown = Path.Combine(directory, "unknown.wv");
+        byte[] wavPackHeader = File.ReadAllBytes(wv);
+        BinaryPrimitives.WriteUInt32LittleEndian(wavPackHeader.AsSpan(12), uint.MaxValue);
+        File.WriteAllBytes(unknown, wavPackHeader);
+        string truncated = Path.Combine(directory, "truncated.aif");
+        File.WriteAllBytes(truncated, File.ReadAllBytes(aiff)[..^2]);
+        string compressed = Path.Combine(directory, "compressed.aifc");
+        WriteAiff(compressed, samples, "ulaw"u8);
+        string unsupportedApe = Path.Combine(directory, "unsupported.ape");
+        byte[] apeHeader = File.ReadAllBytes(ape);
+        int apeDescriptorLength = BinaryPrimitives.ReadInt32LittleEndian(apeHeader.AsSpan(8));
+        BinaryPrimitives.WriteUInt16LittleEndian(apeHeader.AsSpan(apeDescriptorLength + 16), 32);
+        File.WriteAllBytes(unsupportedApe, apeHeader);
+
+        (string Path, int BitDepth)[] accepted = [(aiff, 20), (aifc, 16), (floatAifc, 64), (wave, 20), (flac, 20),
+            (alac, 16), (ape, 16), (wv, 16), (packedWv, 20), (floatWv, 32)];
+        string[] rejected = [aac, hybrid, unknown, truncated, compressed, unsupportedApe];
+        foreach (string path in accepted.Select(entry => entry.Path).Concat(rejected))
+            WriteSheet(path + ".cue", Path.GetFileName(path), "First", "Last", "00:01:01");
+
+        var database = new MusicDatabaseService(Path.Combine(fixture, "cue-formats.db"));
+        await database.InitializeAsync();
+        await database.Connection.CreateTableAsync<PlayListMusic>();
+        await database.CheckFolderBeforeAdd(new StorageFolder(directory));
+        foreach (var (path, bitDepth) in accepted)
+        {
+            var tracks = (await database.GetMusicByPhysicalPathAsync(path)).OrderBy(track => track.CueTrackNo).ToArray();
+            Check(tracks.Length == 2 && tracks.All(track => track.IsCueTrack && track.SampleRate == 48_000
+                && track.BitDepth == bitDepth && track.EncodingKind == 1)
+                && tracks[0].StartSample == 0 && tracks[0].EndSample == 48_640
+                && tracks[1].StartSample == 48_640 && tracks[1].EndSample == samples,
+                $"{Path.GetFileName(path)} keeps exact sample boundaries and {bitDepth}-bit lossless encoding metadata");
+            if (path == alac)
+                Check(tracks.All(track => track.CodecId == "ALAC"), "the physical ALAC codec is available to version sorting");
+        }
+        foreach (string path in rejected)
+        {
+            var tracks = await database.GetMusicByPhysicalPathAsync(path);
+            Check(tracks.Count == 1 && tracks[0] is { IsCueTrack: false, IsCueContainer: false, BitDepth: 48, EncodingKind: 2 },
+                $"{Path.GetFileName(path)} keeps its ordinary source row");
+            if (path == aac)
+                Check(tracks[0].CodecId == "MPEG-4", "AAC M4A retains its ordinary codec label");
+        }
+        int reads = ToolUtils.Reads;
+        Check(await database.ScanChangedFolderAsync(directory) == 0 && ToolUtils.Reads == reads,
+            "rescan reuses exact accepted mappings and does not reread music metadata");
+
+        string CopyFixture(string name, string destination)
+        {
+            string path = Path.Combine(directory, destination);
+            File.Copy(FixturePath(name), path);
+            return path;
+        }
+
+        static string FixturePath(string name) => Path.Combine(AppContext.BaseDirectory, "Fixtures", name);
+    }
+
+    private static void WriteAiff(string path, int samples, ReadOnlySpan<byte> compression, short bits = 16)
+    {
+        using var writer = new BinaryWriter(File.Create(path));
+        int bytes = samples * ((bits + 7) / 8);
+        int paddedBytes = bytes + (bytes & 1);
+        bool aifc = !compression.IsEmpty;
+        writer.Write("FORM"u8);
+        WriteInt32(46 + paddedBytes + (aifc ? 18 : 0));
+        writer.Write(aifc ? "AIFC"u8 : "AIFF"u8);
+        if (aifc)
+        {
+            writer.Write("FVER"u8);
+            WriteInt32(4);
+            WriteInt32(unchecked((int)0xA2805140));
+        }
+        writer.Write("COMM"u8);
+        WriteInt32(aifc ? 24 : 18);
+        WriteInt16(1);
+        WriteInt32(samples);
+        WriteInt16(bits);
+        writer.Write(new byte[] { 0x40, 0x0E, 0xBB, 0x80, 0, 0, 0, 0, 0, 0 }); // 48000 as an 80-bit extended float.
+        if (aifc)
+        {
+            writer.Write(compression);
+            WriteInt16(0); // Empty, padded Pascal string for the compression name.
+        }
+        writer.Write("SSND"u8);
+        WriteInt32(8 + bytes);
+        writer.Write(0L);
+        writer.BaseStream.SetLength(writer.BaseStream.Position + paddedBytes);
+
+        void WriteInt32(int value) => writer.Write(BinaryPrimitives.ReverseEndianness(value));
+        void WriteInt16(short value) => writer.Write(BinaryPrimitives.ReverseEndianness(value));
+    }
+
     private static void WriteSheet(string path, string source, string first, string second, string secondStart) => File.WriteAllText(path, $"""
         REM DATE 2011
         REM GENRE "J-Pop / Utaite / Doujin"
@@ -191,22 +312,33 @@ internal static class CueFolderChecks
                 INDEX 01 {secondStart}
         """);
 
-    private static void WriteWave(string path, int samples)
+    private static void WriteWave(string path, int samples, ushort bits = 16, ushort validBits = 0)
     {
         using var writer = new BinaryWriter(File.Create(path));
+        int blockAlign = bits / 8;
+        int bytes = samples * blockAlign;
+        int paddedBytes = bytes + (bytes & 1);
+        int formatBytes = validBits == 0 ? 16 : 40;
         writer.Write("RIFF"u8);
-        writer.Write(36 + samples * 2);
+        writer.Write(20 + formatBytes + paddedBytes);
         writer.Write("WAVEfmt "u8);
-        writer.Write(16);
-        writer.Write((short)1);
+        writer.Write(formatBytes);
+        writer.Write((ushort)(validBits == 0 ? 1 : 0xFFFE));
         writer.Write((short)1);
         writer.Write(48_000);
-        writer.Write(96_000);
-        writer.Write((short)2);
-        writer.Write((short)16);
+        writer.Write(48_000 * blockAlign);
+        writer.Write((short)blockAlign);
+        writer.Write(bits);
+        if (validBits != 0)
+        {
+            writer.Write((short)22);
+            writer.Write(validBits);
+            writer.Write(4); // Mono center channel.
+            writer.Write(new Guid("00000001-0000-0010-8000-00AA00389B71").ToByteArray());
+        }
         writer.Write("data"u8);
-        writer.Write(samples * 2);
-        writer.Write(new byte[samples * 2]);
+        writer.Write(bytes);
+        writer.BaseStream.SetLength(writer.BaseStream.Position + paddedBytes);
     }
 
     private static void Check(bool value, string message)

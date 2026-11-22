@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
-    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs" />
+    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs;../../External/AudioPlayer/Decode/CuePcmSource.cs" />
     <Compile Include="../../Helper/UsbExportPaths.cs" />
 
     <Compile Include="../../Services/PlaybackStatsService.cs;../../Model/Stats/PlaybackHistory.cs;../../Model/Stats/StatsSnapshot.cs" />
@@ -47,4 +47,5 @@
     <Compile Include="../../Services/MusicMetadataStorage.cs" />
   </ItemGroup>
   <ItemGroup><Compile Include="../../Services/SongVersionStore*.cs;../../Services/SongVersionPolicy.cs;../../Services/MusicDatabaseService.Automatic.cs" /></ItemGroup>
+  <ItemGroup><None Update="Fixtures/*.ape;Fixtures/*.flac;Fixtures/*.m4a;Fixtures/*.wv" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
 </Project>

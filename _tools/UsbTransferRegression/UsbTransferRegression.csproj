@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
-    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs" />
+    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs;../../External/AudioPlayer/Decode/CuePcmSource.cs" />
     <Compile Include="../../Services/UsbDeviceMusicPresence.cs" />
 
     <Compile Include="../../Reader/UsbStorageDeviceReader.cs" Link="UsbStorageDeviceReader.cs" />

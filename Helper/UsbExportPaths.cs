@@ -59,6 +59,21 @@ internal static class UsbExportPaths
         return FormattableString.Invariant($"{music.CueTrackNo:00} - {title} [{Convert.ToHexString(hash.AsSpan(0, 8))}]");
     }
 
+    internal static string? GetExportFormat(Music music, string? requested)
+    {
+        if (requested is not null || !music.IsCueTrack) return requested;
+        if (music.BitDepth > 24) return "wav";
+        // A CUE entry always needs an encoder. M4A is a container, and the bundled
+        // encoders have no AIFF, Monkey's Audio or WavPack output.
+        return music.Extension.ToLowerInvariant() switch
+        {
+            "aif" or "aiff" or "aifc" or "ape" or "wv" or "m4a" when music.BitDepth <= 0 => "wav",
+            "m4a" => "alac",
+            "aif" or "aiff" or "aifc" or "ape" or "wv" => "flac",
+            var format => format
+        };
+    }
+
     internal static string GetRelativeFileStem(Music music)
         => Path.Combine("MUSIC", GetFolderName(music.Author), GetFolderName(music.Album), music.IsCueTrack
             ? GetCueTrackFileStem(music) : Path.GetFileNameWithoutExtension(GetFileName(Path.GetFileName(music.Path))));

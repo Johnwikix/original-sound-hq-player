@@ -16,7 +16,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
-    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs" />
+    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs;../../External/AudioPlayer/Decode/CuePcmSource.cs" />
 
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />

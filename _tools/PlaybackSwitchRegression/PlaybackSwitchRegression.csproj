@@ -13,8 +13,11 @@
     <Compile Include="../../Services/WebDav/WebDavTransport.cs;../../Services/WebDav/WebDavCertificates.cs;../../Services/WebDav/HttpRangeReadStream.cs;../../Services/WebDav/WebDavReadFailure.cs;../../Services/WebDav/RemoteReadSession.cs;../../Services/WebDav/RemoteResourceVersion.cs;../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs;../../Services/WebDav/WebDavPlaybackBridge.cs" />
     <Compile Include="../../AudioConverters/FFmpegAudioConverter.cs" />
     <Compile Include="../../Model/ConversionMetadata.cs" />
+    <Compile Include="../../External/AudioAnalysisWorker/AudioDecoder.cs;../../External/AudioAnalysisWorker/SpectrogramDecoder.cs" />
+    <Compile Include="../../Services/AudioAnalysis/Core/SpectrogramAccumulator.cs;../../Services/AudioAnalysis/Core/SpectrogramData.cs" />
     <None Include="Fixtures/eac3-5.1.m4a" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures/flac-invalid-tail.flac" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../FolderScanRegression/Fixtures/Image.*" Link="CueFixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Model/EqualizerModel.cs" />
     <Compile Include="../../Utils/EqualizerHelper.cs" />
     <!-- Exercise the shipping engine/decoder/interop without starting IPC or a real device. -->

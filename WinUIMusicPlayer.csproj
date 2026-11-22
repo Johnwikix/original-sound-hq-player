@@ -359,7 +359,7 @@
   <ItemGroup>
     <ProjectReference Include="External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj" />
     <ProjectReference Include="External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" />
-    <Compile Include="External\AudioPlayer\Decode\PcmSampleRange.cs" />
+    <Compile Include="External\AudioPlayer\Decode\PcmSampleRange.cs;External\AudioPlayer\Decode\CuePcmSource.cs" />
     <ProjectReference Include="External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -389,7 +389,7 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
-    <AnalysisWorkerSources Include="External\AudioAnalysisWorker\*.cs;External\AudioAnalysisWorker\*.csproj;Services\AudioAnalysis\Core\*.cs;External\AudioPlayer\Decode\PcmSampleRange.cs;External\BassPlayerIpc.Shared\AudioInput.cs;Assets\icon.ico" />
+    <AnalysisWorkerSources Include="External\AudioAnalysisWorker\*.cs;External\AudioAnalysisWorker\*.csproj;Services\AudioAnalysis\Core\*.cs;External\AudioPlayer\Decode\PcmSampleRange.cs;External\AudioPlayer\Decode\CuePcmSource.cs;External\BassPlayerIpc.Shared\AudioInput.cs;Assets\icon.ico" />
   </ItemGroup>
   <!-- AudioPlayer 输入含 IPC 共享源码 BassPlayerIpc.Shared 与内嵌的 dsp-tables.bin；递归 glob 必须排除
        obj/bin，否则发布自身生成的 .cs 会让哈希漂移导致无限重发布；pubxml 不经命令行使用，不纳入。 -->

@@ -61,6 +61,7 @@ namespace WinUIMusicPlayer.AudioConverters
             double gainLinear = applyGain ? Math.Pow(10, dsdGainDb / 20.0) : 1.0;
 
             AVFormatContext* inFmt = null;
+            AVDictionary* inputOptions = null;
             AVCodecContext* decCtx = null;
             AVFormatContext* ofmtCtx = null;
             AVCodecContext* encCtx = null;
@@ -74,7 +75,9 @@ namespace WinUIMusicPlayer.AudioConverters
 
             try
             {
-                int ret = ffmpeg.avformat_open_input(&inFmt, inputPath, null, null);
+                if (input.SampleRange is not null)
+                    CuePcmSource.SetInputOptions(&inputOptions);
+                int ret = ffmpeg.avformat_open_input(&inFmt, inputPath, null, &inputOptions);
                 if (ret < 0) throw CreateException(ret, $"无法打开音频文件: {inputPath}");
                 if (ffmpeg.avformat_find_stream_info(inFmt, null) < 0)
                     throw new InvalidOperationException($"无法读取流信息: {inputPath}");
@@ -95,7 +98,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 PcmSampleRange? crop = null;
                 if (input.SampleRange is { } range)
                 {
-                    crop = new(range, inFmt, inStream, inFmt->pb != null && (inFmt->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
+                    crop = new(range, inFmt, inStream, inputPath, inFmt->pb != null && (inFmt->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
                     if (range.StartSample != 0 && !crop.Seek(inFmt, streamIndex, range.StartSample))
                         throw new IOException("无法定位到 CUE 音频区间。");
                 }
@@ -119,19 +122,30 @@ namespace WinUIMusicPlayer.AudioConverters
                 }
 
                 int depth = DetectBitDepth(decCtx, isDsd);
+                AVSampleFormat rangedSampleFormat = AVSampleFormat.AV_SAMPLE_FMT_NONE;
+                if (crop is not null)
+                {
+                    rangedSampleFormat = ffmpeg.av_get_packed_sample_fmt(decCtx->sample_fmt);
+                    if (depth == 0)
+                        depth = decCtx->bits_per_coded_sample > 0 ? decCtx->bits_per_coded_sample
+                            : ffmpeg.av_get_bytes_per_sample(rangedSampleFormat) * 8;
+                }
                 int inRate = decCtx->sample_rate != 0 ? decCtx->sample_rate : 48000;
                 int outRate = isDsd && dsdPcmFreq > 0 ? dsdPcmFreq : inRate;
 
-                SelectEncoder(format, depth, isDsd, ref outRate,
+                SelectEncoder(format, depth, isDsd, rangedSampleFormat, ref outRate,
                     out string muxerName, out AVCodecID encCodecId, out AVSampleFormat encFmt, out int flacBps);
 
                 ffmpeg.avformat_alloc_output_context2(&ofmtCtx, null, muxerName, outputPath);
                 if (ofmtCtx == null) throw new InvalidOperationException($"不支持的输出格式: {format}");
 
-                AVCodec* encoder = ffmpeg.avcodec_find_encoder(encCodecId);
-                if (encoder == null) throw new InvalidOperationException($"没有可用编码器: {encCodecId}");
+                // These CUE WAV formats already match the packed samples produced by swresample.
+                bool rawPcmWav = encCodecId is AVCodecID.AV_CODEC_ID_PCM_S32LE or AVCodecID.AV_CODEC_ID_PCM_F64LE;
+                AVCodec* encoder = rawPcmWav ? null : ffmpeg.avcodec_find_encoder(encCodecId);
+                if (encoder == null && !rawPcmWav) throw new InvalidOperationException($"没有可用编码器: {encCodecId}");
 
                 encCtx = ffmpeg.avcodec_alloc_context3(encoder);
+                if (encCtx == null) throw new OutOfMemoryException();
                 encCtx->sample_fmt = encFmt;
                 encCtx->sample_rate = outRate;
                 encCtx->bit_rate = IsLossless(encCodecId) ? 0 : Math.Max(16, bitRateKbps) * 1000L;
@@ -144,26 +158,46 @@ namespace WinUIMusicPlayer.AudioConverters
                     encCtx->global_quality = VorbisQualityFor(bitRateKbps) * ffmpeg.FF_QP2LAMBDA;
                     encCtx->bit_rate = 0;
                 }
-                ffmpeg.av_channel_layout_copy(&encCtx->ch_layout, &decCtx->ch_layout);
-                // lame 等编码器只接受原生声道布局；解码器可能是 UNSPEC 顺序，统一规范化
-                ffmpeg.av_channel_layout_uninit(&encCtx->ch_layout);
-                ffmpeg.av_channel_layout_default(&encCtx->ch_layout, Math.Max(1, decCtx->ch_layout.nb_channels));
-                SelectEncoderChannelLayout(encCtx, encoder);
-                // 采样率对齐编码器支持表（lame 最高 48k 等），避免 DSD 高采样率直接失败
-                outRate = SnapRateToEncoder(encCtx, encoder, outRate);
-                encCtx->sample_rate = outRate;
-                if (flacBps > 0) encCtx->bits_per_raw_sample = flacBps;
-                if (encCodecId == AVCodecID.AV_CODEC_ID_FLAC) encCtx->compression_level = FlacCompressionLevel;
-                if ((ofmtCtx->oformat->flags & ffmpeg.AVFMT_GLOBALHEADER) != 0)
-                    encCtx->flags |= ffmpeg.AV_CODEC_FLAG_GLOBAL_HEADER;
+                if (rawPcmWav)
+                {
+                    if (!BitConverter.IsLittleEndian)
+                        throw new PlatformNotSupportedException("WAV PCM export requires little-endian samples.");
+                    ret = ffmpeg.av_channel_layout_copy(&encCtx->ch_layout, &decCtx->ch_layout);
+                    if (ret < 0) throw CreateException(ret, "设置 WAV 声道布局失败");
+                    encCtx->codec_type = AVMediaType.AVMEDIA_TYPE_AUDIO;
+                    encCtx->codec_id = encCodecId;
+                    encCtx->bits_per_coded_sample = ffmpeg.av_get_bits_per_sample(encCodecId);
+                    encCtx->block_align = ffmpeg.av_get_bytes_per_sample(encFmt) * encCtx->ch_layout.nb_channels;
+                    encCtx->bit_rate = (long)encCtx->block_align * outRate * 8;
+                }
+                else
+                {
+                    // lame 等编码器只接受原生声道布局；解码器可能是 UNSPEC 顺序，统一规范化
+                    ffmpeg.av_channel_layout_default(&encCtx->ch_layout, Math.Max(1, decCtx->ch_layout.nb_channels));
+                    SelectEncoderChannelLayout(encCtx, encoder);
+                    // 采样率对齐编码器支持表（lame 最高 48k 等），避免 DSD 高采样率直接失败
+                    outRate = SnapRateToEncoder(encCtx, encoder, outRate);
+                    encCtx->sample_rate = outRate;
+                    if (flacBps > 0) encCtx->bits_per_raw_sample = flacBps;
+                    if (encCodecId == AVCodecID.AV_CODEC_ID_FLAC)
+                    {
+                        encCtx->compression_level = FlacCompressionLevel;
+                        // FFmpeg otherwise reduces a 32-bit FLAC request to 24 bits.
+                        if (flacBps == 32) encCtx->strict_std_compliance = ffmpeg.FF_COMPLIANCE_EXPERIMENTAL;
+                    }
+                    if ((ofmtCtx->oformat->flags & ffmpeg.AVFMT_GLOBALHEADER) != 0)
+                        encCtx->flags |= ffmpeg.AV_CODEC_FLAG_GLOBAL_HEADER;
 
-                ret = ffmpeg.avcodec_open2(encCtx, encoder, null);
-                if (ret < 0)
-                    throw CreateException(ret, $"编码器打开失败 ({encCodecId}, {outRate} Hz, {encCtx->ch_layout.nb_channels} 声道)");
+                    ret = ffmpeg.avcodec_open2(encCtx, encoder, null);
+                    if (ret < 0)
+                        throw CreateException(ret, $"编码器打开失败 ({encCodecId}, {outRate} Hz, {encCtx->ch_layout.nb_channels} 声道)");
+                }
 
                 AVStream* outStream = ffmpeg.avformat_new_stream(ofmtCtx, null);
+                if (outStream == null) throw new OutOfMemoryException();
                 outStream->time_base = new AVRational { num = 1, den = outRate };
-                ffmpeg.avcodec_parameters_from_context(outStream->codecpar, encCtx);
+                ret = ffmpeg.avcodec_parameters_from_context(outStream->codecpar, encCtx);
+                if (ret < 0) throw CreateException(ret, "设置输出音频参数失败");
 
                 // 封面（mp3/flac/m4a）：附加图片流，包数据在 write_header 后首个写入；
                 // ogg/opus 的 muxer 不接受视频流，封面走 METADATA_BLOCK_PICTURE 注释。
@@ -190,6 +224,8 @@ namespace WinUIMusicPlayer.AudioConverters
                 AVDictionary* headerOpts = null;
                 if (muxerName == "ipod")
                     ffmpeg.av_dict_set(&headerOpts, "movflags", "+faststart", 0); // m4a 元数据前置，利于流式播放
+                else if (rawPcmWav)
+                    ffmpeg.av_dict_set(&headerOpts, "rf64", "auto", 0);
                 int headerRet = ffmpeg.avformat_write_header(ofmtCtx, &headerOpts);
                 ffmpeg.av_dict_free(&headerOpts);
                 if (headerRet < 0)
@@ -258,7 +294,7 @@ namespace WinUIMusicPlayer.AudioConverters
                         throw new InvalidOperationException("DSD 增益级初始化失败");
                 }
 
-                chunker = new EncoderFrameFeeder(encCtx, DrainEncodedPackets);
+                chunker = new EncoderFrameFeeder(encCtx, rawPcmWav ? WritePcmFrame : EncodeFrame);
                 double totalSeconds = input.SampleRange is { } segment ? segment.FrameCount / (double)segment.SampleRate
                     : inFmt->duration > 0 ? inFmt->duration / (double)ffmpeg.AV_TIME_BASE : 0;
                 long samplesWritten = 0;
@@ -325,10 +361,10 @@ namespace WinUIMusicPlayer.AudioConverters
                 chunker.Flush();
 
                 // 冲洗编码器并写出剩余包
-                ffmpeg.avcodec_send_frame(encCtx, null);
-                while (ffmpeg.avcodec_receive_packet(encCtx, pkt) >= 0)
+                if (!rawPcmWav)
                 {
-                    WritePacket(pkt, ofmtCtx, outStream, outRate);
+                    ffmpeg.avcodec_send_frame(encCtx, null);
+                    DrainEncodedPackets();
                 }
 
                 ret = ffmpeg.av_write_trailer(ofmtCtx);
@@ -353,6 +389,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 }
                 if (decCtx != null) ffmpeg.avcodec_free_context(&decCtx);
                 if (inFmt != null) ffmpeg.avformat_close_input(&inFmt);
+                ffmpeg.av_dict_free(&inputOptions);
             }
         }
 
@@ -595,6 +632,33 @@ namespace WinUIMusicPlayer.AudioConverters
             if (ret < 0) throw CreateException(ret, "写入音频数据失败");
         }
 
+        private void EncodeFrame(AVFrame* frame)
+        {
+            int ret = ffmpeg.avcodec_send_frame(_encCtx, frame);
+            if (ret < 0) throw CreateException(ret, "编码失败");
+            DrainEncodedPackets();
+        }
+
+        private void WritePcmFrame(AVFrame* frame)
+        {
+            // WAV has one stream. av_write_frame writes synchronously and borrows the packed frame.
+            AVPacket packet = new()
+            {
+                data = frame->extended_data[0],
+                size = checked(frame->nb_samples * _encCtx->block_align),
+                pts = frame->pts,
+                dts = frame->pts,
+                duration = frame->nb_samples,
+                pos = -1,
+                flags = ffmpeg.AV_PKT_FLAG_KEY,
+                stream_index = _outStream->index
+            };
+            ffmpeg.av_packet_rescale_ts(&packet, new AVRational { num = 1, den = _outRate }, _outStream->time_base);
+            int ret = ffmpeg.av_write_frame(_ofmtCtx, &packet);
+            ffmpeg.av_packet_unref(&packet);
+            if (ret < 0) throw CreateException(ret, "写入 WAV PCM 数据失败");
+        }
+
         /// <summary>每帧送入编码器后立即取空输出包并写入封装器。</summary>
         private void DrainEncodedPackets()
         {
@@ -728,15 +792,27 @@ namespace WinUIMusicPlayer.AudioConverters
         }
 
         /// <summary>按旧版 BASS 规则选择封装器/编码器/采样格式与输出采样率。</summary>
-        private static void SelectEncoder(string format, int depth, bool isDsd, ref int outRate,
+        private static void SelectEncoder(string format, int depth, bool isDsd, AVSampleFormat rangedSampleFormat, ref int outRate,
             out string muxerName, out AVCodecID encCodecId, out AVSampleFormat encFmt, out int flacBps)
         {
             flacBps = 0;
+            bool ranged = rangedSampleFormat != AVSampleFormat.AV_SAMPLE_FMT_NONE;
             switch (format)
             {
                 case "wav":
                     muxerName = "wav";
-                    if (depth == 24)
+                    if (ranged)
+                    {
+                        (encCodecId, encFmt) = rangedSampleFormat switch
+                        {
+                            AVSampleFormat.AV_SAMPLE_FMT_DBL => (AVCodecID.AV_CODEC_ID_PCM_F64LE, AVSampleFormat.AV_SAMPLE_FMT_DBL),
+                            AVSampleFormat.AV_SAMPLE_FMT_FLT => (AVCodecID.AV_CODEC_ID_PCM_F32LE, AVSampleFormat.AV_SAMPLE_FMT_FLT),
+                            _ when depth > 24 => (AVCodecID.AV_CODEC_ID_PCM_S32LE, AVSampleFormat.AV_SAMPLE_FMT_S32),
+                            _ when depth > 16 => (AVCodecID.AV_CODEC_ID_PCM_S24LE, AVSampleFormat.AV_SAMPLE_FMT_S32),
+                            _ => (AVCodecID.AV_CODEC_ID_PCM_S16LE, AVSampleFormat.AV_SAMPLE_FMT_S16)
+                        };
+                    }
+                    else if (depth == 24)
                     {
                         encCodecId = AVCodecID.AV_CODEC_ID_PCM_S24LE;
                         encFmt = AVSampleFormat.AV_SAMPLE_FMT_S32; // pcm_s24le 以 s32 承载（高 24 位有效）
@@ -755,10 +831,10 @@ namespace WinUIMusicPlayer.AudioConverters
                 case "flac":
                     muxerName = "flac";
                     encCodecId = AVCodecID.AV_CODEC_ID_FLAC;
-                    if (depth >= 24 || isDsd)
+                    if (depth >= 24 || isDsd || ranged && depth > 16)
                     {
                         encFmt = AVSampleFormat.AV_SAMPLE_FMT_S32;
-                        flacBps = 24;
+                        flacBps = rangedSampleFormat == AVSampleFormat.AV_SAMPLE_FMT_S32 && depth > 24 ? 32 : 24;
                     }
                     else
                     {
@@ -796,7 +872,7 @@ namespace WinUIMusicPlayer.AudioConverters
                     // Apple 无损，封装 .m4a；位深规则与 flac 一致
                     muxerName = "ipod";
                     encCodecId = AVCodecID.AV_CODEC_ID_ALAC;
-                    if (depth >= 24 || isDsd)
+                    if (depth >= 24 || isDsd || ranged && depth > 16)
                     {
                         encFmt = AVSampleFormat.AV_SAMPLE_FMT_S32P;
                         flacBps = 24;
@@ -812,6 +888,8 @@ namespace WinUIMusicPlayer.AudioConverters
             }
         }
 
+        private delegate void WriteAudioFrame(AVFrame* frame);
+
         /// <summary>
         /// 固定 frame_size 编码器（如 libopus 960 采样）的分帧供料器：
         /// 把任意大小的转换帧切成编码器要求的精确帧长，结尾发送剩余短帧并冲刷。
@@ -819,7 +897,7 @@ namespace WinUIMusicPlayer.AudioConverters
         private sealed unsafe class EncoderFrameFeeder : IDisposable
         {
             private readonly AVCodecContext* _encCtx;
-            private readonly Action _drain;
+            private readonly WriteAudioFrame _write;
             private readonly AVFrame* _frame;
             private readonly bool _planar;
             private readonly int _bytesPerSample;
@@ -828,10 +906,10 @@ namespace WinUIMusicPlayer.AudioConverters
             private int _filled;
             private long _nextPts;
 
-            public EncoderFrameFeeder(AVCodecContext* encCtx, Action drain)
+            public EncoderFrameFeeder(AVCodecContext* encCtx, WriteAudioFrame write)
             {
                 _encCtx = encCtx;
-                _drain = drain;
+                _write = write;
                 _capacity = encCtx->frame_size > 0 ? encCtx->frame_size : 0;
                 _bytesPerSample = ffmpeg.av_get_bytes_per_sample(encCtx->sample_fmt);
                 _channels = encCtx->ch_layout.nb_channels;
@@ -853,7 +931,7 @@ namespace WinUIMusicPlayer.AudioConverters
                     // 编码器接受任意帧长（lame/vorbis/pcm/flac），直通
                     src->pts = _nextPts;
                     _nextPts += src->nb_samples;
-                    Send(src);
+                    _write(src);
                     return;
                 }
                 int srcOffset = 0;
@@ -868,7 +946,7 @@ namespace WinUIMusicPlayer.AudioConverters
                         _frame->nb_samples = _capacity;
                         _frame->pts = _nextPts;
                         _nextPts += _capacity;
-                        Send(_frame);
+                        _write(_frame);
                         ReallocFrame();
                     }
                 }
@@ -880,16 +958,9 @@ namespace WinUIMusicPlayer.AudioConverters
                 {
                     _frame->nb_samples = _filled;
                     _frame->pts = _nextPts;
-                    Send(_frame);
+                    _write(_frame);
                     ReallocFrame();
                 }
-            }
-
-            private void Send(AVFrame* frame)
-            {
-                int ret = ffmpeg.avcodec_send_frame(_encCtx, frame);
-                if (ret < 0) throw CreateException(ret, "编码失败");
-                _drain();
             }
 
             private void ReallocFrame()

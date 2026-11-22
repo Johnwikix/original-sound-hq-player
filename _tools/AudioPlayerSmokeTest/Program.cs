@@ -91,6 +91,9 @@ if (args.Contains("--cue-range"))
     finally { StopPlayer(); }
 }
 
+if (args.Contains("--cue-transitions"))
+    return CueTransitionProbe.Run(transport, states, StopPlayer);
+
 Span<byte> urlBuf = new byte[BinarySerializer.SetMusicUrlRequestSize];
 BinarySerializer.WriteSetMusicUrlRequest(urlBuf, new SetMusicUrlRequest { Url = mediaPath });
 var t = Send(CommandId.SetMusicUrl, urlBuf, out _);

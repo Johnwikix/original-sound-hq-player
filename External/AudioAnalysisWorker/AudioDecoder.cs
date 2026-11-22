@@ -14,6 +14,7 @@ public sealed unsafe class AudioDecoder : IDisposable
     private readonly Deadline _deadline = new();
     private readonly float[] _scratch;
     private readonly AudioSampleRange? _range;
+    private readonly PcmSampleRange? _crop;
     private bool CanSeek => _format->pb != null && (_format->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0;
     private GCHandle _handle;
     private AVFormatContext* _format;
@@ -46,6 +47,8 @@ public sealed unsafe class AudioDecoder : IDisposable
             _format->max_analyze_duration = 2 * ffmpeg.AV_TIME_BASE;
             _format->max_probe_packets = 128;
             ffmpeg.av_dict_set(&options, "protocol_whitelist", "file", 0);
+            if (_range is not null)
+                CuePcmSource.SetInputOptions(&options);
             fixed (AVFormatContext** format = &_format) Check(ffmpeg.avformat_open_input(format, input.Path, null, &options));
             Check(ffmpeg.avformat_find_stream_info(_format, null));
             _index = ffmpeg.av_find_best_stream(_format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
@@ -78,7 +81,7 @@ public sealed unsafe class AudioDecoder : IDisposable
                 : stream->duration > 0 ? stream->duration * ffmpeg.av_q2d(stream->time_base) : 0;
             if (_range is { } range)
             {
-                _ = new PcmSampleRange(range, _format, stream, CanSeek);
+                _crop = new(range, _format, stream, input.Path, CanSeek);
                 duration = range.FrameCount / (double)range.SampleRate;
             }
             Duration = duration;
@@ -94,16 +97,15 @@ public sealed unsafe class AudioDecoder : IDisposable
         _deadline.Ticks = Stopwatch.GetTimestamp() + 15 * Stopwatch.Frequency;
         var stream = _format->streams[_index];
         double streamStart = stream->start_time == ffmpeg.AV_NOPTS_VALUE ? 0 : stream->start_time * ffmpeg.av_q2d(stream->time_base);
-        PcmSampleRange? crop = null;
-        if (_range is { } range)
+        var crop = _crop;
+        if (crop is not null && _range is { } range)
         {
             if (destination.IsEmpty) return 0;
             long start = range.StartSample + Math.Clamp((long)Math.Round(startSeconds * range.SampleRate), 0, range.FrameCount - 1);
             long window = ((long)destination.Length * range.SampleRate + 31999) / 32000;
             long end = start + Math.Min(window, range.EndSample - start);
-            crop = new(new AudioSampleRange(start, end, range.SampleRate), _format, stream, CanSeek);
             // The decoder is reused for three windows, so each job seeks even when it starts at sample zero.
-            if (!crop.Seek(_format, _index, start)) throw new InvalidDataException("Audio range seek failed.");
+            if (!crop.Seek(_format, _index, start, end)) throw new InvalidDataException("Audio range seek failed.");
         }
         else
         {

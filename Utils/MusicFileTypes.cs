@@ -8,10 +8,11 @@ internal static class MusicFileTypes
 {
     private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"
+        ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".aifc", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"
     };
 
     internal static bool CanOpen(string extension) => Contains(extension) || extension.Equals(".cue", StringComparison.OrdinalIgnoreCase);
 
     internal static bool Contains(string extension) => Extensions.Contains(extension);
+    internal static bool Contains(ReadOnlySpan<char> extension) => Extensions.GetAlternateLookup<ReadOnlySpan<char>>().Contains(extension);
 }

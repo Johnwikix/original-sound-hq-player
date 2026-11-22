@@ -29,10 +29,10 @@ internal static class UsbExportConflicts
             if (!available[i]) continue;
             var music = songs[i];
             var targets = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            if (format is null || !music.IsCueTrack)
+            if (!music.IsCueTrack)
                 AddTargets(targets, UsbExportPaths.GetRelativeFilePath(music, music.Extension));
-            if (format is not null)
-                AddTargets(targets, UsbExportPaths.GetRelativeFilePath(music, AudioConverterService.GetExtensionForFormat(format)));
+            if (UsbExportPaths.GetExportFormat(music, format) is { } encoding)
+                AddTargets(targets, UsbExportPaths.GetRelativeFilePath(music, AudioConverterService.GetExtensionForFormat(encoding)));
             foreach (var target in targets)
             {
                 string path = target.Key;

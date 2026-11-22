@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AudioDecoding.Shared;
+using FFmpeg.AutoGen;
 using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Services;
@@ -27,7 +30,8 @@ internal readonly record struct CueFileRevision(long Length, long LastWriteUtcTi
     }
 }
 
-internal sealed record CueInput(string Path, CueFileRevision Revision, int SampleRate, long TotalSamples, Music Metadata);
+internal sealed record CueInput(string Path, CueFileRevision Revision, int SampleRate, long TotalSamples, int BitDepth,
+    string? CodecId, Music Metadata);
 internal sealed record CueText(string Path, CueFileRevision Revision, string Fingerprint, byte[] Bytes);
 
 internal sealed record CueSheetReader(string Path, CueFileRevision Revision, string Fingerprint, string EncodingName,
@@ -35,7 +39,10 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
 {
     private const int MaximumBytes = 1024 * 1024;
     private const int MaximumLines = 16_384;
+    private const int LosslessEncodingKind = 1;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+    private static readonly unsafe AVIOInterruptCB_callback StopSourceProbe = static opaque =>
+        Stopwatch.GetTimestamp() >= *(long*)opaque ? 1 : 0;
 
     public bool IsCurrent()
     {
@@ -80,11 +87,11 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
                 if ((File.GetAttributes(track.Path) & (FileAttributes.ReparsePoint | FileAttributes.Directory)) != 0)
                     throw Invalid("CUE source must be a regular file in the CUE directory");
                 var sourceRevision = CueFileRevision.Read(track.Path);
-                var (rate, samples) = ReadPcmLength(track.Path);
+                var (rate, samples, bitDepth, codecId) = ReadPcmLength(track.Path, token);
                 var (metadata, _) = await AddFolderService.ReadMusicAsync(track.Path, token).ConfigureAwait(false);
                 if (metadata is null || metadata.SampleRate > 0 && metadata.SampleRate != rate)
                     throw Invalid("CUE source metadata is unavailable or inconsistent");
-                sourceCache.Add(track.Path, source = new(track.Path, sourceRevision, rate, samples, metadata));
+                sourceCache.Add(track.Path, source = new(track.Path, sourceRevision, rate, samples, bitDepth, codecId, metadata));
             }
             sources.Add(source);
             int last = first + 1;
@@ -109,6 +116,7 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
     private static Music CreateTrack(string sheet, Tags album, CueTrack track, CueInput source, long start, long end)
     {
         Music metadata = source.Metadata;
+        long durationTicks = checked((long)((Int128)(end - start) * TimeSpan.TicksPerSecond / source.SampleRate));
         return new Music
         {
             CuePath = sheet,
@@ -132,14 +140,14 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
             TrackNumber = track.Number,
             DiskNumber = Positive(track.Tags.Disc, album.Disc, metadata.DiskNumber),
             SampleRate = source.SampleRate,
-            Duration = TimeSpan.FromTicks((end - start) * TimeSpan.TicksPerSecond / source.SampleRate),
+            Duration = TimeSpan.FromTicks(durationTicks),
             FolderPath = metadata.FolderPath,
             LastLevelFolderPath = metadata.LastLevelFolderPath,
             Extension = metadata.Extension,
-            CodecId = metadata.CodecId,
-            EncodingKind = metadata.EncodingKind,
+            CodecId = source.CodecId ?? metadata.CodecId,
+            EncodingKind = LosslessEncodingKind,
             BitRate = metadata.BitRate,
-            BitDepth = metadata.BitDepth,
+            BitDepth = source.BitDepth > 0 ? source.BitDepth : metadata.BitDepth,
             Channel = metadata.Channel,
             CreateTime = metadata.CreateTime,
             UpdateTime = metadata.UpdateTime
@@ -300,7 +308,7 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
         }
     }
 
-    private static (int Rate, long Samples) ReadPcmLength(string path)
+    private static (int Rate, long Samples, int BitDepth, string? CodecId) ReadPcmLength(string path, CancellationToken token)
     {
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         Span<byte> header = stackalloc byte[12];
@@ -313,16 +321,17 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
             file.ReadExactly(header[..8]);
             ulong format = BinaryPrimitives.ReadUInt64BigEndian(header);
             int rate = (int)(format >> 44);
+            int bits = (int)((format >> 36) & 0x1F) + 1;
             long samples = (long)(format & 0xFFFFFFFFF);
             if (rate <= 0 || samples <= 0 || file.Length <= 42) throw Invalid("FLAC stream has no exact sample count");
-            return (rate, samples);
+            return (rate, samples, bits, null);
         }
         if (!header[..4].SequenceEqual("RIFF"u8) || !header[8..].SequenceEqual("WAVE"u8))
-            throw Invalid("CUE source must be FLAC or PCM WAV");
+            return ReadAdditionalPcmLength(path, token);
 
         long limit = 8L + BinaryPrimitives.ReadUInt32LittleEndian(header[4..]);
         if (limit > file.Length) throw Invalid("Incomplete WAV source");
-        int rateWav = 0, blockAlign = 0;
+        int rateWav = 0, blockAlign = 0, bitDepth = 0;
         long dataLength = 0;
         Span<byte> fmt = stackalloc byte[40];
         while (file.Position + 8 <= limit)
@@ -336,8 +345,13 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
                 if (length < 16) throw Invalid("Incomplete WAV format");
                 file.ReadExactly(fmt[..(int)Math.Min(length, fmt.Length)]);
                 int format = BinaryPrimitives.ReadUInt16LittleEndian(fmt);
+                bitDepth = BinaryPrimitives.ReadUInt16LittleEndian(fmt[14..]);
                 if (format == 0xFFFE && length >= 40 && fmt[26..40].SequenceEqual(new byte[] { 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xAA, 0, 0x38, 0x9B, 0x71 }))
+                {
                     format = BinaryPrimitives.ReadUInt16LittleEndian(fmt[24..]);
+                    int validBits = BinaryPrimitives.ReadUInt16LittleEndian(fmt[18..]);
+                    if (validBits > 0 && validBits <= bitDepth) bitDepth = validBits;
+                }
                 if (format is not (1 or 3)) throw Invalid("WAV source is not PCM");
                 rateWav = BinaryPrimitives.ReadInt32LittleEndian(fmt[4..]);
                 blockAlign = BinaryPrimitives.ReadUInt16LittleEndian(fmt[12..]);
@@ -348,7 +362,72 @@ internal sealed record CueSheetReader(string Path, CueFileRevision Revision, str
         }
         if (rateWav <= 0 || blockAlign <= 0 || dataLength < blockAlign || dataLength % blockAlign != 0)
             throw Invalid("WAV stream has no exact sample count");
-        return (rateWav, dataLength / blockAlign);
+        return (rateWav, dataLength / blockAlign, bitDepth, null);
+    }
+
+    private static unsafe (int Rate, long Samples, int BitDepth, string? CodecId) ReadAdditionalPcmLength(string path, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        long deadline = Stopwatch.GetTimestamp() + 5 * Stopwatch.Frequency;
+        AVFormatContext* format = null;
+        AVDictionary* options = null;
+        try
+        {
+            format = ffmpeg.avformat_alloc_context();
+            if (format == null) throw Invalid("Could not create the CUE source probe");
+            format->interrupt_callback = new AVIOInterruptCB { callback = StopSourceProbe, opaque = &deadline };
+            ffmpeg.av_dict_set(&options, "protocol_whitelist", "file", 0);
+            ffmpeg.av_dict_set(&options, "format_whitelist", "aiff,ape,wv,mov", 0);
+            CuePcmSource.SetInputOptions(&options);
+            if (ffmpeg.avformat_open_input(&format, path, null, &options) < 0 || format == null)
+                throw Invalid("Unsupported or incomplete CUE audio source");
+
+            // The demuxer's header provides the source frame count. Stream-info probing
+            // can substitute a duration estimate and read packets, neither is needed here.
+            int audio = ffmpeg.av_find_best_stream(format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
+            if (audio < 0 || !CuePcmSource.TryGetSampleCount(format, format->streams[audio], path, out long samples, out int headerBitDepth))
+                throw Invalid("CUE audio source has no supported, exact sample count");
+            var parameters = format->streams[audio]->codecpar;
+            if (!TryReadDecoderBitDepth(parameters, out int decoderBitDepth))
+                throw Invalid("The CUE audio source codec configuration is unsupported");
+            token.ThrowIfCancellationRequested();
+            int bitDepth = headerBitDepth > 0 ? headerBitDepth : decoderBitDepth;
+            string? codecId = parameters->codec_id == AVCodecID.AV_CODEC_ID_ALAC ? "ALAC" : null;
+            return (parameters->sample_rate, samples, bitDepth, codecId);
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException
+            or TypeInitializationException or NotSupportedException)
+        {
+            throw new InvalidDataException("The CUE audio format probe is unavailable", ex);
+        }
+        finally
+        {
+            if (options != null) ffmpeg.av_dict_free(&options);
+            if (format != null) ffmpeg.avformat_close_input(&format);
+        }
+    }
+
+    private static unsafe bool TryReadDecoderBitDepth(AVCodecParameters* parameters, out int bitDepth)
+    {
+        // The decoder can reject a profile, bit depth or channel layout after its
+        // codec ID has matched. Initialize it from headers without decoding packets.
+        bitDepth = 0;
+        var decoder = ffmpeg.avcodec_find_decoder(parameters->codec_id);
+        if (decoder == null) return false;
+        var context = ffmpeg.avcodec_alloc_context3(decoder);
+        if (context == null) return false;
+        try
+        {
+            context->thread_count = 1;
+            if (ffmpeg.avcodec_parameters_to_context(context, parameters) < 0
+                || ffmpeg.avcodec_open2(context, decoder, null) < 0
+                || context->sample_rate != parameters->sample_rate)
+                return false;
+            bitDepth = context->bits_per_raw_sample > 0 ? context->bits_per_raw_sample : context->bits_per_coded_sample;
+            if (bitDepth <= 0) bitDepth = ffmpeg.av_get_bits_per_sample(parameters->codec_id);
+            return true;
+        }
+        finally { ffmpeg.avcodec_free_context(&context); }
     }
 
     private static InvalidDataException Invalid(string message) => new(message);

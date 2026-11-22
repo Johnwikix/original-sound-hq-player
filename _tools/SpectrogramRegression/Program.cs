@@ -94,6 +94,27 @@ Check(ReferenceEquals(second, await service.AnalyzeAsync(secondInput, 2048, prog
     "repeated CUE spectra reuse the matching range only");
 File.Delete(cueAudio);
 File.Delete(sliced);
+
+var compressedRange = new AudioSampleRange(47117, 144137, 48000);
+var compressedSources = new[] { "ape", "m4a", "wv" }.Select(extension =>
+    new AudioInput(Path.Combine(AppContext.BaseDirectory, "CueFixtures", $"Image.{extension}"), compressedRange));
+await using (var worker = new AnalysisWorkerClient())
+{
+    SpectrogramData? expectedSpectrogram = null;
+    float[]? expectedFeatures = null;
+    foreach (var source in compressedSources)
+    {
+        var spectrum = await SpectrogramWorkerClient.AnalyzeAsync(source, 2048, null, CancellationToken.None);
+        var analyzed = await worker.AnalyzeAsync(source, CancellationToken.None);
+        expectedSpectrogram ??= spectrum;
+        expectedFeatures ??= analyzed;
+        Check(spectrum.Duration == compressedRange.FrameCount / (double)compressedRange.SampleRate
+            && spectrum.Combined.SequenceEqual(expectedSpectrogram.Combined)
+            && spectrum.Left.SequenceEqual(expectedSpectrogram.Left) && spectrum.Right.SequenceEqual(expectedSpectrogram.Right)
+            && analyzed.Length == 384 && analyzed.All(float.IsFinite) && analyzed.SequenceEqual(expectedFeatures),
+            $"published worker analyzes the same CUE samples from {Path.GetExtension(source.Path)} through physical EOF");
+    }
+}
 database.Track = new(2, "/fixture.wav", new FileInfo(fixture).Length, "fixture-version");
 Check(await service.AnalyzeAsync(new(1, 2, "webdav://2/fixture.wav"), 2048, progress, CancellationToken.None) is null,
     "uncached remote songs do not start network downloads");

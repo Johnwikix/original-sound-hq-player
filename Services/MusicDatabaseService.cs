@@ -1538,9 +1538,6 @@ namespace WinUIMusicPlayer.Services
         public Task ScanUsbDeviceAsync(string drivePath, string uniqueDeviceId)
             => Task.Run(() => ScanUsbDeviceAsync(new UsbStorageDevice { Path = drivePath, UniqueId = uniqueDeviceId }, CancellationToken.None));
 
-        private static readonly string[] _musicPatterns =
-            [".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"];
-
         private static List<string> EnumerateMusicFilesInDirectory(string folderPath)
         {
             var paths = new List<string>();
@@ -1608,17 +1605,6 @@ namespace WinUIMusicPlayer.Services
         }
 
         private static bool HasMusicExtension(string filePath)
-        {
-            ReadOnlySpan<char> span = filePath;
-            int dot = span.LastIndexOf('.');
-            if (dot < 0) return false;
-            ReadOnlySpan<char> ext = span[dot..];
-            foreach (var pattern in _musicPatterns)
-            {
-                if (MemoryExtensions.Equals(ext, pattern, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
+            => MusicFileTypes.Contains(Path.GetExtension(filePath.AsSpan()));
     }
 }

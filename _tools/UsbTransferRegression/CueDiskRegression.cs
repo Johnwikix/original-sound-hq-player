@@ -73,6 +73,55 @@ internal static class CueDiskRegression
                 && wavTags.EmbeddedPictures.Any(p => p.PictureData.SequenceEqual(cover)), "WAV export keeps Unicode ID3 tags and cover");
             Check(ReadPcm(wavPath).SequenceEqual(expected), "WAV export and ID3 write preserve the exact selected samples");
 
+            string alac = Path.Combine(scratch, "source.m4a");
+            new FFmpegAudioConverter().Convert(sourceWav, alac, "alac");
+            var appleTrack = new Music(alac, "Kano", "Apple") {
+                Id = 503, CueTrackNo = 2, CuePath = Path.ChangeExtension(alac, ".cue"), Title = second.Title,
+                BitDepth = 16, SampleRate = rate, StartSample = start, EndSample = end
+            };
+            var appleExport = await writer.WriteToUsb([appleTrack], target);
+            Check(appleExport.Succeeded.Count == 1 && appleExport.Succeeded[0].Extension == "m4a",
+                "USB chooses the ALAC encoder for an M4A CUE entry");
+            string applePath = Path.Combine(target.Path, UsbExportPaths.GetRelativeFilePath(appleTrack, "m4a"));
+            new FFmpegAudioConverter().Convert(applePath, decodedPath, "wav");
+            Check(ReadPcm(decodedPath).SequenceEqual(expected), "USB ALAC contains only the requested samples");
+
+            var wholeApple = new Music(alac, "Kano", "Whole") { Id = 504 };
+            var copied = await writer.WriteToUsb([wholeApple], target);
+            string copiedPath = Path.Combine(target.Path, UsbExportPaths.GetRelativeFilePath(wholeApple, "m4a"));
+            Check(copied.Succeeded.Count == 1 && File.ReadAllBytes(copiedPath).SequenceEqual(File.ReadAllBytes(alac)),
+                "sending an ordinary M4A still copies the original bytes");
+
+            foreach (string extension in new[] { "ape", "aiff", "aif", "aifc", "wv" })
+            {
+                var entry = new Music(Path.Combine(scratch, "source." + extension), "Kano", "Collision") {
+                    Id = 505, BitDepth = 16, CueTrackNo = 2, CuePath = Path.Combine(scratch, "toc.cue"), Title = second.Title
+                };
+                var other = new Music(Path.Combine(scratch, UsbExportPaths.GetCueTrackFileStem(entry) + ".flac"), entry.Author, entry.Album);
+                string?[] planned = UsbExportConflicts.Find([entry, other], null, null, [true, true], default);
+                Check(planned.All(path => Path.GetExtension(path) == ".flac"), $"CUE {extension} conflict check protects the actual FLAC output for both songs");
+            }
+
+            appleTrack.BitDepth = 0;
+            Check(UsbExportPaths.GetExportFormat(appleTrack, null) == "wav", "unknown precision uses PCM to preserve the source samples");
+            appleTrack.BitDepth = 32;
+            Check(UsbExportPaths.GetExportFormat(appleTrack, null) == "wav" && UsbExportPaths.GetExportFormat(appleTrack, "mp3") == "mp3",
+                "high-precision CUE defaults to PCM while explicit output format wins");
+            string doublePath = Path.Combine(scratch, "Double.wav");
+            byte[] doubles = new byte[rate * 2 * sizeof(double)];
+            for (int sample = 0; sample < doubles.Length / sizeof(double); sample++)
+                BinaryPrimitives.WriteDoubleLittleEndian(doubles.AsSpan(sample * sizeof(double)), Math.Sin(sample * .371) * 1.05);
+            WriteWave(doublePath, rate, doubles, 3, 1, 64);
+            var doubleTrack = new Music(doublePath, "PCM", "Double") {
+                Id = 506, BitDepth = 64, CueTrackNo = 2, CuePath = Path.ChangeExtension(doublePath, ".cue"),
+                Title = "Float64", SampleRate = rate, StartSample = start, EndSample = end
+            };
+            var doubleExport = await writer.WriteToUsb([doubleTrack], target);
+            string doubleOutput = Path.Combine(target.Path, UsbExportPaths.GetRelativeFilePath(doubleTrack, "wav"));
+            Check(doubleExport.Succeeded.Count == 1 && ReadPcm(doubleOutput).AsSpan().SequenceEqual(
+                doubles.AsSpan(start * sizeof(double), (end - start) * sizeof(double))),
+                "default USB export and metadata write preserve the exact selected float64 samples");
+
             var bad = await writer.WriteToUsb([second], target, "unsupported-format");
             Check(bad.Succeeded.Count == 0 && bad.Failures.Count == 1
                 && !File.Exists(Path.Combine(Path.GetDirectoryName(secondPath)!, Path.GetFileName(source))),
@@ -97,12 +146,13 @@ internal static class CueDiskRegression
         }
     }
 
-    private static void WriteWave(string path, int rate, byte[] samples)
+    private static void WriteWave(string path, int rate, byte[] samples, short format = 1, short channels = 2, short bits = 16)
     {
         using var writer = new BinaryWriter(File.Create(path));
         writer.Write("RIFF"u8); writer.Write(36 + samples.Length); writer.Write("WAVEfmt "u8); writer.Write(16);
-        writer.Write((short)1); writer.Write((short)2); writer.Write(rate); writer.Write(rate * 4);
-        writer.Write((short)4); writer.Write((short)16); writer.Write("data"u8); writer.Write(samples.Length);
+        short blockAlign = (short)(channels * bits / 8);
+        writer.Write(format); writer.Write(channels); writer.Write(rate); writer.Write(rate * blockAlign);
+        writer.Write(blockAlign); writer.Write(bits); writer.Write("data"u8); writer.Write(samples.Length);
         writer.Write(samples);
     }
 

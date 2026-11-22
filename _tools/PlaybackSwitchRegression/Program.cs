@@ -41,6 +41,14 @@ internal static unsafe partial class Program
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
             RunCuePlaybackTests(args.Length == 2 ? Path.GetFullPath(args[1]) : null);
+            RunCueTransitionTests();
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length is >= 1 and <= 3 && args[0] == "--test-cue-formats")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            if (args.Length == 1) RunCueFormatFixtures();
+            else RunCueFormatTests(Path.GetFullPath(args[1]), args.Length == 3 ? Path.GetFullPath(args[2]) : null);
             return _failures == 0 ? 0 : 1;
         }
         if (args.Length == 1 && args[0] == "--test-ir-memory")

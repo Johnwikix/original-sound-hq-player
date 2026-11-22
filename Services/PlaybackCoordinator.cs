@@ -480,8 +480,9 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             _activeIntent = (music, entryId, exact, mayAdvance, false);
             _activeSelectionVersion = _selectionVersion;
             bool lyricsAlreadyPresented = IsPresenting(music, entryId);
+            bool keepTargetClock = lyricsAlreadyPresented || music.IsCueTrack || state.CurrentPlayingMusic?.IsCueTrack == true;
             state.CurrentPlayingMusic = music;
-            FinishTrackPresentation(music, entryId, previousEpoch, lyricsAlreadyPresented);
+            FinishTrackPresentation(music, entryId, previousEpoch, keepTargetClock);
             state.RemotePlaybackStatus = music.IsRemote ? Utils.ToolUtils.GetString("WebDavOpening") : "";
             if (music.IsRemote) { state.IsPlaying = false; state.StopProgressTimer(); }
             try { if (music.IsRemote) statistics.FlushSession(); else statistics.StartSession(music); }
@@ -517,8 +518,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                 token.ThrowIfCancellationRequested();
                 if (_disposed || Volatile.Read(ref _failedLocalPlaybackId) == playbackId
                     || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
-                if (ipc.TryGetProgressSnapshot(out var progress) && progress.Playing && progress.Epoch > 0 && progress.Epoch != previousEpoch
-                    && (!music.IsCueTrack || progress.PlaybackId == playbackId))
+                if (ipc.TryGetProgressSnapshot(out var progress) && IsLocalStartProgress(music, playbackId, previousEpoch, progress))
                 {
                     await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {

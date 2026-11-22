@@ -99,9 +99,7 @@ namespace WinUIMusicPlayer.Helper
                     string targetBasePath = stagingPath ?? Path.Combine(device.Path, "MUSIC", sanitizedAuthor, sanitizedAlbum);
                     Directory.CreateDirectory(targetBasePath);
 
-                    string? exportFormat = format;
-                    if (music.IsCueTrack && exportFormat is null)
-                        exportFormat = music.Extension.ToLowerInvariant();
+                    string? exportFormat = UsbExportPaths.GetExportFormat(music, format);
                     string extensionForTarget = AudioConverterService.GetExtensionForFormat(exportFormat ?? music.Extension);
                     string sanitizedFileName = music.IsCueTrack ? UsbExportPaths.GetCueTrackFileStem(music) + "." + extensionForTarget
                         : UsbExportPaths.GetFileName(Path.GetFileName(music.Path));

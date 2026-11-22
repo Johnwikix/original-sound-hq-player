@@ -7,7 +7,7 @@ namespace BassPlayerIpc.Shared;
 /// <param name="Epoch">The current playback epoch.</param>
 /// <param name="Token">The positive identity of a queued track, or zero for cancellation.</param>
 /// <param name="Path">The next track path, or empty for cancellation.</param>
-/// <param name="PreserveAlbumBoundary">Keep the original track boundary in Smart mode.</param>
+/// <param name="PreserveAlbumBoundary">Keep the natural boundary in Smart mode and for contiguous ranges in the same image.</param>
 /// <param name="SampleRange">An optional interval in the original audio stream.</param>
 public sealed record GaplessRequest(long Epoch, long Token, string Path, bool PreserveAlbumBoundary = false, AudioSampleRange? SampleRange = null)
 {

@@ -1,43 +1,45 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using BassPlayerIpc.Shared;
 using FFmpeg.AutoGen;
 
 namespace AudioDecoding.Shared;
 
-/// <summary>Discards preroll and crops decoded PCM/FLAC before resampling.</summary>
+/// <summary>Discards preroll and crops the lossless source before resampling.</summary>
 internal sealed unsafe class PcmSampleRange
 {
     private readonly AudioSampleRange _range;
     private readonly long _streamStart;
+    private readonly bool _ape;
     private long _nextSample;
+    private long _endSample;
+    private long? _decodedEnd;
 
-    internal PcmSampleRange(AudioSampleRange range, AVFormatContext* format, AVStream* stream, bool canSeek)
+    internal PcmSampleRange(AudioSampleRange range, AVFormatContext* format, AVStream* stream, string path, bool canSeek)
     {
         range.Validate();
-        var parameters = stream->codecpar;
-        string? container = Marshal.PtrToStringAnsi((nint)format->iformat->name);
-        var codec = ffmpeg.avcodec_descriptor_get(parameters->codec_id);
-        bool supported = container == "flac" && parameters->codec_id == AVCodecID.AV_CODEC_ID_FLAC
-            || container == "wav" && codec != null && Marshal.PtrToStringAnsi((nint)codec->name)?.StartsWith("pcm_", StringComparison.Ordinal) == true;
-        if (!canSeek || !supported || parameters->sample_rate != range.SampleRate
-            || (long)stream->time_base.num * range.SampleRate != stream->time_base.den
-            || stream->duration < range.EndSample)
+        if (!canSeek || stream->codecpar->sample_rate != range.SampleRate
+            || !CuePcmSource.TryGetSampleCount(format, stream, path, out long totalSamples)
+            || totalSamples < range.EndSample)
             throw new IOException("The audio stream cannot provide the requested sample range.");
 
         _range = range;
         _streamStart = stream->start_time == ffmpeg.AV_NOPTS_VALUE ? 0 : stream->start_time;
+        _ape = stream->codecpar->codec_id == AVCodecID.AV_CODEC_ID_APE;
         _nextSample = range.StartSample;
+        _endSample = range.EndSample;
     }
 
-    internal bool EndReached => _nextSample == _range.EndSample;
+    internal bool EndReached => _nextSample == _endSample;
 
-    internal bool Seek(AVFormatContext* format, int streamIndex, long sample)
+    internal bool Seek(AVFormatContext* format, int streamIndex, long sample, long? endSample = null)
     {
-        sample = Math.Clamp(sample, _range.StartSample, _range.EndSample);
+        long end = endSample ?? _range.EndSample;
+        if (end < _range.StartSample || end > _range.EndSample)
+            throw new ArgumentOutOfRangeException(nameof(endSample));
+        sample = Math.Clamp(sample, _range.StartSample, end);
         // Seeking to the exclusive endpoint needs no input packet, even at physical EOF.
-        if (sample != _range.EndSample)
+        if (sample != end)
         {
             // Unindexed FLAC may fail to resolve a timestamp near EOF. Retry from earlier
             // packets and discard preroll using decoded timestamps, keeping the target exact.
@@ -49,7 +51,9 @@ internal sealed unsafe class PcmSampleRange
                     : preroll > sample / 4 ? sample : preroll * 4;
             }
         }
+        _decodedEnd = null;
         _nextSample = sample;
+        _endSample = end;
         return true;
     }
 
@@ -58,17 +62,21 @@ internal sealed unsafe class PcmSampleRange
         skip = take = 0;
         if (EndReached) return;
         long timestamp = frame->best_effort_timestamp;
-        if (timestamp == ffmpeg.AV_NOPTS_VALUE || frame->sample_rate != _range.SampleRate)
-            throw new IOException("A decoded frame did not report its source sample position.");
+        if (frame->sample_rate != _range.SampleRate || frame->nb_samples <= 0)
+            throw new IOException("A decoded frame did not match the source sample rate.");
 
-        long start = checked(timestamp - _streamStart);
+        // The APE decoder emits multiple frames per packet. Only the first frame carries the packet timestamp.
+        long start = timestamp != ffmpeg.AV_NOPTS_VALUE ? checked(timestamp - _streamStart)
+            : _ape && _decodedEnd is { } previousEnd ? previousEnd
+            : throw new IOException("A decoded frame did not report its source sample position.");
         long end = checked(start + frame->nb_samples);
+        _decodedEnd = end;
         if (end <= _nextSample) return;
         if (start > _nextSample)
             throw new IOException("Decoded audio skipped samples in the requested range.");
 
         skip = (int)(_nextSample - start);
-        take = (int)Math.Min(end - _nextSample, _range.EndSample - _nextSample);
+        take = (int)Math.Min(end - _nextSample, _endSample - _nextSample);
         _nextSample += take;
     }
 

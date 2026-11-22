@@ -99,7 +99,7 @@ public sealed partial class PlaybackEngine
             CancelGapless();
             if (request.Epoch != _session?.TimelineEpoch || !IsPlaying || _dspSettings?.GaplessPlayback != true
                 || _session is not { Kind: RenderKind.Pcm } || _gaplessSource == null
-                || ExperimentalAtmosPassthrough && request.SampleRange == null || _currentStream != Guid.Empty
+                || RequiresAtmosSelection(request) || _currentStream != Guid.Empty
                 || !Path.IsPathFullyQualified(request.Path)) return false;
             _gaplessPreloader ??= new(_streamLock, OpenGaplessSession, PublishGaplessSession);
             _gaplessPreloader.SetPlan(request);
@@ -137,7 +137,7 @@ public sealed partial class PlaybackEngine
 
         bool sameManual = SameTransition(_lastManualTransition, request);
         if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping || !IsPlaying || Volatile.Read(ref _fadeBusy) != 0
-            || _output is not { IsFailed: false } || _currentStream != Guid.Empty || ExperimentalAtmosPassthrough
+            || _output is not { IsFailed: false } || _currentStream != Guid.Empty || RequiresAtmosSelection(request)
             || _session is not { Kind: RenderKind.Pcm, DecodeFailure: null } current || request.Epoch != current.TimelineEpoch
             || _gaplessSource is not { } source || request.Token <= 0 || !sameManual && !Path.IsPathFullyQualified(request.Path)
             || _dspSettings is not { GaplessPlayback: true, TransitionStyle: TrackTransitionStyle.Crossfade or TrackTransitionStyle.Smart } settings)
@@ -182,6 +182,10 @@ public sealed partial class PlaybackEngine
 
     private static bool SameTransition(GaplessRequest? plan, GaplessRequest request) =>
         plan != null && plan.Epoch == request.Epoch && plan.Token == request.Token && plan.Input == request.Input;
+
+    // A ranged target is always PCM. An entire file may need Atmos probing on normal playback.
+    private bool RequiresAtmosSelection(GaplessRequest request) =>
+        ExperimentalAtmosPassthrough && !request.SampleRange.HasValue;
 
     private bool HasCommittedTransition(GaplessRequest request) =>
         request.Token == _currentGaplessToken && _session?.TimelineEpoch == _committedGaplessEpoch

@@ -51,6 +51,10 @@ $probe = '_tools/AudioPlayerSmokeTest/bin/Release/net11.0/AudioPlayerSmokeTest.e
 
 验证曲中按「下一首」时，将第一首换成 30 秒的文件，并添加 `--transition-now`。探针会在距曲尾至少 15 秒时请求过渡，检查交接时间、下一首已混入的进度及最终结束通知。添加 `--queue-first` 可复测已提交下一首计划的路径。
 
+## CUE 与普通曲目的过渡
+
+`& $probe $player . --cue-transitions` 使用临时 WAV 和静音的共享 WASAPI 输出，检查同镜像相邻子轨的自然衔接、子轨与普通曲目的双向交叉淡化、开启实验性 Atmos 时的手动下一首，以及不同采样率回退后的曲终与普通起播。
+
 ## 独占设备的异采样率切歌
 
 准备两个时长不同且至少 20 秒的静音双声道 PCM WAV，使用 44.1 kHz 与 48 kHz，或设备均支持的另一组采样率。传入同一个发布目录下的 NativeAOT 播放器，保留随包分发的原生库。先列出设备，再用名称中的唯一片段选定一个实际端点或驱动。

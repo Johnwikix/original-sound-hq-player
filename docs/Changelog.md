@@ -1,3 +1,10 @@
+## 2026-11-22 扩展本地 CUE 分轨格式并修复跨曲过渡
+
+- `Services/CueSheetReader.cs`、`External/AudioPlayer/Decode` 新增 PCM AIFF/AIFC、ALAC M4A、可定位 APE 和无损 PCM WavPack 整轨，按源采样计算每轨区间，并以实际编码和位深参与版本排序。格式不支持的新清单保留普通歌曲入口。
+- `Services/PlaybackCoordinator*`、`External/AudioPlayer/Playback` 修复实验性 Atmos 开启时手动切入 PCM 子轨的淡化，以及子轨切到普通歌曲后旧进度覆盖新曲时钟的问题。
+- `AudioConverters/FFmpegAudioConverter.cs`、`External/AudioAnalysisWorker` 让导出、音乐分析与声谱图使用与播放一致的区间；高精度 CUE 子轨导出 WAV 时保留整数或浮点样本。
+- `Helper/UsbExport*`、`Helper/UsbWriterHelper.cs` 统一 USB 默认编码和文件冲突检查，ALAC 子轨可导出为 M4A，APE、AIFF/AIFC、WV 可导出为 FLAC，超过 24 位的子轨默认使用 WAV。
+
 ## 2026-11-22 本地 CUE 整轨专辑与目录封面
 
 - `Services`、`Model/Music.cs` 支持把同目录 FLAC/WAV 镜像按外置 CUE 的轨序、标签和采样边界入库，保留曲目身份与旧整轨引用。

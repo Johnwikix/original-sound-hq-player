@@ -42,6 +42,7 @@ try
     await AutomaticLinkChecks.RunAsync(root);
     ToolUtils.ScanCueSources = true;
     await CueFolderChecks.RunAsync(root);
+    await CueFolderChecks.CheckAdditionalFormatsAsync(root);
 }
 catch (Exception exception) { Console.WriteLine(exception); throw; }
 finally
