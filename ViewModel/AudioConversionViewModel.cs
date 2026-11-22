@@ -131,7 +131,7 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
 
     private async Task ConvertSingleFile(Music music, string targetFormat, int bitrate, Action onCommitted)
     {
-        if (music.Extension.Equals(targetFormat, StringComparison.OrdinalIgnoreCase))
+        if (!music.IsCueTrack && music.Extension.Equals(targetFormat, StringComparison.OrdinalIgnoreCase))
         {
             UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
             return;

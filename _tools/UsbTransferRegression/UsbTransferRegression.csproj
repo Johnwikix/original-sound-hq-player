@@ -7,6 +7,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs" />
+    <Compile Include="../../Services/UsbDeviceMusicPresence.cs" />
+
     <Compile Include="../../Reader/UsbStorageDeviceReader.cs" Link="UsbStorageDeviceReader.cs" />
     <Compile Include="../../Model/UsbStorageDevice.cs" Link="UsbStorageDevice.cs" />
     <Compile Include="../../Model/UsbDeviceMusic.cs;../../Model/LyricsDocument.cs" />

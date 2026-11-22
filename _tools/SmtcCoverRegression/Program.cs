@@ -66,6 +66,7 @@ using (var pngStream = pngFile.AsRandomAccessStream())
 }
 Console.WriteLine("PASS: JPEG EXIF 旋转与 PNG 透明度");
 
+await CheckDirectoryCoverAsync(fixtures, jpeg, png);
 File.Delete(shared);
 var merged = await Task.WhenAll(PlaybackCoverImage.GetOrCreateAsync(large, default),
     PlaybackCoverImage.GetOrCreateAsync(large, default));
@@ -288,4 +289,33 @@ static async Task Measure(string name, Func<Task> operation)
 static void Check(bool condition, string message)
 {
     if (!condition) throw new Exception(message);
+}
+
+static async Task CheckDirectoryCoverAsync(string fixtures, string jpeg, string png)
+{
+    string dir = Path.Combine(fixtures, "cue-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(dir);
+    try
+    {
+        var music = new WinUIMusicPlayer.Model.Music { Path = Path.Combine(dir, "image.flac") };
+        string cover = Path.Combine(dir, "cover.jpg");
+        File.Copy(jpeg, Path.Combine(dir, "back.jpg"));
+        Check(WinUIMusicPlayer.Utils.LocalCoverSource.GetRevision(dir, true, default) == "", "Back cover excluded");
+        File.Copy(jpeg, cover);
+        File.Copy(png, Path.Combine(dir, "folder.png"));
+        string stamp = WinUIMusicPlayer.Utils.LocalCoverSource.GetRevision(dir, true, default);
+        int opens = 0;
+        byte[] Embedded(WinUIMusicPlayer.Model.Music _) { Interlocked.Increment(ref opens); return []; }
+        var reads = await Task.WhenAll(Enumerable.Range(0, 9).Select(_ =>
+            WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, stamp, Embedded, default)));
+        Check(opens == 1 && reads.All(b => b.AsSpan().SequenceEqual(File.ReadAllBytes(jpeg))), "Nine CUE tracks share one read of the front cover");
+        var time = File.GetLastWriteTimeUtc(cover);
+        File.WriteAllBytes(cover, new byte[new FileInfo(cover).Length]);
+        File.SetLastWriteTimeUtc(cover, time);
+        string replaced = WinUIMusicPlayer.Utils.LocalCoverSource.GetRevision(dir, true, default);
+        Check(replaced != stamp, "Equal-size replacement with preserved timestamp invalidates artwork");
+        var fallback = await WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, replaced, Embedded, default);
+        Check(fallback.AsSpan().SequenceEqual(File.ReadAllBytes(png)), "Damaged front cover falls back to folder.png");
+    }
+    finally { Directory.Delete(dir, true); }
 }

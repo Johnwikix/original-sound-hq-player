@@ -8,6 +8,6 @@
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="z440.atl.core" Version="7.18.0" />
     <Compile Include="../../Model/Music.cs;../../Model/AdditionalMusicMetadata.cs;../../Model/PendingMetadataWrite.cs;../../Model/LyricsDocument.cs" />
-    <Compile Include="../../Utils/AudioMetadataTags.cs;../../Services/MusicMetadataStorage.cs;../../ViewModel/Controls/MusicMetadataEditorViewModel.cs" />
+    <Compile Include="../../Utils/AudioMetadataTags.cs;../../Utils/MusicPlaylistFile.cs;../../Services/MusicMetadataStorage.cs;../../Services/CueMetadataOverrides.cs;../../ViewModel/Controls/MusicMetadataEditorViewModel.cs" />
   </ItemGroup>
 </Project>

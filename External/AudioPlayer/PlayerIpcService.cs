@@ -157,7 +157,7 @@ public class PlayerIpcService : IDisposable
         WriteEmptyResponse(MessageTypeId.Success);
         try
         {
-            if (commandId != CommandId.TransitionNow) _engine!.SynchronizeGapless();
+            if (commandId is not (CommandId.TransitionNow or CommandId.TransitionNowAudioInput)) _engine!.SynchronizeGapless();
             switch (commandId)
             {
                 case CommandId.Play:
@@ -172,6 +172,12 @@ public class PlayerIpcService : IDisposable
                     _engine!.PlayMusic(url, playbackId);
                     break;
                 }
+                case CommandId.PlayAudioInput:
+                {
+                    var (playbackId, input) = AudioInputProtocol.ReadOccurrence(payload);
+                    _engine!.PlayMusic(input, playbackId);
+                    break;
+                }
                 case CommandId.PlayButton:
                     _engine!.PlayButton();
                     WritePlayStateResponsePayload(_engine.IsPlaying);
@@ -179,10 +185,13 @@ public class PlayerIpcService : IDisposable
                 case CommandId.SetMusicUrl:
                 {
                     var req = BinarySerializer.ReadSetMusicUrlRequest(payload);
-                    _engine!.MusicUrl = req.Url ?? string.Empty;
+                    _engine!.SetAudioInput(new(req.Url ?? string.Empty));
                     WriteEmptyResponse(MessageTypeId.Success);
                     break;
                 }
+                case CommandId.SetAudioInput:
+                    _engine!.SetAudioInput(AudioInputProtocol.Read(payload));
+                    break;
                 case CommandId.GetTimeProgress:
                 {
                     var (curMs, totalMs) = _engine!.GetTimeProgress();
@@ -221,8 +230,10 @@ public class PlayerIpcService : IDisposable
                     break;
                 }
                 case CommandId.QueueNext:
+                case CommandId.QueueNextAudioInput:
                 {
-                    if (!_engine!.TryQueueNext(GaplessRequest.Read(payload)))
+                    var request = commandId == CommandId.QueueNextAudioInput ? GaplessRequest.ReadRanged(payload) : GaplessRequest.Read(payload);
+                    if (!_engine!.TryQueueNext(request))
                     {
                         WriteEmptyResponse(MessageTypeId.Failed);
                         break;
@@ -235,9 +246,12 @@ public class PlayerIpcService : IDisposable
                     break;
                 }
                 case CommandId.TransitionNow:
+                case CommandId.TransitionNowAudioInput:
                 {
                     TransitionNowStatus status;
-                    if (payload.Length == TransitionNowQuery.Size)
+                    if (commandId == CommandId.TransitionNowAudioInput)
+                        status = _engine!.TryTransitionNow(GaplessRequest.ReadRanged(payload));
+                    else if (payload.Length == TransitionNowQuery.Size)
                     {
                         var (epoch, token) = TransitionNowQuery.Read(payload);
                         status = _engine!.GetTransitionNowStatus(epoch, token);
@@ -403,6 +417,13 @@ public class PlayerIpcService : IDisposable
         Span<byte> payload = stackalloc byte[PlaybackEnded.Size];
         ended.Write(payload);
         SendNotification(MessageTypeId.PlayEnded, payload);
+    }
+
+    public void PlaybackFailure(long playbackId)
+    {
+        Span<byte> payload = stackalloc byte[sizeof(long)];
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(payload, playbackId);
+        SendNotification(MessageTypeId.PlaybackFailed, payload);
     }
 
     public void Dispose()

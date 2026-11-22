@@ -27,5 +27,5 @@ internal static class ActivationFileResolver
     }
 
     private static bool IsPlayable(string path) => path.Length > 0 &&
-        MusicFileTypes.Contains(Path.GetExtension(path)) && File.Exists(path);
+        MusicFileTypes.CanOpen(Path.GetExtension(path)) && File.Exists(path);
 }

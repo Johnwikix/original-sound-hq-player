@@ -11,6 +11,15 @@ namespace WinUIMusicPlayer
 }
 namespace WinUIMusicPlayer.Model
 {
+    internal sealed class Music
+    {
+        public string Path { get; init; } = "";
+        public string ImageHash { get; set; } = "";
+        public string CoverOverridePath { get; set; } = "";
+        public long CoverAudioWriteTicks { get; set; }
+        public string CoverSourceStamp { get; set; } = "";
+        public bool IsRemote => false;
+    }
     internal static class AppData { internal static bool IsPlaying => false; }
 }
 namespace WinUIMusicPlayer.ViewModel { internal sealed class NamespaceMarker; }

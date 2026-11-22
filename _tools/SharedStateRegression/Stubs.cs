@@ -4,6 +4,11 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed record Music(int Id, string Path) : System.ComponentModel.INotifyPropertyChanged
     {
+        public string LocalTrackKey => Path;
+        public bool IsCueTrack => CueTrackNo > 0;
+        public bool IsCueContainer { get; set; }
+        public string CuePath { get; set; } = "";
+        public int CueTrackNo { get; set; }
         public int SongId { get; init; }
         public int? SongPreferredMusicId { get; init; }
         public bool IsMissing { get; set; }
@@ -95,13 +100,12 @@ namespace WinUIMusicPlayer.Services
 {
     public sealed class AudioConverterService
     {
-        public event EventHandler<double>? updateProgress;
         public bool Succeed { get; set; }
         public static string GetExtensionForFormat(string format) => format;
-        public async Task<bool> ConvertForExportAsync(Model.Music music, string path, string format, int rate)
+        public async Task<bool> ConvertForExportAsync(Model.Music music, string path, string format, int rate, bool overwrite = true, Action<double>? reportProgress = null)
         {
             await Task.Yield();
-            updateProgress?.Invoke(this, 100);
+            reportProgress?.Invoke(100);
             if (Succeed) await File.WriteAllTextAsync(path, "converted");
             return Succeed;
         }
@@ -136,7 +140,7 @@ namespace WinUIMusicPlayer.Helper
             OpenCalls++;
             throw OpenError ?? new NotSupportedException("Use UsbTransferRegression for MTP integration.");
         }
-        public Task CopyAsync(string source) => throw new NotSupportedException();
+        public Task CopyAsync(string source, bool overwrite = true) => throw new NotSupportedException();
         public Task<Model.UsbFileFingerprint> GetLastCopiedFingerprintAsync() => throw new NotSupportedException();
         public Task DeleteFileIfExistsAsync(string name) => throw new NotSupportedException();
         public void Dispose() { }

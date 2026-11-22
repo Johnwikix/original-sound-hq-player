@@ -45,7 +45,7 @@ public sealed class LyricsOnlineSearch(MusicDatabaseService database, LrcService
 
     public async Task<LyricsDocument?> SearchAsync(Music music, bool force, CancellationToken token)
     {
-        music = new Music { Id = music.Id, Path = music.Path, Title = music.Title ?? "", Author = music.Author ?? "",
+        music = new Music { Id = music.Id, CueTrackNo = music.CueTrackNo, CuePath = music.CuePath, Path = music.Path, Title = music.Title ?? "", Author = music.Author ?? "",
             Album = music.Album ?? "", Duration = music.Duration, IsLrcSearched = music.IsLrcSearched, IsKrcSearched = music.IsKrcSearched };
         CancellationToken callerToken = token;
         CancellationTokenSource linked;
@@ -66,7 +66,7 @@ public sealed class LyricsOnlineSearch(MusicDatabaseService database, LrcService
             {
                 token.ThrowIfCancellationRequested();
                 string channel = Channels[i];
-                string key = music.Path + "|" + channel;
+                string key = music.LocalTrackKey + "|" + channel;
                 var search = music.Id > 0 ? await database.Lyrics.GetSearchAsync(music.Id, channel).ConfigureAwait(false)
                     : _external.GetValueOrDefault(key);
                 if (search is null && (i == 0 ? music.IsKrcSearched : music.IsLrcSearched))

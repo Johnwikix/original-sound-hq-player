@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using BassPlayerIpc.Shared;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -156,7 +157,7 @@ public sealed class AudioAnalysisService(MusicDatabaseService database, RemoteAu
                 {
                     if (new DriveInfo(Path.GetPathRoot(path)!).DriveType == DriveType.Network) continue;
                     info = new(path);
-                    if (!info.Exists) continue;
+                    if (!source.MatchesFile(info)) continue;
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { continue; }
                 discovered++;
@@ -172,12 +173,12 @@ public sealed class AudioAnalysisService(MusicDatabaseService database, RemoteAu
                 var record = new AnalysisRecord { MusicId = source.Id, SourceKey = source.SourceKey, Fingerprint = fingerprint };
                 try
                 {
-                    float[] features = await worker.AnalyzeAsync(path, batch.Token).ConfigureAwait(false);
+                    float[] features = await worker.AnalyzeAsync(new AudioInput(path, source.SampleRange), batch.Token).ConfigureAwait(false);
                     batch.Token.ThrowIfCancellationRequested();
                     info.Refresh();
                     // 在途删除、修改、换来源和缓存清理不得提交迟到结果。
                     var current = await database.Analysis.FindSourceAsync(source.Id).ConfigureAwait(false);
-                    if (current is null || current.SourceKey != source.SourceKey || !info.Exists ||
+                    if (current is null || current.SourceKey != source.SourceKey || !current.MatchesFile(info) ||
                         (source.SourceId != 0 && lease?.IsCurrent != true) || fingerprint != Fingerprint(source, info)) continue;
                     record.Data = MemoryMarshal.AsBytes(features.AsSpan()).ToArray();
                     completed++;

@@ -50,6 +50,7 @@ internal sealed class PcmEffects : IDisposable
     private LoudnessStatus _status;
     private CancellationTokenSource? _scan;
     private string? _path;
+    private AudioSampleRange? _sampleRange;
     private PlaybackSource? _source;
     private int _dsdRate, _dsdGain;
     private uint _channelMask;
@@ -84,10 +85,12 @@ internal sealed class PcmEffects : IDisposable
         _parameterStep = 1.0 / Math.Max(1, rate / 50);
     }
 
-    internal void SetFile(string path, int dsdRate, int dsdGain, PlaybackSource? source = null, uint channelMask = 0)
+    internal void SetFile(string path, int dsdRate, int dsdGain, PlaybackSource? source = null, uint channelMask = 0,
+        AudioSampleRange? sampleRange = null)
     {
         _channelMask = channelMask;
         _path = path; _dsdRate = dsdRate; _dsdGain = dsdGain; _source = source;
+        _sampleRange = sampleRange;
     }
 
     internal void Configure(DspSettings settings)
@@ -222,7 +225,8 @@ internal sealed class PcmEffects : IDisposable
         bool failed = false, changed = false;
         try
         {
-            result = await LoudnessScanner.ScanAsync(_path!, _rate, _channels, _dsdRate, _dsdGain, scan.Token, source: _source, channelMask: _channelMask).ConfigureAwait(false);
+            result = await LoudnessScanner.ScanAsync(_path!, _rate, _channels, _dsdRate, _dsdGain, scan.Token, source: _source,
+                channelMask: _channelMask, sampleRange: _sampleRange).ConfigureAwait(false);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) { failed = true; Console.WriteLine($"[loudness] analysis failed: {ex.Message}"); }

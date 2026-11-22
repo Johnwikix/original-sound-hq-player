@@ -1,3 +1,4 @@
+using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.AudioAnalysis;
 using WinUIMusicPlayer.Services.AudioAnalysis;
 
@@ -71,6 +72,28 @@ var cached = await service.AnalyzeAsync(input, 2048, progress, CancellationToken
 Check(ReferenceEquals(cached, await service.AnalyzeAsync(input, 2048, progress, CancellationToken.None)), "completed spectra reuse the same file-version cache entry");
 File.SetLastWriteTimeUtc(fixture, File.GetLastWriteTimeUtc(fixture).AddSeconds(2));
 Check(!ReferenceEquals(cached, await service.AnalyzeAsync(input, 2048, progress, CancellationToken.None)), "file changes invalidate cached spectra");
+string cueAudio = Path.Combine(AppContext.BaseDirectory, "spectrum-cue-fixture.wav");
+string sliced = Path.Combine(AppContext.BaseDirectory, "spectrum-slice-fixture.wav");
+const int cueRate = 48000;
+byte[] beforeTrack = Pcm(cueRate, 1, 375, false);
+byte[] afterTrack = Pcm(cueRate, 1, 1875, true);
+Wave(cueAudio, cueRate, [.. beforeTrack, .. afterTrack]);
+const int preroll = 13, trimmedTail = 27;
+Wave(sliced, cueRate, afterTrack.AsSpan(preroll * 4, afterTrack.Length - (preroll + trimmedTail) * 4).ToArray());
+var cueInput = new WinUIMusicPlayer.Services.SpectrogramInput(2, 0, cueAudio, new(0, cueRate, cueRate));
+var first = await service.AnalyzeAsync(cueInput, 2048, progress, CancellationToken.None);
+var secondInput = cueInput with { MusicId = 3, SampleRange = new(cueRate + preroll, cueRate * 2 - trimmedTail, cueRate) };
+var second = await service.AnalyzeAsync(secondInput, 2048, progress, CancellationToken.None);
+var reference = await SpectrogramWorkerClient.AnalyzeAsync(sliced, 2048, null, CancellationToken.None);
+Check(first is not null && second is not null && !ReferenceEquals(first, second)
+    && Math.Abs(Peak(first) * cueRate / 2048d - 375) < 24
+    && second.Duration == reference.Duration && second.Combined.SequenceEqual(reference.Combined)
+    && second.Left.SequenceEqual(reference.Left) && second.Right.SequenceEqual(reference.Right),
+    "same-file CUE spectra use each range and match the independent PCM slice at non-frame-aligned boundaries");
+Check(ReferenceEquals(second, await service.AnalyzeAsync(secondInput, 2048, progress, CancellationToken.None)),
+    "repeated CUE spectra reuse the matching range only");
+File.Delete(cueAudio);
+File.Delete(sliced);
 database.Track = new(2, "/fixture.wav", new FileInfo(fixture).Length, "fixture-version");
 Check(await service.AnalyzeAsync(new(1, 2, "webdav://2/fixture.wav"), 2048, progress, CancellationToken.None) is null,
     "uncached remote songs do not start network downloads");

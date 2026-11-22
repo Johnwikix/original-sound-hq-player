@@ -317,7 +317,7 @@ internal static unsafe partial class Program
                     "Incompatible preloading altered the old ASIO source");
 
                 // Use the same new-session open and old-output reuse decision as Play, then replace only the hardware boundary.
-                using var next = (Session)Invoke(engine, "OpenSession", nextPath, false, null)!;
+                using var next = OpenTestSession(engine, nextPath, false, null)!;
                 Require(next.SampleRate == nextRate && !Reuse(engine, next) && output.SourceSampleRate == firstRate,
                     "Ordinary Play accepted reusing old-rate ASIO buffers for the new source");
                 Invoke(engine, "DisposeSession");

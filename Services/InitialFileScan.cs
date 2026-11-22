@@ -15,7 +15,7 @@ public class InitialFileScan
         {
             var database = App.Services.GetRequiredService<MusicDatabaseService>();
             // 只枚举一次并保存路径，确定分母后复用快照扫描；不提前读取全部文件的元数据。
-            var pending = new List<(string Path, List<string> Files)>();
+            var pending = new List<(string Path, List<ScanDirectory> Directories, int InputCount)>();
             long total = 0;
             foreach (var folder in await database.GetFolders())
             {
@@ -25,14 +25,16 @@ public class InitialFileScan
                 if (folder.IsExternalImport) continue;
                 try
                 {
-                    var files = new List<string>();
-                    foreach (var path in AddFolderService.EnumerateMusicPaths(folder.Path))
+                    var directories = new List<ScanDirectory>();
+                    int count = 0;
+                    foreach (var directory in AddFolderService.EnumerateScanDirectories(folder.Path, recursive: true))
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        files.Add(path);
+                        directories.Add(directory);
+                        count += directory.Audio.Count + directory.Cues.Count;
                     }
-                    pending.Add((folder.Path, files));
-                    total += files.Count;
+                    pending.Add((folder.Path, directories, count));
+                    total += count;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -64,7 +66,7 @@ public class InitialFileScan
                 }
                 try
                 {
-                    changed |= await database.ScanChangedFolderAsync(folder.Path, cancellationToken, folder.Files, Advance) > 0;
+                    changed |= await database.ScanChangedFolderAsync(folder.Path, cancellationToken, folder.Directories, Advance) > 0;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -73,8 +75,8 @@ public class InitialFileScan
                     changed = true;
                 }
                 // 失败目录也结束本轮尝试；取消时不继续推进或发布完成。
-                Advance(folder.Files.Count - folderCompleted);
-                folder.Files.Clear();
+                Advance(folder.InputCount - folderCompleted);
+                folder.Directories.Clear();
             }
             changed |= await Deduplication(cancellationToken);
             // 外部导入对账：删除磁盘上确认缺失的导入行（盘根不可达整组保留）。

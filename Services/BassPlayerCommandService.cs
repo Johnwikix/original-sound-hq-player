@@ -46,7 +46,7 @@ namespace WinUIMusicPlayer.Services
         private void IpcService_NotificationReceived(MessageTypeId typeId, ReadOnlyMemory<byte> payload)
         {
             if (!CanReceive || App.MainWindow is null) return;
-            if (_remote.IsActive && typeId is MessageTypeId.PlayState or MessageTypeId.PlayEnded) return;
+            if (_remote.IsActive && typeId is MessageTypeId.PlayState or MessageTypeId.PlayEnded or MessageTypeId.PlaybackFailed) return;
             if (typeId == MessageTypeId.PlayState)
             {
                 var state = BinarySerializer.ReadPlayStateResponse(payload.Span);
@@ -73,6 +73,15 @@ namespace WinUIMusicPlayer.Services
                     AppViewModel.MarkPlaybackEnded(total);
                     AppViewModel.UpdateProgressTimerUI();
                     _ = coordinator.AdvanceAfterEndAsync();
+                });
+            }
+            else if (typeId == MessageTypeId.PlaybackFailed && payload.Length == sizeof(long))
+            {
+                long playbackId = System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(payload.Span);
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!CanReceive || _remote.IsActive) return;
+                    App.Services.GetRequiredService<PlaybackCoordinator>().LocalPlaybackFailed(playbackId);
                 });
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
@@ -144,7 +153,7 @@ namespace WinUIMusicPlayer.Services
         public void PlayMusic(Music music, long playbackId)
         {
             if (!CanPlay) return;
-            IpcService.Play(music.Path, playbackId);
+            IpcService.Play(PlaybackCoordinator.GetAudioInput(music), playbackId);
             AppViewModel.StartProgressTimer();
         }
 

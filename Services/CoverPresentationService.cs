@@ -78,7 +78,9 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 
         if (!ReferenceEquals(_displayMusic, music))
         {
+            if (_displayMusic is not null) _displayMusic.PropertyChanged -= DisplayCoverChanged;
             _displayMusic = music;
+            if (music is not null) music.PropertyChanged += DisplayCoverChanged;
             _defaultPaletteVersion++;
             if (music is null)
             {
@@ -161,7 +163,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 {
                     string cachedRaw = FindRawCachePath(music.ImageHash);
                     if (File.Exists(cachedRaw) && new FileInfo(cachedRaw).Length > 0 &&
-                        (music.IsRemote || File.GetLastWriteTimeUtc(cachedRaw) > File.GetLastWriteTimeUtc(music.Path)))
+                        LocalCoverSource.IsCacheCurrent(music, cachedRaw))
                         return null;
                 }
                 return await GetRawImage(music, false, token);
@@ -314,6 +316,14 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         }
     }
 
+    private void DisplayCoverChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is not (nameof(Music.CoverSourceStamp) or nameof(Music.CoverOverridePath))) return;
+        if (_disposed || sender is not Music music || !ReferenceEquals(music, _displayMusic)) return;
+        _artworkMusic = null;
+        _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
+    }
+
     public void ThemeChangedUpdateCover()
     {
         if (state.Playback.DisplayedPlaybackMusic is null) return;
@@ -405,6 +415,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         state.Preferences.PropertyChanged -= OnCoverSettingsChanged;
         state.Playback.PropertyChanged -= OnPlaybackChanged;
         _coverPreview = null;
+        if (_displayMusic is not null) _displayMusic.PropertyChanged -= DisplayCoverChanged;
         _displayMusic = _artworkMusic = null;
         state.Presentation.LyricPageBackdrop = default;
     }

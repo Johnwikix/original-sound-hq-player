@@ -62,7 +62,8 @@ public sealed partial class PlaybackEngine
         SetSession(rendered.Current);
         if (request != null && request.Token == rendered.CompletedToken)
         {
-            MusicUrl = request.Path;
+            _requestedInput = _activeInput = request.Input;
+            _hasPendingInput = false;
             _currentGaplessToken = request.Token;
             _activePlaybackId = _requestedPlaybackId = request.Token;
             _committedGaplessEpoch = rendered.Current.TimelineEpoch;
@@ -98,7 +99,7 @@ public sealed partial class PlaybackEngine
             CancelGapless();
             if (request.Epoch != _session?.TimelineEpoch || !IsPlaying || _dspSettings?.GaplessPlayback != true
                 || _session is not { Kind: RenderKind.Pcm } || _gaplessSource == null
-                || ExperimentalAtmosPassthrough || _currentStream != Guid.Empty
+                || ExperimentalAtmosPassthrough && request.SampleRange == null || _currentStream != Guid.Empty
                 || !Path.IsPathFullyQualified(request.Path)) return false;
             _gaplessPreloader ??= new(_streamLock, OpenGaplessSession, PublishGaplessSession);
             _gaplessPreloader.SetPlan(request);
@@ -180,7 +181,7 @@ public sealed partial class PlaybackEngine
     }
 
     private static bool SameTransition(GaplessRequest? plan, GaplessRequest request) =>
-        plan != null && plan.Epoch == request.Epoch && plan.Token == request.Token && string.Equals(plan.Path, request.Path, StringComparison.Ordinal);
+        plan != null && plan.Epoch == request.Epoch && plan.Token == request.Token && plan.Input == request.Input;
 
     private bool HasCommittedTransition(GaplessRequest request) =>
         request.Token == _currentGaplessToken && _session?.TimelineEpoch == _committedGaplessEpoch
@@ -232,7 +233,7 @@ public sealed partial class PlaybackEngine
             playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
             enhancementDeviceRate: preparation.EnhancementDeviceRate, resampleMode: preparation.ResampleMode,
             resampleTargetRate: preparation.ResampleTargetRate, measureTransitionIntro: preparation.MeasureTransitionIntro,
-            requiredPcmFormat: preparation.Current);
+            requiredPcmFormat: preparation.Current, sampleRange: preparation.Request.SampleRange);
     }
 
     // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。
@@ -249,13 +250,17 @@ public sealed partial class PlaybackEngine
             _dspSettings?.CrossfadeMilliseconds ?? DspSettings.DefaultCrossfadeMilliseconds, _manualTransitionPending);
     }
 
-    private static TrackTransitionStyle ResolveTransitionStyle(GaplessRequest request, DspSettings? settings) =>
-        settings?.TransitionStyle switch
+    private TrackTransitionStyle ResolveTransitionStyle(GaplessRequest request, DspSettings? settings)
+    {
+        if (request.PreserveAlbumBoundary && _activeInput is { } active && active.IsImmediatelyFollowedBy(request.Input))
+            return TrackTransitionStyle.Gapless;
+        return settings?.TransitionStyle switch
         {
             TrackTransitionStyle.Crossfade => TrackTransitionStyle.Crossfade,
             TrackTransitionStyle.Smart when !request.PreserveAlbumBoundary => TrackTransitionStyle.Smart,
             _ => TrackTransitionStyle.Gapless,
         };
+    }
 
     // 相对于渲染边界的拼接操作，原子地快照两个借用引用。
     // 在渲染锁外发布目标时，由流锁防止对象被释放。

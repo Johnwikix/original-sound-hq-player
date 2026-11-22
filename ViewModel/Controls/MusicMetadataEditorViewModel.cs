@@ -83,8 +83,8 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
         _source.TrackNumber = snapshot.TrackNumber;
         _source.DiskNumber = snapshot.DiskNumber;
         _source.UpdateTime = snapshot.UpdateTime;
-        _source.CoverOverridePath = snapshot.CoverOverridePath;
         _source.ImageHash = snapshot.ImageHash;
+        _source.CoverOverridePath = snapshot.CoverOverridePath;
         _source.MetadataRevision = snapshot.MetadataRevision;
         Draft.CoverOverridePath = snapshot.CoverOverridePath;
         Draft.ImageHash = snapshot.ImageHash;
@@ -104,7 +104,10 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
         {
             Id = source.Id, SongId = source.SongId, MetadataRevision = source.MetadataRevision,
             SourceId = source.SourceId, Path = source.Path, UpdateTime = source.UpdateTime,
+            CuePath = source.CuePath, CueTrackNo = source.CueTrackNo, IsCueContainer = source.IsCueContainer,
+            StartSample = source.StartSample, EndSample = source.EndSample, SampleRate = source.SampleRate, Duration = source.Duration,
             CoverOverridePath = source.CoverOverridePath, ImageHash = source.ImageHash,
+            CoverAudioWriteTicks = source.CoverAudioWriteTicks, CoverSourceStamp = source.CoverSourceStamp,
             TitleFromFileName = source.TitleFromFileName,
             Title = source.Title,
             Author = source.Author,

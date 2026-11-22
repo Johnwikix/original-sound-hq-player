@@ -14,6 +14,10 @@ namespace WinUIMusicPlayer.Model
         public string Author { get; set; } = "Artist";
         public string Album { get; set; } = "Album";
         public string Path { get; set; } = "";
+        public long CoverAudioWriteTicks { get; set; }
+        public string CoverSourceStamp { get; set; } = "";
+        public string CoverOverridePath { get; set; } = "";
+        public string LocalTrackKey => Path;
         public string ImageHash { get; set; } = "";
         public bool IsRemote { get; set; }
         public int PlayCount { get; set; }

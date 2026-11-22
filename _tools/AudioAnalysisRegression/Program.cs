@@ -1,3 +1,4 @@
+using BassPlayerIpc.Shared;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -48,6 +49,28 @@ await using (var client = new AnalysisWorkerClient())
     catch(OperationCanceledException) { Check(true,"in-flight cancellation waits for worker exit"); }
     data = await client.AnalyzeAsync(source,default);
     Check(data.Length==384,"worker restarts after cancellation");
+    string cueAudio = Path.Combine(root, "cue-mir.wav");
+    string isolatedAudio = Path.Combine(root, "cue-mir-reference.wav");
+    const int rate = 32000;
+    const int joinSample = rate + 37;
+    const int cutoff = rate * 2 - 19;
+    var sourceSamples = new short[rate * 2];
+    for (int i = 0; i < sourceSamples.Length; i++)
+        sourceSamples[i] = (short)(Math.Sin(2 * Math.PI * i * (i < joinSample ? 296 : 1307) / rate) * 14000);
+    SaveWave(cueAudio, sourceSamples);
+    SaveWave(isolatedAudio, sourceSamples.AsSpan(joinSample, cutoff - joinSample));
+    var first = await client.AnalyzeAsync(new AudioInput(cueAudio, new(0, joinSample, rate)), default);
+    var second = await client.AnalyzeAsync(new AudioInput(cueAudio, new(joinSample, cutoff, rate)), default);
+    var independent = await client.AnalyzeAsync(isolatedAudio, default);
+    Check(!first.SequenceEqual(second) && second.SequenceEqual(independent), "CUE MIR windows exclude samples outside the track and match an independent slice");
+
+    static void SaveWave(string path, ReadOnlySpan<short> samples)
+    {
+        using var writer = new BinaryWriter(File.Create(path));
+        writer.Write("RIFF"u8); writer.Write(36 + samples.Length * 2); writer.Write("WAVEfmt "u8); writer.Write(16);
+        writer.Write((short)1); writer.Write((short)1); writer.Write(rate); writer.Write(rate * 2); writer.Write((short)2); writer.Write((short)16);
+        writer.Write("data"u8); writer.Write(samples.Length * 2); writer.Write(MemoryMarshal.AsBytes(samples));
+    }
 }
 var cache = new RemoteAudioCache();
 cache.Configure(true,root,10000000);
@@ -74,13 +97,15 @@ var db=new SQLiteAsyncConnection(Path.Combine(root,"analysis.db"));
 AudioAnalysisService? service=null;
 try
 {
-    await db.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,SourceId INTEGER,Path TEXT,Title TEXT)");
+    await AnalysisTestSchema.CreateMusicAsync(db);
     await db.ExecuteAsync("CREATE TABLE RemoteTrack(MusicId INTEGER PRIMARY KEY,SourceId INTEGER,Href TEXT,Length INTEGER,ETag TEXT,Modified TEXT,Missing INTEGER)");
     await db.ExecuteAsync("CREATE TABLE WebDavSource(Id INTEGER PRIMARY KEY,Enabled INTEGER)");
     var repo=new AnalysisRepository(db); await repo.InitializeAsync();
     Check(await repo.ReadEnabledAsync(),"fresh analysis uses confirmed default");
     await repo.SaveEnabledAsync(false); Check(!await repo.ReadEnabledAsync(),"analysis switch persists");
-    for(int id=1;id<=130;id++) await db.ExecuteAsync("INSERT INTO Music VALUES(?,0,?,?)",id,source,"Track "+id);
+    for(int id=1;id<=130;id++) await db.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title) VALUES(?,0,?,?)",id,source,"Track "+id);
+    await db.ExecuteAsync("UPDATE Music SET IsCueContainer=NULL,CueTrackNo=NULL,CueMappingActive=NULL WHERE Id=1");
+    Check((await repo.FindSourceAsync(1))?.SourceKey == source, "pre-CUE library rows keep their source key when newly added columns are NULL");
     Check((await repo.ReadSourcesAsync(0)).Count==64 && (await repo.ReadSourcesAsync(128)).Count==2,"source scanning uses keyset pagination");
     for(int id=1;id<=16;id++)
     {
@@ -101,13 +126,30 @@ try
         }
     }
     await db.ExecuteAsync("INSERT INTO WebDavSource VALUES(1,1)");
-    await db.ExecuteAsync("INSERT INTO Music VALUES(1000,1,'webdav://1/song','Remote')");
+    await db.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title) VALUES(1000,1,'webdav://1/song','Remote')");
     await db.ExecuteAsync("INSERT INTO RemoteTrack VALUES(1000,1,'/song',4,'v1','',0)");
     var remote=(await repo.ReadSourcesAsync(999)).Single();
     await repo.SaveAsync(new(){MusicId=1000,SourceKey=remote.SourceKey,Data=new byte[1536]});
     Check((await repo.ReadVectorsAsync(999)).Count==1,"current remote version joins feature rows");
     await db.ExecuteAsync("UPDATE RemoteTrack SET ETag='v2' WHERE MusicId=1000");
     Check((await repo.ReadVectorsAsync(999)).Count==0,"changed remote version is excluded from recommendation scores");
+    string cuePath = Path.Combine(root, "cue-identity.wav");
+    const int cueSheetId = 7;
+    await db.ExecuteAsync("INSERT INTO CueSource VALUES(?,?,?,?,?,?)", cueSheetId, cuePath, 1234, 5678, 32000, 64000);
+    await db.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title,IsCueContainer) VALUES(1100,0,?,'Expanded container',1)", cuePath);
+    await db.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title,CueSheetId,CueTrackNo,CueMappingActive,StartSample,EndSample,SampleRate) VALUES(1101,0,?,'Cue One',?,1,1,0,32000,32000)", cuePath, cueSheetId);
+    await db.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title,CueSheetId,CueTrackNo,CueMappingActive,StartSample,EndSample,SampleRate) VALUES(1102,0,?,'Cue Two',?,2,1,32000,64000,32000)", cuePath, cueSheetId);
+    await repo.SaveAsync(new(){MusicId=1100,SourceKey=cuePath,Data=new byte[1536]});
+    var cueSources = await repo.ReadSourcesAsync(1000);
+    Check(cueSources.Count == 2 && cueSources[0].SourceKey != cueSources[1].SourceKey
+        && cueSources[1].SampleRange == new AudioSampleRange(32000, 64000, 32000), "analysis selects the two CUE intervals and excludes the expanded container");
+    foreach (var row in cueSources)
+        await repo.SaveAsync(new(){MusicId=row.Id,SourceKey=row.SourceKey,Data=new byte[1536]});
+    Check((await repo.ReadVectorsAsync(1000)).Count == 2, "recommendations only join current CUE versions");
+    await db.ExecuteAsync("UPDATE Music SET StartSample=32001 WHERE Id=1102");
+    Check((await repo.ReadVectorsAsync(1000)).Single().MusicId == 1101, "an edited CUE interval invalidates its recommendation vector");
+    await db.ExecuteAsync("UPDATE CueSource SET LastWriteUtcTicks=LastWriteUtcTicks+1 WHERE CueSheetId=?", cueSheetId);
+    Check((await repo.ReadVectorsAsync(1000)).Count == 0, "an updated image version invalidates all its CUE vectors");
     var library=new AppViewModel();
     var lifecycle = new AppLifecycle();
     service=new(new(repo),cache,library,NullLogger<AudioAnalysisService>.Instance,lifecycle);

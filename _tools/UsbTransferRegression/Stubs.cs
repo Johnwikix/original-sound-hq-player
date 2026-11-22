@@ -20,8 +20,14 @@ namespace WinUIMusicPlayer.Model
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         public string Extension => System.IO.Path.GetExtension(Path).TrimStart('.');
         public string Title { get; set; } = "测试标题（与文件名不同）";
+        public bool IsCueTrack => CueTrackNo > 0;
+        public string CuePath { get; set; } = "";
+        public int CueTrackNo { get; set; }
+        public int SampleRate { get; set; }
+        public long StartSample { get; set; }
+        public long EndSample { get; set; }
         public bool IsRemote => false;
-        public int TrackNumber => 1;
+        public int TrackNumber => CueTrackNo > 0 ? CueTrackNo : 1;
         public int DiskNumber => 1;
         public int Year => 2026;
     }
@@ -45,7 +51,7 @@ namespace WinUIMusicPlayer.Services
         public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => music.Title == LyricsErrorForTitle
             ? Task.FromException<Model.LyricsDocument>(new IOException("Controlled lyrics read failure")) : Task.FromResult(
             new Model.LyricsDocument(new("[00:00.00]USB regression", Model.LyricsFormat.Lrc), "[00:00.00]翻译", "[00:00.00]pronunciation"));
-        internal Task InstallConvertedFileAsync(string temporaryPath, string outputPath, Action? onCommitted) => throw new InvalidOperationException("USB export must not add staged files to the library.");
+        internal Task InstallConvertedFileAsync(string temporaryPath, string outputPath, Action? onCommitted, bool overwrite = true) => throw new InvalidOperationException("USB export must not add staged files to the library.");
     }
 }
 
@@ -75,6 +81,7 @@ namespace WinUIMusicPlayer.Utils
         public static bool IsMusicFile(string extension) => extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".m4a", StringComparison.OrdinalIgnoreCase);
-        public static Task<byte[]?> GetRawImage(Model.Music music) => Task.FromResult<byte[]?>(null);
+        public static byte[]? CoverBytes { get; set; }
+        public static Task<byte[]?> GetRawImage(Model.Music music) => Task.FromResult(CoverBytes);
     }
 }

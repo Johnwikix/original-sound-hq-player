@@ -43,11 +43,11 @@ public sealed class UsbPortableStorageWriter : IDisposable
         }
     }
 
-    public async Task CopyAsync(string sourcePath)
+    public async Task CopyAsync(string sourcePath, bool overwrite = true)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         var source = await StorageFile.GetFileFromPathAsync(sourcePath);
-        _lastCopiedFile = await source.CopyAsync(_folder, source.Name, NameCollisionOption.ReplaceExisting);
+        _lastCopiedFile = await source.CopyAsync(_folder, source.Name, overwrite ? NameCollisionOption.ReplaceExisting : NameCollisionOption.FailIfExists);
     }
 
     public async Task<UsbFileFingerprint> GetLastCopiedFingerprintAsync()

@@ -19,6 +19,14 @@ string root = Path.Combine(Path.GetTempPath(), "music-metadata-" + Guid.NewGuid(
 Directory.CreateDirectory(root);
 try
 {
+    var playlist = new StringBuilder().AppendLine("#EXTM3U");
+    var segments = Enumerable.Range(1, 2).Select(i => new Music { Id = i, Path = @"D:\Music\whole.flac", CuePath = @"D:\Music\whole.cue", CueMappingActive = true,
+        CueTrackNo = i, StartSample = (i - 1) * 44100, EndSample = i * 44100, SampleRate = 44100 }).ToList();
+    var whole = new Music { Id = 3, Path = segments[0].Path };
+    foreach (var item in segments) MusicPlaylistFile.WriteEntry(playlist, item);
+    MusicPlaylistFile.WriteEntry(playlist, whole);
+    segments.Add(whole);
+    Check(MusicPlaylistFile.Resolve(playlist.ToString(), segments).SequenceEqual(segments), "M3U8 preserves two different CUE ranges and the whole image in order");
     var source = new Music { Id = 1, Path = "test.flac", Title = "original", Author = "artist", PlayCount = 7, IsFavorite = true };
     var editor = new MusicMetadataEditorViewModel(source);
     Check(AdditionalMusicMetadata.From(editor.Draft).IsEmpty, "Missing metadata is empty with no invented labels");
@@ -41,6 +49,19 @@ try
     Check(tags.Matches("cat-001") && !default(AdditionalMusicMetadata).Matches("anything"), "Sparse metadata search handles default nulls and case folding");
 
     var db = new SQLiteAsyncConnection(Path.Combine(root, "old.db"));
+    await CueMetadataOverrides.EnsureSchemaAsync(db);
+    await db.RunInTransactionAsync(connection =>
+    {
+        var before = new Music { Id = 42, CueTrackNo = 2, Title = "CUE title", Author = "原作者", Genre = "Jazz" };
+        var after = new Music { Id = 42, CueTrackNo = 2, Title = "", Author = "我的署名", Genre = "Jazz" };
+        CueMetadataOverrides.Capture(connection, before, after);
+        var scanned = new Music { Id = 42, CueTrackNo = 2, Title = "New title", Genre = "Rock" };
+        CueMetadataOverrides.Apply(connection, scanned);
+        Check(scanned.Title == "" && scanned.Author == "我的署名" && scanned.Genre == "Rock", "CUE explicit clears and manual fields survive new sheet metadata");
+        var sibling = new Music { Id = 43, Title = "Sibling" };
+        CueMetadataOverrides.Apply(connection, sibling);
+        Check(sibling.Title == "Sibling", "Editing a segment leaves sibling metadata independent");
+    });
     await db.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,Path TEXT,Title TEXT,PlayCount INTEGER)");
     await db.ExecuteAsync("CREATE TABLE PendingMetadataWrite(Path TEXT PRIMARY KEY,Title TEXT)");
     await db.ExecuteAsync("INSERT INTO Music VALUES(1,'test.flac','old title',9)");

@@ -451,12 +451,13 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         private async Task OnDeleteAsync()
         {
+            if (SelectedMusics is { Count: > 1 } ? SelectedMusics.Any(static music => !music.CanEditFile) : SelectedMusic?.CanEditFile != true) return;
             if (!await IsDeleteFromDisk()) return;
             if (SelectedMusics.Count > 1)
             {
-                foreach (var item in SelectedMusics)
+                foreach (var item in SelectedMusics.ToArray())
                 {
-                    if (ToolUtils.DeleteFileFromDisk(item.Path))
+                    if (await ToolUtils.DeleteFileFromDiskAsync(item))
                     {
                         AppViewModel.RemoveFromSongsSource(item);
                     }
@@ -464,7 +465,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             }
             else if (SelectedMusic is not null)
             {
-                if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
+                if (await ToolUtils.DeleteFileFromDiskAsync(SelectedMusic))
                 {
                     AppViewModel.RemoveFromSongsSource(SelectedMusic);
                 }

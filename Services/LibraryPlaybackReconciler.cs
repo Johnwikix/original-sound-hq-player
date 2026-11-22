@@ -12,7 +12,7 @@ internal static class LibraryPlaybackReconciler
         for (int i = queue.Count - 1; i >= 0; i--)
         {
             var music = queue[i];
-            if (music.Id == current?.Id) continue;
+            if (music.Id == 0 || music.Id == current?.Id) continue;
             if (songs.TryGetValue(music.Id, out var updated))
             {
                 if (!ReferenceEquals(music, updated)) queue[i] = updated;

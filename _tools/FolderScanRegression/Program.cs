@@ -2,6 +2,12 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using Windows.Storage;
 
+if (args is ["--cue-sample", var cuePath])
+{
+    await CueFolderChecks.CheckSweetIcesCreamAsync(cuePath);
+    return;
+}
+
 await FolderAccessRegression.RunAsync();
 
 string artifactsRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "artifacts"));
@@ -34,6 +40,8 @@ try
     await ReadonlyQueryChecks.RunAsync(root);
     await MetadataRegression.RunAsync(root);
     await AutomaticLinkChecks.RunAsync(root);
+    ToolUtils.ScanCueSources = true;
+    await CueFolderChecks.RunAsync(root);
 }
 catch (Exception exception) { Console.WriteLine(exception); throw; }
 finally

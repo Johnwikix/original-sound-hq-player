@@ -12,6 +12,21 @@ namespace WinUIMusicPlayer.Services.Lyrics;
 
 public static class LyricsFilePolicy
 {
+    internal static string SidecarBase(Music music)
+    {
+        if (!music.IsCueTrack) return music.Path;
+        string title = music.Title ?? "";
+        foreach (char invalid in Path.GetInvalidFileNameChars()) title = title.Replace(invalid, '_');
+        if (title.Length > 100) title = title[..100].TrimEnd();
+        string sheet = Path.GetFileNameWithoutExtension(music.CuePath);
+        if (sheet.Length > 80)
+        {
+            string hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(sheet)));
+            sheet = sheet[..64] + "-" + hash[..12];
+        }
+        return Path.Combine(Path.GetDirectoryName(music.CuePath)!, $"{sheet} - {music.CueTrackNo:00} - {title}.audio");
+    }
+
     public const string DefaultOrder = "krc,qrc,lrc,ttml";
     private static readonly string[] Formats = ["krc", "qrc", "lrc", "ttml"];
 

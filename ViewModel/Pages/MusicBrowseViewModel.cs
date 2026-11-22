@@ -249,7 +249,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void PlayMusicWithFolderQueue(Music music)
         {
             if (!AppViewModel.CanStartPlayback) return;
-            if (string.IsNullOrEmpty(music.FolderPath))
+            if (music.IsCueContainer || string.IsNullOrEmpty(music.FolderPath))
             {
                 _ = _coordinator.PlayAsync(music, exactVersion: true);
                 return;
@@ -260,7 +260,7 @@ namespace WinUIMusicPlayer.ViewModel
             for (int i = 0; i < source.Length; i++)
             {
                 var m = source[i];
-                if (m.SourceId == music.SourceId
+                if (!m.IsCueContainer && !m.IsMissing && m.SourceId == music.SourceId
                     && string.Equals(FolderLocation.Normalize(m.FolderPath, m.SourceId), FolderLocation.Normalize(music.FolderPath, music.SourceId),
                         music.IsRemote ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
                 {
@@ -276,6 +276,16 @@ namespace WinUIMusicPlayer.ViewModel
             // SequentialPlayingList 是唯一状态源：赋值后 CurrentPlayingList 自动跟随（随机模式自动洗牌）。
             AppViewModel.SetBrowseQueue(new(folderSongs), exactFiles: true, sourceScope: music.SourceId);
             _ = _coordinator.PlayAsync(music, exactVersion: true);
+        }
+
+        internal void PlayCueTracks(IReadOnlyList<Music> tracks)
+        {
+            if (!AppViewModel.CanStartPlayback || tracks.Count == 0) return;
+            var resolved = new List<Music>(tracks.Count);
+            foreach (var track in tracks)
+                resolved.Add(track.Id > 0 ? AppViewModel.FindById(track.Id) ?? track : track);
+            AppViewModel.SetBrowseQueue(new(resolved), exactFiles: true, sourceScope: 0);
+            _ = _coordinator.PlayAsync(resolved[0], exactVersion: true);
         }
 
         [RelayCommand]

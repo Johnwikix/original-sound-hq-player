@@ -4,6 +4,10 @@
 		<type fullname="WinUIMusicPlayer.Model.PlayListMusic" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.PlayList" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.Music" preserve="all"/>
+		<type fullname="WinUIMusicPlayer.Services.MusicDatabaseService">
+			<method name="FindCueTrackAsync" />
+			<method name="GetMusicByPhysicalPathAsync" />
+		</type>
 		<type fullname="WinUIMusicPlayer.Model.WebDavSource" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.RemoteTrack" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.WebDavCacheSettings" preserve="all"/>

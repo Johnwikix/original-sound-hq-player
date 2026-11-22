@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.Services
         private readonly AddFolderService addFolderService = new();
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         public Task<Music?> FindMusicByPathAsync(string path) => _dbConnection.FindWithQueryAsync<Music>(
-            "SELECT * FROM Music WHERE IsDetached=0 AND Path = ? COLLATE NOCASE LIMIT 1", path)!;
+            "SELECT * FROM Music WHERE IsDetached=0 AND COALESCE(CueTrackNo,0)=0 AND Path = ? COLLATE NOCASE LIMIT 1", path)!;
         public Lyrics.LyricsRepository Lyrics { get; }
         public SongVersionStore Versions { get; set; } = null!;
         private ViewModel.AppViewModel? AppViewModel => null;
@@ -176,6 +176,8 @@ namespace WinUIMusicPlayer.Services
         public async Task InitializeAsync()
         {
             await _dbConnection.CreateTableAsync<Music>();
+            await CueLibrarySchema.InitializeAsync(_dbConnection);
+            await CueMetadataOverrides.EnsureSchemaAsync(_dbConnection);
             await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
             await _dbConnection.CreateTableAsync<Folder>();
             await _dbConnection.CreateTableAsync<SubFolder>();

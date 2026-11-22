@@ -22,7 +22,7 @@ namespace AudioPlayer.Playback;
 /// - 输出失效（渲染失败）先静默快速恢复，穷尽后如实停机告知——UI 不再随暂态失效闪烁。
 /// 淡入淡出（全 PCM 模式采样精确斜坡）竞态修复：
 /// - 恢复播放递增停机令牌：取消在途的"淡出后延迟 Pause"，不再出现"UI 播放中、实际已停"；
-/// - 换曲淡出单飞行任务 + 最新优先：淡出期间的新 PlayMusic 只更新 MusicUrl，到期切最新，
+/// - 换曲淡出单飞行任务 + 最新优先：淡出期间的新 PlayMusic 只更新请求音源，到期切最新，
 ///   不再被重入保护丢弃；淡出期间被暂停则备好新会话不起播（PlayButton 直接续播新曲）；
 /// - 斜坡 300ms（原 500ms）；WasapiShared 模式增益稳态回 1（音量由会话音量承担，不叠加）。
 /// 独占换曲复用（ASIO 与 WASAPI 独占）：仅同设备、同采样率、同声道的 PCM 换源。
@@ -70,7 +70,7 @@ public sealed partial class PlaybackEngine : IDisposable
     private IAudioOutput? _output;
     private Timer? _endedWatchdog;
     private int _disposed;
-    private int _fadeBusy; // 使用 Interlocked 原子访问：换曲淡出任务单飞行（在途时新请求只更新 MusicUrl）
+    private int _fadeBusy; // 使用 Interlocked 原子访问：换曲淡出任务单飞行
     private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
     private int _pauseFadeToken; // 暂停淡出停机令牌：恢复播放/再次暂停递增，使在途延迟停机作废
     private long _playGen; // 用户操作代数（切歌/换设置/停止递增）：使在途失效恢复计划作废
@@ -98,7 +98,9 @@ public sealed partial class PlaybackEngine : IDisposable
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
     private long _lastProgressSeekId;
-    public string? MusicUrl;
+    private AudioInput? _requestedInput;
+    private AudioInput? _activeInput;
+    private bool _hasPendingInput;
     public int DsdGain = 6;
     public int DsdPcmFreq = 88200;
     private PcmResampleMode EffectiveResampleMode => _dspSettings?.IsEnabled != false ? _dspSettings?.ResampleMode ?? PcmResampleMode.Source : PcmResampleMode.Source;
@@ -169,7 +171,7 @@ public sealed partial class PlaybackEngine : IDisposable
 
     /// <summary>当前会话实际渲染种类（无会话时按设置预判）。</summary>
     private RenderKind EffectiveKind =>
-        _session?.Kind ?? (IsBitstreamActive(MusicUrl)
+        _session?.Kind ?? ((_activeInput ?? _requestedInput) is { SampleRange: null } input && IsBitstreamActive(input.Path)
             ? (OutputMode == "ASIO" ? RenderKind.NativeDsd : RenderKind.Dop)
             : RenderKind.Pcm);
 
@@ -179,67 +181,85 @@ public sealed partial class PlaybackEngine : IDisposable
 
     // ─────────────── 播放控制（IPC 面） ───────────────
 
-    // MusicUrl can already name the next request while the outgoing decoder drains its fade.
+    // The active input stays with its playback ID while the outgoing decoder drains its fade.
     private long _requestedPlaybackId, _activePlaybackId;
 
-    public void PlayMusic(string musicUrl, long playbackId = 0)
+    public void SetAudioInput(AudioInput input)
     {
+        if (input.SampleRange.HasValue) input.Validate();
+        lock (_streamLock)
+        {
+            _requestedInput = input;
+            _requestedPlaybackId = 0;
+            _hasPendingInput = true;
+        }
+    }
+
+    public void PlayMusic(string musicUrl, long playbackId = 0) => PlayMusic(new AudioInput(musicUrl), playbackId);
+
+    public void PlayMusic(AudioInput input, long playbackId)
+    {
+        if (input.SampleRange.HasValue) input.Validate();
         CancelStreams();
         lock (_streamLock)
         {
             AdoptGapless();
             CancelGapless();
             _requestedPlaybackId = playbackId;
-            MusicUrl = musicUrl;
+            _requestedInput = input;
+            _hasPendingInput = true;
             if (IsFadingEnabled && IsPlaying && _session is { Kind: RenderKind.Pcm } && _output is { IsFailed: false })
             {
-                // 换曲淡出：单飞行任务，期间的新请求只更新 MusicUrl（上面已赋值），到期切最新
+                // 换曲淡出完成后读取最新请求。
                 if (Interlocked.CompareExchange(ref _fadeBusy, 1, 0) == 0)
                     Task.Run(FadeOutAndSwitchAsync);
             }
             else
             {
-                SwitchTo(musicUrl);
+                SwitchTo(input);
             }
         }
     }
 
-    private void SwitchTo(string musicUrl)
+    private void SwitchTo(AudioInput input)
     {
-        _activePlaybackId = _requestedPlaybackId;
-        _currentGaplessToken = 0;
         Interlocked.Increment(ref _playGen);
         _recovery = null;
         ResetAtmosAttempt();
         ResetSurroundAttempt();
-        var next = OpenSession(musicUrl); // 先开新会话：复用时旧会话须存活到源替换完成
+        var next = OpenSession(input); // 先开新会话：复用时旧会话须存活到源替换完成
         if (next != null && TryReuseExclusiveOutput(next))
         {
             var old = _session;
+            ActivateRequestedInput(input);
             SetSession(next);
             old?.Dispose(); // 输出已指向新源（回调整周期只认旧快照），旧会话安全释放
             AfterAttachToLiveOutput(resumeIfStopped: true);
             return;
         }
         DisposeSession();
+        ActivateRequestedInput(input);
         SetSession(next);
         if (_session != null) StartOutputAndPlay();
-        else if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); }
+        else
+        {
+            StopAndNotifyLocked();
+            NotifySampleRangeFailure();
+        }
     }
 
     /// <summary>备好新会话但不起播（换曲淡出期间被暂停）：UI 已显示新曲，PlayButton 直接续播新曲。</summary>
-    private void PrepareNext(string url)
+    private void PrepareNext(AudioInput input)
     {
-        _activePlaybackId = _requestedPlaybackId;
-        _currentGaplessToken = 0;
         Interlocked.Increment(ref _playGen);
         _recovery = null;
         ResetAtmosAttempt();
         ResetSurroundAttempt();
-        var next = OpenSession(url);
+        var next = OpenSession(input);
         if (next != null && TryReuseExclusiveOutput(next))
         {
             var old = _session;
+            ActivateRequestedInput(input);
             SetSession(next);
             old?.Dispose();
             next.RequestSeek(0);
@@ -247,8 +267,25 @@ public sealed partial class PlaybackEngine : IDisposable
             return;
         }
         DisposeSession();
+        ActivateRequestedInput(input);
         SetSession(next);
         if (_session != null) _session.RequestSeek(0);
+        else NotifySampleRangeFailure();
+    }
+
+    private void ActivateRequestedInput(AudioInput input)
+    {
+        _activeInput = input;
+        _activePlaybackId = _requestedPlaybackId;
+        _hasPendingInput = false;
+        _currentGaplessToken = 0;
+        _lastProgressSeekId = 0;
+    }
+
+    private void NotifySampleRangeFailure()
+    {
+        if (_activeInput is { SampleRange: not null } && !_hasPendingInput)
+            _ipc?.PlaybackFailure(_activePlaybackId);
     }
 
     /// <summary>
@@ -324,20 +361,21 @@ public sealed partial class PlaybackEngine : IDisposable
     private bool TryRebuildOutput(long positionMs)
     {
         CancelGapless();
-        var url = MusicUrl;
-        if (string.IsNullOrWhiteSpace(url)) return false;
+        if (_activeInput is not { } input || string.IsNullOrWhiteSpace(input.Path)) return false;
         var kind = _session?.Kind;
         DisposeSession();
-        SetSession(OpenSession(url, kindOverride: kind));
+        SetSession(OpenSession(input, kindOverride: kind));
         if (_session == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return false; }
         if (positionMs > 0) _session.RequestSeek(positionMs);
         StartOutputAndPlay(); // 内部按成败发 PlayStateUpdate（仅在状态变化时）
         return IsPlaying && _output != null;
     }
 
-    private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
+    private Session? OpenSession(AudioInput input, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
-        if (_streamSlots.TryGetValue(_currentStream, out var remote) && remote.Source.Location == url)
+        string url = input.Path;
+        bool ranged = input.SampleRange.HasValue;
+        if (!ranged && _streamSlots.TryGetValue(_currentStream, out var remote) && remote.Source.Location == url)
         {
             bool needsMix = forceSharedFormat || (EffectiveEnhancement != SpectralEnhancementMode.Off && IsSharedMode(OutputMode));
             var mix = needsMix ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId) : null;
@@ -348,7 +386,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate,
                 enhancement: EffectiveEnhancement, enhancementDeviceRate: mix?.SampleRate, resampleMode: EffectiveResampleMode, resampleTargetRate: EffectiveResampleTarget);
         }
-        if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
+        if (!ranged && ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
         {
             var encoded = Session.Open(this, url, RenderKind.Eac3, DsdPcmFreq, DsdGain, Latency,
@@ -369,7 +407,7 @@ public sealed partial class PlaybackEngine : IDisposable
         // 回退共享时强制 PCM：位流会话（DoP/NativeDSD）在共享模式必然失败
         // 换曲复用会在旧会话仍存活时打开新会话。EffectiveKind 表示旧会话的实际格式
         //（可能已回退为 PCM/DoP），不能拿它决定新文件的解码/位流路径。
-        var kind = forceSharedFormat ? RenderKind.Pcm : kindOverride
+        var kind = forceSharedFormat || ranged ? RenderKind.Pcm : kindOverride
             ?? (IsBitstreamActive(url)
                 ? (OutputMode == "ASIO" ? RenderKind.NativeDsd : RenderKind.Dop)
                 : RenderKind.Pcm);
@@ -408,7 +446,8 @@ public sealed partial class PlaybackEngine : IDisposable
             && (forceSharedFormat || IsSharedMode(OutputMode)) && enhancementMix == null) return null;
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate,
             enhancement: _atmosUseSharedPcm ? SpectralEnhancementMode.Off : EffectiveEnhancement,
-            enhancementDeviceRate: enhancementMix, resampleMode: EffectiveResampleMode, resampleTargetRate: EffectiveResampleTarget);
+            enhancementDeviceRate: enhancementMix, resampleMode: EffectiveResampleMode, resampleTargetRate: EffectiveResampleTarget,
+            sampleRange: input.SampleRange);
         if (session != null)
         {
             session.ConfigureDsp(_deviceCorrections.Enabled
@@ -454,7 +493,7 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             long position = session.CurrentMs;
             DisposeSession();
-            SetSession(OpenSession(MusicUrl!));
+            SetSession(OpenSession(_activeInput!.Value));
             if (_session == null) { StopAndNotifyLocked(); return; }
             _session.RequestSeek(position);
             session = _session;
@@ -483,7 +522,7 @@ public sealed partial class PlaybackEngine : IDisposable
             Console.WriteLine("[engine] asio native dsd failed, retry as dop");
             long keepMs = session.CurrentMs;
             DisposeSession();
-            SetSession(OpenSession(MusicUrl!, kindOverride: RenderKind.Dop));
+            SetSession(OpenSession(_activeInput!.Value, kindOverride: RenderKind.Dop));
             if (_session != null)
             {
                 _session.RequestSeek(keepMs);
@@ -497,7 +536,7 @@ public sealed partial class PlaybackEngine : IDisposable
             Console.WriteLine("[engine] primary output failed, fallback to shared");
             long keepMs = session.CurrentMs; // 回退重建会话必须保留位置（否则从头播放）
             DisposeSession();
-            SetSession(OpenSession(MusicUrl!, forceSharedFormat: true));
+            SetSession(OpenSession(_activeInput!.Value, forceSharedFormat: true));
             if (_session == null) { StopAndNotifyLocked(); return; }
             _session.RequestSeek(keepMs);
             output = CreateSharedOutput(_session);
@@ -574,11 +613,10 @@ public sealed partial class PlaybackEngine : IDisposable
             // 直传被拒（罕见）：退回旧路径——会话按端点混音格式重建后重试
             Console.WriteLine("[engine] autoconvert rejected, rebuild session at mix format");
             long keepMs = session.CurrentMs;
-            var url = MusicUrl;
             output.Dispose();
-            if (string.IsNullOrWhiteSpace(url)) return null;
+            if (_activeInput is not { } input || string.IsNullOrWhiteSpace(input.Path)) return null;
             DisposeSession();
-            SetSession(OpenSession(url, forceSharedFormat: true));
+            SetSession(OpenSession(input, forceSharedFormat: true));
             if (_session == null) return null;
             _session.RequestSeek(keepMs);
             var retry = new WasapiOutput(false, false);
@@ -623,11 +661,10 @@ public sealed partial class PlaybackEngine : IDisposable
         var session = _session;
         if (session == null) return false;
         if (session.Kind == RenderKind.Pcm && (_atmosUseSharedPcm || IsSharedMode(OutputMode))) return SwapSharedOutput();
-        var url = MusicUrl;
-        if (string.IsNullOrWhiteSpace(url)) return false;
+        if (_activeInput is not { } input || string.IsNullOrWhiteSpace(input.Path)) return false;
         var kind = session.Kind;
         DisposeSession();
-        SetSession(OpenSession(url, kindOverride: kind));
+        SetSession(OpenSession(input, kindOverride: kind));
         if (_session == null) return false;
         if (positionMs > 0) _session.RequestSeek(positionMs);
         StartOutputAndPlay();
@@ -702,11 +739,11 @@ public sealed partial class PlaybackEngine : IDisposable
         // 延迟任务到点仍会 Pause 掉刚恢复的输出 → UI 播放中、实际静音
         _pauseFadeToken++;
         _pauseFadeActive = false;
-        if (_session == null)
+        if (_session == null || _hasPendingInput && Volatile.Read(ref _fadeBusy) == 0)
         {
-            if (!string.IsNullOrWhiteSpace(MusicUrl))
+            if (_requestedInput is { } input && !string.IsNullOrWhiteSpace(input.Path))
             {
-                SwitchTo(MusicUrl);
+                SwitchTo(input);
                 return;
             }
         }
@@ -725,6 +762,7 @@ public sealed partial class PlaybackEngine : IDisposable
         }
         else
         {
+            if (_activeInput is { SampleRange: not null } && _session.IsDrained) _session.RequestSeek(0);
             _output.Resume();
             if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
                 _session.Gain.RampTo(GainVolumeTarget, FadeMs);
@@ -735,7 +773,7 @@ public sealed partial class PlaybackEngine : IDisposable
 
     /// <summary>
     /// 换曲淡出（bass 规则：剩余&lt;3s 或时长未知跳过；时长 min(剩余/2,300)ms）。单飞行任务：
-    /// ① 淡出期间的新 PlayMusic 只更新 MusicUrl（最新优先），本任务到期切到最新——旧实现
+    /// ① 淡出期间的新 PlayMusic 只更新请求音源（最新优先），本任务到期切到最新——旧实现
     /// 会被重入保护直接丢弃，造成"UI 显示新曲、实际继续播旧曲"；② 淡出期间被暂停时备好
     /// 新会话不起播，PlayButton 直接续播新曲。
     /// </summary>
@@ -748,16 +786,24 @@ public sealed partial class PlaybackEngine : IDisposable
             long switchGeneration;
             lock (_streamLock)
             {
-                if (_session is not { Kind: RenderKind.Pcm, Gain: not null } || _output is not { IsFailed: false })
+                if (_disposed != 0 || !_hasPendingInput || _requestedInput is not { } input)
                 {
                     Interlocked.Exchange(ref _fadeBusy, 0);
-                    return; // 会话已被其他操作换掉/释放：MusicUrl 保留，后续 Play 会起播
+                    return;
+                }
+                if (_session is not { Kind: RenderKind.Pcm, Gain: not null } || _output is not { IsFailed: false })
+                {
+                    if (IsPlaying) SwitchTo(input);
+                    else if (_session != null) PrepareNext(input);
+                    Interlocked.Exchange(ref _fadeBusy, 0);
+                    return;
                 }
                 var (curMs, totalMs) = GetTimeProgress();
                 long remainingMs = totalMs - curMs;
                 if (remainingMs < 3000 || totalMs <= 0)
                 {
-                    SwitchTo(MusicUrl ?? string.Empty);
+                    if (IsPlaying) SwitchTo(input);
+                    else PrepareNext(input);
                     Interlocked.Exchange(ref _fadeBusy, 0);
                     return;
                 }
@@ -772,11 +818,10 @@ public sealed partial class PlaybackEngine : IDisposable
                 try
                 {
                     if (_playGen != switchGeneration) return;
-                    // MusicUrl 现值 = 最新请求（期间的新 PlayMusic 只更新了它）
-                    if (_session is { Kind: RenderKind.Pcm })
+                    if (_requestedInput is { } input)
                     {
-                        if (IsPlaying) SwitchTo(MusicUrl ?? string.Empty);
-                        else PrepareNext(MusicUrl ?? string.Empty);
+                        if (IsPlaying) SwitchTo(input);
+                        else PrepareNext(input);
                     }
                 }
                 finally
@@ -815,8 +860,12 @@ public sealed partial class PlaybackEngine : IDisposable
                 // Stop 后可能仍有一个在途渲染周期（已置位的事件 + 整拍缓冲），
                 // 等它落地后再复位，否则进度会停在 ~1 拍而非 0
                 Thread.Sleep(40);
-                if (_session?.Kind == RenderKind.Eac3) { _output?.Dispose(); _output = null; }
-                _session?.RequestSeek(0);
+                if (_hasPendingInput) DisposeSession();
+                else
+                {
+                    if (_session?.Kind == RenderKind.Eac3) { _output?.Dispose(); _output = null; }
+                    _session?.RequestSeek(0);
+                }
             }
             catch { }
             IsPlaying = false;
@@ -833,15 +882,18 @@ public sealed partial class PlaybackEngine : IDisposable
                 AdoptGapless();
                 CancelGapless();
                 if (_session is { CanSeek: false }) return;
+                positionMs = _activeInput?.SampleRange is { } range
+                    ? Math.Clamp(positionMs, 0, range.DurationMs)
+                    : Math.Max(0, positionMs);
                 bool restartCarrier = _session?.Kind == RenderKind.Eac3 && _output != null;
                 if (restartCarrier) { _output!.Dispose(); _output = null; }
-                _session?.RequestSeek(Math.Max(0, positionMs));
+                _session?.RequestSeek(positionMs, seekId);
                 // 开始不同的突发包序列前，先排空接收器的旧载波。
                 if (restartCarrier && IsPlaying) StartOutputAndPlay();
             }
             catch { }
             var plan = _recovery; // 失效暂停期间手动 seek：恢复时落到新位置
-            if (plan != null) plan.PositionMs = Math.Max(0, positionMs);
+            if (plan != null) plan.PositionMs = positionMs;
             if (seekId > 0) _lastProgressSeekId = seekId;
         }
     }
@@ -908,7 +960,8 @@ public sealed partial class PlaybackEngine : IDisposable
             bool playing = IsPlaying && output is { IsFailed: false };
             long current = session == null ? 0 : GetAudiblePosition(session, session.CurrentMs, delay);
             snapshot = new(0, session?.TimelineEpoch ?? 0, current, session?.TotalMs ?? 0,
-                System.Diagnostics.Stopwatch.GetTimestamp(), playing, _lastProgressSeekId, session?.PlaybackRate ?? 1, _currentGaplessToken);
+                System.Diagnostics.Stopwatch.GetTimestamp(), playing, _lastProgressSeekId, session?.PlaybackRate ?? 1, _currentGaplessToken,
+                PlaybackId: _activeInput is { SampleRange: not null } ? _activePlaybackId : 0);
             if (playing && session != null && _gaplessSource?.TryCaptureOverlap(session, out var incoming, out long token, out long position) == true
                 && incoming != null)
             {
@@ -979,17 +1032,19 @@ public sealed partial class PlaybackEngine : IDisposable
                 _recovery = null; // 用户改设置：接管恢复
                 var (curMs, _) = GetTimeProgress();
                 bool wasPlaying = IsPlaying;
+                bool pendingInput = _hasPendingInput;
+                var input = pendingInput ? _requestedInput : _activeInput;
                 _pauseFadeToken++;
                 _pauseFadeActive = false;
                 DisposeSession();
                 ResetAtmosAttempt();
                 ResetSurroundAttempt();
-                var url = MusicUrl;
-                if (url == null) { QueueDspState(); return; }
-                SetSession(OpenSession(url));
+                if (input is not { } next) { QueueDspState(); return; }
+                if (pendingInput) ActivateRequestedInput(next);
+                SetSession(OpenSession(next));
                 if (_session != null)
                 {
-                    if (_session.CanSeek) _session.RequestSeek(curMs);
+                    if (_session.CanSeek && curMs > 0 && !pendingInput) _session.RequestSeek(curMs);
                     if (wasPlaying || IsPlaying) StartOutputAndPlay();
                 }
                 else
@@ -1205,7 +1260,11 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 lock (_streamLock)
                 {
-                    if (ReferenceEquals(session, _session)) StopAndNotifyLocked(session);
+                    if (ReferenceEquals(session, _session))
+                    {
+                        StopAndNotifyLocked(session);
+                        NotifySampleRangeFailure();
+                    }
                 }
                 return;
             }

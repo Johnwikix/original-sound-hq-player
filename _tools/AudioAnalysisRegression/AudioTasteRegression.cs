@@ -19,7 +19,7 @@ internal static class AudioTasteRegression
         var db = new SQLiteAsyncConnection(Path.Combine(root, "taste.db"));
         try
         {
-            await db.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,SourceId INTEGER,Path TEXT,Title TEXT)");
+            await AnalysisTestSchema.CreateMusicAsync(db);
             await db.ExecuteAsync("CREATE TABLE RemoteTrack(MusicId INTEGER PRIMARY KEY,SourceId INTEGER,Href TEXT,Length INTEGER,ETag TEXT,Modified TEXT,Missing INTEGER)");
             await db.ExecuteAsync("CREATE TABLE WebDavSource(Id INTEGER PRIMARY KEY,Enabled INTEGER)");
             var repository = new AnalysisRepository(db);
@@ -28,7 +28,7 @@ internal static class AudioTasteRegression
             {
                 var raw = new float[384];
                 for (int clip = 0; clip < 3; clip++) raw[clip * 128 + (id <= 4 ? 0 : 1)] = id % 2 == 1 ? 1 : -1;
-                await db.ExecuteAsync("INSERT INTO Music VALUES(?,0,?,'Fixture')", id, "source-" + id);
+                await db.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title) VALUES(?,0,?,'Fixture')", id, "source-" + id);
                 await repository.SaveAsync(new AnalysisRecord { MusicId = id, SourceKey = "source-" + id, Data = MemoryMarshal.AsBytes(raw.AsSpan()).ToArray() });
             }
             var tracks = Enumerable.Range(1, 20).Select(id => new RecommendationTrack(id, ["Artist " + id], "", "", "", 2020, id <= 2, true, 0)).ToArray();

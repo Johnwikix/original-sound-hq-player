@@ -482,17 +482,20 @@ public sealed class HomeViewModel : ObservableObject
                             token.ThrowIfCancellationRequested();
                             if (revision != _revision || version != _app.State.Library.Version) break;
                             var m = _app.SongsSource[i];
+                            if (m.IsCueContainer) continue;
                             bool playable = m.IsPlayable, inPlaylist = playlistIds.Contains(m.Id);
                             int plays = m.PlayCount;
                             if (m.SongId > 0 && _app.FindMultipleVersions(m.SongId) is { } versions)
                             {
                                 if (!includedSongs.Add(m.SongId)) continue;
-                                m = _app.FindDisplayVersion(m.SongId) ?? m;
+                                if (_app.FindDisplayVersion(m.SongId) is { IsCueContainer: false } display)
+                                    m = display;
                                 plays = 0;
                                 playable = false;
                                 for (int j = 0; j < versions.Count; j++)
                                 {
                                     var versionFile = versions[j];
+                                    if (versionFile.IsCueContainer) continue;
                                     plays += versionFile.PlayCount;
                                     playable |= versionFile.IsPlayable;
                                     inPlaylist |= playlistIds.Contains(versionFile.Id);

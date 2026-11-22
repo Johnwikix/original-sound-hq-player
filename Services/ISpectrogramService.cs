@@ -1,4 +1,5 @@
 using System;
+using BassPlayerIpc.Shared;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.AudioAnalysis;
@@ -6,7 +7,7 @@ using WinUIMusicPlayer.AudioAnalysis;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>UI 线程捕获的不可变曲目身份，不向工作线程传递可变 Music。</summary>
-public sealed record SpectrogramInput(int MusicId, int SourceId, string Path);
+public sealed record SpectrogramInput(int MusicId, int SourceId, string Path, AudioSampleRange? SampleRange = null);
 
 public interface ISpectrogramService
 {

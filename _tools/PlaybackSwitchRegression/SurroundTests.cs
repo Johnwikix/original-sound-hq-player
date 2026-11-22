@@ -40,7 +40,7 @@ internal static unsafe partial class Program
                     {
                         var engine = Engine(mode);
                         engine.ExperimentalSurround51 = enabled;
-                        using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
+                        using var session = OpenTestSession(engine, path, false, null);
                         bool shared = mode is "WasapiShared" or "DirectSound";
                         Require(session != null && session.Channels == (shared && !enabled ? 2 : 6), "existing channel policy changed");
                         Require(session!.ChannelMask == (enabled ? mask : 0), "experiment escaped output scope");

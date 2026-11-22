@@ -4,6 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+
     <Compile Include="../../Model/Recommendations/*.cs;../../Services/Recommendations/*.cs;../../Model/StartupEntry.cs" />
     <Compile Include="../../Services/AudioAnalysis/AudioPreferenceScorer.cs;../../Services/AudioAnalysis/AudioNeighborProfile.cs;../../Services/AudioAnalysis/AnalysisRepository.cs;../../Services/AudioAnalysis/Core/FeatureMath.cs" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />

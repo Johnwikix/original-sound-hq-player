@@ -74,9 +74,15 @@ namespace WinUIMusicPlayer.Model
         public bool? TitleFromFileName { get; set; }
         public int EncodingKind { get; set; }
         public int SampleRate { get; set; }
+        public bool IsCueTrack { get; set; }
+        public string CuePath { get; set; } = "";
+        public int CueTrackNo { get; set; }
+        public long StartSample { get; set; }
+        public long EndSample { get; set; }
         public int BitRate { get; set; }
         public int Channel { get; set; }
         public string Path { get; set => SetProperty(ref field, value); } = source == 0 ? System.IO.Path.GetFullPath($"track-{id}.wav") : $"webdav://{source}/dav/tone.flac";
+        public string LocalTrackKey => IsCueTrack ? CuePath + "|" + CueTrackNo.ToString(System.Globalization.CultureInfo.InvariantCulture) : Path;
         public TimeSpan Duration { get; set; }
         public int Id => id;
         public int SourceId => source;

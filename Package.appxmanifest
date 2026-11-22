@@ -71,6 +71,7 @@
               <uap:FileType>.mp3</uap:FileType>
               <uap:FileType>.wav</uap:FileType>
               <uap:FileType>.flac</uap:FileType>
+              <uap:FileType>.cue</uap:FileType>
               <uap:FileType>.wma</uap:FileType>
               <uap:FileType>.aac</uap:FileType>
               <uap:FileType>.ogg</uap:FileType>

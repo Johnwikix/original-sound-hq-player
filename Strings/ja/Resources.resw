@@ -2816,4 +2816,5 @@ SHA-256: {5}
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>基準白の輝度</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>ハイライトのピーク輝度</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR 再生ページでは、歌詞の発光強度 0、5、10 で基準白からそれぞれ 0%、50%、100% 明るくなります。上限は HDR のピーク輝度です。</value></data>
+  <data name="CueSharedSource" xml:space="preserve"><value>複数の CUE トラックがこの音声ファイルを使用しています。変更はライブラリに保存してください。</value></data>
 </root>

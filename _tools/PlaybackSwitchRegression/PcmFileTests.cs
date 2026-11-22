@@ -42,8 +42,8 @@ internal static unsafe partial class Program
             Run($"PCM file: {mode} session advances", () =>
             {
                 var engine = Engine(mode);
-                engine.MusicUrl = path;
-                using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
+                SetTestInput(engine, path);
+                using var session = OpenTestSession(engine, path, false, null);
                 Require(session != null && session.Kind == RenderKind.Pcm, "PCM session did not open");
                 if (mode == "WasapiShared") Require(session!.Channels <= 2, "shared output did not downmix");
                 CheckProgress(session!);
@@ -54,7 +54,7 @@ internal static unsafe partial class Program
             {
                 var engine = Engine("DirectSound");
                 engine.IsFadingEnabled = fade;
-                using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
+                using var session = OpenTestSession(engine, path, false, null);
                 Require(session != null, "PCM session did not open");
                 var buffer = new double[4096 * session!.Channels];
                 var deadline = Stopwatch.StartNew();

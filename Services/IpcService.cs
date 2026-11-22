@@ -177,7 +177,7 @@ namespace WinUIMusicPlayer.Services
                 _logger.LogWarning(ex, "Startup correction synchronization was not confirmed; initialization will continue");
             }
             if (music is not null && !music.IsRemote)
-                await SetMusicUrl(music.Path);
+                await SetAudioInput(PlaybackCoordinator.GetAudioInput(music));
             UpdateEq();
             UpdateSettings();
             UpdateDsp();
@@ -280,10 +280,16 @@ namespace WinUIMusicPlayer.Services
 
         // ──────────────── Public API ────────────────
 
-        public void Play(string musicUrl, long playbackId)
+        public void Play(AudioInput input, long playbackId)
         {
+            if (input.SampleRange.HasValue)
+            {
+                if (_transport?.Publish(CommandId.PlayAudioInput, AudioInputProtocol.WriteOccurrence(playbackId, input), coalesce: false) != true)
+                    throw new InvalidOperationException("播放命令未能进入发送队列");
+                return;
+            }
             Span<byte> buf = stackalloc byte[BinarySerializer.PlayOccurrenceSize];
-            int len = BinarySerializer.WritePlayOccurrence(buf, playbackId, musicUrl);
+            int len = BinarySerializer.WritePlayOccurrence(buf, playbackId, input.Path);
             if (_transport?.Publish(CommandId.PlayOccurrence, buf[..len], coalesce: false) != true)
                 throw new InvalidOperationException("播放命令未能进入发送队列");
         }
@@ -560,9 +566,15 @@ namespace WinUIMusicPlayer.Services
             };
         }
 
-        public async Task SetMusicUrl(string musicUrl)
+        private async Task SetAudioInput(AudioInput input)
         {
-            var req = new SetMusicUrlRequest { Url = musicUrl };
+            if (input.SampleRange.HasValue)
+            {
+                var result = await SendCommandAsync(CommandId.SetAudioInput, AudioInputProtocol.Write(input));
+                if (result != MessageTypeId.Success) throw new InvalidOperationException("播放器未确认初始音轨。");
+                return;
+            }
+            var req = new SetMusicUrlRequest { Url = input.Path };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.SetMusicUrlRequestSize);
             try
             {
@@ -619,14 +631,18 @@ namespace WinUIMusicPlayer.Services
         public async Task<bool> QueueNextAsync(GaplessRequest request)
         {
             byte[] reply = new byte[16];
-            var (type, length) = await SendWithResponseAsync(CommandId.QueueNext, request.Write(), reply);
+            bool ranged = request.SampleRange.HasValue;
+            var (type, length) = await SendWithResponseAsync(ranged ? CommandId.QueueNextAudioInput : CommandId.QueueNext,
+                ranged ? request.WriteRanged() : request.Write(), reply);
             return type == MessageTypeId.Success && length == reply.Length
                 && System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(reply.AsSpan(8)) == request.Epoch;
         }
 
         /// <summary>请求从当前位置过渡到指定队列曲目。</summary>
         public Task<TransitionNowStatus> TransitionNowAsync(GaplessRequest request, CancellationToken token = default)
-            => SendTransitionNowAsync(request.Write(), token);
+            => request.SampleRange.HasValue
+                ? SendTransitionNowAsync(request.WriteRanged(), token, CommandId.TransitionNowAudioInput)
+                : SendTransitionNowAsync(request.Write(), token);
 
         /// <summary>查询已经提交的手动过渡。轮询只发送原始播放代次和令牌。</summary>
         public Task<TransitionNowStatus> PollTransitionNowAsync(long epoch, long transitionToken, CancellationToken token)
@@ -636,13 +652,13 @@ namespace WinUIMusicPlayer.Services
             return SendTransitionNowAsync(identity, token);
         }
 
-        private Task<TransitionNowStatus> SendTransitionNowAsync(ReadOnlySpan<byte> request, CancellationToken token)
+        private Task<TransitionNowStatus> SendTransitionNowAsync(ReadOnlySpan<byte> request, CancellationToken token, CommandId command = CommandId.TransitionNow)
         {
             var transport = _transport;
             if (transport is null) return Task.FromException<TransitionNowStatus>(new InvalidOperationException("Audio command pipe is unavailable."));
             byte[] reply = ArrayPool<byte>.Shared.Rent(1);
             // RequestAsync copies the request synchronously and stops writing to the response when it completes.
-            try { return ReadTransitionNowAsync(transport.RequestAsync(CommandId.TransitionNow, request, reply, token: token), reply); }
+            try { return ReadTransitionNowAsync(transport.RequestAsync(command, request, reply, token: token), reply); }
             catch { ArrayPool<byte>.Shared.Return(reply); throw; }
         }
 

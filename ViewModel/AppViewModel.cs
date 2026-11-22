@@ -543,6 +543,13 @@ namespace WinUIMusicPlayer.ViewModel
                 playing.IsFavorite = refreshed.IsFavorite;
                 playing.Order = refreshed.Order;
                 playing.HasVersionLyrics = refreshed.HasVersionLyrics;
+                if (!ReferenceEquals(playing, refreshed))
+                {
+                    playing.CoverAudioWriteTicks = refreshed.CoverAudioWriteTicks;
+                    playing.CoverOverridePath = refreshed.CoverOverridePath;
+                    playing.ImageHash = refreshed.ImageHash;
+                    playing.CoverSourceStamp = refreshed.CoverSourceStamp;
+                }
             }
             else if (CurrentPlayingMusic is { Id: > 0 } detached)
             {

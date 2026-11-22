@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using AudioDecoding.Shared;
+using BassPlayerIpc.Shared;
 namespace WinUIMusicPlayer.AudioAnalysis;
 
 /// <summary>本地只读解码器；拥有一个文件的原生上下文，使用调用方复用的浮点缓冲。</summary>
@@ -11,6 +13,8 @@ public sealed unsafe class AudioDecoder : IDisposable
         Stopwatch.GetTimestamp() >= ((Deadline)GCHandle.FromIntPtr((nint)opaque).Target!).Ticks ? 1 : 0;
     private readonly Deadline _deadline = new();
     private readonly float[] _scratch;
+    private readonly AudioSampleRange? _range;
+    private bool CanSeek => _format->pb != null && (_format->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0;
     private GCHandle _handle;
     private AVFormatContext* _format;
     private AVCodecContext* _decoder;
@@ -23,8 +27,10 @@ public sealed unsafe class AudioDecoder : IDisposable
     public double Duration { get; private set; }
 
     /// <summary>打开本地文件并配置单线程解码到32kHz单声道，不写音频文件。</summary>
-    public AudioDecoder(string path, float[] scratch, bool readTags = false)
+    public AudioDecoder(AudioInput input, float[] scratch)
     {
+        input.Validate();
+        _range = input.SampleRange;
         if (scratch.Length < 65536) throw new ArgumentException("Decode scratch too small.");
         _scratch = scratch;
         _handle = GCHandle.Alloc(_deadline);
@@ -40,7 +46,7 @@ public sealed unsafe class AudioDecoder : IDisposable
             _format->max_analyze_duration = 2 * ffmpeg.AV_TIME_BASE;
             _format->max_probe_packets = 128;
             ffmpeg.av_dict_set(&options, "protocol_whitelist", "file", 0);
-            fixed (AVFormatContext** format = &_format) Check(ffmpeg.avformat_open_input(format, path, null, &options));
+            fixed (AVFormatContext** format = &_format) Check(ffmpeg.avformat_open_input(format, input.Path, null, &options));
             Check(ffmpeg.avformat_find_stream_info(_format, null));
             _index = ffmpeg.av_find_best_stream(_format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
             Check(_index);
@@ -70,6 +76,11 @@ public sealed unsafe class AudioDecoder : IDisposable
             if (_frame == null || _packet == null) throw new OutOfMemoryException();
             double duration = _format->duration > 0 ? _format->duration / (double)ffmpeg.AV_TIME_BASE
                 : stream->duration > 0 ? stream->duration * ffmpeg.av_q2d(stream->time_base) : 0;
+            if (_range is { } range)
+            {
+                _ = new PcmSampleRange(range, _format, stream, CanSeek);
+                duration = range.FrameCount / (double)range.SampleRate;
+            }
             Duration = duration;
         }
         catch { Dispose(); throw; }
@@ -83,8 +94,22 @@ public sealed unsafe class AudioDecoder : IDisposable
         _deadline.Ticks = Stopwatch.GetTimestamp() + 15 * Stopwatch.Frequency;
         var stream = _format->streams[_index];
         double streamStart = stream->start_time == ffmpeg.AV_NOPTS_VALUE ? 0 : stream->start_time * ffmpeg.av_q2d(stream->time_base);
-        long timestamp = (long)Math.Round((startSeconds + streamStart) * ffmpeg.AV_TIME_BASE);
-        Check(ffmpeg.av_seek_frame(_format, -1, timestamp, ffmpeg.AVSEEK_FLAG_BACKWARD));
+        PcmSampleRange? crop = null;
+        if (_range is { } range)
+        {
+            if (destination.IsEmpty) return 0;
+            long start = range.StartSample + Math.Clamp((long)Math.Round(startSeconds * range.SampleRate), 0, range.FrameCount - 1);
+            long window = ((long)destination.Length * range.SampleRate + 31999) / 32000;
+            long end = start + Math.Min(window, range.EndSample - start);
+            crop = new(new AudioSampleRange(start, end, range.SampleRate), _format, stream, CanSeek);
+            // The decoder is reused for three windows, so each job seeks even when it starts at sample zero.
+            if (!crop.Seek(_format, _index, start)) throw new InvalidDataException("Audio range seek failed.");
+        }
+        else
+        {
+            long timestamp = (long)Math.Round((startSeconds + streamStart) * ffmpeg.AV_TIME_BASE);
+            Check(ffmpeg.av_seek_frame(_format, -1, timestamp, ffmpeg.AVSEEK_FLAG_BACKWARD));
+        }
         ffmpeg.avcodec_flush_buffers(_decoder);
         ffmpeg.av_frame_unref(_frame);
         ffmpeg.av_packet_unref(_packet);
@@ -93,26 +118,41 @@ public sealed unsafe class AudioDecoder : IDisposable
         int filled = 0;
         bool draining = false, first = true;
         long skip = 0;
-        while (filled < destination.Length)
+        byte** offsetData = stackalloc byte*[64];
+        while (filled < destination.Length && crop is not { EndReached: true })
         {
             if (Stopwatch.GetTimestamp() >= _deadline.Ticks) throw new TimeoutException("Decode time budget exceeded.");
             int receive = ffmpeg.avcodec_receive_frame(_decoder, _frame);
             if (receive == 0)
             {
-                if (first)
+                int takeInput = _frame->nb_samples;
+                byte** source = _frame->extended_data;
+                if (crop is not null)
+                {
+                    crop.Crop(_frame, out int preRoll, out takeInput);
+                    if (takeInput == 0)
+                    {
+                        ffmpeg.av_frame_unref(_frame);
+                        continue;
+                    }
+                    if (_frame->ch_layout.nb_channels is < 1 or > 64)
+                        throw new InvalidDataException("Unsupported audio layout.");
+                    source = PcmSampleRange.OffsetInput(_frame, preRoll, offsetData);
+                }
+                else if (first)
                 {
                     first = false;
                     double frameStart = _frame->best_effort_timestamp == ffmpeg.AV_NOPTS_VALUE ? startSeconds
                         : _frame->best_effort_timestamp * ffmpeg.av_q2d(stream->time_base) - streamStart;
                     skip = Math.Max(0, (long)Math.Round((startSeconds - frameStart) * 32000));
                 }
-                int maximum = ffmpeg.swr_get_out_samples(_swr, _frame->nb_samples);
+                int maximum = ffmpeg.swr_get_out_samples(_swr, takeInput);
                 if (maximum > _scratch.Length) throw new InvalidDataException("Decoded frame exceeds bounded scratch.");
                 int count;
                 fixed (float* output = _scratch)
                 {
                     byte* target = (byte*)output;
-                    count = ffmpeg.swr_convert(_swr, &target, _scratch.Length, _frame->extended_data, _frame->nb_samples);
+                    count = ffmpeg.swr_convert(_swr, &target, _scratch.Length, source, takeInput);
                 }
                 Check(count);
                 int dropped = (int)Math.Min(skip, count);
@@ -139,7 +179,25 @@ public sealed unsafe class AudioDecoder : IDisposable
             }
             else { Check(read); Check(ffmpeg.avcodec_send_packet(_decoder, _packet)); }
         }
-        // .NET 11：调用方输入与解码scratch跨片段复用；不按帧申请托管数组。
+        if (crop is not null)
+        {
+            if (!crop.EndReached) throw new InvalidDataException("Audio ended inside the requested range.");
+            while (filled < destination.Length)
+            {
+                int count;
+                fixed (float* output = _scratch)
+                {
+                    byte* target = (byte*)output;
+                    count = ffmpeg.swr_convert(_swr, &target, _scratch.Length, null, 0);
+                }
+                Check(count);
+                if (count == 0) break;
+                int take = Math.Min(count, destination.Length - filled);
+                _scratch.AsSpan(0, take).CopyTo(destination[filled..]);
+                filled += take;
+            }
+        }
+        // 解码与特征提取的暂存缓冲区跨片段复用。
         return filled;
     }
     private static void Check(int code)

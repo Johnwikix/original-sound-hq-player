@@ -11,5 +11,7 @@ internal static class MusicFileTypes
         ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"
     };
 
+    internal static bool CanOpen(string extension) => Contains(extension) || extension.Equals(".cue", StringComparison.OrdinalIgnoreCase);
+
     internal static bool Contains(string extension) => Extensions.Contains(extension);
 }

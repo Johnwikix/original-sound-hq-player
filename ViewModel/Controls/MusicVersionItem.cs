@@ -23,7 +23,15 @@ public sealed class MusicVersionItem : ObservableObject
     private static string Duration(System.TimeSpan value) => value <= System.TimeSpan.Zero ? "—" : value.TotalHours >= 1
         ? $"{(int)value.TotalHours}:{value.Minutes:00}:{value.Seconds:00}" : value.ToString(@"mm\:ss", CultureInfo.CurrentCulture);
     /// <summary>获取原文件路径。</summary>
-    public string Path => Music.Path;
+    public string Path => Music.IsCueTrack && Music.SampleRate > 0
+        ? string.Create(CultureInfo.CurrentCulture, $"CUE {Music.CueTrackNo:00} · {Timecode(Music.StartSample)}–{Timecode(Music.EndSample)} · {Music.Path}")
+        : Music.Path;
+
+    private string Timecode(long sample)
+    {
+        var time = System.TimeSpan.FromSeconds((double)sample / Music.SampleRate);
+        return string.Create(CultureInfo.CurrentCulture, $"{(long)time.TotalMinutes}:{time.Seconds:00}.{time.Milliseconds:000}");
+    }
     /// <summary>获取可用性、首选与播放状态。</summary>
     public string StateText { get; private set => SetProperty(ref field, value); } = "";
     /// <summary>更新派生标记，实际状态仍由歌曲和播放器拥有。</summary>

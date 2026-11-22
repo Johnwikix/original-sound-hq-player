@@ -93,7 +93,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     {
         if (_music.Id <= 0)
         {
-            var cached = OneShotLyricsCache.Load(_music.Path);
+            var cached = OneShotLyricsCache.Load(_music.LocalTrackKey);
             _revision = cached?.Revision ?? 0;
             _savedDocument = cached?.Document ?? _parser.Import(_music.EmbeddedLyrics, token: token);
             if (_draftVersion == 0) SetDocument(_savedDocument);
@@ -208,7 +208,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         operation = Task.CompletedTask;
         if (!CanSave) return false;
         if (metadata.Id != _music.Id || metadata.SourceId != _music.SourceId ||
-            !string.Equals(metadata.Path, _music.Path, StringComparison.OrdinalIgnoreCase))
+            !string.Equals(metadata.LocalTrackKey, _music.LocalTrackKey, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Metadata draft belongs to a different track.");
         var snapshot = new DatabaseSaveSnapshot(metadata, metadataChanged, cover, _savedDocument, _revision, _ownerId,
             OriginalText, TranslationText, PronunciationText);
@@ -236,7 +236,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
             }) : snapshot.SavedDocument;
             if (snapshot.Metadata.Id <= 0)
             {
-                if (!await Task.Run(() => OneShotLyricsCache.SaveEdited(snapshot.Metadata.Path, document, snapshot.Revision)))
+                if (!await Task.Run(() => OneShotLyricsCache.SaveEdited(snapshot.Metadata.LocalTrackKey, document, snapshot.Revision)))
                     throw new InvalidOperationException("LyricsEditConflict");
             }
             else if (snapshot.MetadataChanged)
@@ -260,7 +260,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         bool saved = false;
         if (!_loaded || IsBusy || _disposed) return false;
         if (metadataDraft is not null && (metadataDraft.Id != _music.Id || metadataDraft.SourceId != _music.SourceId ||
-            !string.Equals(metadataDraft.Path, _music.Path, StringComparison.OrdinalIgnoreCase)))
+            !string.Equals(metadataDraft.LocalTrackKey, _music.LocalTrackKey, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException("Metadata draft belongs to a different track.");
         await RunAsync(async token =>
         {
@@ -281,7 +281,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
             if (_music.Id <= 0)
             {
                 if (queueMetadata) throw new InvalidOperationException("External tracks must be imported before queuing tag edits.");
-                if (!OneShotLyricsCache.SaveEdited(_music.Path, document, _revision)) throw new InvalidOperationException("LyricsEditConflict");
+                if (!OneShotLyricsCache.SaveEdited(_music.LocalTrackKey, document, _revision)) throw new InvalidOperationException("LyricsEditConflict");
             }
             else if (queueMetadata)
                 await _database.QueueMetadataWriteAsync(metadataDraft ?? _music, cover, document, _revision, token, lyricsChanged: lyricsChanged, expectedOwnerId: _ownerId);
@@ -318,7 +318,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     {
         string original = OriginalText, translation = TranslationText, pronunciation = PronunciationText;
         var document = await Task.Run(() => _parser.Import(original, translation, token: token, pronunciation: pronunciation), token);
-        string path = await LyricsExporter.SaveFilesAsync(_music.Path, document, token);
+        string path = await LyricsExporter.SaveFilesAsync(LyricsFilePolicy.SidecarBase(_music), document, token);
         if (!_disposed) Status = ToolUtils.GetString("LyricsFilesSaved") + " " + path;
     });
 

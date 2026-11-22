@@ -49,7 +49,7 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
     /// <summary>获取是否需要重试初始化读取，不把封面或保存错误误当作重新加载草稿。</summary>
     public bool LoadFailed { get; private set => SetProperty(ref field, value); }
     /// <summary>获取标签是否可编辑；远程曲目沿用只读文件标签策略。</summary>
-    public bool CanEditTags => !_stopped && !IsLoading && Music.CanEditFile;
+    public bool CanEditTags => !_stopped && !IsLoading && Music.IsLocal;
     private bool CanSave => !_stopped && !IsLoading && !IsSaving && !IsCoverBusy && Lyrics.CanSave;
     /// <summary>获取是否可以确认写入文件；远程来源只允许保存本地数据库歌词。</summary>
     public bool CanSaveFile => CanSave && Music.CanEditFile;
@@ -90,10 +90,10 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
         SaveDatabaseCommand = new AsyncRelayCommand(SaveDatabaseAsync, () => CanSave);
         SaveFileCommand = new AsyncRelayCommand(SaveFileAsync, () => CanSave && Music.CanEditFile);
         FindCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(true), () => CanOperate);
-        ChooseCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(false), () => CanOperate && Music.CanEditFile);
+        ChooseCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(false), () => CanOperate && Music.IsLocal);
         ExportCoverCommand = new AsyncRelayCommand(ExportCoverAsync, () => CanOperate && _cover is not null);
         ReadEmbeddedCommand = new AsyncRelayCommand(ReadEmbeddedAsync, () => CanOperate && Music.CanEditFile);
-        OpenLocationCommand = new RelayCommand(OpenLocation, () => !_stopped && Music.CanEditFile);
+        OpenLocationCommand = new RelayCommand(OpenLocation, () => !_stopped && Music.IsLocal);
         Lyrics.PropertyChanged += Lyrics_PropertyChanged;
     }
     /// <summary>注册退出屏障并开始异步加载，不阻塞 Connected Animation。</summary>
@@ -159,7 +159,7 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
         ExportCoverCommand.NotifyCanExecuteChanged();
     }
     private Task ChangeCoverAsync(bool online)
-        => CanOperate && (online || Music.CanEditFile) ? _operationTask = ChangeCoverCoreAsync(online) : Task.CompletedTask;
+        => CanOperate && (online || Music.IsLocal) ? _operationTask = ChangeCoverCoreAsync(online) : Task.CompletedTask;
     private async Task ChangeCoverCoreAsync(bool online)
     {
         IsCoverBusy = true;
@@ -266,7 +266,7 @@ public sealed class MusicDetailsEditorViewModel : ObservableObject
     private Task ReadEmbeddedAsync() => CanOperate && Music.CanEditFile ? _operationTask = Lyrics.ReadEmbeddedAsync() : Task.CompletedTask;
     private void OpenLocation()
     {
-        if (_stopped || !Music.CanEditFile) return;
+        if (_stopped || !Music.IsLocal) return;
         try { _host.OpenLocation(Music); }
         catch (Exception ex) { ReportError(ex); }
     }

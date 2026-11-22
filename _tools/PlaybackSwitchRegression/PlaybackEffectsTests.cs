@@ -228,7 +228,7 @@ internal static unsafe partial class Program
             Require(ReferenceEquals(source.Pending, prepared), "Ordinary DSP update discarded the prepared session");
             source.FillPcm(new double[512], 256);
             engine.SynchronizeGapless();
-            Require(engine.MusicUrl == path && source.CompletedToken == 11, "Engine did not adopt next track");
+            Require(GetTestInput(engine).Path == path && source.CompletedToken == 11, "Engine did not adopt next track");
             Require(engine.TryCaptureProgress(out var snapshot) && snapshot.GaplessToken == 11, "Transition missing from telemetry");
             engine.MusicEnd();
             Require(source.Pending == null && !engine.IsPlaying, "Stop retained queued audio");

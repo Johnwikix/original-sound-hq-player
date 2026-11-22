@@ -46,6 +46,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public sealed class MusicBrowseViewModel
     {
+        public void PlayCueTracks(IReadOnlyList<Music> tracks) => throw new InvalidOperationException("Playback is not ready in resolver tests");
         public void PlayMusicWithFolderQueue(Music music) => throw new InvalidOperationException("Playback is not ready in resolver tests");
         public Task PlayMusic(Music music) => throw new InvalidOperationException("Playback is not ready in resolver tests");
     }

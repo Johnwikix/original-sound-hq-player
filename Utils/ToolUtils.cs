@@ -1,4 +1,5 @@
 using ATL;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Text;
@@ -173,6 +174,7 @@ namespace WinUIMusicPlayer.Utils
             bool hasSelection = false;
             bool hasOffline = false;
             bool hasRemote = false;
+            bool protectedFile = false;
             if (selected is not null)
             {
                 foreach (var music in selected)
@@ -180,6 +182,7 @@ namespace WinUIMusicPlayer.Utils
                     if (music is null) continue;
                     hasSelection = true;
                     hasRemote |= music.IsRemote;
+                    protectedFile |= !music.CanEditFile;
                     hasOffline |= music.IsRemote && music.IsRemoteOffline;
                 }
             }
@@ -187,6 +190,7 @@ namespace WinUIMusicPlayer.Utils
             {
                 hasSelection = true;
                 hasRemote = fallback.IsRemote;
+                protectedFile = !fallback.CanEditFile;
                 hasOffline = fallback.IsRemote && fallback.IsRemoteOffline;
             }
 
@@ -194,6 +198,7 @@ namespace WinUIMusicPlayer.Utils
             SetMenuEnabled(options, "ConvertAudio", hasSelection && !hasOffline);
             SetMenuEnabled(options, "ReGetLyrics", hasSelection && !hasOffline);
             // "打开文件位置"只对本地曲目可用；远程曲目置灰，与行按钮的 CanEditFile 门控一致。
+            SetMenuEnabled(options, "DeleteMenuItem", hasSelection && !protectedFile);
             SetMenuEnabled(options, "OpenInExplorer", hasSelection && !hasRemote);
             SetMenuEnabled(options, "SendToUsbDevice", hasSelection && !hasOffline);
         }
@@ -420,97 +425,77 @@ namespace WinUIMusicPlayer.Utils
                 cancellationToken.ThrowIfCancellationRequested();
                 return remotePicture;
             }
+            long expectedAudioTicks = music.CoverAudioWriteTicks;
+            string expectedStamp = music.CoverSourceStamp ?? "";
+            string expectedHash = music.ImageHash ?? "";
+            string expectedOverride = music.CoverOverridePath ?? "";
             try
             {
-                // 磁盘缓存查找（raw bytes，避免重复从音频文件读取内嵌封面）
-                if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
-                    && !string.IsNullOrEmpty(music.ImageHash))
+                long audioTicks = File.GetLastWriteTimeUtc(music.Path).Ticks;
+                string revision = LocalCoverSource.GetRevision(Path.GetDirectoryName(music.Path) ?? "", false, cancellationToken);
+                if (revision == expectedStamp && expectedHash.Length > 0 && !string.IsNullOrEmpty(AppSettings.MusicCoverCache))
                 {
-                    var cachePath = GetRawCachePath(music.ImageHash);
-                    if (File.Exists(cachePath))
-                    {
-                        if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(music.Path))
-                            return await File.ReadAllBytesAsync(cachePath, cancellationToken);
-
-                        // 缓存过期：清理该 hash 的所有旧格式缓存 (_raw.bin / .bmp / .bgra8 / .jpg)
-                        DeleteRawCaches(music.ImageHash);
-                    }
+                    string cached = GetRawCachePath(expectedHash);
+                    if (File.Exists(cached) && LocalCoverSource.IsCacheCurrent(music, cached))
+                        return await File.ReadAllBytesAsync(cached, cancellationToken);
                 }
 
-                byte[]? picture = [];
+                byte[] picture = await LocalCoverSource.ReadAsync(music, revision, ReadEmbeddedPicture, cancellationToken);
+                if (picture.Length == 0) picture = await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
                 cancellationToken.ThrowIfCancellationRequested();
-                if (FastReadExtensions.Contains(music.Extension))
-                {
-                    picture = AudioCoverReader.ReadCover(music.Path);
-                    //if (picture is null || picture.Length == 0)
-                    //{
-                    //    Track track = new(music.Path);
-                    //    if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
-                    //    {
-                    //        picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
-                    //    }
-                    //}
-                }
-                else
-                {
-                    Track track = new(music.Path);
-                    if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
-                    {
-                        picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
-                    }
-                }
-                if (picture is null || picture.Length == 0)
-                {
-                    picture = await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
-                }
-                cancellationToken.ThrowIfCancellationRequested();
+                string hash = "";
                 if (picture.Length > 0)
                 {
-                    Span<byte> hashSpan = stackalloc byte[8];
-                    System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(hashSpan, XxHash64.HashToUInt64(picture));
-                    var imageHash = Convert.ToHexString(hashSpan);
-                    if (music.ImageHash != imageHash)
+                    Span<byte> buffer = stackalloc byte[8];
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(buffer, XxHash64.HashToUInt64(picture));
+                    hash = Convert.ToHexString(buffer);
+                    if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
                     {
-                        music.ImageHash = imageHash;
-                        _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
-                    }
-
-                    // 写入 raw bytes 磁盘缓存
-                    if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
-                        && !string.IsNullOrEmpty(music.ImageHash))
-                    {
-                        try
-                        {
-                            var cachePath = GetRawCachePath(music.ImageHash);
-                            Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                            await File.WriteAllBytesAsync(cachePath, picture, cancellationToken);
-                        }
-                        catch (Exception ex) { _logger.LogError(ex, "写_raw.bin缓存失败"); }
+                        try { await PlaybackCoverCache.StoreAsync(GetRawCachePath(hash), picture, cancellationToken); }
+                        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                        { _logger.LogWarning(ex, "Cannot cache the cover for {Path}", music.Path); }
                     }
                 }
-                else
+                if (File.GetLastWriteTimeUtc(music.Path).Ticks != audioTicks) return [];
+                if (revision != expectedStamp || hash != expectedHash || audioTicks != expectedAudioTicks)
                 {
-                    if (string.IsNullOrEmpty(music.ImageHash))
+                    bool accepted = music.Id <= 0 || await App.Services.GetRequiredService<MusicDatabaseService>()
+                        .UpdateCoverSourceAsync(music, expectedStamp, expectedOverride, revision, hash, expectedAudioTicks, audioTicks);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!accepted) return [];
+                    bool current = await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
-                        music.ImageHash = string.Empty;
-                        _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
-                    }
+                        if ((music.CoverOverridePath ?? "") != expectedOverride) return false;
+                        string stamp = music.CoverSourceStamp ?? "";
+                        if (stamp != expectedStamp && stamp != revision) return false;
+                        music.CoverAudioWriteTicks = audioTicks;
+                        music.ImageHash = hash;
+                        music.CoverSourceStamp = revision;
+                        return true;
+                    });
+                    if (!current) return [];
                 }
                 return picture;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                if (cancellationToken.IsCancellationRequested) throw;
-                _logger.LogError(ex, $"GetRawImage 获取原始图片失败: {ex.Message}");
-                try
-                {
-                    return await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
-                }
-                catch (Exception innerEx)
-                {
-                    _logger.LogError(innerEx, $"GetRawImage 网络获取图片也失败: {innerEx.Message}");
-                    return [];
-                }
+                _logger.LogWarning(ex, "Failed to resolve cover for {Path}", music.Path);
+                return await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
+            }
+        }
+
+        private static byte[] ReadEmbeddedPicture(Music music)
+        {
+            try
+            {
+                if (FastReadExtensions.Contains(music.Extension)) return AudioCoverReader.ReadCover(music.Path);
+                var pictures = new Track(music.Path).EmbeddedPictures;
+                return pictures is { Count: > 0 } ? pictures[0].PictureData : [];
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                _logger.LogWarning(ex, "Cannot read embedded cover for {Path}", music.Path);
+                return [];
             }
         }
 
@@ -518,22 +503,18 @@ namespace WinUIMusicPlayer.Utils
             => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_raw.bin");
 
         internal static string FindRawCachePath(string imageHash)
-            => Services.WebDav.WebDavCachePaths.FindCover(AppSettings.MusicCoverCache, imageHash);
-
-        private static void DeleteRawCaches(string imageHash)
         {
-            try
+            // Version overrides live with the library and must remain available after a cache clear.
+            int separator = imageHash.IndexOf('-');
+            if (separator > 0 && imageHash.Length - separator - 1 == 64 &&
+                int.TryParse(imageHash.AsSpan(0, separator), NumberStyles.None, CultureInfo.InvariantCulture, out int id) && id > 0 &&
+                imageHash.AsSpan(separator + 1).IndexOfAnyExcept("0123456789ABCDEF") < 0)
             {
-                var dir = Path.Combine(AppSettings.MusicCoverCache, "Cache");
-                if (!Directory.Exists(dir)) return;
-
-                foreach (var file in Directory.GetFiles(dir, $"{imageHash}_*"))
-                {
-                    try { File.Delete(file); }
-                    catch (Exception ex) { _logger.LogError(ex, "DeleteRawCaches 清理失败: {File}", file); }
-                }
+                var database = App.Services.GetRequiredService<MusicDatabaseService>().GetDbConnection();
+                string original = Path.Combine(Path.GetDirectoryName(database.DatabasePath)!, "VersionCovers", imageHash + ".bin");
+                if (File.Exists(original)) return original;
             }
-            catch (Exception ex) { _logger.LogError(ex, "DeleteRawCaches 失败"); }
+            return Services.WebDav.WebDavCachePaths.FindCover(AppSettings.MusicCoverCache, imageHash);
         }
 
         private static readonly string[] AudioInfoProps =
@@ -763,7 +744,16 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static bool DeleteFileFromDisk(string path)
+        public static async Task<bool> DeleteFileFromDiskAsync(Music music)
+        {
+            if (music is null || !music.CanEditFile) return false;
+            using var lease = await LibraryOperationGate.EnterAsync(reportBusy: false);
+            var db = App.Services.GetRequiredService<MusicDatabaseService>().GetDbConnection();
+            if (await db.ExecuteScalarAsync<int>("SELECT EXISTS(SELECT 1 FROM Music WHERE Path=? COLLATE NOCASE AND (IsCueContainer=1 OR (CueTrackNo>0 AND IsMissing=0 AND IsDetached=0)))", music.Path) != 0) return false;
+            return DeleteFileFromDisk(music.Path);
+        }
+
+        private static bool DeleteFileFromDisk(string path)
         {
             try
             {
@@ -1225,27 +1215,10 @@ namespace WinUIMusicPlayer.Utils
         {
             if (string.IsNullOrEmpty(fileContent))
                 return;
-            // 按行分割内容
-            var lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            // 验证是否是有效的m3u8文件
-            if (lines.Length == 0 || !lines[0].Equals("#EXTM3U", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new FormatException("无效的m3u8文件格式，必须以#EXTM3U开头");
-            }
-            // 从第二行开始解析
-            for (int i = lines.Length - 1; i >= 1; i--)
-            {
-                var line = lines[i].Trim();
-                // 处理歌曲路径行（非注释行）
-                if (!line.StartsWith("#"))
-                {
-                    Music? music = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Path.Contains(Path.GetFileName(line)));
-                    if (music is not null)
-                    {
-                        await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicToPlayList(playListId, music.Id);
-                    }
-                }
-            }
+            var database = App.Services.GetRequiredService<MusicDatabaseService>();
+            var tracks = MusicPlaylistFile.Resolve(fileContent, App.Services.GetRequiredService<AppViewModel>().SongsSource);
+            tracks.Reverse(); // New playlist entries are displayed in descending insertion order.
+            await database.AddMusicListToPlayList(tracks, playListId, pinCueTracks: true);
         }
 
         public static string GenerateM3U8Content(IEnumerable<PlayListMusicItem> musics, string playlistName)
@@ -1256,8 +1229,7 @@ namespace WinUIMusicPlayer.Utils
             sb.AppendLine($"# Created: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             foreach (var music in musics)
             {
-                sb.AppendLine($"#EXTINF:{music.Music.Author} - {music.Music.Title}");
-                sb.AppendLine(music.Music.Path);
+                MusicPlaylistFile.WriteEntry(sb, music.Music);
             }
             return sb.ToString();
         }

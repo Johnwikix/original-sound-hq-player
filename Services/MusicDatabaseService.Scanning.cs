@@ -28,7 +28,7 @@ public partial class MusicDatabaseService
             // The persisted Folder.SongCount can be stale in older databases. Count actual songs,
             // grouping once by directory rather than materializing every Music or relying on UI startup order.
             var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
-                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId = 0 AND IsDetached=0 AND IsMissing=0 GROUP BY FolderPath COLLATE NOCASE");
+                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId=0 AND IsDetached=0 AND IsMissing=0 AND COALESCE(IsCueContainer,0)=0 GROUP BY FolderPath COLLATE NOCASE");
             cancellationToken.ThrowIfCancellationRequested();
             // 外部导入虚拟行的计数同源现算：归属 = 分组目录不落入任何本地扫描根。
             Folder? external = null;
@@ -61,14 +61,7 @@ public partial class MusicDatabaseService
         public async Task ScanFolderAsync(StorageFolder folder, int folderId,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted = null)
         {
-            // Read paths only, not every song's metadata/strings. This snapshot is immutable while workers run.
-            string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder.Path));
-            string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
-            var existingPaths = new HashSet<string>(
-                await _dbConnection.QueryScalarsAsync<string>("SELECT Path FROM Music WHERE SourceId=0 AND IsDetached=0 AND IsMissing=0 AND (FolderPath=? COLLATE NOCASE OR substr(FolderPath,1,length(?))=? COLLATE NOCASE)", root, prefix, prefix), StringComparer.OrdinalIgnoreCase);
-            await addFolderService.ScanPathsAsync(
-                AddFolderService.EnumerateMusicPaths(folder.Path).Where(path => !existingPaths.Contains(path)),
-                batch => CommitScanBatchAsync(batch, onBatchInserted));
+            await RescanFolderCoreAsync(folder.Path, updateExisting: false, singleFolder: false, onBatchInserted);
             // Do not walk the entire tree before delivering the first song.
             await InsertSubFolders(AutoRescanService.RecordInitialFolderTimes(folder.Path, folderId));
         }
@@ -94,9 +87,10 @@ public partial class MusicDatabaseService
                 {
                     if (music is null) continue;
                     var existing = music.Id == 0
-                        ? db.FindWithQuery<Music>("SELECT Id,IsDetached,IsMissing FROM Music WHERE Path=? COLLATE NOCASE ORDER BY IsDetached,Id LIMIT 1", music.Path)
+                        ? db.FindWithQuery<Music>("SELECT Id,IsDetached,IsMissing FROM Music WHERE Path=? COLLATE NOCASE AND COALESCE(CueTrackNo,0)=0 ORDER BY IsDetached,Id LIMIT 1", music.Path)
                         : db.FindWithQuery<Music>("SELECT Id,IsDetached,IsMissing FROM Music WHERE Id=?", music.Id);
                     if (music.Id == 0 && !replaceExistingPath && existing is { IsDetached: false, IsMissing: false }) continue;
+                    if (db.ExecuteScalar<int>(ActiveCueSourceSql, music.Path) != 0) continue;
                     if (existing is not null) music.Id = existing.Id;
                     // 延迟写入时保留数据库标签，重新纳入的文件仍可恢复可见性。
                     if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM PendingMetadataWrite WHERE Path=? COLLATE NOCASE", music.Path) != 0)
@@ -161,7 +155,7 @@ public partial class MusicDatabaseService
             string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folderPath));
             string prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
             return _dbConnection.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM Music WHERE FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,length(?)) = ? COLLATE NOCASE",
+                "SELECT COUNT(*) FROM Music WHERE IsDetached=0 AND IsMissing=0 AND COALESCE(IsCueContainer,0)=0 AND (FolderPath = ? COLLATE NOCASE OR substr(FolderPath,1,length(?)) = ? COLLATE NOCASE)",
                 root, prefix, prefix);
         }
 
@@ -265,58 +259,94 @@ public partial class MusicDatabaseService
 
         private async Task<int> RescanFolderCoreAsync(string folderPath, bool updateExisting, bool singleFolder,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted = null, bool onlyChanged = false,
-            CancellationToken cancellationToken = default, IReadOnlyList<string>? scannedPaths = null,
+            CancellationToken cancellationToken = default, IReadOnlyList<ScanDirectory>? scannedDirectories = null,
             Action<int>? onFilesChecked = null, Action? onCommitted = null, string? previousFolderPath = null,
-            bool attachedFilesOnly = false)
+            bool attachedFilesOnly = false, IReadOnlyDictionary<string, string>? renames = null)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var existing = await GetSongsInFolderAsync(folderPath, !singleFolder);
             if (previousFolderPath is not null && previousFolderPath != folderPath)
                 existing.AddRange(await GetSongsInFolderAsync(previousFolderPath, !singleFolder));
             // Outside a registered root only explicitly imported files belong to the library.
+            HashSet<string>? restrictPaths = null;
             if (attachedFilesOnly)
             {
                 existing.RemoveAll(song => song.IsRemote || song.IsDetached);
                 if (existing.Count == 0) return 0;
-                scannedPaths = existing.Where(song => File.Exists(song.Path)).Select(song => song.Path).ToList();
+                restrictPaths = new HashSet<string>(existing.Select(song => song.Path), StringComparer.OrdinalIgnoreCase);
             }
             var remaining = new Dictionary<string, Music>(existing.Count, StringComparer.OrdinalIgnoreCase);
+            var cueRows = new List<Music>();
+            var cueDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var song in existing)
-                if (!song.IsRemote) remaining.TryAdd(song.Path, song);
+                if (!song.IsRemote)
+                {
+                    if (song.IsCueTrack)
+                    {
+                        cueRows.Add(song);
+                        if (Path.GetDirectoryName(song.CuePath) is { } directory) cueDirectories.Add(directory);
+                    }
+                    else remaining.TryAdd(song.Path, song);
+                }
             int changes = 0;
 
-            // Only the source enumerator owns remaining; deletion reads it after every worker/consumer completes.
-            IEnumerable<(string Path, Music? Existing)> EnumerateWork()
-            {
-                foreach (var path in scannedPaths ?? AddFolderService.EnumerateMusicPaths(folderPath, !singleFolder))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    remaining.Remove(path, out var old);
-                    if (old is null || old.IsDetached || old.IsMissing || (updateExisting && (!onlyChanged || old.Path != path || File.GetLastWriteTime(path) != old.UpdateTime)))
-                        yield return (path, old);
-                    else onFilesChecked?.Invoke(1);
-                }
-            }
-
-            await ScanPipeline.RunAsync(EnumerateWork(), async (work, token) =>
-            {
-                var result = await AddFolderService.ReadMusicAsync(work.Path, token);
-                if (result.Music is not null && work.Existing is not null)
-                    result.Music.Id = work.Existing.Id;
-                return result;
-            }, async batch =>
+            foreach (var directory in scannedDirectories ?? AddFolderService.EnumerateScanDirectories(folderPath, !singleFolder))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var committed = await CommitScanBatchAsync(batch, onBatchInserted, onCommitted);
-                changes += committed.Added.Count + committed.Updated;
-                onFilesChecked?.Invoke(batch.Count);
-            }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500), cancellationToken);
+                string? previous = previousFolderPath is null ? null :
+                    Path.GetFullPath(Path.Combine(previousFolderPath, Path.GetRelativePath(folderPath, directory.Path)));
+                HashSet<string>? covered = null;
+                if (directory.Cues.Count > 0 || cueDirectories.Contains(directory.Path) || previous is not null && cueDirectories.Contains(previous))
+                {
+                    var result = await ReconcileCueDirectoryAsync(directory, cancellationToken, previous, renames,
+                        onBatchInserted, onCommitted, restrictPaths);
+                    changes += result.Changes;
+                    covered = result.CoveredPaths;
+                    onFilesChecked?.Invoke(directory.Cues.Count);
+                }
+
+                var work = new List<(string Path, Music? Existing)>();
+                foreach (var path in directory.Audio)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (restrictPaths is not null && !restrictPaths.Contains(path)) continue;
+                    remaining.Remove(path, out var old);
+                    if (covered?.Contains(path) == true)
+                    {
+                        onFilesChecked?.Invoke(1);
+                        continue;
+                    }
+                    if (old is null || old.IsCueContainer || old.IsDetached || old.IsMissing ||
+                        updateExisting && (!onlyChanged || old.Path != path || File.GetLastWriteTime(path) != old.UpdateTime))
+                        work.Add((path, old));
+                    else onFilesChecked?.Invoke(1);
+                }
+                if (work.Count > 0)
+                    await ScanPipeline.RunAsync(work, async (item, token) =>
+                    {
+                        var result = await AddFolderService.ReadMusicAsync(item.Path, token);
+                        if (result.Music is not null && item.Existing is not null)
+                            result.Music.Id = item.Existing.Id;
+                        return result;
+                    }, async batch =>
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var committed = await CommitScanBatchAsync(batch, onBatchInserted, onCommitted, replaceExistingPath: true);
+                        changes += committed.Added.Count + committed.Updated;
+                        onFilesChecked?.Invoke(batch.Count);
+                    }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500), cancellationToken);
+                if (await CheckDirectoryCoversAsync(directory.Path, cancellationToken, directory.Covers))
+                {
+                    changes++;
+                    onCommitted?.Invoke();
+                }
+            }
 
             // An inaccessible/disconnected directory is not deletion evidence. Check again if
             // the watcher is reconciling a directory that may have vanished during enumeration.
             if (onCommitted is not null && !Directory.Exists(folderPath)) return changes;
             var missing = new List<Music>();
-            foreach (var music in remaining.Values)
+            foreach (var music in remaining.Values.Concat(cueRows))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!music.IsMissing && !music.IsDetached && LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
@@ -331,9 +361,9 @@ public partial class MusicDatabaseService
         }
 
         internal Task<int> ScanChangedFolderAsync(string folderPath, CancellationToken cancellationToken = default,
-            IReadOnlyList<string>? scannedPaths = null, Action<int>? onFilesChecked = null)
+            IReadOnlyList<ScanDirectory>? scannedDirectories = null, Action<int>? onFilesChecked = null)
             => RescanFolderCoreAsync(folderPath, true, false, onlyChanged: true, cancellationToken: cancellationToken,
-                scannedPaths: scannedPaths, onFilesChecked: onFilesChecked);
+                scannedDirectories: scannedDirectories, onFilesChecked: onFilesChecked);
 
         public Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
             => RescanFolderCoreAsync(folderPath, false, isSingleFolder);
@@ -363,13 +393,23 @@ public partial class MusicDatabaseService
             }
 
             var parents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var coverParents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var missingFiles = new List<string>();
             foreach (string path in changes.Files)
             {
+                if (Path.GetDirectoryName(path) is not { } parent) continue;
+                if (LocalCoverSource.IsCandidate(path))
+                {
+                    coverParents.Add(parent);
+                    continue;
+                }
                 if (!TryReadAttributes(path, out var attributes)) continue;
-                if (attributes is null) missingFiles.Add(path);
-                else if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0 &&
-                    Path.GetDirectoryName(path) is { } parent) parents.Add(parent);
+                if (attributes is null)
+                {
+                    if (!AddFolderService.IsCueFile(path)) missingFiles.Add(path);
+                    if (Directory.Exists(parent)) parents.Add(parent);
+                }
+                else if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0) parents.Add(parent);
             }
 
             foreach (var (original, current) in subtrees)
@@ -382,6 +422,9 @@ public partial class MusicDatabaseService
                 if (!subtrees.Keys.Any(tree => LibraryPath.IsWithin(parent, tree)))
                     await ScanDirectoryAsync(parent, singleFolder: true);
             }
+            foreach (string parent in coverParents)
+                if (!parents.Contains(parent) && !subtrees.Values.Any(tree => LibraryPath.IsWithin(parent, tree)) &&
+                    Directory.Exists(parent) && await CheckDirectoryCoversAsync(parent, token)) onCommitted();
 
             if (missingFiles.Count > 0)
             {
@@ -444,7 +487,7 @@ public partial class MusicDatabaseService
                         if ((File.GetAttributes(parent) & FileAttributes.ReparsePoint) != 0) return;
                     }
                     await RescanFolderCoreAsync(path, true, singleFolder, onlyChanged: true, cancellationToken: token,
-                        onCommitted: onCommitted, previousFolderPath: previous);
+                        onCommitted: onCommitted, previousFolderPath: previous, renames: changes.Renames);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
@@ -454,7 +497,7 @@ public partial class MusicDatabaseService
         }
 
         /// <summary>编码成功后以同目录重命名替换目标。在同一维护锁内写入曲库，迟到的监听通知只会核对已提交的版本。</summary>
-        internal async Task InstallConvertedFileAsync(string temporaryPath, string outputPath, Action? onCommitted)
+        internal async Task InstallConvertedFileAsync(string temporaryPath, string outputPath, Action? onCommitted, bool overwrite = true)
         {
             using var lease = await LibraryOperationGate.EnterAsync(reportBusy: false).ConfigureAwait(false);
             await _metadataGate.WaitAsync().ConfigureAwait(false);
@@ -463,19 +506,31 @@ public partial class MusicDatabaseService
                 // Queued tags identify the old file by size and timestamp. Replacing it would strand that edit.
                 if (await _dbConnection.ExecuteScalarAsync<int>("SELECT EXISTS(SELECT 1 FROM PendingMetadataWrite WHERE Path=? COLLATE NOCASE)", outputPath).ConfigureAwait(false) != 0)
                     throw new IOException($"转换目标有待写入的标签: {outputPath}");
-                File.Move(temporaryPath, outputPath, overwrite: true);
+                if (await HasActiveCueSourceAsync(outputPath).ConfigureAwait(false))
+                    throw new IOException($"转换目标是 CUE 音源: {outputPath}");
+                File.Move(temporaryPath, outputPath, overwrite);
                 var result = await AddFolderService.ReadMusicAsync(outputPath, default).ConfigureAwait(false);
                 if (result.Music is null) throw new IOException($"无法读取转换产物: {outputPath}");
-                await CommitScanBatchAsync([result], null, onCommitted, replaceExistingPath: true).ConfigureAwait(false);
+                await CommitScanBatchAsync([result], null, onCommitted, replaceExistingPath: overwrite).ConfigureAwait(false);
             }
             finally { _metadataGate.Release(); }
+        }
+
+        private async Task<bool> CheckDirectoryCoversAsync(string directory, CancellationToken token, IReadOnlyList<string>? candidates = null)
+        {
+            try { return await ReconcileLocalCoversAsync(directory, token, candidates); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "无法检查目录封面: {Path}", directory);
+                return false;
+            }
         }
 
         public Task AddMusicList(IEnumerable<Music> songs)
             => addFolderService.ScanPathsAsync(songs.Select(m => m.Path), batch => CommitScanBatchAsync(batch, null), TimeSpan.Zero);
 
         public Task UpdateMusicList(IEnumerable<Music> songs)
-            => ScanPipeline.RunAsync(songs, async (old, token) =>
+            => ScanPipeline.RunAsync(songs.Where(song => !song.IsCueTrack && !song.IsCueContainer), async (old, token) =>
             {
                 var result = await AddFolderService.ReadMusicAsync(old.Path, token);
                 if (result.Music is not null) result.Music.Id = old.Id;
@@ -501,7 +556,7 @@ public partial class MusicDatabaseService
                 foreach (var music in songs)
                 {
                     if (keepVersions)
-                        changed += db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=? AND IsMissing=0", music.Id);
+                        changed += db.Execute("UPDATE Music SET IsMissing=1 WHERE Id=? AND Path=? COLLATE BINARY AND IsMissing=0", music.Id, music.Path);
                     else if (db.Delete<Music>(music.Id) > 0)
                     {
                         changed++;
@@ -525,7 +580,7 @@ public partial class MusicDatabaseService
                     localRoots.Add(folder.Path);
             }
             var owned = new List<Music>();
-            foreach (var music in await _dbConnection.QueryAsync<Music>("SELECT Id,Path,IsMissing FROM Music WHERE SourceId=0 AND IsDetached=0"))
+            foreach (var music in await _dbConnection.QueryAsync<Music>("SELECT Id,Path,IsMissing,CuePath,CueTrackNo FROM Music WHERE SourceId=0 AND IsDetached=0"))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 bool within = false;
@@ -547,19 +602,37 @@ public partial class MusicDatabaseService
             if (owned.Count == 0) return false;
             var missing = new List<Music>();
             var restored = new List<int>();
+            bool cueChanged = false;
             foreach (var group in owned.GroupBy(
                          music => Path.GetPathRoot(music.Path) ?? string.Empty, StringComparer.OrdinalIgnoreCase))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!IsDriveRootReachable(group.Key)) continue;
+                var reconciled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var music in group)
+                {
+                    if (!music.IsCueTrack || Path.GetDirectoryName(music.CuePath) is not { } directory ||
+                        reconciled.Contains(directory) || !Directory.Exists(directory)) continue;
+                    try
+                    {
+                        cueChanged |= await RescanFolderCoreAsync(directory, true, true, onlyChanged: true,
+                            cancellationToken: cancellationToken, attachedFilesOnly: true) > 0;
+                        reconciled.Add(directory);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        _logger.LogWarning(ex, "无法检查外部 CUE 目录: {Path}", directory);
+                    }
+                }
                 foreach (var music in group)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
+                        if (Path.GetDirectoryName(music.Path) is { } directory && reconciled.Contains(directory)) continue;
                         if (LibraryPath.IsConfirmedMissing(music.Path, Path.GetDirectoryName(music.Path) ?? music.Path) && !music.IsMissing)
                             missing.Add(music);
-                        else if (music.IsMissing && File.Exists(music.Path)) restored.Add(music.Id);
+                        else if (!music.IsCueTrack && music.IsMissing && File.Exists(music.Path)) restored.Add(music.Id);
                     }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
@@ -574,7 +647,7 @@ public partial class MusicDatabaseService
                     foreach (int id in restored) db.Execute("UPDATE Music SET IsMissing=0 WHERE Id=? AND IsDetached=0", id);
                 });
             if (missing.Count > 0) await DeletedMusicList(missing, cancellationToken);
-            return missing.Count > 0 || restored.Count > 0;
+            return cueChanged || missing.Count > 0 || restored.Count > 0;
         }
 
         /// <summary>盘根是否可达：DriveInfo 为元数据查询；IsReady=false 或根访问异常按不可达保留整组。</summary>

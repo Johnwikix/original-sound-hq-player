@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using AudioPlayer.Interop;
 using AudioPlayer.Playback;
+using BassPlayerIpc.Shared;
 
 [assembly: System.Runtime.Versioning.SupportedOSPlatform("windows")]
 
@@ -34,6 +35,12 @@ internal static unsafe partial class Program
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
             RunCacheLocationTests();
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length is 1 or 2 && args[0] == "--test-cue-playback")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunCuePlaybackTests(args.Length == 2 ? Path.GetFullPath(args[1]) : null);
             return _failures == 0 ? 0 : 1;
         }
         if (args.Length == 1 && args[0] == "--test-ir-memory")
@@ -221,6 +228,19 @@ internal static unsafe partial class Program
     private static object? Invoke(object target, string name, params object?[] args) =>
         target.GetType().GetMethod(name, Private)!.Invoke(target, args);
 
+    private static Session? OpenTestSession(PlaybackEngine engine, string path, bool forceShared, RenderKind? kind) =>
+        (Session?)Invoke(engine, "OpenSession", new AudioInput(path), forceShared, kind);
+
+    private static AudioInput GetTestInput(PlaybackEngine engine) =>
+        (AudioInput)typeof(PlaybackEngine).GetField("_activeInput", Private)!.GetValue(engine)!;
+
+    private static void SetTestInput(PlaybackEngine engine, string path)
+    {
+        var input = new AudioInput(path);
+        Set(engine, "_activeInput", input);
+        Set(engine, "_requestedInput", input);
+    }
+
     private static PlaybackEngine Engine(string mode)
     {
         // Bypass the constructor's endpoint listener/watchdog; all exercised methods are production code.
@@ -253,10 +273,10 @@ internal static unsafe partial class Program
         engine.IsDopEnabled = dopEnabled;
         using var old = Source(engine, previous);
         Set(engine, "_session", old);
-        engine.MusicUrl = file.EndsWith(".dsf", StringComparison.Ordinal)
+        SetTestInput(engine, file.EndsWith(".dsf", StringComparison.Ordinal)
             ? Path.Combine(AppContext.BaseDirectory, "switch-test.dsf")
-            : Path.Combine(root, "_tools", file);
-        using var next = (Session?)Invoke(engine, "OpenSession", engine.MusicUrl, false, kindOverride);
+            : Path.Combine(root, "_tools", file));
+        using var next = OpenTestSession(engine, GetTestInput(engine).Path, false, kindOverride);
         Require(next != null, $"new {file} session failed to open after {previous}");
         Require(next!.Kind == expected, $"expected {expected}, got {next.Kind} (previous={previous})");
 
@@ -291,8 +311,8 @@ internal static unsafe partial class Program
                 ("test_tone_96000.wav", 96000), ("test_tone.wav", 44100),
             })
             {
-                engine.MusicUrl = Path.Combine(root, "_tools", file);
-                var next = (Session?)Invoke(engine, "OpenSession", engine.MusicUrl, false, null);
+                SetTestInput(engine, Path.Combine(root, "_tools", file));
+                var next = OpenTestSession(engine, GetTestInput(engine).Path, false, null);
                 Require(next != null, $"failed to open {file}");
                 previous?.Dispose();
                 previous = next;

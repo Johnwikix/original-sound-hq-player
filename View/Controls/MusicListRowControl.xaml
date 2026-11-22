@@ -191,7 +191,7 @@
             BorderThickness="0"
             Command="{x:Bind Music.OpenSourceCommand, Mode=OneWay}"
             CommandParameter="{x:Bind Music, Mode=OneWay}"
-            IsEnabled="{x:Bind Music.CanEditFile, Mode=OneWay}"
+            IsEnabled="{x:Bind Music.IsLocal, Mode=OneWay}"
             Style="{StaticResource MenuButtonStyle}"
             AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('FlyoutOpenLocationItem')}"
             ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('FlyoutOpenLocationItem')}">

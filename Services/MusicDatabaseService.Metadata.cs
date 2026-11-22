@@ -30,6 +30,7 @@ public partial class MusicDatabaseService
         await _dbConnection.RunInTransactionAsync(db =>
         {
             token.ThrowIfCancellationRequested();
+            if (music.IsCueTrack) CueMetadataOverrides.Capture(db, db.Get<Music>(id), music);
             LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User", lyricsChanged, expectedOwnerId);
             if (db.Execute("UPDATE Music SET TitleFromFileName=CASE WHEN Title IS ? THEN TitleFromFileName ELSE 0 END,Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=?,MetadataRevision=MetadataRevision+1 WHERE Id=? AND MetadataRevision=?",
                 title, title, author, album, track, disk, year, updated, id, metadataRevision) != 1) throw new InvalidOperationException("MusicMetadataConflict");
@@ -46,6 +47,7 @@ public partial class MusicDatabaseService
     public async Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long expectedRevision, CancellationToken token = default, bool lyricsChanged = true, int expectedOwnerId = 0)
     {
         if (music.IsRemote) throw new InvalidOperationException(ToolUtils.GetString("WebDavReadOnly"));
+        if (!music.CanEditFile) throw new InvalidOperationException(ToolUtils.GetString("CueSharedSource"));
         var identity = await Task.Run(() =>
         {
             var file = new FileInfo(music.Path);
@@ -76,6 +78,8 @@ public partial class MusicDatabaseService
             {
                 token.ThrowIfCancellationRequested();
                 LyricsRepository.SaveInTransaction(db, musicId, document, expectedRevision, "User", lyricsChanged, expectedOwnerId);
+                if (db.ExecuteScalar<int>("SELECT EXISTS(SELECT 1 FROM Music WHERE Path=? COLLATE NOCASE AND (IsCueContainer=1 OR (CueTrackNo>0 AND IsMissing=0 AND IsDetached=0)))", request.Path) != 0)
+                    throw new InvalidOperationException(ToolUtils.GetString("CueSharedSource"));
                 var previous = db.Find<PendingMetadataWrite>(request.Path);
                 if (request.Cover is null && previous is not null && previous.MusicId == request.MusicId &&
                     previous.FileLength == request.FileLength && previous.FileLastWriteTicks == request.FileLastWriteTicks)
@@ -164,7 +168,7 @@ public partial class MusicDatabaseService
                     using var write = AudioFileWriteGate.BeginWrite(request.Path);
                     var version = await _dbConnection.FindAsync<Music>(request.MusicId);
                     var file = new FileInfo(request.Path);
-                    if (request.MusicId <= 0 || version is null || version.IsDetached ||
+                    if (request.MusicId <= 0 || version is null || version.IsDetached || !version.CanEditFile ||
                         !string.Equals(Path.GetFullPath(version.Path), request.Path, StringComparison.OrdinalIgnoreCase) ||
                         !file.Exists || file.Length != request.FileLength || file.LastWriteTimeUtc.Ticks != request.FileLastWriteTicks)
                         throw new InvalidOperationException(ToolUtils.GetString("SongVersionsFileChanged"));

@@ -6,6 +6,8 @@
     <EventSourceSupport>false</EventSourceSupport><NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../AudioPlayer/Decode/PcmSampleRange.cs" Link="PcmSampleRange.cs" />
     <Compile Include="../../Services/AudioAnalysis/Core/*.cs" Link="Core/%(Filename)%(Extension)" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
   </ItemGroup>

@@ -22,7 +22,7 @@ public sealed class LibraryQueries(LibraryState library)
     public void SetSourceFilter(int sourceId) { _sourceFilter = sourceId; _indexedVersion = -1; }
     public static bool MatchesSource(Music music, int sourceId) => sourceId == -1 || (sourceId == -2 ? music.IsRemote : music.SourceId == sourceId);
     // Missing local versions retain their database identity, history and explicit playlist entries.
-    public static bool IsBrowsable(Music music) => !music.IsMissing || music.IsRemote;
+    public static bool IsBrowsable(Music music) => !music.IsCueContainer && (!music.IsMissing || music.IsRemote);
 
     internal IReadOnlyDictionary<int, Music> GetIdIndex()
     {

@@ -7,6 +7,11 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
+        public int CueTrackNo { get; set; }
+        public string CuePath { get; set; } = "";
+        public bool IsCueTrack => CueTrackNo > 0;
+        public string Title { get; set; } = "";
+        public string LocalTrackKey => IsCueTrack ? $"{CuePath}|{CueTrackNo}" : Path;
         public int Id { get; set; }
         public string Path { get; set; } = "";
         public TimeSpan Duration { get; set; }

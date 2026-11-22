@@ -36,6 +36,10 @@ public enum CommandId : short
     SetFftEnabled = 25,
     TransitionNow = 26,
     PlayOccurrence = 27,
+    PlayAudioInput = 28,
+    SetAudioInput = 29,
+    QueueNextAudioInput = 30,
+    TransitionNowAudioInput = 31,
 }
 
 /// <summary>播放进程处理带曲目令牌的手动过渡请求后报告的状态。</summary>
@@ -67,6 +71,7 @@ public enum MessageTypeId : short
     GaplessTransition = 15,
     FftData = 16,
     TransitionProgress = 17,
+    PlaybackFailed = 18,
 }
 
 public enum ErrorCode : short

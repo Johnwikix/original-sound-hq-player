@@ -11,6 +11,8 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Services
 {
+    internal sealed record ScanDirectory(string Path, List<string> Audio, List<string> Cues, List<string> Covers);
+
     public class AddFolderService
     {
         private static ILogger<AddFolderService> _logger = App.GetLogger<AddFolderService>();
@@ -147,6 +149,50 @@ namespace WinUIMusicPlayer.Services
             foreach (var path in Directory.EnumerateFiles(root, "*", options))
                 if (ToolUtils.IsMusicFile(Path.GetExtension(path)))
                     yield return path;
+        }
+
+        public static bool IsCueFile(string path) => Path.GetExtension(path).Equals(".cue", StringComparison.OrdinalIgnoreCase);
+
+        internal static IEnumerable<ScanDirectory> EnumerateScanDirectories(string root, bool recursive)
+        {
+            var pending = new Stack<string>();
+            pending.Push(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)));
+            var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = System.IO.FileAttributes.ReparsePoint };
+            while (pending.TryPop(out string? directory))
+            {
+                var inputs = new ScanDirectory(directory, [], [], []);
+                foreach (var entry in new DirectoryInfo(directory).EnumerateFileSystemInfos("*", options))
+                {
+                    if (entry is DirectoryInfo)
+                    {
+                        if (recursive) pending.Push(entry.FullName);
+                        continue;
+                    }
+                    string path = entry.FullName;
+                    if (IsCueFile(path)) inputs.Cues.Add(path);
+                    else if (ToolUtils.IsMusicFile(entry.Extension)) inputs.Audio.Add(path);
+                    else if (LocalCoverSource.IsCandidate(path)) inputs.Covers.Add(path);
+                }
+                yield return inputs;
+            }
+        }
+
+        public static async Task<List<Music>> ReadCueTracksAsync(string path, CancellationToken token = default)
+        {
+            if (!IsCueFile(path)) return [];
+            try
+            {
+                var input = await CueSheetReader.ReadTextAsync(path, token).ConfigureAwait(false);
+                var sheet = await CueSheetReader.ReadAsync(input, new(StringComparer.OrdinalIgnoreCase), token).ConfigureAwait(false);
+                if (sheet.EncodingName is not ("UTF-8" or "UTF-8 BOM"))
+                    _logger.LogInformation("CUE 编码 {Encoding}: {Path}", sheet.EncodingName, path);
+                return sheet.Tracks;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or OverflowException)
+            {
+                _logger.LogWarning(ex, "无法验证 CUE 清单: {Path}", path);
+                return [];
+            }
         }
 
         internal static async ValueTask<(Music Music, string Lyrics)> ReadMusicAsync(string path, CancellationToken token)

@@ -27,13 +27,13 @@ public sealed class LibraryTrackActions(AppState state, MusicDatabaseService dat
                     try
                     {
                         var stored = music.Id > 0 ? await database.Lyrics.GetAsync(music.Id, token) : null;
-                        long externalRevision = stored is null ? OneShotLyricsCache.Load(music.Path)?.Revision ?? 0 : 0;
+                        long externalRevision = stored is null ? OneShotLyricsCache.Load(music.LocalTrackKey)?.Revision ?? 0 : 0;
                         var document = await lyricsSearch.SearchAsync(music, true, token);
                         token.ThrowIfCancellationRequested();
                         if (document is null) { Report(new InvalidOperationException(ToolUtils.GetString("FailedObtainLyrics"))); continue; }
                         if (stored is null)
                         {
-                            if (!OneShotLyricsCache.SaveEdited(music.Path, document, externalRevision))
+                            if (!OneShotLyricsCache.SaveEdited(music.LocalTrackKey, document, externalRevision))
                                 Report(new InvalidOperationException(ToolUtils.GetString("LyricsEditConflict")));
                         }
                         else if (!await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token, expectedOwnerId: stored.OwnerId))

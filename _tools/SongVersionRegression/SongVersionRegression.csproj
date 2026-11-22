@@ -8,8 +8,9 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
-    <Compile Include="../../Model/Music.cs;../../Model/PlayListMusic.cs;../../Model/SongRecord.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs" />
+    <Compile Include="../../Model/Music.cs;../../Model/AdditionalMusicMetadata.cs;../../Model/PlayListMusic.cs;../../Model/SongRecord.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs" />
     <Compile Include="../../Services/LibraryDatabaseMigration.cs;../../Services/SongVersionPolicy.cs;../../Services/SongVersionStore*.cs" />
+    <Compile Include="../../Services/CueLibrarySchema.cs;../../Services/CueMetadataOverrides.cs" />
     <Compile Include="../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsParser*.cs" />
   </ItemGroup>
 </Project>

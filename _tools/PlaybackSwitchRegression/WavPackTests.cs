@@ -53,7 +53,7 @@ internal static unsafe partial class Program
             Run($"WV {channels}ch/{rate}: bitstream EQ rejected", () =>
             {
                 var engine = Engine("ASIO");
-                engine.MusicUrl = path;
+                SetTestInput(engine, path);
                 // This is the predicate used by UpdateEq, before a session is opened as well.
                 Require((bool)Invoke(engine, "IsBitstreamActive", path)!, "WV DSD did not activate bitstream EQ guard");
             });
@@ -104,8 +104,8 @@ internal static unsafe partial class Program
         engine.IsDopEnabled = dop;
         using var old = Source(engine, RenderKind.Pcm);
         Set(engine, "_session", old);
-        engine.MusicUrl = path;
-        using var next = (Session?)Invoke(engine, "OpenSession", path, false, kindOverride);
+        SetTestInput(engine, path);
+        using var next = OpenTestSession(engine, path, false, kindOverride);
         Require(next != null && next.Kind == expected, $"expected {expected}, got {next?.Kind.ToString() ?? "null"}");
         CheckProgress(next!);
     }

@@ -1,3 +1,4 @@
+using BassPlayerIpc.Shared;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -11,10 +12,12 @@ internal sealed class FixtureSpectrogramService : ISpectrogramService
 {
     internal Task Gate { get; set; } = Task.CompletedTask;
     internal int Starts;
+    internal SpectrogramInput? LastInput;
     internal bool Fail;
     public async Task<SpectrogramData?> AnalyzeAsync(SpectrogramInput input, int size, IProgress<double> progress, CancellationToken token)
     {
         Starts++;
+        LastInput = input;
         await Gate; // 保留真实边界的不可取消收尾，用于验证关闭会等待工作完成。
         token.ThrowIfCancellationRequested();
         progress.Report(50);
@@ -166,6 +169,28 @@ internal sealed partial class RegressionApplication
         Check(errorVm.Data is null && errorVm.Status.Length > 0 && errorVm.RetryCommand.CanExecute(null), "spectrum failures leave an available retry");
         await errorVm.StopAsync();
 
+        var cue = new Music
+        {
+            Path = "album.wav", CuePath = "album.cue", CueTrackNo = 2, StartSample = 48000, EndSample = 96000, SampleRate = 48000
+        };
+        var cueService = new FixtureSpectrogramService();
+        var cueVm = new SpectrogramViewModel(cue, app, cueService, NullLogger<SpectrogramViewModel>.Instance);
+        cueVm.SetActive(true);
+        await Wait(() => !cueVm.IsBusy);
+        Check(cueService.LastInput?.SampleRange == new AudioSampleRange(48000, 96000, 48000),
+            "the spectrogram view snapshots the track sample range");
+        app.CurrentPlayingMusic = new Music
+        {
+            Path = cue.Path, CuePath = cue.CuePath, CueTrackNo = 1, StartSample = 0, EndSample = 48000, SampleRate = 48000
+        };
+        Check(!cueVm.HasPlaybackCursor, "a different one-shot CUE track on the same file has its own cursor");
+        app.CurrentPlayingMusic = new Music
+        {
+            Path = cue.Path, CuePath = cue.CuePath, CueTrackNo = 2, StartSample = cue.StartSample, EndSample = cue.EndSample, SampleRate = cue.SampleRate
+        };
+        Check(cueVm.HasPlaybackCursor, "a re-created one-shot CUE row with the same bounds owns the cursor");
+        await cueVm.StopAsync();
+
         var tabSource = new FixtureSpectrogramService();
         var tabVm = new SpectrogramViewModel(music, app, tabSource, NullLogger<SpectrogramViewModel>.Instance);
         var factory = new FixtureEditorFactory(database, app);
@@ -190,25 +215,29 @@ internal sealed partial class RegressionApplication
         var year = (NumberBox)details.FindName("YearInput");
         year.Value = 2026;
         Check(presentation.Editor.Metadata.Draft.Year == 2026, "detail two-way inputs survive parent unload/reload");
-        var identityPanel = (Grid)details.FindName("IdentityPanel");
-        var actions = (StackPanel)details.FindName("Actions");
-        var playlist = (Button)details.FindName("PlaylistButton");
+        // The identity elements live in the ScrollViewer content's visual tree.
+        var identity = Descendants<ScrollViewer>(details).Single(control => control.Name == "IdentityScroll");
+        var heroText = Descendants<StackPanel>(identity).Single(control => control.Name == "HeroText");
+        var actions = Descendants<StackPanel>(heroText).Single(control => control.Name == "Actions");
+        var playlist = Descendants<Button>(actions).Single(control => control.Name == "PlaylistButton");
         var detailRoot = (Grid)details.FindName("DetailRoot");
-        double actionsBottom = actions.TransformToVisual(detailRoot).TransformPoint(new Windows.Foundation.Point(0, actions.ActualHeight)).Y;
-        double panelBottom = identityPanel.TransformToVisual(detailRoot).TransformPoint(new Windows.Foundation.Point(0, identityPanel.ActualHeight)).Y;
-        Check(panelBottom - actionsBottom > 40, "large detail layout keeps actions next to identity content instead of pinning them to the window");
+        var footer = (Grid)details.FindName("FooterBar");
+        Check(ReferenceEquals(actions.Parent, heroText) && Grid.GetRow(heroText) == 1
+            && Bottom(actions, detailRoot) < footer.TransformToVisual(detailRoot).TransformPoint(default).Y,
+            "large detail layout keeps actions inline with the identity below the artwork");
         await Capture(details, "details-large-inline-actions.png");
         presentation.Editor.Metadata.Draft.Title = "Long title 長いタイトル 长标题 " + new string('A', 180);
-        details.Width = 760;
+        details.Width = 740;
         details.Height = 420;
-        await Task.Delay(250);
-        actionsBottom = actions.TransformToVisual(detailRoot).TransformPoint(new Windows.Foundation.Point(0, actions.ActualHeight)).Y;
-        panelBottom = identityPanel.TransformToVisual(detailRoot).TransformPoint(new Windows.Foundation.Point(0, identityPanel.ActualHeight)).Y;
-        double playlistRight = playlist.TransformToVisual(detailRoot).TransformPoint(new Windows.Foundation.Point(playlist.ActualWidth, 0)).X;
-        double panelRight = identityPanel.TransformToVisual(detailRoot).TransformPoint(new Windows.Foundation.Point(identityPanel.ActualWidth, 0)).X;
-        Check(ReferenceEquals(actions.Parent, identityPanel) && actionsBottom <= panelBottom + .1 && playlistRight <= panelRight + .1,
-            "long titles keep all detail actions visible in a fixed compact-layout footer");
-        await Capture(details, "details-long-title-fixed-actions.png");
+        await Wait(() => Grid.GetColumn(heroText) == 1 && Math.Abs(details.ActualWidth - 740) < .1);
+        double playlistRight = playlist.TransformToVisual(identity).TransformPoint(new Windows.Foundation.Point(playlist.ActualWidth, 0)).X;
+        Check(ReferenceEquals(actions.Parent, heroText) && playlist.ActualWidth > 0
+            && Bottom(actions, identity) <= identity.ActualHeight + .1 && playlistRight <= identity.ActualWidth + .1,
+            "the stacked detail layout keeps identity actions visible with a long title");
+        await Capture(details, "details-long-title-inline-actions.png");
+
+        static double Bottom(Microsoft.UI.Xaml.FrameworkElement element, Microsoft.UI.Xaml.FrameworkElement relativeTo)
+            => element.TransformToVisual(relativeTo).TransformPoint(new Windows.Foundation.Point(0, element.ActualHeight)).Y;
         tabs.SelectedItem = originalTab;
         Check(!tabVm.RetryCommand.CanExecute(null), "leaving the spectrum pivot deactivates analysis");
         await presentation.StopAsync();

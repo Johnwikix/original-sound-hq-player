@@ -26,6 +26,17 @@ namespace WinUIMusicPlayer.Model
         public bool IsMissing { get; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsPlayable)); } }
         /// <summary>获取或设置已从库解绑但为恢复保留的状态。</summary>
         public bool IsDetached { get; set; }
+        public int? CueSheetId { get; set; }
+        public string CuePath { get; set; } = "";
+        public int CueTrackNo { get; set; }
+        public long StartSample { get; set; }
+        public long EndSample { get; set; }
+        public bool CueMappingActive { get; set; }
+        /// <summary>Original CUE title used to reconcile identity after edits and renumbering.</summary>
+        public string CueSourceTitle { get; set; } = "";
+        public bool CueReusedWhole { get; set; }
+        public bool IsCueContainer { get; set; }
+        [Ignore] public bool IsCueTrack => CueTrackNo > 0;
         /// <summary>获取或设置共享歌曲的手动首选投影。</summary>
         [Ignore] public int? SongPreferredMusicId { get; set; }
         /// <summary>获取或设置是否使用独立版本歌词。</summary>
@@ -50,7 +61,7 @@ namespace WinUIMusicPlayer.Model
         }
         /// <summary>供自动切歌和传输控制使用的最近状态；手动播放仍须进入服务重新探活。</summary>
         [Ignore] public bool IsPlayable => !IsDetached && (IsRemoteCached || !IsMissing && !IsRemoteOffline);
-        [Ignore] public bool CanEditFile => !IsRemote;
+        [Ignore] public bool CanEditFile => !IsRemote && !IsCueTrack && !IsCueContainer;
         public string Path { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Author { get; set => SetProperty(ref field, value); } = string.Empty;
@@ -107,9 +118,13 @@ namespace WinUIMusicPlayer.Model
         [Ignore]
         [System.Text.Json.Serialization.JsonIgnore]
         public Music? ArtistTileSource { get; set => SetProperty(ref field, value); }
+        public long CoverAudioWriteTicks { get; set; }
+        public string CoverSourceStamp { get; set => SetProperty(ref field, value); } = "";
+        [Ignore] public string LocalTrackKey => IsCueTrack ? CuePath + "|" + CueTrackNo.ToString(System.Globalization.CultureInfo.InvariantCulture) : Path;
+        [Ignore] public bool IsLocal => !IsRemote;
         public string ImageHash { get; set => SetProperty(ref field, value); } = string.Empty;
         /// <summary>获取或设置本版本的数据库封面原件，不随可重建缓存清理。</summary>
-        public string CoverOverridePath { get; set; } = "";
+        public string CoverOverridePath { get; set => SetProperty(ref field, value); } = "";
         public DateTime CreateTime { get; set => SetProperty(ref field, value); }
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 
@@ -123,7 +138,10 @@ namespace WinUIMusicPlayer.Model
             BitDepth == row.BitDepth && BitRate == row.BitRate && SampleRate == row.SampleRate && Channel == row.Channel &&
             TrackNumber == row.TrackNumber && DiskNumber == row.DiskNumber && Year == row.Year &&
             CreateTime == row.CreateTime && UpdateTime == row.UpdateTime && CodecId == row.CodecId && EncodingKind == row.EncodingKind &&
-            ImageHash == row.ImageHash && CoverOverridePath == row.CoverOverridePath && LyricsOffsetMs == row.LyricsOffsetMs &&
+            ImageHash == row.ImageHash && CoverOverridePath == row.CoverOverridePath && CoverSourceStamp == row.CoverSourceStamp && CoverAudioWriteTicks == row.CoverAudioWriteTicks && LyricsOffsetMs == row.LyricsOffsetMs &&
+            CueSheetId == row.CueSheetId && CuePath == row.CuePath && CueTrackNo == row.CueTrackNo &&
+            StartSample == row.StartSample && EndSample == row.EndSample && IsCueContainer == row.IsCueContainer &&
+            CueMappingActive == row.CueMappingActive && CueSourceTitle == row.CueSourceTitle && CueReusedWhole == row.CueReusedWhole &&
             AdditionalMetadataRead == row.AdditionalMetadataRead &&
             AdditionalMusicMetadata.From(this) == AdditionalMusicMetadata.From(row);
 

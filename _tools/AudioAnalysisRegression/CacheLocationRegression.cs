@@ -10,10 +10,10 @@ internal static class CacheLocationRegression
         var database = new SQLiteAsyncConnection(Path.Combine(fixture, "library.db"));
         try
         {
-            await database.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,SourceId INTEGER,Path TEXT,Title TEXT)");
+            await AnalysisTestSchema.CreateMusicAsync(database);
             await database.ExecuteAsync("CREATE TABLE RemoteTrack(MusicId INTEGER PRIMARY KEY,Href TEXT,Length INTEGER,ETag TEXT,Modified TEXT,Missing INTEGER)");
             await database.ExecuteAsync("CREATE TABLE WebDavSource(Id INTEGER PRIMARY KEY,Enabled INTEGER)");
-            await database.ExecuteAsync("INSERT INTO Music VALUES(1,0,'local.flac','Preserved library')");
+            await database.ExecuteAsync("INSERT INTO Music(Id,SourceId,Path,Title) VALUES(1,0,'local.flac','Preserved library')");
             var legacy = new AnalysisRepository(database);
             await legacy.InitializeAsync();
             await legacy.SaveEnabledAsync(false);

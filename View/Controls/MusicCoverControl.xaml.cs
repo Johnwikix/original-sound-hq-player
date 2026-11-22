@@ -126,7 +126,7 @@ public sealed partial class MusicCoverControl : UserControl
     }
     private void MetadataChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName is not (nameof(Music.ImageHash) or nameof(Music.Path))) return;
+        if (args.PropertyName is not (nameof(Music.ImageHash) or nameof(Music.Path) or nameof(Music.CoverSourceStamp) or nameof(Music.CoverOverridePath))) return;
         // 封面管线（CoverLoadQueue 工作线程）会在此通知里写 ImageHash；在订阅边界切回控件线程，
         // 否则后台线程直接触碰 FrameworkElement 会抛 RPC_E_WRONG_THREAD (0x8001010E) 并中断整条加载链路。
         if (_dispatcher.HasThreadAccess) Reload();

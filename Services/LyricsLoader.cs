@@ -40,7 +40,7 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
 
         var owner = new CancellationTokenSource();
         _request = owner;
-        var snapshot = new Music { Id = music.Id, SourceId = music.SourceId, Path = music.Path, Title = music.Title,
+        var snapshot = new Music { Id = music.Id, SourceId = music.SourceId, CuePath = music.CuePath, CueTrackNo = music.CueTrackNo, Path = music.Path, Title = music.Title,
             Author = music.Author, Album = music.Album, Duration = music.Duration, EmbeddedLyrics = music.EmbeddedLyrics,
             IsLrcSearched = music.IsLrcSearched, IsKrcSearched = music.IsKrcSearched };
         _ = RunOwnedAsync();

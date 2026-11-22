@@ -20,7 +20,7 @@ internal static class ScaleRegression
         AudioAnalysisService? service = null;
         try
         {
-            await db.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,SourceId INTEGER,Path TEXT,Title TEXT)");
+            await AnalysisTestSchema.CreateMusicAsync(db);
             await db.ExecuteAsync("CREATE TABLE RemoteTrack(MusicId INTEGER PRIMARY KEY,SourceId INTEGER,Href TEXT,Length INTEGER,ETag TEXT,Modified TEXT,Missing INTEGER)");
             await db.ExecuteAsync("CREATE TABLE WebDavSource(Id INTEGER PRIMARY KEY,Enabled INTEGER)");
             var repo = new AnalysisRepository(db); await repo.InitializeAsync();
@@ -36,7 +36,7 @@ internal static class ScaleRegression
             {
                 for(int i=1;i<=count;i++)
                 {
-                    tx.Execute("INSERT INTO Music VALUES(?,0,?,'Scale')",i,source);
+                    tx.Execute("INSERT INTO Music(Id,SourceId,Path,Title) VALUES(?,0,?,'Scale')",i,source);
                     tx.Execute("INSERT INTO AnalysisRecord(MusicId,SourceKey,Fingerprint,Version,Data,RetryAfterTicks) VALUES(?,?,'',2,?,0)",i,source,blobs[i%32]);
                 }
             });

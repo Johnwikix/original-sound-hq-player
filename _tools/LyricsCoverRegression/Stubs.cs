@@ -17,6 +17,10 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
+        public int CueTrackNo { get; set; }
+        public string CuePath { get; set; } = "";
+        public bool IsCueTrack => CueTrackNo > 0;
+        public string LocalTrackKey => IsCueTrack ? $"{CuePath}|{CueTrackNo}" : Path;
         public int Id { get; set; }
         public int? SourceId { get; set; }
         public string Path { get; set; } = "";

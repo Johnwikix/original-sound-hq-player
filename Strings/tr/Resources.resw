@@ -2816,4 +2816,5 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Referans beyaz parlaklığı</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Vurguların tepe parlaklığı</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR oynatma sayfasında şarkı sözlerinin 0, 5 ve 10 parlama düzeyleri referans beyazın parlaklığını sırasıyla %0, %50 ve %100 artırır. Üst sınır HDR tepe parlaklığıdır.</value></data>
+  <data name="CueSharedSource" xml:space="preserve"><value>Bu ses dosyasını birden fazla CUE parçası kullanıyor. Değişiklikleri kitaplığa kaydedin.</value></data>
 </root>

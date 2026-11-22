@@ -130,7 +130,7 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = 0; i < srcSpan.Length; i++)
                 {
                     var m = srcSpan[i];
-                    if (ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
+                    if (LibraryQueries.IsBrowsable(m) && ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                     {
                         buf[count++] = m;
                     }
@@ -152,7 +152,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void AddToFavour()
         {
             var artists = AppViewModel.SongsSource.AsValueEnumerable()
-                .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
+                .Where(m => LibraryQueries.IsBrowsable(m) && ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                 .OrderBy(m => m.Album, CjkStringComparer.Instance);
             foreach (var artist in artists)
             {
@@ -164,7 +164,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void AddToPlayList(int playListId)
         {
             var albums = AppViewModel.SongsSource
-                .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
+                .Where(m => LibraryQueries.IsBrowsable(m) && ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                 .OrderBy(m => m.Album, CjkStringComparer.Instance);
             _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
         }
@@ -173,7 +173,7 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task TransmitFileToUsb(UsbSendTarget? target)
         {
             var artists = AppViewModel.SongsSource
-                .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
+                .Where(m => LibraryQueries.IsBrowsable(m) && ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                 .OrderBy(m => m.Album, CjkStringComparer.Instance);
             if (target?.Device is null) return;
             await AppViewModel.TransmitFileToUsb(artists, target.Device, target.Format, target.BitrateKbps);

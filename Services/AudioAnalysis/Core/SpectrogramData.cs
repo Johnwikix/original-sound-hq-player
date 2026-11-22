@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json.Serialization;
+using BassPlayerIpc.Shared;
 
 namespace WinUIMusicPlayer.AudioAnalysis;
 
@@ -14,7 +15,10 @@ public sealed record SpectrogramData(int SampleRate, int Channels, int FftSize, 
     public static bool ValidFftSize(int size) => size is 2048 or 4096 or 8192;
 }
 
-public sealed record SpectrogramRequest(string Path, int FftSize);
+public sealed record SpectrogramRequest(string Path, int FftSize, AudioInput? CueInput = null)
+{
+    internal AudioInput GetInput() => CueInput is { SampleRange: not null } input ? input : new(Path);
+}
 
 [JsonSerializable(typeof(SpectrogramRequest))]
 public partial class SpectrogramJsonContext : JsonSerializerContext;

@@ -123,6 +123,7 @@ public sealed class PipeStateServer : IDisposable
             token.ThrowIfCancellationRequested();
             PipeFrameKind kind;
             int type = 0;
+            int transitionLength = 0;
             long id = 0;
             ReadOnlyMemory<byte> payload;
             lock (_gate)
@@ -162,10 +163,10 @@ public sealed class PipeStateServer : IDisposable
                         if (_progress.TransitionToken > 0)
                         {
                             type = (int)MessageTypeId.TransitionProgress;
-                            ProgressProtocol.WriteTransition(buffer, _progress);
+                            transitionLength = ProgressProtocol.WriteTransition(buffer, _progress);
+                            payload = buffer.AsMemory(0, ProgressProtocol.Size);
                         }
-                        else ProgressProtocol.Write(buffer, _progress);
-                        payload = buffer.AsMemory(0, ProgressProtocol.Size);
+                        else payload = buffer.AsMemory(0, ProgressProtocol.Write(buffer, _progress));
                     }
                 }
                 else if (_fftPending)
@@ -185,10 +186,10 @@ public sealed class PipeStateServer : IDisposable
                 continue;
             }
             await writer.WriteAsync(pipe, kind, id, type, payload, token).ConfigureAwait(false);
-            // Preserve the version-4 progress payload. Legacy readers ignore the coalesced companion notification.
-            if (kind == PipeFrameKind.Progress && type == (int)MessageTypeId.TransitionProgress)
+            // The base pulse carries the outgoing timeline; the companion adds the transition.
+            if (transitionLength > 0)
                 await writer.WriteAsync(pipe, PipeFrameKind.Notification, id, type,
-                    buffer.AsMemory(0, ProgressProtocol.TransitionSize), token).ConfigureAwait(false);
+                    buffer.AsMemory(0, transitionLength), token).ConfigureAwait(false);
         }
     }
 

@@ -1,3 +1,4 @@
+using BassPlayerIpc.Shared;
 using SQLite;
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,17 @@ public sealed class AnalysisSource
     public string StatusFingerprint { get; set; } = "";
     public int StatusDataLength { get; set; }
     public long StatusRetryTicks { get; set; }
-    public string SourceKey => SourceId == 0 ? Path : string.Join("\u001f", SourceId, Href, ETag, Modified, Length);
+    public string SourceKey { get; set; } = "";
+    public int CueTrackNo { get; set; }
+    public long StartSample { get; set; }
+    public long EndSample { get; set; }
+    public int SampleRate { get; set; }
+    public long CueSourceLength { get; set; }
+    public long CueSourceModifiedTicks { get; set; }
+    public AudioSampleRange? SampleRange => CueTrackNo > 0 ? new(StartSample, EndSample, SampleRate) : null;
+
+    public bool MatchesFile(FileInfo file) => file.Exists && (CueTrackNo == 0
+        || (file.Length == CueSourceLength && file.LastWriteTimeUtc.Ticks == CueSourceModifiedTicks));
 }
 /// <summary>同步消费SQLite借用的特征视图，返回前不得保留span。</summary>
 public delegate void VisitAnalysisVector(int musicId, ReadOnlySpan<float> vector);
@@ -119,11 +130,22 @@ public sealed class AnalysisRepository(SQLiteAsyncConnection connection, Func<st
 
     private string SourceSelectSql => cacheRoot is null ? SourcesMain : SourcesCache;
     private static readonly string SourcesCache = SourcesMain.Replace("main.AnalysisRecord", "features.AnalysisRecord", StringComparison.Ordinal);
+    private const string CueSourceJoin = "LEFT JOIN CueSource cs ON cs.CueSheetId=m.CueSheetId AND cs.Path=m.Path COLLATE NOCASE ";
+    private const string VisibleLocal = "m.SourceId=0 AND COALESCE(m.IsCueContainer,0)=0 AND COALESCE(m.IsMissing,0)=0 AND COALESCE(m.IsDetached,0)=0 " +
+        "AND (COALESCE(m.CueTrackNo,0)=0 OR (m.CueMappingActive=1 AND cs.Path IS NOT NULL AND m.SampleRate=cs.SampleRate " +
+        "AND m.StartSample>=0 AND m.EndSample>m.StartSample AND m.EndSample<=cs.TotalSamples))";
+    private const string VisibleRemote = "m.SourceId<>0 AND r.Missing=0 " +
+        "AND EXISTS(SELECT 1 FROM WebDavSource s WHERE s.Id=m.SourceId AND s.Enabled=1)";
+    private const string SourceKeySql =
+        "CASE WHEN m.SourceId<>0 THEN m.SourceId||char(31)||r.Href||char(31)||r.ETag||char(31)||r.Modified||char(31)||r.Length " +
+        "WHEN COALESCE(m.CueTrackNo,0)=0 THEN m.Path ELSE m.Path||char(31)||m.CueSheetId||char(31)||m.CueTrackNo||char(31)||m.SampleRate " +
+        "||char(31)||m.StartSample||char(31)||m.EndSample||char(31)||cs.Length||char(31)||cs.LastWriteUtcTicks END";
     private const string SourcesMain =
-        "SELECT m.Id,m.SourceId,m.Path,m.Title,r.Href,r.Length,r.ETag,r.Modified,a.Version AS StatusVersion," +
+        "SELECT m.Id,m.SourceId,m.Path,m.Title,m.CueTrackNo,m.StartSample,m.EndSample,m.SampleRate,r.Href,r.Length,r.ETag,r.Modified," +
+        "cs.Length AS CueSourceLength,cs.LastWriteUtcTicks AS CueSourceModifiedTicks," + SourceKeySql + " AS SourceKey,a.Version AS StatusVersion," +
         "a.Fingerprint AS StatusFingerprint,length(a.Data) AS StatusDataLength,a.RetryAfterTicks AS StatusRetryTicks " +
-        "FROM Music m LEFT JOIN RemoteTrack r ON r.MusicId=m.Id LEFT JOIN main.AnalysisRecord a ON a.MusicId=m.Id " +
-        "WHERE (m.SourceId=0 OR (r.Missing=0 AND EXISTS(SELECT 1 FROM WebDavSource s WHERE s.Id=m.SourceId AND s.Enabled=1)))";
+        "FROM Music m LEFT JOIN RemoteTrack r ON r.MusicId=m.Id " + CueSourceJoin + "LEFT JOIN main.AnalysisRecord a ON a.MusicId=m.Id " +
+        "WHERE ((" + VisibleLocal + ") OR (" + VisibleRemote + "))";
 
     /// <summary>按曲目查询已提交版本。</summary>
     public Task<AnalysisRecord?> FindAsync(int id) => WithCache<AnalysisRecord?>(db => db.FindWithQuery<AnalysisRecord>("SELECT * FROM " + Table + " WHERE MusicId=?", id));
@@ -138,9 +160,8 @@ public sealed class AnalysisRepository(SQLiteAsyncConnection connection, Func<st
     private static readonly string VectorsCache = VectorsMain.Replace("main.AnalysisRecord", "features.AnalysisRecord", StringComparison.Ordinal);
     private const string VectorsMain =
         "SELECT a.MusicId,a.Data FROM main.AnalysisRecord a JOIN Music m ON m.Id=a.MusicId LEFT JOIN RemoteTrack r ON r.MusicId=m.Id " +
-        "WHERE a.MusicId>? AND a.Version=2 AND length(a.Data)=1536 AND ((m.SourceId=0 AND a.SourceKey=m.Path) OR " +
-        "(r.Missing=0 AND EXISTS(SELECT 1 FROM WebDavSource s WHERE s.Id=m.SourceId AND s.Enabled=1) AND a.SourceKey=" +
-        "CAST(m.SourceId AS TEXT)||char(31)||r.Href||char(31)||r.ETag||char(31)||r.Modified||char(31)||CAST(r.Length AS TEXT))) ORDER BY a.MusicId LIMIT 64";
+        CueSourceJoin + "WHERE a.MusicId>? AND a.Version=2 AND length(a.Data)=1536 AND a.SourceKey=(" + SourceKeySql +
+        ") AND ((" + VisibleLocal + ") OR (" + VisibleRemote + ")) ORDER BY a.MusicId LIMIT 64";
 
     /// <summary>在SQLite连接锁下同步借用BLOB，避免每遍按曲目复制1536 B托管数组。</summary>
     /// <remarks>回调在后台线程执行，span只在当前step期间有效；不能传出回调或跨await。每页结束释放statement和锁。</remarks>

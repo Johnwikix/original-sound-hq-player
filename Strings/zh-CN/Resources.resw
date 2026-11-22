@@ -2818,4 +2818,5 @@ SHA-256：{5}
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>参考白点亮度</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>高光峰值亮度</value></data>
   <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>在 HDR 播放页，歌词发光强度 0、5、10 分别在参考白基础上提亮 0%、50%、100%，受 HDR 峰值限制。</value></data>
+  <data name="CueSharedSource" xml:space="preserve"><value>多个 CUE 音轨共用此音频文件。请将更改保存到曲库。</value></data>
 </root>

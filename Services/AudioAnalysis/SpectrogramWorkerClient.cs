@@ -1,4 +1,5 @@
 using System;
+using BassPlayerIpc.Shared;
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
@@ -12,8 +13,12 @@ namespace WinUIMusicPlayer.Services.AudioAnalysis;
 /// <summary>拥有一次声谱图进程；取消或失败后先终止并等待进程，调用方随后才能释放输入租约。</summary>
 public static class SpectrogramWorkerClient
 {
-    public static async Task<SpectrogramData> AnalyzeAsync(string path, int fftSize, IProgress<double>? progress, CancellationToken token)
+    public static Task<SpectrogramData> AnalyzeAsync(string path, int fftSize, IProgress<double>? progress, CancellationToken token)
+        => AnalyzeAsync(new AudioInput(path), fftSize, progress, token);
+
+    public static async Task<SpectrogramData> AnalyzeAsync(AudioInput input, int fftSize, IProgress<double>? progress, CancellationToken token)
     {
+        input.Validate();
         token.ThrowIfCancellationRequested();
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromMinutes(10));
@@ -26,8 +31,9 @@ public static class SpectrogramWorkerClient
         using var process = Process.Start(start) ?? throw new IOException("Spectrum worker did not start.");
         try
         {
-            var request = JsonSerializer.Serialize(new SpectrogramRequest(path, fftSize), SpectrogramJsonContext.Default.SpectrogramRequest);
-            await process.StandardInput.WriteLineAsync(request.AsMemory(), deadline.Token).ConfigureAwait(false);
+            var request = input.SampleRange is null ? new SpectrogramRequest(input.Path, fftSize) : new SpectrogramRequest("", fftSize, input);
+            string json = JsonSerializer.Serialize(request, SpectrogramJsonContext.Default.SpectrogramRequest);
+            await process.StandardInput.WriteLineAsync(json.AsMemory(), deadline.Token).ConfigureAwait(false);
             process.StandardInput.Close();
             var stream = process.StandardOutput.BaseStream;
             var header = new byte[24];

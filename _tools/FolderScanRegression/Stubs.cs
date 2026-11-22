@@ -2,9 +2,29 @@ namespace ATL
 {
     public class Track(string path)
     {
-        public string Title => path;
-        public string Artist => "Test";
-        public string Album => "Test";
+        public Track(Stream stream, string extension) : this("") => throw new NotSupportedException("WAV tags are tested by UsbTransferRegression.");
+        public string Title { get; set; } = path;
+        public string? Artist { get; set; } = "Test";
+        public string? Album { get; set; } = "Test";
+        public int TrackNumber { get; set; }
+        public int DiscNumber { get; set; }
+        public int Year { get; set; }
+        public List<PictureInfo> EmbeddedPictures { get; } = [];
+        public bool Save(AudioData.MetaDataIOFactory.TagType type) => throw new NotSupportedException();
+    }
+
+    public sealed class PictureInfo
+    {
+        public enum PIC_TYPE { Front }
+        public static PictureInfo fromBinaryData(byte[] bytes, PIC_TYPE type) => new();
+    }
+}
+
+namespace ATL.AudioData
+{
+    public static class MetaDataIOFactory
+    {
+        public enum TagType { ID3V2 }
     }
 }
 namespace ZLinq
@@ -57,7 +77,21 @@ namespace WinUIMusicPlayer.Model
         public bool? TitleFromFileName { get; set; }
         public bool IsMissing { get; set; }
         public bool IsDetached { get; set; }
+        public int? CueSheetId { get; set; }
+        public string CuePath { get; set; } = "";
+        public int CueTrackNo { get; set; }
+        public long StartSample { get; set; }
+        public long EndSample { get; set; }
+        public bool CueMappingActive { get; set; }
+        public string CueSourceTitle { get; set; } = "";
+        public bool CueReusedWhole { get; set; }
+        public bool IsCueContainer { get; set; }
+        [SQLite.Ignore] public bool IsCueTrack => CueTrackNo > 0;
+        [SQLite.Ignore] public bool CanEditFile => !IsRemote && !IsCueTrack && !IsCueContainer;
+        [SQLite.Ignore] public string LocalTrackKey => IsCueTrack ? CuePath + "|" + CueTrackNo : Path;
         public string CoverOverridePath { get; set; } = "";
+        public long CoverAudioWriteTicks { get; set; }
+        public string CoverSourceStamp { get; set; } = "";
         public string ImageHash { get; set; } = "";
         public int SourceId { get; set; }
         [SQLite.Ignore] public bool IsRemote => SourceId != 0;
@@ -111,11 +145,18 @@ namespace WinUIMusicPlayer.Utils
             WriteMetadata(music, path);
         }
         public static string GetString(string key) => key;
+        public static string SanitizeFileName(string name, char[] invalid)
+        {
+            foreach (char character in invalid) name = name.Replace(character, '_');
+            return name;
+        }
         public static TaskCompletionSource SlowFile = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static TaskCompletionSource SlowFileEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static int Reads;
         public static Task<byte[]?> GetRawImage(Model.Music song) => Task.FromResult<byte[]?>(null);
-        public static bool IsMusicFile(string extension) => extension == ".mp3";
+        public static bool ScanCueSources;
+        public static bool IsMusicFile(string extension) => extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
+            ScanCueSources && extension.ToLowerInvariant() is ".wav" or ".flac";
         public static async Task<(Model.Music?, string?)> GetMusicInfo(Windows.Storage.StorageFile file)
         {
             if (file.Name.StartsWith("slow"))
@@ -129,8 +170,22 @@ namespace WinUIMusicPlayer.Utils
             {
                 Path = file.Path, Title = file.Name, FolderPath = global::System.IO.Path.GetDirectoryName(file.Path)!,
                 LastLevelFolderPath = new DirectoryInfo(global::System.IO.Path.GetDirectoryName(file.Path)!).Name,
-                UpdateTime = File.GetLastWriteTime(file.Path), Duration = TimeSpan.FromSeconds(2), SampleRate = 48000
+                UpdateTime = File.GetLastWriteTime(file.Path), Duration = TimeSpan.FromSeconds(2),
+                SampleRate = Path.GetExtension(file.Path).Equals(".flac", StringComparison.OrdinalIgnoreCase) ? 44_100 : 48_000
             }, "[00:01.00]lyrics");
+        }
+    }
+}
+
+namespace WinUIMusicPlayer.Utils
+{
+    internal static class LocalCoverSource
+    {
+        internal static bool IsCandidate(string path) => Path.GetFileName(path).Equals("cover.jpg", StringComparison.OrdinalIgnoreCase);
+        internal static string GetRevision(string directory, bool verifyContent, CancellationToken token, IReadOnlyList<string>? candidates = null)
+        {
+            string path = Path.Combine(directory, "cover.jpg");
+            return File.Exists(path) ? File.ReadAllText(path) : "";
         }
     }
 }

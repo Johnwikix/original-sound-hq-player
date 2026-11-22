@@ -56,11 +56,13 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
                 "BEGIN INSERT OR IGNORE INTO SongAutoLinkDirty(SongId) VALUES(NEW.Id); END");
             db.Execute("CREATE TABLE IF NOT EXISTS VersionMatch(MusicId INTEGER PRIMARY KEY, MatchKey TEXT NOT NULL)");
             db.Execute("CREATE INDEX IF NOT EXISTS IX_VersionMatch_Key ON VersionMatch(MatchKey)");
-            if (schema is { Version: < 4 }) db.Execute("DROP TRIGGER IF EXISTS SongAutoLink_Member");
+            if (schema is { Version: < 5 }) db.Execute("DROP TRIGGER IF EXISTS SongAutoLink_Member");
             db.Execute("""
-                CREATE TRIGGER IF NOT EXISTS SongAutoLink_Member AFTER UPDATE OF Title,Author,Album,SongId,IsDetached ON Music
+                CREATE TRIGGER IF NOT EXISTS SongAutoLink_Member AFTER UPDATE OF Title,Author,Album,SongId,IsDetached,IsCueContainer,CueSheetId,TitleFromFileName ON Music
                 WHEN OLD.Title IS NOT NEW.Title OR OLD.Author IS NOT NEW.Author OR OLD.Album IS NOT NEW.Album
                     OR OLD.SongId IS NOT NEW.SongId OR OLD.IsDetached IS NOT NEW.IsDetached
+                    OR OLD.IsCueContainer IS NOT NEW.IsCueContainer OR OLD.CueSheetId IS NOT NEW.CueSheetId
+                    OR OLD.TitleFromFileName IS NOT NEW.TitleFromFileName
                 BEGIN
                     INSERT OR IGNORE INTO SongAutoLinkDirty SELECT OLD.SongId WHERE OLD.SongId>0;
                     INSERT OR IGNORE INTO SongAutoLinkDirty SELECT NEW.SongId WHERE NEW.SongId>0;
@@ -172,7 +174,7 @@ public sealed partial class SongVersionStore(SQLiteAsyncConnection database)
         SELECT * FROM Music WHERE Id IN (
             SELECT m.Id FROM VersionMatch v INDEXED BY IX_VersionMatch_Key JOIN Music m ON m.Id=v.MusicId
             WHERE v.MatchKey=(SELECT MatchKey FROM VersionMatch WHERE MusicId=?)
-              AND m.IsDetached=0 AND m.SongId<>(SELECT SongId FROM Music WHERE Id=?)
+              AND m.IsDetached=0 AND COALESCE(m.IsCueContainer,0)=0 AND m.SongId<>(SELECT SongId FROM Music WHERE Id=?)
         ) ORDER BY Id
         """;
 

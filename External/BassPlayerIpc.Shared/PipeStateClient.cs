@@ -92,7 +92,8 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
                     case PipeFrameKind.Notification:
                         if (frame.Type == (int)MessageTypeId.TransitionProgress)
                         {
-                            if (transitionRevision == 0 || frame.Id != transitionRevision || frame.Payload.Length != ProgressProtocol.TransitionSize)
+                            if (transitionRevision == 0 || frame.Id != transitionRevision
+                                || frame.Payload.Length is not (ProgressProtocol.TransitionSize or ProgressProtocol.TransitionWithPlaybackIdSize))
                                 throw new InvalidDataException("Invalid transition progress framing.");
                             var transition = ProgressProtocol.Read(frame.Payload.Span);
                             if (transition.Revision != frame.Id) throw new InvalidDataException("Invalid transition progress revision.");

@@ -90,11 +90,11 @@ public sealed partial class PlaybackEngine
     {
         if (!ReferenceEquals(failed, _session)) return false;
         long position = GetTimeProgress().currentMs;
-        string? url = MusicUrl;
+        var input = _activeInput;
         _atmosUseSharedPcm = true;
         DisposeSession();
-        if (string.IsNullOrEmpty(url)) return false;
-        SetSession(OpenSession(url, kindOverride: RenderKind.Pcm));
+        if (input is not { } active || string.IsNullOrEmpty(active.Path)) return false;
+        SetSession(OpenSession(active, kindOverride: RenderKind.Pcm));
         if (_session == null) return false;
         _session.RequestSeek(position);
         return true;

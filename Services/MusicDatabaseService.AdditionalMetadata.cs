@@ -14,7 +14,7 @@ public partial class MusicDatabaseService
     /// <summary>只为当前属性窗口补读一次本地标签；已知空值不重复打开文件。</summary>
     public async Task<AdditionalMusicMetadata?> ReadAdditionalMetadataAsync(Music music, CancellationToken token)
     {
-        if (music.IsRemote || music.AdditionalMetadataRead) return null;
+        if (music.IsRemote || music.IsCueTrack || music.AdditionalMetadataRead) return null;
         await WhenInitialized.WaitAsync(token);
         token.ThrowIfCancellationRequested();
         try

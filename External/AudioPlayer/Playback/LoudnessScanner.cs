@@ -25,11 +25,12 @@ internal static class LoudnessScanner
     }
 
     internal static Task<LoudnessMeasurement?> ScanAsync(string path, int rate, int channels,
-        int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null, PlaybackSource? source = null, uint channelMask = 0)
-        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory, source, channelMask), token);
+        int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null, PlaybackSource? source = null,
+        uint channelMask = 0, AudioSampleRange? sampleRange = null)
+        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory, source, channelMask, sampleRange), token);
 
     private static async Task<LoudnessMeasurement?> ScanCoreAsync(string path, int rate, int channels, int dsdRate, int dsdGain,
-        CancellationToken token, string? cacheDirectory, PlaybackSource? source, uint channelMask)
+        CancellationToken token, string? cacheDirectory, PlaybackSource? source, uint channelMask, AudioSampleRange? sampleRange)
     {
         token.ThrowIfCancellationRequested();
         bool remote = source?.Kind == PlaybackSourceKind.Http;
@@ -50,6 +51,8 @@ internal static class LoudnessScanner
             ? $"http|{source!.ResourceId}|{remoteVersion}"
             : $"file|{file!.FullName.ToUpperInvariant()}|{length}|{modified}";
         string key = $"v3|{identity}|{rate}|{channels}|{channelMask}|{dsdRate}|{dsdGain}";
+        if (sampleRange is { } range)
+            key += $"|{range.StartSample}|{range.EndSample}|{range.SampleRate}";
         var location = Volatile.Read(ref _location);
         string directory = cacheDirectory ?? location?.Directory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WinUIMusicPlayer", "LoudnessCache");
@@ -72,7 +75,7 @@ internal static class LoudnessScanner
         try
         {
             using var decoder = new PcmDecoder();
-            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels, source: source, cancellationToken: token)) return null;
+            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels, source: source, cancellationToken: token, sampleRange: sampleRange)) return null;
             var meter = new LoudnessMeter(rate, channels, channelMask: channelMask);
             double[] scratch = ArrayPool<double>.Shared.Rent(16384 * channels);
             long frames = 0;

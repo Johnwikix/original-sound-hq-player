@@ -116,7 +116,7 @@ internal static unsafe partial class Program
             if (mode != "ready")
                 Require(!commands.IsCompletedSuccessfully && !states.IsCompletedSuccessfully, "stopped or failed initialization published IPC ready");
             if (mode == "failure")
-                Require(output.GetAwaiter().GetResult().Contains("startup dependency failure", StringComparison.Ordinal), "dependency failure was not observed");
+                Require(errors.GetAwaiter().GetResult().Contains("startup dependency failure", StringComparison.Ordinal), "dependency failure was not observed on stderr");
         }
         finally
         {

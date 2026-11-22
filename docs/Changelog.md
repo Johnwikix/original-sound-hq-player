@@ -1,3 +1,11 @@
+## 2026-11-22 本地 CUE 整轨专辑与目录封面
+
+- `Services`、`Model/Music.cs` 支持把同目录 FLAC/WAV 镜像按外置 CUE 的轨序、标签和采样边界入库，保留曲目身份与旧整轨引用。
+- `External/AudioPlayer`、`External/BassPlayerIpc.Shared`、`ViewModel` 按轨播放、定位与切换，显示单轨时长和版本来源。
+- `Utils/LocalCoverSource.cs`、`Services/CoverPresentationService.cs` 为本地音乐读取同目录正面封面并在换图后刷新。
+- `AudioConverters`、`External/AudioAnalysisWorker`、`Helper/UsbWriterHelper.cs` 按所选区间转码、分析及导出；CUE 子轨各自保存歌词和库内标签，禁止从子轨删除或改写整盘音源。
+- `Utils/MusicPlaylistFile.cs` 在 M3U8 导出与重新导入时保留 CUE 轨号、时间范围和曲序。
+
 ## 2026-11-21 错开播放页切歌渲染并恢复歌词换场
 
 - `LyricsLoader` 为全部播放歌词加载入口统一执行 500 ms 防抖；手动切歌、自动连播、交叉淡化预览、回退及同曲重载共用同一个可取消请求。

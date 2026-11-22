@@ -30,6 +30,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private (Music Music, long Generation, bool Advance)? _deferredFailure;
     private (Music Music, long Entry, bool Exact, bool MayAdvance, bool Confirmed)? _activeIntent;
     private long _activeSelectionVersion, _activeLocalPlaybackId, _lastEndedEpoch;
+    private long _failedLocalPlaybackId = -1;
     private (int Version, int Scope)? _manualQueueOptions;
     private readonly HashSet<int> _attemptedVersions = [];
     private readonly HashSet<int> _probedVersionSources = [];
@@ -276,6 +277,18 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         AdvanceAfterVersionFailure();
     }
 
+    internal void LocalPlaybackFailed(long playbackId)
+    {
+        if (!CanAdvanceAfterEnd || playbackId != _activeLocalPlaybackId
+            || state.CurrentPlayingMusic is not { IsRemote: false, IsCueTrack: true } music) return;
+        Volatile.Write(ref _failedLocalPlaybackId, playbackId);
+        if (state.State.Playback.TransitionPresentation is { IsCommitted: true, Token: 0 })
+            state.State.Playback.TransitionPresentation = null;
+        state.IsPlaying = false;
+        state.StopProgressTimer();
+        OnRemoteFailed(music, _playingGeneration, advance: true);
+    }
+
     private void AdvanceAfterVersionFailure()
     {
         if (!_intentMayAdvance) { ShowVersionFailure(); return; }
@@ -334,7 +347,16 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
 
     private async Task<bool> IsAvailableAsync(Music music, CancellationToken token, bool retryImmediately = false)
     {
-        if (!music.IsRemote) return music.IsPlayable && (music.SongId <= 0 || await Task.Run(() => File.Exists(music.Path), token));
+        if (!music.IsRemote)
+        {
+            if (!music.IsPlayable) return false;
+            if (music.IsCueTrack)
+            {
+                try { GetAudioInput(music).Validate(); }
+                catch (ArgumentException) { return false; }
+            }
+            return music.SongId <= 0 || await Task.Run(() => File.Exists(music.Path), token);
+        }
         try
         {
             return await library.CanPlayAsync(music, retryImmediately, token);
@@ -429,6 +451,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         bool exact = _intentExact && (!resumeInterrupted || state.State.Queue.RequestedVersion(entryId) > 0);
         bool mayAdvance = _intentMayAdvance;
         long previousEpoch = 0;
+        long localPlaybackId = 0;
         long remoteGeneration = music.IsRemote ? remote.BeginSelection(music, resumeInterrupted) : 0;
         _playingGeneration = remoteGeneration;
         _playingVersion = _selectionVersion;
@@ -445,9 +468,9 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             if (!music.IsRemote)
             {
                 previousEpoch = ipc.TryGetProgressSnapshot(out var before) ? before.Epoch : 0;
-                long playbackId = ++_nextToken;
-                player.PlayMusic(music, playbackId);
-                _activeLocalPlaybackId = playbackId;
+                localPlaybackId = ++_nextToken;
+                player.PlayMusic(music, localPlaybackId);
+                _activeLocalPlaybackId = localPlaybackId;
                 _lastEndedEpoch = 0;
             }
             _supersededHandoff = null;
@@ -477,10 +500,10 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         if (music.IsRemote && !token.IsCancellationRequested)
             await Task.Run(() => remote.PlayAsync(music, remoteGeneration, token), token);
         else if (!music.IsRemote)
-            _ = tasks.RunAsync(stopping => ConfirmLocalStartAsync(music, previousEpoch, token, stopping));
+            _ = tasks.RunAsync(stopping => ConfirmLocalStartAsync(music, localPlaybackId, previousEpoch, token, stopping));
     }
 
-    private async Task ConfirmLocalStartAsync(Music music, long previousEpoch, CancellationToken selection, CancellationToken stopping)
+    private async Task ConfirmLocalStartAsync(Music music, long playbackId, long previousEpoch, CancellationToken selection, CancellationToken stopping)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(selection, stopping);
         var token = linked.Token;
@@ -492,12 +515,15 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             while (Environment.TickCount64 < deadline)
             {
                 token.ThrowIfCancellationRequested();
-                if (_disposed || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
-                if (ipc.TryGetProgressSnapshot(out var progress) && progress.Playing && progress.Epoch != previousEpoch)
+                if (_disposed || Volatile.Read(ref _failedLocalPlaybackId) == playbackId
+                    || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
+                if (ipc.TryGetProgressSnapshot(out var progress) && progress.Playing && progress.Epoch > 0 && progress.Epoch != previousEpoch
+                    && (!music.IsCueTrack || progress.PlaybackId == playbackId))
                 {
                     await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
                         if (!_disposed && state.CanPublishState && !token.IsCancellationRequested
+                            && _activeLocalPlaybackId == playbackId && _failedLocalPlaybackId != playbackId
                             && ReferenceEquals(state.CurrentPlayingMusic, music))
                         {
                             ClearConfirmedPresentation(progress);
@@ -512,7 +538,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             }
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
-                if (_disposed || token.IsCancellationRequested || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
+                if (_disposed || token.IsCancellationRequested || _activeLocalPlaybackId != playbackId
+                    || _failedLocalPlaybackId == playbackId || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
                 if (state.State.Playback.TransitionPresentation is { IsCommitted: true, Token: 0 })
                     state.State.Playback.TransitionPresentation = null;
                 if (_intentExact || _intentMusic?.SongId <= 0) { ShowVersionFailure(); return; }

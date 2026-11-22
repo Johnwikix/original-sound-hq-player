@@ -16,16 +16,18 @@ internal static class CommunitySeedRegression
         var db = new SQLiteAsyncConnection(path);
         try
         {
-            await db.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,Title TEXT,Author TEXT,IsFavorite INTEGER)");
+            await db.ExecuteAsync("CREATE TABLE Music(Id INTEGER PRIMARY KEY,Title TEXT,Author TEXT,IsFavorite INTEGER,IsCueContainer INTEGER NOT NULL DEFAULT 0)");
             await db.ExecuteAsync("CREATE TABLE PlayList(Id INTEGER PRIMARY KEY)");
             await db.ExecuteAsync("CREATE TABLE PlayListMusic(PlayListId INTEGER,MusicId INTEGER)");
             await db.ExecuteAsync("CREATE TABLE PlaybackHistory(MusicId INTEGER,StartedAt INTEGER,TotalDurationMs REAL,DurationPlayedMs REAL)");
-            for (int id = 1; id <= 20; id++) await db.ExecuteAsync("INSERT INTO Music VALUES(?,?,'Dominant',1)", id, "Song " + id);
-            await db.ExecuteAsync("INSERT INTO Music VALUES(21,'Duet','Singer A & Singer B',1),(22,'Playlist only','Curated',0),(23,'Recently liked','Recent',0),(24,'Orphaned','Orphan',0),(25,'Too short','Short',0)");
+            for (int id = 1; id <= 20; id++) await db.ExecuteAsync("INSERT INTO Music(Id,Title,Author,IsFavorite) VALUES(?,?,'Dominant',1)", id, "Song " + id);
+            await db.ExecuteAsync("INSERT INTO Music(Id,Title,Author,IsFavorite) VALUES(21,'Duet','Singer A & Singer B',1),(22,'Playlist only','Curated',0),(23,'Recently liked','Recent',0),(24,'Orphaned','Orphan',0),(25,'Too short','Short',0)");
             await db.ExecuteAsync("INSERT INTO PlayList VALUES(1),(2)");
             await db.ExecuteAsync("INSERT INTO PlayListMusic VALUES(1,22),(2,22),(999,24)");
             await db.ExecuteAsync("INSERT INTO PlaybackHistory VALUES(23,?,100000,100000),(25,?,100000,1000)", now.Ticks, now.Ticks);
+            await db.ExecuteAsync("INSERT INTO Music VALUES(26,'Expanded Album','Expanded Artist',1,1)");
             var candidates = await CommunitySeedQuery.ReadAsync(db, now, .5, default);
+            Check(candidates.All(item => item.Id != 26), "expanded CUE images do not become community seeds");
             Check(candidates.Count(item => item.Artist == "Dominant") == 1, "duplicate artist favorites cannot exhaust the community seed budget");
             Check(candidates.Single(item => item.Id == 22).IsPreferred, "playlist-only track is a positive community seed");
             Check(candidates.All(item => item.Id is not (24 or 25)), "orphaned playlist and unqualified short listen are not positive community seeds");

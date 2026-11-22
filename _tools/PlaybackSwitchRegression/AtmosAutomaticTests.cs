@@ -17,19 +17,19 @@ internal static unsafe partial class Program
         {
             var engine = Engine("ASIO");
             engine.ExperimentalAtmosPassthrough = true;
-            using var ordinary = (Session?)Invoke(engine, "OpenSession", path, false, null);
+            using var ordinary = OpenTestSession(engine, path, false, null);
             Require(ordinary?.Kind == RenderKind.Pcm && engine.OutputMode == "ASIO", "ASIO was silently redirected");
             engine.AtmosEndpointId = "explicit-hdmi";
             Invoke(engine, "ResetAtmosAttempt");
-            using var encoded = (Session?)Invoke(engine, "OpenSession", path, false, null);
+            using var encoded = OpenTestSession(engine, path, false, null);
             Require(encoded?.Kind == RenderKind.Eac3 && engine.OutputMode == "ASIO", "explicit HDMI did not enable temporary exclusive");
         });
         Run("Auto Atmos: pause/settings/seek preserve intent and original shared preference", () =>
         {
             var engine = Engine("WasapiShared");
             Set(engine, "_streamLock", new object());
-            engine.MusicUrl = path;
-            using var initial = (Session?)Invoke(engine, "OpenSession", path, false, null);
+            SetTestInput(engine, path);
+            using var initial = OpenTestSession(engine, path, false, null);
             initial!.AnchorFrames = initial.MsToFrames(500);
             Set(engine, "_session", initial);
             var settings = new IpcSetting { OutputMode = "WasapiShared", BassOutputDeviceId = -1,
@@ -56,9 +56,9 @@ internal static unsafe partial class Program
         {
             var engine = Engine("WasapiShared");
             Set(engine, "_streamLock", new object());
-            engine.MusicUrl = path;
+            SetTestInput(engine, path);
             engine.ExperimentalAtmosPassthrough = true;
-            using var encoded = (Session?)Invoke(engine, "OpenSession", path, false, null);
+            using var encoded = OpenTestSession(engine, path, false, null);
             encoded!.AnchorFrames = encoded.MsToFrames(400);
             Set(engine, "_session", encoded);
             Set(engine, "_atmosResolvedEndpoint", "pinned-hdmi");
@@ -71,12 +71,12 @@ internal static unsafe partial class Program
                 var state = engine.GetDspState();
                 Require(state.AtmosStatus == AtmosPlaybackStatus.PcmFallback && state.AtmosFailureSequence == 1
                     && state.LastAtmosFailure == AtmosFailure.DeviceBusy && !state.AtmosFailureStopped, "incorrect/duplicate failure state");
-                using var retry = (Session?)Invoke(engine, "OpenSession", path, false, RenderKind.Eac3);
+                using var retry = OpenTestSession(engine, path, false, RenderKind.Eac3);
                 Require(retry?.Kind == RenderKind.Pcm, "recovery reacquired exclusive mode");
                 engine.ChangeWaveChannelTime(300);
                 Require(engine.GetTimeProgress().currentMs == 300, "fallback seek lost position");
                 Invoke(engine, "ResetAtmosAttempt");
-                using var next = (Session?)Invoke(engine, "OpenSession", path, false, null);
+                using var next = OpenTestSession(engine, path, false, null);
                 Require(next?.Kind == RenderKind.Eac3, "next explicit attempt stayed disabled");
                 Require(engine.GetDspState().AtmosFailureSequence == 1, "failure evidence lost before IPC could read it");
             }
@@ -127,8 +127,8 @@ internal static unsafe partial class Program
             Set(engine, "_streamLock", new object());
             Set(engine, "_ipc", RuntimeHelpers.GetUninitializedObject(typeof(AudioPlayer.PlayerIpcService)));
             engine.ExperimentalAtmosPassthrough = true;
-            engine.MusicUrl = path;
-            using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
+            SetTestInput(engine, path);
+            using var session = OpenTestSession(engine, path, false, null);
             session!.AnchorFrames = session.MsToFrames(600);
             Set(engine, "_session", session);
             Set(engine, "_atmosResolvedEndpoint", "receiver");

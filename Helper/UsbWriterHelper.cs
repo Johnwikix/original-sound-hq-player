@@ -12,7 +12,7 @@ namespace WinUIMusicPlayer.Helper
 {
     /// <summary>
     /// USB 传输的纯 IO 层：按目标设备目录结构（MUSIC\歌手\专辑）写入音频与歌词，
-    /// 支持发送前转换（磁盘直接编码，MTP 经本地暂存，失败回退为原格式复制）。
+    /// 支持发送前转换。CUE 轨逐轨编码，普通曲目的转换失败时可复制原文件。
     /// 不做任何 UI 或数据层操作——进度经 <see cref="WriteToUsb"/> 的聚合回调上报，
     /// 入库由扫描/发送流程负责。
     /// </summary>
@@ -31,7 +31,7 @@ namespace WinUIMusicPlayer.Helper
 
         /// <summary>
         /// 把一批音乐写入 USB 设备。<paramref name="format"/> 为 null 时原格式复制；
-        /// 否则先转换为该格式（含标签/封面写入），失败时回退复制原文件，保证用户仍拿到音乐。
+        /// 否则先转换为该格式（含标签/封面写入）。CUE 轨使用指定格式或原格式重新编码。
         /// <paramref name="progress"/> 收到整批聚合百分比（0-100）；
         /// <paramref name="nextFileBase"/> 在每个文件完成后调用，返回该文件的完成基准百分比
         /// （= 已完成文件数/总数），用于跨批次的进度重置与聚合。
@@ -46,151 +46,173 @@ namespace WinUIMusicPlayer.Helper
         {
             var result = new UsbExportResult(musicList.Count);
             var available = new bool[musicList.Count];
+            bool hasCueTracks = false;
             for (int i = 0; i < musicList.Count; i++)
             {
                 if (cancellationToken.IsCancellationRequested) return result;
                 available[i] = File.Exists(musicList[i].Path);
+                hasCueTracks |= available[i] && musicList[i].IsCueTrack;
             }
             string?[] conflicts;
             try { conflicts = UsbExportConflicts.Find(musicList, format, existingRecords, available, cancellationToken); }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return result; }
-            double basePercent = 0;
-            double currentFilePercent = 0;
-            // 转换服务的进度事件（0-100）映射为当前文件的内部进度参与聚合
-            void OnConverterProgress(object? _, double p)
+            var ownership = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (hasCueTracks && existingRecords is not null)
             {
-                currentFilePercent = p;
-                // MTP 转码完成后还要传输，保留最后 20% 给设备复制。
-                progress?.Report(basePercent + currentFilePercent * (device.IsPortable ? 0.8 : 1) / musicList.Count);
-            }
-            _converterService.updateProgress += OnConverterProgress;
-            try
-            {
-                for (int index = 0; index < musicList.Count; index++)
+                var ids = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (var existing in existingRecords)
                 {
-                    var music = musicList[index];
-                    // 原生转换没有取消协议：等待本文件真正结束后停止下一项，保留已成功的台账。
-                    if (cancellationToken.IsCancellationRequested) break;
-                    currentFilePercent = 0;
-                    progress?.Report(basePercent);
-                    string? stagingPath = null;
-                    bool audioCopied = false;
-                    try
+                    string path = UsbExportPaths.GetStoragePathKey(existing.Path);
+                    if (!ids.TryGetValue(path, out int previous) || previous < existing.Id)
                     {
-                        if (conflicts[index] is { } conflict)
-                            throw new IOException(string.Format(ToolUtils.GetString("UsbExportPathConflict"), conflict));
-                        if (!available[index])
-                        {
-                            _logger.LogWarning($"源文件不存在，跳过: {music.Path}");
-                            result.AddFailure(music, UsbExportFailureStage.Audio, new FileNotFoundException(null, music.Path).Message);
-                            continue;
-                        }
-                        string sanitizedAuthor = UsbExportPaths.GetFolderName(music.Author);
-                        string sanitizedAlbum = UsbExportPaths.GetFolderName(music.Album);
-                        using var portableWriter = device.IsPortable
-                            ? await UsbPortableStorageWriter.OpenAsync(device, sanitizedAuthor, sanitizedAlbum, cancellationToken)
-                            : null;
-                        if (device.IsPortable)
-                            stagingPath = Directory.CreateTempSubdirectory("OriginalSound-UsbExport-").FullName;
-                        string targetBasePath = stagingPath ?? Path.Combine(device.Path, "MUSIC", sanitizedAuthor, sanitizedAlbum);
-                        Directory.CreateDirectory(targetBasePath);
-
-                        string sanitizedFileName = UsbExportPaths.GetFileName(Path.GetFileName(music.Path));
-                        string convertedPath = Path.Combine(targetBasePath,
-                            Path.ChangeExtension(sanitizedFileName, "." + AudioConverterService.GetExtensionForFormat(format ?? music.Extension)));
-                        string originalPath = Path.Combine(targetBasePath, sanitizedFileName);
-
-                        bool converted = false;
-                        if (format is not null && !music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
-                        {
-                            // MTP 编码到暂存目录；标签/封面仍由同一转换服务完成。
-                            converted = await _converterService.ConvertForExportAsync(music, convertedPath, format, bitRateKbps);
-                            if (!converted)
-                                _logger.LogWarning($"转换发送失败，回退为原格式复制: {music.Path}");
-                        }
-
-                        string targetFilePath = converted ? convertedPath : originalPath;
-                        if (!converted)
-                        {
-                            if (device.IsPortable)
-                                targetFilePath = music.Path;
-                            else
-                                await CopyWithProgressAsync(music.Path, targetFilePath,
-                                    f => progress?.Report(basePercent + f / musicList.Count));
-                        }
-
-                        if (portableWriter is not null)
-                            await portableWriter.CopyAsync(targetFilePath);
-
-                        _logger.LogInformation("已发送 {File} 到 {Device}", music.Path, device.Name);
-                        string extension = Path.GetExtension(targetFilePath).TrimStart('.');
-                        result.AddSuccess(music, extension);
-                        audioCopied = true;
-                        // 回调仅发布状态，不能重入 MTP 门；持久化由协调器在整批 I/O 结束后完成。
-                        if (onFileCopied is not null)
-                        {
-                            UsbFileFingerprint fingerprint = default;
-                            try
-                            {
-                                if (portableWriter is not null) fingerprint = await portableWriter.GetLastCopiedFingerprintAsync();
-                                else
-                                {
-                                    var file = new FileInfo(targetFilePath);
-                                    fingerprint = new(file.Length, file.LastWriteTimeUtc.Ticks);
-                                }
-                            }
-                            catch (Exception ex) { _logger.LogDebug(ex, "读取已复制文件指纹失败，将由后续扫描补齐: {File}", music.Path); }
-                            try { await onFileCopied(music, extension, fingerprint); }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "发布 USB 发送状态失败: {File}", music.Path);
-                                result.AddFailure(music, UsbExportFailureStage.Status, ex.Message);
-                            }
-                        }
-                        string? lyricsError = await WriteLyricsFileAsync(music, targetBasePath, sanitizedFileName);
-                        if (lyricsError is not null)
-                            result.AddFailure(music, UsbExportFailureStage.Lyrics, lyricsError);
-                        if (portableWriter is not null)
-                        {
-                            if (lyricsError is null)
-                            {
-                                string lyricsBase = Path.GetFileNameWithoutExtension(sanitizedFileName);
-                                foreach (string suffix in new[] { ".lrc", "_Translated.lrc", "_Pronunciation.lrc" })
-                                {
-                                    string name = lyricsBase + suffix;
-                                    string lyricsPath = Path.Combine(targetBasePath, name);
-                                    if (File.Exists(lyricsPath)) await portableWriter.CopyAsync(lyricsPath);
-                                    else await portableWriter.DeleteFileIfExistsAsync(name);
-                                }
-                            }
-                            progress?.Report(basePercent + 100.0 / musicList.Count);
-                        }
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"将 {music.Path} 发送到 {device.Name} 时失败: {ex.Message}");
-                        result.AddFailure(music, audioCopied ? UsbExportFailureStage.Lyrics : UsbExportFailureStage.Audio, ex.Message);
-                        // MTP 会话已失效时停止整批，避免每首重复等待驱动超时。
-                        if (device.IsPortable && IsDeviceUnavailable(ex)) break;
-                    }
-                    finally
-                    {
-                        if (stagingPath is not null)
-                        {
-                            try { Directory.Delete(stagingPath, recursive: true); }
-                            catch (Exception ex) { _logger.LogWarning(ex, "清理 USB 导出临时文件失败: {Path}", stagingPath); }
-                        }
-                        basePercent = nextFileBase?.Invoke() ?? (basePercent + 100.0 / musicList.Count);
+                        ids[path] = existing.Id;
+                        ownership[path] = existing.ExportSourceIdentity ?? "";
                     }
                 }
             }
-            finally
+            double basePercent = 0;
+            for (int index = 0; index < musicList.Count; index++)
             {
-                _converterService.updateProgress -= OnConverterProgress;
+                var music = musicList[index];
+                // 原生转换没有取消协议：等待本文件真正结束后停止下一项，保留已成功的台账。
+                if (cancellationToken.IsCancellationRequested) break;
+                progress?.Report(basePercent);
+                string? stagingPath = null;
+                bool audioCopied = false;
+                try
+                {
+                    if (conflicts[index] is { } conflict)
+                        throw new IOException(string.Format(ToolUtils.GetString("UsbExportPathConflict"), conflict));
+                    if (!available[index])
+                    {
+                        _logger.LogWarning($"源文件不存在，跳过: {music.Path}");
+                        result.AddFailure(music, UsbExportFailureStage.Audio, new FileNotFoundException(null, music.Path).Message);
+                        continue;
+                    }
+                    string sanitizedAuthor = UsbExportPaths.GetFolderName(music.Author);
+                    string sanitizedAlbum = UsbExportPaths.GetFolderName(music.Album);
+                    using var portableWriter = device.IsPortable
+                        ? await UsbPortableStorageWriter.OpenAsync(device, sanitizedAuthor, sanitizedAlbum, cancellationToken)
+                        : null;
+                    if (device.IsPortable)
+                        stagingPath = Directory.CreateTempSubdirectory("OriginalSound-UsbExport-").FullName;
+                    string targetBasePath = stagingPath ?? Path.Combine(device.Path, "MUSIC", sanitizedAuthor, sanitizedAlbum);
+                    Directory.CreateDirectory(targetBasePath);
+
+                    string? exportFormat = format;
+                    if (music.IsCueTrack && exportFormat is null)
+                        exportFormat = music.Extension.ToLowerInvariant();
+                    string extensionForTarget = AudioConverterService.GetExtensionForFormat(exportFormat ?? music.Extension);
+                    string sanitizedFileName = music.IsCueTrack ? UsbExportPaths.GetCueTrackFileStem(music) + "." + extensionForTarget
+                        : UsbExportPaths.GetFileName(Path.GetFileName(music.Path));
+                    string convertedPath = Path.Combine(targetBasePath, Path.ChangeExtension(sanitizedFileName, "." + extensionForTarget));
+                    string originalPath = Path.Combine(targetBasePath, sanitizedFileName);
+
+                    string? cueIdentity = music.IsCueTrack ? UsbExportPaths.GetSourceIdentity(music) : null;
+                    string? cueRelativePath = music.IsCueTrack ? UsbExportPaths.GetRelativeFilePath(music, extensionForTarget) : null;
+                    bool allowOverwrite = cueRelativePath is null
+                        || (ownership.TryGetValue(cueRelativePath, out string? owner)
+                            && string.Equals(cueIdentity, owner, StringComparison.OrdinalIgnoreCase));
+
+                    bool converted = false;
+                    if (exportFormat is not null && (music.IsCueTrack || !music.Extension.Equals(exportFormat, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        if (!allowOverwrite && portableWriter is null && File.Exists(convertedPath))
+                            throw new IOException(string.Format(ToolUtils.GetString("UsbExportPathConflict"), convertedPath));
+                        // MTP spends the last 20% on the provider copy and sidecars.
+                        converted = await _converterService.ConvertForExportAsync(music, convertedPath, exportFormat, bitRateKbps,
+                            overwrite: allowOverwrite, reportProgress: p => progress?.Report(basePercent + p * (device.IsPortable ? .8 : 1) / musicList.Count));
+                        if (!converted)
+                        {
+                            if (music.IsCueTrack)
+                                throw new IOException(string.Format(ToolUtils.GetString("InfoBarMessageConverterFailedWithFile"), music.Title));
+                            _logger.LogWarning($"转换发送失败，回退为原格式复制: {music.Path}");
+                        }
+                    }
+
+                    string targetFilePath = converted ? convertedPath : originalPath;
+                    if (!converted)
+                    {
+                        if (device.IsPortable)
+                            targetFilePath = music.Path;
+                        else
+                        {
+                            if (string.Equals(Path.GetFullPath(music.Path), Path.GetFullPath(targetFilePath), StringComparison.OrdinalIgnoreCase))
+                                throw new IOException(string.Format(ToolUtils.GetString("UsbExportPathConflict"), targetFilePath));
+                            await CopyWithProgressAsync(music.Path, targetFilePath,
+                                f => progress?.Report(basePercent + f / musicList.Count));
+                        }
+                    }
+
+                    if (portableWriter is not null)
+                        await portableWriter.CopyAsync(targetFilePath, overwrite: allowOverwrite);
+                    if (cueRelativePath is not null)
+                        ownership[cueRelativePath] = cueIdentity!;
+
+                    _logger.LogInformation("已发送 {File} 到 {Device}", music.Path, device.Name);
+                    string extension = Path.GetExtension(targetFilePath).TrimStart('.');
+                    result.AddSuccess(music, extension);
+                    audioCopied = true;
+                    // 回调仅发布状态，不能重入 MTP 门；持久化由协调器在整批 I/O 结束后完成。
+                    if (onFileCopied is not null)
+                    {
+                        UsbFileFingerprint fingerprint = default;
+                        try
+                        {
+                            if (portableWriter is not null) fingerprint = await portableWriter.GetLastCopiedFingerprintAsync();
+                            else
+                            {
+                                var file = new FileInfo(targetFilePath);
+                                fingerprint = new(file.Length, file.LastWriteTimeUtc.Ticks);
+                            }
+                        }
+                        catch (Exception ex) { _logger.LogDebug(ex, "读取已复制文件指纹失败，将由后续扫描补齐: {File}", music.Path); }
+                        try { await onFileCopied(music, extension, fingerprint); }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "发布 USB 发送状态失败: {File}", music.Path);
+                            result.AddFailure(music, UsbExportFailureStage.Status, ex.Message);
+                        }
+                    }
+                    string? lyricsError = await WriteLyricsFileAsync(music, targetBasePath, sanitizedFileName);
+                    if (lyricsError is not null)
+                        result.AddFailure(music, UsbExportFailureStage.Lyrics, lyricsError);
+                    if (portableWriter is not null)
+                    {
+                        if (lyricsError is null)
+                        {
+                            string lyricsBase = Path.GetFileNameWithoutExtension(sanitizedFileName);
+                            foreach (string suffix in new[] { ".lrc", "_Translated.lrc", "_Pronunciation.lrc" })
+                            {
+                                string name = lyricsBase + suffix;
+                                string lyricsPath = Path.Combine(targetBasePath, name);
+                                if (File.Exists(lyricsPath)) await portableWriter.CopyAsync(lyricsPath);
+                                else await portableWriter.DeleteFileIfExistsAsync(name);
+                            }
+                        }
+                        progress?.Report(basePercent + 100.0 / musicList.Count);
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"将 {music.Path} 发送到 {device.Name} 时失败: {ex.Message}");
+                    result.AddFailure(music, audioCopied ? UsbExportFailureStage.Lyrics : UsbExportFailureStage.Audio, ex.Message);
+                    // MTP 会话已失效时停止整批，避免每首重复等待驱动超时。
+                    if (device.IsPortable && IsDeviceUnavailable(ex)) break;
+                }
+                finally
+                {
+                    if (stagingPath is not null)
+                    {
+                        try { Directory.Delete(stagingPath, recursive: true); }
+                        catch (Exception ex) { _logger.LogWarning(ex, "清理 USB 导出临时文件失败: {Path}", stagingPath); }
+                    }
+                    basePercent = nextFileBase?.Invoke() ?? (basePercent + 100.0 / musicList.Count);
+                }
             }
             return result;
         }

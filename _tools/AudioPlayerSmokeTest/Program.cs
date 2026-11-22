@@ -85,6 +85,12 @@ if (args.Contains("--list-output-devices") || args.Any(a => a.StartsWith("--rate
     finally { StopPlayer(); }
 }
 
+if (args.Contains("--cue-range"))
+{
+    try { return CuePlaybackProbe.Run(transport, states, mediaPath); }
+    finally { StopPlayer(); }
+}
+
 Span<byte> urlBuf = new byte[BinarySerializer.SetMusicUrlRequestSize];
 BinarySerializer.WriteSetMusicUrlRequest(urlBuf, new SetMusicUrlRequest { Url = mediaPath });
 var t = Send(CommandId.SetMusicUrl, urlBuf, out _);

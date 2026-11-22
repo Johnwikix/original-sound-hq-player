@@ -12,6 +12,11 @@ if (log is not null)
     Console.SetOut(log);
     Console.SetError(log);
 }
+if (args.Contains("--cue-disk"))
+{
+    await CueDiskRegression.RunAsync();
+    return;
+}
 try { Console.WriteLine($"Package identity: {Windows.ApplicationModel.Package.Current.Id.FullName}"); }
 catch (InvalidOperationException) { Console.WriteLine("Package identity: unpackaged"); }
 

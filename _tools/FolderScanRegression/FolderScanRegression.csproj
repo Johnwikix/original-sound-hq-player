@@ -7,8 +7,13 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../../External/AudioPlayer/Decode/PcmSampleRange.cs" />
+    <Compile Include="../../Helper/UsbExportPaths.cs" />
+
     <Compile Include="../../Services/PlaybackStatsService.cs;../../Model/Stats/PlaybackHistory.cs;../../Model/Stats/StatsSnapshot.cs" />
     <Compile Include="../../Services/AddFolderService.cs" />
+    <Compile Include="../../Services/CueSheetReader.cs;../../Services/CueLibrarySchema.cs;../../Services/CueMetadataOverrides.cs;../../Services/MusicDatabaseService.Cue.cs;../../Services/MusicDatabaseService.Covers.cs" />
     <Compile Include="../../Services/ScanPipeline.cs" />
     <Compile Include="../../Services/InitialFileScan.cs" />
     <Compile Include="../../Services/LibraryPlaybackReconciler.cs" />

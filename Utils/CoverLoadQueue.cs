@@ -326,23 +326,10 @@ internal static class CoverLoadQueue
             var thumbPath = GetThumbCachePath(req.Music.ImageHash, req.CoverSize);
             if (File.Exists(thumbPath))
             {
-                if (req.Music.IsRemote || File.GetLastWriteTime(thumbPath) > File.GetLastWriteTime(req.Music.Path))
+                if (LocalCoverSource.IsCacheCurrent(req.Music, thumbPath))
                 {
                     var result = await LoadThumbFromCacheAsync(thumbPath, req.Token);
                     if (result != null) return result;
-                }
-                else
-                {
-                    try
-                    {
-                        var dir = Path.GetDirectoryName(thumbPath)!;
-                        foreach (var file in Directory.GetFiles(dir, $"{req.Music.ImageHash}_*"))
-                        {
-                            try { File.Delete(file); }
-                            catch (Exception ex) { _logger?.LogError(ex, "清理旧缓存失败: {File}", file); }
-                        }
-                    }
-                    catch (Exception ex) { _logger?.LogError(ex, "清理旧缓存失败"); }
                 }
             }
         }
@@ -355,7 +342,7 @@ internal static class CoverLoadQueue
 
         req.Token.ThrowIfCancellationRequested();
 
-        return await DecodeAndCacheThumbAsync(picture, req.Music, req.CoverSize, req.Token);
+        return await DecodeAndCacheThumbAsync(picture, req.Music.ImageHash, req.CoverSize, req.Token);
     }
 
     private static async Task<DecodedCover?> LoadThumbFromCacheAsync(
@@ -431,7 +418,7 @@ internal static class CoverLoadQueue
     }
 
     private static async Task<DecodedCover?> DecodeAndCacheThumbAsync(
-        byte[] picture, Music music, int coverSize, CancellationToken token)
+        byte[] picture, string imageHash, int coverSize, CancellationToken token)
     {
         SoftwareBitmap? softwareBitmap = null;
         try
@@ -466,12 +453,12 @@ internal static class CoverLoadQueue
 
             token.ThrowIfCancellationRequested();
             // 临时文件完整写入并关闭后才发布，取消或失败不破坏现有可读缓存。
-            if (music.ImageHash is { Length: > 0 })
+            if (imageHash is { Length: > 0 } && !string.IsNullOrEmpty(AppSettings.MusicCoverCache))
             {
                 string? temporary = null;
                 try
                 {
-                    var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
+                    var thumbPath = GetThumbCachePath(imageHash, coverSize);
                     Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
                     temporary = thumbPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
                     Span<byte> header = stackalloc byte[54];
@@ -566,7 +553,7 @@ internal static class CoverLoadQueue
 
     public static string CacheKey(Music music) =>
         string.IsNullOrEmpty(music.ImageHash)
-            ? $"id:{music.Id}"
+            ? music.Id == 0 ? music.LocalTrackKey : $"id:{music.Id}"
             : music.ImageHash;
 
     internal static string GetThumbCachePath(string imageHash, int coverSize)

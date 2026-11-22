@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
@@ -20,7 +22,9 @@ internal static class UsbExportPaths
         => path.StartsWith("MUSIC" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
     internal static string GetSourceIdentity(Music music)
-        => music.Id > 0 ? "music:" + music.Id.ToString(CultureInfo.InvariantCulture) : "path:" + Path.GetFullPath(music.Path);
+        => music.Id > 0 ? "music:" + music.Id.ToString(CultureInfo.InvariantCulture)
+            : music.IsCueTrack ? FormattableString.Invariant($"cue:{Path.GetFullPath(music.CuePath)}:{music.CueTrackNo}")
+            : "path:" + Path.GetFullPath(music.Path);
 
     internal static string GetFolderName(string? name) => Normalize(name ?? string.Empty);
 
@@ -42,10 +46,24 @@ internal static class UsbExportPaths
         return reserved ? "_" + sanitized : sanitized;
     }
 
-    internal static string GetRelativeFilePath(Music music, string extension)
+    internal static string GetCueTrackFileStem(Music music)
     {
-        string fileName = GetFileName(Path.GetFileName(music.Path));
-        return Path.Combine("MUSIC", GetFolderName(music.Author), GetFolderName(music.Album),
-            Path.ChangeExtension(fileName, "." + extension));
+        string title = GetFileName(music.Title);
+        if (title.Length > 120)
+        {
+            int length = char.IsHighSurrogate(title[119]) ? 119 : 120;
+            title = title[..length].TrimEnd();
+        }
+        string path = Path.GetFullPath(music.CuePath).ToUpperInvariant();
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(path));
+        return FormattableString.Invariant($"{music.CueTrackNo:00} - {title} [{Convert.ToHexString(hash.AsSpan(0, 8))}]");
     }
+
+    internal static string GetRelativeFileStem(Music music)
+        => Path.Combine("MUSIC", GetFolderName(music.Author), GetFolderName(music.Album), music.IsCueTrack
+            ? GetCueTrackFileStem(music) : Path.GetFileNameWithoutExtension(GetFileName(Path.GetFileName(music.Path))));
+
+    internal static string GetRelativeFilePath(Music music, string extension)
+        => GetRelativeFileStem(music) + "." + extension;
+
 }

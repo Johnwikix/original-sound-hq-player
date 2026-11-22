@@ -31,13 +31,15 @@ while (true)
     try
     {
         var job = JsonSerializer.Deserialize(line, AnalysisJsonContext.Default.AnalysisRequest) ?? throw new InvalidDataException();
-        if (!Path.IsPathFullyQualified(job.Path) || job.Path.StartsWith(@"\") || job.Path.EndsWith(".part", StringComparison.OrdinalIgnoreCase))
+        var source = job.GetInput();
+        source.Validate();
+        if (!Path.IsPathFullyQualified(source.Path) || source.Path.StartsWith(@"\") || source.Path.EndsWith(".part", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException();
         extractor ??= new();
         input ??= new float[320000];
         scratch ??= new float[65536];
         var vectors = new float[384];
-        using (var decoder = new AudioDecoder(job.Path, scratch))
+        using (var decoder = new AudioDecoder(source, scratch))
         {
             if (!double.IsFinite(decoder.Duration) || decoder.Duration <= 0) throw new InvalidDataException();
             for (int clip = 0; clip < 3; clip++)

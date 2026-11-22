@@ -96,6 +96,7 @@ internal sealed class Session : IRenderSource, IDisposable
     internal bool EnhancementActive { get; private init; }
     public uint EncodedChannelMask { get; private init; }
     public long TotalMs { get; }
+    private AudioSampleRange? _sampleRange;
     public long AnchorFrames; // 引擎线程写、渲染线程不读（位置在引擎侧合成）
 
     private readonly int _channels;
@@ -144,19 +145,21 @@ internal sealed class Session : IRenderSource, IDisposable
         int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
         SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null,
         PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000, bool measureTransitionIntro = false,
-        Session? requiredPcmFormat = null)
+        Session? requiredPcmFormat = null, AudioSampleRange? sampleRange = null)
     {
         Session? pending = null;
         IDisposable? input = null;
         try
         {
+            if (sampleRange.HasValue && kind != RenderKind.Pcm) return null;
             switch (kind)
             {
                 case RenderKind.Pcm:
                 {
                     var dec = new PcmDecoder();
                     input = dec;
-                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken, enhancement, enhancementDeviceRate, resampleMode, resampleTargetRate)) { dec.Dispose(); return null; }
+                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source,
+                        cancellationToken, enhancement, enhancementDeviceRate, resampleMode, resampleTargetRate, sampleRange)) { dec.Dispose(); return null; }
                     // 不可定位的流在采样率变化后无法安全地从可听位置重建。
                     if (!dec.CanSeek) playbackRate = 1;
                     int rate = dec.SampleRate;
@@ -171,6 +174,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
                     {
                         _pcm = dec,
+                        _sampleRange = sampleRange,
                         EnhancementActive = dec.EnhancementActive,
                         PlaybackRate = playbackRate,
                         _tempo = playbackRate == 1 ? null : new TempoProcessor(rate, channels, playbackRate),
@@ -181,7 +185,7 @@ internal sealed class Session : IRenderSource, IDisposable
                         CanSeek = dec.CanSeek,
                         InitialBufferFrames = initialFrames,
                     };
-                    s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source, dec.AnalysisChannelMask);
+                    s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source, dec.AnalysisChannelMask, sampleRange);
                     pending = s;
                     s.StartThread(measureTransitionIntro ? s.PcmDecodeWithIntroMeasurement : s.PcmDecodeProc);
                     return s;
@@ -294,6 +298,7 @@ internal sealed class Session : IRenderSource, IDisposable
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs, long seekId = 0)
     {
+        if (_sampleRange.HasValue) targetMs = Math.Clamp(targetMs, 0, TotalMs);
         lock (_seekGate)
         {
             _pendingSeekId = seekId;

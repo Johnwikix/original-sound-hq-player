@@ -4,6 +4,8 @@
     <Nullable>enable</Nullable><NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+
     <Content Include="Fixtures/Tone.mp3" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Services/AudioAnalysis/Core/Spectrogram*.cs;../../Services/AudioAnalysis/SpectrogramWorkerClient.cs" />
     <Compile Include="../../Services/ISpectrogramService.cs;../../Services/SpectrogramService.cs;../../Services/AudioAnalysis/AnalysisWorkerClient.cs;../../Services/AudioAnalysis/Core/AnalysisProtocol.cs" />

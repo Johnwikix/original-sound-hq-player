@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Helper;
 
 namespace WinUIMusicPlayer.Services;
 
@@ -16,14 +17,16 @@ internal static class UsbDeviceMusicPresence
         IReadOnlyList<Music> affected = songs;
         HashSet<string>? neededTitles = null;
         var neededFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var mapped = new Dictionary<string, List<UsbDeviceMusic>>(StringComparer.OrdinalIgnoreCase);
         if (titles is not null)
         {
             var selected = new List<Music>();
             neededTitles = new(StringComparer.Ordinal);
             foreach (var music in songs)
             {
-                if (!titles.Contains(music.Title)
-                    && !changedFileLookup.Contains(Path.GetFileNameWithoutExtension(music.Path.AsSpan()))) continue;
+                string? cueStem = music.IsCueTrack ? UsbExportPaths.GetCueTrackFileStem(music) : null;
+                var fileName = cueStem is null ? Path.GetFileNameWithoutExtension(music.Path.AsSpan()) : cueStem.AsSpan();
+                if (!titles.Contains(music.Title) && !changedFileLookup.Contains(fileName)) continue;
                 selected.Add(music);
                 neededTitles.Add(music.Title);
                 neededFiles.Add(Path.GetFileNameWithoutExtension(music.Path));
@@ -33,11 +36,18 @@ internal static class UsbDeviceMusicPresence
         if (affected.Count == 0) return;
         var groups = new Dictionary<string, List<UsbDeviceMusic>>(StringComparer.Ordinal);
         var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var music in affected)
+            if (music.IsCueTrack) mapped.TryAdd(UsbExportPaths.GetRelativeFileStem(music), []);
         var neededFileLookup = neededFiles.GetAlternateLookup<ReadOnlySpan<char>>();
         var fileNameLookup = fileNames.GetAlternateLookup<ReadOnlySpan<char>>();
         foreach (var record in onDevice)
         {
             var fileName = Path.GetFileNameWithoutExtension(record.Path.AsSpan());
+            if (mapped.Count > 0)
+            {
+                string stem = Path.ChangeExtension(UsbExportPaths.GetStoragePathKey(record.Path), null);
+                if (mapped.TryGetValue(stem, out var exports)) exports.Add(record);
+            }
             // 只限制待更新歌曲；其标题下所有设备记录仍需参与完整匹配。
             if (neededTitles is null || neededTitles.Contains(record.Title))
             {
@@ -49,6 +59,22 @@ internal static class UsbDeviceMusicPresence
         }
         foreach (var music in affected)
         {
+            if (music.IsCueTrack)
+            {
+                int presence = 0;
+                string identity = UsbExportPaths.GetSourceIdentity(music);
+                foreach (var record in mapped[UsbExportPaths.GetRelativeFileStem(music)])
+                {
+                    if (string.IsNullOrEmpty(record.ExportSourceIdentity)) presence = 1;
+                    else if (string.Equals(identity, record.ExportSourceIdentity, StringComparison.OrdinalIgnoreCase))
+                    {
+                        presence = string.Equals(music.Extension, record.Extension, StringComparison.OrdinalIgnoreCase) ? 2 : 1;
+                        if (presence == 2) break;
+                    }
+                }
+                music.IsExistOnDevice = presence;
+                continue;
+            }
             var fileName = Path.GetFileNameWithoutExtension(music.Path.AsSpan());
             int flag = 0;
             if (groups.TryGetValue(music.Title, out var matches))

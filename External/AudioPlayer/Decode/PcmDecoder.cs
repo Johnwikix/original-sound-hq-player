@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using AudioDecoding.Shared;
 using BassPlayerIpc.Shared;
 using FFmpeg.AutoGen;
 
@@ -25,6 +26,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
     private int _decodeRate;
     private AVPacket* _pkt;
     private AVFrame* _frame;
+    private PcmSampleRange? _sampleClip;
+    private AudioSampleRange? _sampleRange;
 
     private int _streamIndex = -1;
     private bool _dsdSource;
@@ -57,7 +60,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
     /// <param name="maxChannels">普通路径的声道上限；显式启用且识别出 5.1 时保留六声道，供自动独占输出。</param>
     public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, PlaybackSource? source = null, CancellationToken cancellationToken = default,
-        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null, PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000)
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null, PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000,
+        AudioSampleRange? sampleRange = null)
     {
         try
         {
@@ -86,8 +90,14 @@ internal sealed unsafe class PcmDecoder : IDisposable
             if (si < 0) { Console.WriteLine($"[decode] find_best_stream ret={si}"); return false; }
             _streamIndex = si;
             AVCodecParameters* par = _fmt->streams[si]->codecpar;
+            if (sampleRange is { } range)
+            {
+                _sampleClip = new(range, _fmt, _fmt->streams[si], CanSeek && source?.Kind != PlaybackSourceKind.Http);
+                if (range.StartSample != 0 && !_sampleClip.Seek(_fmt, si, range.StartSample))
+                    throw new IOException("Could not seek to the start of the audio range.");
+                _sampleRange = range;
+            }
 
-            int codecId = (int)par->codec_id;
             bool dsdContainer = Array.IndexOf(DsdCodecIds, par->codec_id) >= 0;
             bool wvDsd = par->codec_id == AVCodecID.AV_CODEC_ID_WAVPACK && par->bits_per_raw_sample == 1;
             _dsdSource = dsdContainer || wvDsd;
@@ -155,7 +165,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
             _pkt = ffmpeg.av_packet_alloc();
             _frame = ffmpeg.av_frame_alloc();
-            _totalMs = _fmt->duration > 0 ? (long)Math.Round(_fmt->duration / (double)ffmpeg.AV_TIME_BASE * 1000) : 0;
+            _totalMs = sampleRange?.DurationMs
+                ?? (_fmt->duration > 0 ? (long)Math.Round(_fmt->duration / (double)ffmpeg.AV_TIME_BASE * 1000) : 0);
             return true;
         }
         catch (Exception ex)
@@ -170,11 +181,15 @@ internal sealed unsafe class PcmDecoder : IDisposable
     {
         if (_fmt == null || _dec == null || !CanSeek) return false;
         _network?.BeginRead();
-        if (ffmpeg.av_seek_frame(_fmt, -1, ms * 1000, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0) return false;
+        if (_sampleRange is { } range)
+        {
+            if (!_sampleClip!.Seek(_fmt, _streamIndex, range.SampleAt(ms))) return false;
+        }
+        else if (ffmpeg.av_seek_frame(_fmt, -1, ms * 1000, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0) return false;
         ffmpeg.avcodec_flush_buffers(_dec);
         ffmpeg.swr_init(_swr);
         _enhancement?.Reset();
-        _eof = false;
+        _eof = _sampleClip?.EndReached == true;
         return true;
     }
 
@@ -202,17 +217,28 @@ internal sealed unsafe class PcmDecoder : IDisposable
             if (ret == 0)
             {
                 invalidFrames = 0;
-                fixed (double* p = buffer)
+                try
                 {
-                    got = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames,
-                        _frame->extended_data, _frame->nb_samples);
+                    if (_sampleClip is { } clip)
+                    {
+                        got = ConvertClipFrame(clip, buffer, maxFrames);
+                        _eof = clip.EndReached;
+                    }
+                    else
+                    {
+                        fixed (double* p = buffer)
+                            got = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames,
+                                _frame->extended_data, _frame->nb_samples);
+                    }
                 }
-                ffmpeg.av_frame_unref(_frame);
+                finally { ffmpeg.av_frame_unref(_frame); }
                 if (got > 0) return FinishRead(buffer, got);
                 continue; // 帧被重采样器内部吸收（改率延迟），继续取下一帧
             }
             if (ret == ffmpeg.AVERROR_EOF)
             {
+                if (_sampleClip is { EndReached: false })
+                    throw new IOException("The audio ended before the sample range was decoded.");
                 _eof = true;
                 ffmpeg.avcodec_send_packet(_dec, null); // 幂等冲洗
                 // 冲洗重采样器
@@ -240,6 +266,19 @@ internal sealed unsafe class PcmDecoder : IDisposable
             if (_pkt->stream_index == _streamIndex)
                 ffmpeg.avcodec_send_packet(_dec, _pkt);
             ffmpeg.av_packet_unref(_pkt);
+        }
+    }
+
+    private int ConvertClipFrame(PcmSampleRange clip, Span<double> buffer, int maxFrames)
+    {
+        clip.Crop(_frame, out int skip, out int take);
+        if (take == 0) return 0;
+        byte** offsetData = stackalloc byte*[_frame->ch_layout.nb_channels];
+        var input = PcmSampleRange.OffsetInput(_frame, skip, offsetData);
+        fixed (double* p = buffer)
+        {
+            int result = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames, input, take);
+            return result >= 0 ? result : throw new IOException($"Converting the audio range failed ({result}).");
         }
     }
 

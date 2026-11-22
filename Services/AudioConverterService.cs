@@ -1,3 +1,4 @@
+using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -5,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.AudioConverters;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -13,8 +15,7 @@ namespace WinUIMusicPlayer.Services
 {
     /// <summary>
     /// 音频转换服务：解码/编码由进程内的 FFmpeg DLL（FFmpegAudioConverter）完成，
-    /// BASS 已从主程序移除。元数据（标签/歌词/封面）随转换由 FFmpeg 内联写入，
-    /// 无 ATL 后置；容器能力差异（歌词/封面可写范围）由转换器处理。
+    /// 标签、歌词和封面随编码写入。CUE 的 WAV 产物使用 ID3v2 保留 Unicode 标签和封面。
     /// 返回 true 表示转换成功；失败只记日志并保证进度事件达 100。
     /// </summary>
     public class AudioConverterService
@@ -38,13 +39,16 @@ namespace WinUIMusicPlayer.Services
             => FormatExtensionMap.TryGetValue(format, out var ext) ? ext : format;
 
         /// <summary>
-        /// 转换（元数据随转换由 FFmpeg 内联写入，无 ATL 后置），不入库——
-        /// 供 USB 导出等"目标不在音乐库"的场景。全程持有写入门。
+        /// 供 USB 等导出场景生成独立文件，全程持有写入门。
         /// 失败返回 false，进度事件保证达 100。
         /// </summary>
-        public async Task<bool> ConvertForExportAsync(Music music, string outputPath, string format, int bitRateKbps = 320)
+        public async Task<bool> ConvertForExportAsync(Music music, string outputPath, string format, int bitRateKbps = 320,
+            bool overwrite = true, Action<double>? reportProgress = null)
         {
-            if (music.IsRemote) { OnProgressChanged(100); return false; }
+            reportProgress ??= OnProgressChanged;
+            if (music.IsRemote) { reportProgress(100); return false; }
+            var range = music.IsCueTrack ? new AudioSampleRange(music.StartSample, music.EndSample, music.SampleRate) : (AudioSampleRange?)null;
+            var input = new AudioInput(music.Path, range);
             using (AudioFileWriteGate.BeginWrite(outputPath))
             {
                 try
@@ -62,14 +66,31 @@ namespace WinUIMusicPlayer.Services
                         // 由转换器内部处理，元数据获取失败不阻断转换
                         ConversionMetadata? meta = await BuildConversionMetadataAsync(music);
 
-                        _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps, meta);
-                        return true;
+                        var converter = new FFmpegAudioConverter();
+                        converter.progressEvent += (_, progress) => reportProgress(progress);
+                        if (range is null)
+                        {
+                            converter.Convert(input, outputPath, format, dsdFreq, dsdGain, bitRateKbps, meta);
+                            return true;
+                        }
+
+                        if (string.Equals(Path.GetFullPath(input.Path), Path.GetFullPath(outputPath), StringComparison.OrdinalIgnoreCase))
+                            throw new IOException("转换目标与 CUE 音源相同。");
+                        string staged = Path.Combine(Path.GetDirectoryName(outputPath) ?? "", $".{Guid.NewGuid():N}.tmp");
+                        try
+                        {
+                            converter.Convert(input, staged, format, bitRateKbps: bitRateKbps, metadata: meta);
+                            if (format == "wav" && meta is not null) WriteWaveTags(staged, meta);
+                            File.Move(staged, outputPath, overwrite);
+                            return true;
+                        }
+                        finally { DeleteTemporaryFile(staged); }
                     });
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"ConvertForExportAsync 导出转换失败: {ex.Message}");
-                    OnProgressChanged(100);
+                    reportProgress(100);
                     return false;
                 }
             }
@@ -78,49 +99,71 @@ namespace WinUIMusicPlayer.Services
         /// <summary>转换前取齐歌词与封面，构造内联元数据。</summary>
         private async Task<ConversionMetadata?> BuildConversionMetadataAsync(Music music)
         {
+            string? lyrics = null;
             try
             {
                 var document = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsDocumentAsync(music);
-                string? lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsParser().ExportLrc(document);
-                byte[]? cover = await ToolUtils.GetRawImage(music);
-                return new ConversionMetadata
-                {
-                    Title = music.Title,
-                    Artist = music.Author,
-                    Album = music.Album,
-                    TrackNumber = music.TrackNumber,
-                    DiscNumber = music.DiskNumber,
-                    Year = music.Year,
-                    CoverBytes = cover is { Length: > 0 } ? cover : null,
-                    Lyrics = lyrics,
-                };
+                lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsParser().ExportLrc(document);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"BuildConversionMetadataAsync 元数据获取失败（转换继续，无元数据）: {music.Path}: {ex.Message}");
-                return null;
+                _logger.LogWarning(ex, "转换前读取歌词失败: {Path}", music.Path);
+                if (!music.IsCueTrack) return null;
             }
+
+            byte[]? cover = null;
+            try { cover = await Task.Run(() => ToolUtils.GetRawImage(music)).ConfigureAwait(false); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "转换前读取封面失败: {Path}", music.Path);
+                if (!music.IsCueTrack) return null;
+            }
+            return new ConversionMetadata
+            {
+                Title = music.Title,
+                Artist = music.Author,
+                Album = music.Album,
+                TrackNumber = music.IsCueTrack && music.TrackNumber <= 0 ? music.CueTrackNo : music.TrackNumber,
+                DiscNumber = music.DiskNumber,
+                Year = music.Year,
+                CoverBytes = cover is { Length: > 0 } ? cover : null,
+                Lyrics = lyrics,
+            };
         }
 
-        private readonly FFmpegAudioConverter _converter;
+        private static void WriteWaveTags(string path, ConversionMetadata meta)
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            var track = new ATL.Track(stream, ".wav")
+            {
+                Title = meta.Title,
+                Artist = meta.Artist,
+                Album = meta.Album,
+                TrackNumber = meta.TrackNumber,
+                DiscNumber = meta.DiscNumber,
+                Year = meta.Year,
+            };
+            if (meta.CoverBytes is { Length: > 0 } cover)
+                track.EmbeddedPictures.Add(ATL.PictureInfo.fromBinaryData(cover, ATL.PictureInfo.PIC_TYPE.Front));
+            if (!track.Save(ATL.AudioData.MetaDataIOFactory.TagType.ID3V2)) throw new IOException("无法写入 CUE 音轨的 WAV 标签。");
+        }
+
         private AppViewModel AppViewModel { get; }
-        private ILogger<AudioConverterService> _logger;
+        private readonly ILogger<AudioConverterService> _logger;
 
         public AudioConverterService(AppViewModel appViewModel, ILogger<AudioConverterService> logger)
         {
             AppViewModel = appViewModel;
             _logger = logger;
-            _converter = new FFmpegAudioConverter();
-            _converter.progressEvent += (_, progress) => OnProgressChanged(progress);
         }
 
         public async Task<bool> ConvertAudioAsync(Music music, string type = "wav", int bitRateKbps = 320, Action? onCommitted = null)
         {
             if (music.IsRemote) { OnProgressChanged(100); return false; }
             string format = type.ToLowerInvariant();
-            if (music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
-                return true; // 同格式无需转换（多选批量时逐文件判重）
-            string outputPath = GenerateOutputPath(music.Path, format);
+            if (!music.IsCueTrack && music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
+                return true;
+            string outputPath = GenerateOutputPath(music, format);
             // FFmpeg selects its muxer from format. A non-audio suffix keeps unfinished data out of the library.
             string temporaryPath = Path.Combine(Path.GetDirectoryName(outputPath) ?? "", $".{Guid.NewGuid():N}.tmp");
             try
@@ -128,7 +171,7 @@ namespace WinUIMusicPlayer.Services
                 if (!await ConvertForExportAsync(music, temporaryPath, format, bitRateKbps).ConfigureAwait(false))
                     return false;
                 await App.Services.GetRequiredService<MusicDatabaseService>()
-                    .InstallConvertedFileAsync(temporaryPath, outputPath, onCommitted).ConfigureAwait(false);
+                    .InstallConvertedFileAsync(temporaryPath, outputPath, onCommitted, overwrite: !music.IsCueTrack).ConfigureAwait(false);
                 return true;
             }
             catch (Exception ex)
@@ -136,22 +179,30 @@ namespace WinUIMusicPlayer.Services
                 _logger.LogError(ex, "转换产物入库失败: {Path}", outputPath);
                 return false;
             }
-            finally
+            finally { DeleteTemporaryFile(temporaryPath); }
+        }
+
+        private void DeleteTemporaryFile(string path)
+        {
+            try { File.Delete(path); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                try { File.Delete(temporaryPath); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    _logger.LogWarning(ex, "清理转换临时文件失败: {Path}", temporaryPath);
-                }
+                _logger.LogWarning(ex, "清理转换临时文件失败: {Path}", path);
             }
         }
 
-        private string GenerateOutputPath(string inputPath, string format)
+        private static string GenerateOutputPath(Music music, string format)
         {
-            string directory = Path.GetDirectoryName(inputPath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(inputPath);
-            string extension = FormatExtensionMap.TryGetValue(format, out var ext) ? ext : format;
-            return Path.Combine(directory, $"{fileNameWithoutExtension}_output.{extension.ToLower()}");
+            string directory = Path.GetDirectoryName(music.Path) ?? "";
+            string extension = GetExtensionForFormat(format);
+            if (!music.IsCueTrack)
+                return Path.Combine(directory, $"{Path.GetFileNameWithoutExtension(music.Path)}_output.{extension}");
+
+            string stem = UsbExportPaths.GetCueTrackFileStem(music);
+            string path = Path.Combine(directory, $"{stem}.{extension}");
+            for (int suffix = 2; File.Exists(path) || Directory.Exists(path); suffix++)
+                path = Path.Combine(directory, FormattableString.Invariant($"{stem} ({suffix}).{extension}"));
+            return path;
         }
 
         private void OnProgressChanged(double progress)

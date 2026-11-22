@@ -87,7 +87,7 @@ public sealed partial class SongVersionStore
                         }
                         foreach (var group in groups)
                         {
-                            if (group.Count < 2) continue;
+                            if (group.Count < 2 || HasCueAlternatives(db, group)) continue;
                             group.Sort(static (left, right) => left.Id.CompareTo(right.Id));
                             MergeAutomaticBucket(db, group, token);
                             merged += group.Count - 1;
@@ -100,11 +100,27 @@ public sealed partial class SongVersionStore
         finally { _automaticGate.Release(); }
     }
 
+    private static bool HasCueAlternatives(SQLiteConnection db, List<SongRecord> group)
+    {
+        // An ordinary release cannot choose between sibling tracks in the same CUE. Check entire Songs
+        // so an ordinary version already attached to one sibling cannot bridge the two Songs later.
+        string ids = string.Join(',', group.Select(song => song.Id));
+        return db.ExecuteScalar<int>($"""
+            SELECT EXISTS(SELECT 1 FROM Music WHERE SongId IN ({ids}) AND CueSheetId IS NOT NULL
+                GROUP BY CueSheetId HAVING COUNT(DISTINCT SongId)>1)
+            """) != 0;
+    }
+
     // 一次只读取待处理组的标签。按成员建索引使混合组和拆分例外仍可手动关联。
     [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(MemberTags))]
     private static void IndexMemberTags(SQLiteConnection db, string ids, CancellationToken token)
     {
-        var members = db.Query<MemberTags>($"SELECT m.Id,m.SongId,m.Title,m.Author,m.Album,m.IsDetached,s.Title AS SongTitle,s.Artist AS SongArtist,s.Album AS SongAlbum FROM Music m JOIN Song s ON s.Id=m.SongId WHERE m.SongId IN ({ids}) ORDER BY m.SongId,m.Id");
+        var members = db.Query<MemberTags>($"""
+            SELECT m.Id,m.SongId,m.Title,m.Author,m.Album,m.IsDetached,m.IsCueContainer,
+                (m.CueSheetId IS NOT NULL AND m.TitleFromFileName=1) AS HasCuePlaceholder,
+                s.Title AS SongTitle,s.Artist AS SongArtist,s.Album AS SongAlbum
+            FROM Music m JOIN Song s ON s.Id=m.SongId WHERE m.SongId IN ({ids}) ORDER BY m.SongId,m.Id
+            """);
         int start = 0;
         while (start < members.Count)
         {
@@ -117,12 +133,12 @@ public sealed partial class SongVersionStore
             {
                 token.ThrowIfCancellationRequested();
                 var member = members[start++];
-                string? key = member.IsDetached || member.Credits.Count == 0 ? null : SongVersionPolicy.GetBucketKey(member.Title, member.Album);
+                string? key = member.IgnoreForLink || member.HasCuePlaceholder || member.Credits.Count == 0 ? null : SongVersionPolicy.GetBucketKey(member.Title, member.Album);
                 if (key is null)
                     db.Execute("DELETE FROM VersionMatch WHERE MusicId=?", member.Id);
                 else
                     db.Execute("INSERT INTO VersionMatch VALUES(?,?) ON CONFLICT(MusicId) DO UPDATE SET MatchKey=excluded.MatchKey WHERE MatchKey<>excluded.MatchKey", member.Id, key);
-                if (member.IsDetached) continue;
+                if (member.IgnoreForLink) continue;
                 if (representative is null)
                 {
                     representative = member;
@@ -135,9 +151,13 @@ public sealed partial class SongVersionStore
                 }
             } while (start < members.Count && members[start].SongId == first.SongId);
 
-            if (representative is null) continue;
+            if (representative is null)
+            {
+                db.Execute("UPDATE SongAutoLink SET MatchKey=NULL WHERE SongId=?", first.SongId);
+                continue;
+            }
             for (int i = groupStart; consistent && i < start; i++)
-                if (!members[i].IsDetached && !members[i].Credits.IsSubsetOf(representative.Credits)) consistent = false;
+                if (!members[i].IgnoreForLink && !members[i].Credits.IsSubsetOf(representative.Credits)) consistent = false;
             string? groupKey = consistent ? common : null;
             if (groupKey is not null && (groupKey != SongVersionPolicy.GetBucketKey(first.SongTitle, first.SongAlbum) ||
                 !representative.Credits.SetEquals(SongVersionPolicy.ArtistCredits(first.SongArtist))))
@@ -159,6 +179,9 @@ public sealed partial class SongVersionStore
         public string SongArtist { get; set; } = "";
         public string SongAlbum { get; set; } = "";
         public bool IsDetached { get; set; }
+        public bool IsCueContainer { get; set; }
+        public bool HasCuePlaceholder { get; set; }
+        public bool IgnoreForLink => IsDetached || IsCueContainer;
 
         public HashSet<string> Credits => field ??= SongVersionPolicy.ArtistCredits(Author);
     }

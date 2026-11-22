@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Text;
+using AudioDecoding.Shared;
+using BassPlayerIpc.Shared;
 using FFmpeg.AutoGen;
 using WinUIMusicPlayer.Model;
 
@@ -43,7 +45,15 @@ namespace WinUIMusicPlayer.AudioConverters
         private static bool SupportsInlineTags(string format) => format != "wav";
 
         public void Convert(string inputPath, string outputPath, string format, int dsdPcmFreq = 0, int dsdGainDb = 0, int bitRateKbps = 320, ConversionMetadata? metadata = null)
+            => Convert(new AudioInput(inputPath), outputPath, format, dsdPcmFreq, dsdGainDb, bitRateKbps, metadata);
+
+        public void Convert(AudioInput input, string outputPath, string format, int dsdPcmFreq = 0, int dsdGainDb = 0,
+            int bitRateKbps = 320, ConversionMetadata? metadata = null)
         {
+            input.Validate();
+            string inputPath = input.Path;
+            if (string.Equals(Path.GetFullPath(inputPath), Path.GetFullPath(outputPath), StringComparison.OrdinalIgnoreCase))
+                throw new IOException("转换目标与源文件相同。");
             // RIFF INFO 没有 UTF-8 互操作（中文按本地码页读取的软件必乱码），wav 不写任何元数据
             if (!SupportsInlineTags(format)) metadata = null;
             bool isDsd = IsDsdFile(inputPath);
@@ -82,6 +92,13 @@ namespace WinUIMusicPlayer.AudioConverters
                         $"文件中没有音频流: 容器={container}，文件 {size} 字节（疑似非音频文件）: {inputPath}");
                 }
                 AVStream* inStream = inFmt->streams[streamIndex];
+                PcmSampleRange? crop = null;
+                if (input.SampleRange is { } range)
+                {
+                    crop = new(range, inFmt, inStream, inFmt->pb != null && (inFmt->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
+                    if (range.StartSample != 0 && !crop.Seek(inFmt, streamIndex, range.StartSample))
+                        throw new IOException("无法定位到 CUE 音频区间。");
+                }
 
                 AVCodec* decoder = ffmpeg.avcodec_find_decoder(inStream->codecpar->codec_id);
                 if (decoder == null) throw new InvalidOperationException($"没有可用解码器: {inStream->codecpar->codec_id}");
@@ -242,7 +259,8 @@ namespace WinUIMusicPlayer.AudioConverters
                 }
 
                 chunker = new EncoderFrameFeeder(encCtx, DrainEncodedPackets);
-                double totalSeconds = inFmt->duration > 0 ? inFmt->duration / (double)ffmpeg.AV_TIME_BASE : 0;
+                double totalSeconds = input.SampleRange is { } segment ? segment.FrameCount / (double)segment.SampleRate
+                    : inFmt->duration > 0 ? inFmt->duration / (double)ffmpeg.AV_TIME_BASE : 0;
                 long samplesWritten = 0;
                 int lastPercent = -1;
 
@@ -253,31 +271,50 @@ namespace WinUIMusicPlayer.AudioConverters
                 _outRate = outRate;
                 _pkt = pkt;
 
-                while ((ret = ffmpeg.av_read_frame(inFmt, pkt)) >= 0)
+                void ConvertDecodedFrames(AVCodecContext* decoderContext, AVCodecContext* encoderContext,
+                    AVFrame* decoded, SwrContext* gainResampler, AVFrame* gained, AVFrame* resampled, ref SwrContext* resampler)
+                {
+                    byte** offsetData = stackalloc byte*[64];
+                    while (crop is not { EndReached: true } && ffmpeg.avcodec_receive_frame(decoderContext, decoded) >= 0)
+                    {
+                        AVFrame cropped = default;
+                        AVFrame* frame = decoded;
+                        if (crop is not null)
+                        {
+                            crop.Crop(decoded, out int skip, out int take);
+                            if (take == 0) continue;
+                            if (decoded->ch_layout.nb_channels is < 1 or > 64)
+                                throw new InvalidDataException("CUE 声道数超出支持范围。");
+                            // swresample 借用裁剪后的视图，解码帧仍持有原始缓冲区。
+                            cropped = *decoded;
+                            cropped.nb_samples = take;
+                            cropped.extended_data = PcmSampleRange.OffsetInput(decoded, skip, offsetData);
+                            frame = &cropped;
+                        }
+                        if (!SwrMatchesFrame(frame)) RebuildSwr(ref resampler, encoderContext, frame);
+                        ConvertFrame(frame, resampler, gainResampler, gained, resampled,
+                            applyGain, gainLinear, primaryFmt, encFmt, outRate, &encoderContext->ch_layout,
+                            chunker, ref samplesWritten);
+                    }
+                }
+
+                while (crop is not { EndReached: true } && ffmpeg.av_read_frame(inFmt, pkt) >= 0)
                 {
                     if (pkt->stream_index == streamIndex)
                     {
                         ffmpeg.avcodec_send_packet(decCtx, pkt);
-                        while (ffmpeg.avcodec_receive_frame(decCtx, decFrame) >= 0)
-                        {
-                            if (!SwrMatchesFrame(decFrame)) RebuildSwr(ref swr, encCtx, decFrame);
-                            ConvertFrame(decFrame, swr, gainSwr, gainFrame, swrFrame,
-                                applyGain, gainLinear, primaryFmt, encFmt, outRate, &encCtx->ch_layout,
-                                chunker, ref samplesWritten);
-                        }
+                        ConvertDecodedFrames(decCtx, encCtx, decFrame, gainSwr, gainFrame, swrFrame, ref swr);
                     }
                     ffmpeg.av_packet_unref(pkt);
                     ReportProgress(totalSeconds, samplesWritten, outRate, ref lastPercent);
                 }
 
-                // 冲洗解码器
-                ffmpeg.avcodec_send_packet(decCtx, null);
-                while (ffmpeg.avcodec_receive_frame(decCtx, decFrame) >= 0)
+                if (crop is not { EndReached: true })
                 {
-                    if (!SwrMatchesFrame(decFrame)) RebuildSwr(ref swr, encCtx, decFrame);
-                    ConvertFrame(decFrame, swr, gainSwr, gainFrame, swrFrame,
-                        applyGain, gainLinear, primaryFmt, encFmt, outRate, &encCtx->ch_layout,
-                        chunker, ref samplesWritten);
+                    ffmpeg.avcodec_send_packet(decCtx, null);
+                    ConvertDecodedFrames(decCtx, encCtx, decFrame, gainSwr, gainFrame, swrFrame, ref swr);
+                    if (crop is not null && !crop.EndReached)
+                        throw new InvalidDataException("音频源在 CUE 区间完成前结束。");
                 }
 
                 // 冲洗两级 swresample 的延迟缓冲
@@ -294,7 +331,8 @@ namespace WinUIMusicPlayer.AudioConverters
                     WritePacket(pkt, ofmtCtx, outStream, outRate);
                 }
 
-                ffmpeg.av_write_trailer(ofmtCtx);
+                ret = ffmpeg.av_write_trailer(ofmtCtx);
+                if (ret < 0) throw CreateException(ret, "完成音频文件失败");
                 ReportProgress(totalSeconds, samplesWritten, outRate, ref lastPercent, force: true);
             }
             finally
@@ -552,8 +590,9 @@ namespace WinUIMusicPlayer.AudioConverters
                 new AVRational { num = 1, den = encRate },
                 stream->time_base);
             pkt->stream_index = stream->index;
-            ffmpeg.av_interleaved_write_frame(ofmtCtx, pkt);
+            int ret = ffmpeg.av_interleaved_write_frame(ofmtCtx, pkt);
             ffmpeg.av_packet_unref(pkt);
+            if (ret < 0) throw CreateException(ret, "写入音频数据失败");
         }
 
         /// <summary>每帧送入编码器后立即取空输出包并写入封装器。</summary>

@@ -63,6 +63,22 @@ internal static class AutomaticChecks
             await store.InitializeAsync();
             check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetVersionsAsync(b.Id)).Count == 1, "v1 split journals seed automatic exclusions during upgrade");
 
+            var cueTrack = new Music { Title = "Cue Song", Author = "Artist", Album = "Cue Album", Path = "disc.flac", CuePath = "disc.cue", CueTrackNo = 1, CueSheetId = 121, CueMappingActive = true };
+            var copiedTrack = new Music { Title = cueTrack.Title, Author = cueTrack.Author, Album = cueTrack.Album, Path = "single.flac" };
+            await AddAsync(cueTrack);
+            await AddAsync(copiedTrack);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 1 && (await store.GetVersionsAsync(cueTrack.Id)).Count == 2,
+                "an unambiguous CUE track links with a standalone release");
+            var sibling = new Music { Title = cueTrack.Title, Author = cueTrack.Author, Album = cueTrack.Album, Path = cueTrack.Path, CuePath = cueTrack.CuePath, CueTrackNo = 2, CueSheetId = 121, CueMappingActive = true };
+            var ambiguousCopy = new Music { Title = cueTrack.Title, Author = cueTrack.Author, Album = cueTrack.Album, Path = "another-single.flac" };
+            var hidden = new Music { Title = cueTrack.Title, Author = cueTrack.Author, Album = cueTrack.Album, Path = cueTrack.Path, IsCueContainer = true };
+            await AddAsync(sibling);
+            await AddAsync(ambiguousCopy);
+            await AddAsync(hidden);
+            check(await store.ApplyAutomaticLinksAsync(lyrics) == 0 && (await store.GetVersionsAsync(cueTrack.Id)).Count == 2 &&
+                (await store.GetVersionsAsync(sibling.Id)).Count == 1 && (await store.GetVersionsAsync(ambiguousCopy.Id)).Count == 1 &&
+                (await store.GetVersionsAsync(hidden.Id)).Count == 1, "siblings, an ambiguous single and the legacy whole never link through an already attached single");
+
             var empty = new Music { Title = "New", Author = "Artist", Album = "Album", Path = "empty.flac" };
             var full = new Music { Title = "New", Author = "Artist", Album = "Album", Path = "full.mp3" };
             var cleared = new Music { Title = "New", Author = "Artist", Album = "Album", Path = "clear.mp3" };

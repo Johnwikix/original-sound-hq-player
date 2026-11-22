@@ -57,6 +57,19 @@ internal static class SourcePriorityChecks
             File.Delete(sidecar);
             check(await Resolve(music) == "database", "missing file falls back to database");
 
+            music.CuePath = Path.Combine(folder, "image.cue");
+            music.CueTrackNo = 2;
+            await File.WriteAllTextAsync(sidecar, "[00:01.000]whole");
+            await File.WriteAllTextAsync(Path.ChangeExtension(LyricsFilePolicy.SidecarBase(music), ".lrc"), "[00:01.000]segment");
+            check(await Resolve(music) == "segment", "CUE child selects its own lyrics over the shared image sidecar");
+            music.CuePath = Path.Combine(folder, "other.cue");
+            check(await Resolve(music) == "database", "Other sheets with the same track number and title have independent sidecars");
+            music.CuePath = Path.Combine(folder, "image.cue");
+            music.CueTrackNo = 3;
+            check(await Resolve(music) == "database", "CUE sibling does not inherit image or other track lyrics");
+            music.CueTrackNo = 0;
+            File.Delete(sidecar);
+
             music.SourceId = 1;
             AppSettings.PreferDatabaseLyrics = true;
             int published = 0;

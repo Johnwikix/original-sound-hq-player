@@ -378,10 +378,12 @@ internal static class RegressionSuite
             await database.Connection.CloseAsync();
         }
 
-        static Task<Music?> ResolvedAsync(OneShotPlaybackService service) =>
-            ((Task<Music?>)typeof(OneShotPlaybackService).GetField("_resolveTask",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(service)!)
-                .WaitAsync(TimeSpan.FromSeconds(5));
+        static async Task<Music?> ResolvedAsync(OneShotPlaybackService service)
+        {
+            var task = (Task<IReadOnlyList<Music>>)typeof(OneShotPlaybackService).GetField("_resolveTask",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(service)!;
+            return (await task.WaitAsync(TimeSpan.FromSeconds(5))).SingleOrDefault();
+        }
     }
 
     private static async Task StartupCancellationAsync(string root)

@@ -17,6 +17,13 @@ public partial class MusicDatabaseService
     {
         await WhenInitialized.WaitAsync(token);
         token.ThrowIfCancellationRequested();
+        using var lease = await LibraryOperationGate.EnterAsync(token, reportBusy: false);
+        foreach (var target in tracks)
+        {
+            if (!target.CanEditFile || await _dbConnection.ExecuteScalarAsync<int>(
+                "SELECT EXISTS(SELECT 1 FROM Music WHERE Path=? COLLATE NOCASE AND (IsCueContainer=1 OR (CueTrackNo>0 AND IsMissing=0 AND IsDetached=0)))", target.Path) != 0)
+                throw new InvalidOperationException(ToolUtils.GetString(target.IsRemote ? "WebDavReadOnly" : "CueSharedSource"));
+        }
         List<string> failed = [];
         foreach (var music in tracks)
         {
@@ -92,13 +99,22 @@ public partial class MusicDatabaseService
     {
         await WhenInitialized.WaitAsync(token);
         var revisions = new long[tracks.Count];
+        var covers = new string?[tracks.Count];
+        if (edit.Cover is { } bytes)
+            for (int i = 0; i < tracks.Count; i++)
+                covers[i] = await SaveVersionCoverAsync(tracks[i].Id, bytes, token);
         await _dbConnection.RunInTransactionAsync(db =>
         {
             token.ThrowIfCancellationRequested();
             for (int i = 0; i < tracks.Count; i++)
             {
                 var music = tracks[i];
+                var before = music.IsCueTrack ? db.Get<Music>(music.Id) : null;
                 revisions[i] = MusicMetadataStorage.UpdateAlbumFields(db, music.Id, edit.Album, edit.Year, edit.AlbumArtist, edit.Genre);
+                if (before is not null && revisions[i] != 0) CueMetadataOverrides.Capture(db, before, db.Get<Music>(music.Id));
+                if (covers[i] is { } path)
+                    revisions[i] = db.ExecuteScalar<long>("UPDATE Music SET CoverOverridePath=?,ImageHash=?,MetadataRevision=MetadataRevision+1 WHERE Id=? RETURNING MetadataRevision",
+                        path, Path.GetFileNameWithoutExtension(path), music.Id);
             }
         });
         for (int i = 0; i < tracks.Count; i++)
@@ -106,6 +122,11 @@ public partial class MusicDatabaseService
             if (revisions[i] == 0) continue;
             var music = tracks[i];
             music.MetadataRevision = revisions[i];
+            if (covers[i] is { } path)
+            {
+                music.CoverOverridePath = path;
+                music.ImageHash = Path.GetFileNameWithoutExtension(path);
+            }
             if (edit.Album is { } album) music.Album = album;
             if (edit.Year is { } year) music.Year = year;
             if ((edit.AlbumArtist is not null || edit.Genre is not null) && music.AdditionalMetadataRead)

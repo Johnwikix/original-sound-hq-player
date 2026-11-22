@@ -344,7 +344,7 @@ namespace WinUIMusicPlayer
         private void HandleActivation(string? path)
         {
             if (Services.GetRequiredService<AppLifecycle>().Phase == AppPhase.Stopping) return;
-            if (path is not null && MusicFileTypes.Contains(Path.GetExtension(path)))
+            if (path is not null && MusicFileTypes.CanOpen(Path.GetExtension(path)))
                 Services.GetRequiredService<OneShotPlaybackService>().PlayNow(path);
             Services.GetRequiredService<ShellService>().ShowMainWindow();
         }

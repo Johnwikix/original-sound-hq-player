@@ -136,7 +136,7 @@ public sealed class LlmTranslationService(ILogger<LlmTranslationService> logger,
         LlmProviderProfile? profile = settings.Profiles.FirstOrDefault(x => x is not null && x.Id == settings.ActiveProfileId)
             ?? settings.Profiles.FirstOrDefault(x => x is not null);
         if (profile is null || !profile.Enabled || string.IsNullOrWhiteSpace(profile.Model)) return null;
-        string key = music.Id > 0 ? $"id:{music.Id}" : music.Path;
+        string key = music.Id > 0 ? $"id:{music.Id}" : music.LocalTrackKey;
         if (!force && _failedUntil.TryGetValue(key, out long until) && until > DateTimeOffset.UtcNow.Ticks) return null;
         string? apiKey = await GetApiKeyAsync(profile.Id, token).ConfigureAwait(false);
         if (profile.Protocol == LlmApiProtocol.Anthropic && string.IsNullOrWhiteSpace(apiKey)) return null;

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using System;
+using BassPlayerIpc.Shared;
 using System.ComponentModel;
 using System.Globalization;
 using System.Threading;
@@ -126,7 +127,8 @@ public sealed class SpectrogramViewModel : ObservableObject
         Status = ToolUtils.GetString("SpectrumAnalyzing");
         Progress = 0;
         RetryCommand.NotifyCanExecuteChanged();
-        var input = new SpectrogramInput(_music.Id, _music.SourceId, _music.Path);
+        AudioSampleRange? range = _music.IsCueTrack ? new(_music.StartSample, _music.EndSample, _music.SampleRate) : null;
+        var input = new SpectrogramInput(_music.Id, _music.SourceId, _music.Path, range);
         _work = LoadAfterAsync(_work, request, generation, input, 2048 << ResolutionIndex);
     }
 
@@ -166,9 +168,17 @@ public sealed class SpectrogramViewModel : ObservableObject
         }
     }
     private bool Current(int generation) => !_closed && _active && generation == _generation;
-    private bool SameMusic(Music? music) => music is not null && (ReferenceEquals(music, _music)
-        || music.SourceId == _music.SourceId && (music.Id != 0 && music.Id == _music.Id
-            || music.Id == 0 && _music.Id == 0 && string.Equals(music.Path, _music.Path, StringComparison.OrdinalIgnoreCase)));
+    private bool SameMusic(Music? music)
+    {
+        if (ReferenceEquals(music, _music)) return true;
+        if (music is null || music.SourceId != _music.SourceId || music.IsCueTrack != _music.IsCueTrack) return false;
+        if (music.IsCueTrack && (music.SampleRate != _music.SampleRate
+            || music.StartSample != _music.StartSample || music.EndSample != _music.EndSample)) return false;
+        if (music.Id != 0 || _music.Id != 0) return music.Id == _music.Id;
+        return music.IsCueTrack
+            ? music.CueTrackNo == _music.CueTrackNo && string.Equals(music.CuePath, _music.CuePath, StringComparison.OrdinalIgnoreCase)
+            : string.Equals(music.Path, _music.Path, StringComparison.OrdinalIgnoreCase);
+    }
     private void PlaybackChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(AppViewModel.DisplayedPlaybackMusic)) NotifyPlayback();

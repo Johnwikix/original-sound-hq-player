@@ -34,7 +34,7 @@ public static class CommunitySeedQuery
             "CASE WHEN m.IsFavorite=1 OR p.MusicId IS NOT NULL THEN 2.0 ELSE 0 END + " +
             "3.0*COALESCE(h.Weight,0)/(COALESCE(h.Weight,0)+3.0) AS Evidence " +
             "FROM Music m LEFT JOIN membership p ON p.MusicId=m.Id LEFT JOIN listening h ON h.MusicId=m.Id " +
-            "WHERE (m.IsFavorite=1 OR p.MusicId IS NOT NULL OR h.Weight>0) AND TRIM(m.Author)<>'' AND TRIM(m.Title)<>''), " +
+            "WHERE COALESCE(m.IsCueContainer,0)=0 AND (m.IsFavorite=1 OR p.MusicId IS NOT NULL OR h.Weight>0) AND TRIM(m.Author)<>'' AND TRIM(m.Title)<>''), " +
             "ranked AS (SELECT *,ROW_NUMBER() OVER(PARTITION BY TRIM(Artist) COLLATE NOCASE ORDER BY Evidence DESC,Id) AS ArtistRank FROM candidates) " +
             "SELECT Id,Artist,Title,IsPreferred,ListeningWeight FROM ranked WHERE ArtistRank=1 ORDER BY Evidence DESC,Id LIMIT 32",
             nowUtc.Ticks, nowUtc.AddDays(-90).Ticks, nowUtc.Ticks, qualifiedRatio).ConfigureAwait(false);

@@ -17,13 +17,13 @@ internal static unsafe partial class Program
                 Set(engine, "_streamLock", new object());
                 engine.ExperimentalSurround51 = true;
                 engine.Volume = .25f;
-                using var session = (Session)Invoke(engine, "OpenSession", path, false, null)!;
+                using var session = OpenTestSession(engine, path, false, null)!;
                 Set(engine, "_session", session);
                 using var output = new WasapiOutput(true, false);
                 Set(engine, "_output", output);
                 Require(session.Channels == 6 && session.Gain!.Target == .25, "exclusive route starts at full scale");
                 engine.SetVolume(0);
-                Require(session.Gain.Target == 0, "mute was sent to a nonexistent shared volume interface");
+                Require(session.Gain!.Target == 0, "mute was sent to a nonexistent shared volume interface");
                 engine.SetVolume(.4);
                 Require(Math.Abs(session.Gain.Target - .4) < 1e-6 && engine.OutputMode == "WasapiShared", "volume or saved mode changed");
             });
@@ -31,9 +31,9 @@ internal static unsafe partial class Program
             {
                 var engine = Engine("WasapiShared");
                 Set(engine, "_streamLock", new object());
-                engine.MusicUrl = path;
+                SetTestInput(engine, path);
                 engine.ExperimentalSurround51 = true;
-                using var session = (Session)Invoke(engine, "OpenSession", path, false, null)!;
+                using var session = OpenTestSession(engine, path, false, null)!;
                 session.AnchorFrames = session.MsToFrames(400);
                 Set(engine, "_session", session);
                 try
@@ -45,7 +45,7 @@ internal static unsafe partial class Program
                     Invoke(engine, "CompleteSurroundStart", true);
                     Invoke(engine, "CompleteSurroundStart", true);
                     Require(engine.GetDspState().SurroundFailureSequence == 1, "duplicate failure");
-                    using var retry = (Session)Invoke(engine, "OpenSession", path, false, null)!;
+                    using var retry = OpenTestSession(engine, path, false, null)!;
                     Require(retry.Channels == 2, "automatic retry reacquired exclusive");
                     engine.ChangeWaveChannelTime(250);
                     Require(engine.GetTimeProgress().currentMs == 250, "seek after fallback failed");
@@ -56,8 +56,8 @@ internal static unsafe partial class Program
             {
                 var engine = Engine("WasapiShared");
                 Set(engine, "_streamLock", new object());
-                engine.MusicUrl = path;
-                using var session = (Session)Invoke(engine, "OpenSession", path, false, null)!;
+                SetTestInput(engine, path);
+                using var session = OpenTestSession(engine, path, false, null)!;
                 session.AnchorFrames = session.MsToFrames(300);
                 Set(engine, "_session", session);
                 var settings = new IpcSetting { OutputMode = "WasapiShared", BassOutputDeviceId = -1,
@@ -82,9 +82,9 @@ internal static unsafe partial class Program
                 {
                     var engine = Engine("WasapiShared");
                     engine.ExperimentalSurround51 = true;
-                    using var session = (Session)Invoke(engine, "OpenSession", other, false, null)!;
+                    using var session = OpenTestSession(engine, other, false, null)!;
                     Require(session.Channels == 2 && session.ChannelMask == 0, "7.1 silently escaped into automatic 5.1");
-                    using var stereo = (Session)Invoke(engine, "OpenSession", Path.Combine(root, "_tools", "test_tone.wav"), false, null)!;
+                    using var stereo = OpenTestSession(engine, Path.Combine(root, "_tools", "test_tone.wav"), false, null)!;
                     Require(stereo.Channels == 2 && stereo.ChannelMask == 0, "stereo became surround");
                 }
                 finally { File.Delete(other); }
@@ -128,9 +128,9 @@ internal static unsafe partial class Program
             {
                 var engine = Engine("ASIO");
                 engine.ExperimentalSurround51 = true;
-                engine.MusicUrl = path;
+                SetTestInput(engine, path);
                 engine.Volume = .3f;
-                using var session = (Session)Invoke(engine, "OpenSession", path, false, null)!;
+                using var session = OpenTestSession(engine, path, false, null)!;
                 Set(engine, "_session", session);
                 try
                 {
@@ -151,8 +151,8 @@ internal static unsafe partial class Program
                 Set(output, "_source", new SurroundSource(0x60F));
                 Set(output, "<DeviceId>k__BackingField", "receiver");
                 Set(engine, "_output", output);
-                using var next = (Session)Invoke(engine, "OpenSession", path, false, null)!;
-                using var stereo = (Session)Invoke(engine, "OpenSession", Path.Combine(root, "_tools", "test_tone.wav"), false, null)!;
+                using var next = OpenTestSession(engine, path, false, null)!;
+                using var stereo = OpenTestSession(engine, Path.Combine(root, "_tools", "test_tone.wav"), false, null)!;
                 try
                 {
                     Require((bool)Invoke(engine, "TryReuseExclusiveOutput", next)!, "consecutive 5.1 tracks unnecessarily reopened the device");
@@ -168,10 +168,10 @@ internal static unsafe partial class Program
                 engine.ExperimentalAtmosPassthrough = true;
                 engine.ExperimentalSurround51 = true;
                 string atmos = Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a");
-                using var encoded = (Session)Invoke(engine, "OpenSession", atmos, false, null)!;
+                using var encoded = OpenTestSession(engine, atmos, false, null)!;
                 Require(encoded.Kind == RenderKind.Eac3, "surround stole Atmos priority");
                 Set(engine, "_atmosUseSharedPcm", true);
-                using var fallback = (Session)Invoke(engine, "OpenSession", atmos, false, RenderKind.Pcm)!;
+                using var fallback = OpenTestSession(engine, atmos, false, RenderKind.Pcm)!;
                 Require(fallback.Channels == 2 && fallback.ChannelMask == 0, "Atmos fallback retried exclusive via 5.1");
             });
         }

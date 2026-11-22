@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
-using WinUIMusicPlayer.AudioAnalysis;
+using AudioDecoding.Shared;
+using BassPlayerIpc.Shared;
 
 namespace WinUIMusicPlayer.AudioAnalysis;
 
@@ -20,12 +21,14 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
     private SwrContext* _resampler;
     private int _stream;
     private bool _disposed;
+    private readonly PcmSampleRange? _crop;
     public int SampleRate { get; private set; }
     public int Channels { get; private set; }
     public double Duration { get; private set; }
 
-    public SpectrogramDecoder(string path)
+    public SpectrogramDecoder(AudioInput input)
     {
+        input.Validate();
         _handle = GCHandle.Alloc(_deadline);
         AVDictionary* options = null;
         AVChannelLayout layout = default;
@@ -36,7 +39,7 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
             if (_format == null) throw new OutOfMemoryException();
             _format->interrupt_callback = new AVIOInterruptCB { callback = Interrupt, opaque = (void*)GCHandle.ToIntPtr(_handle) };
             ffmpeg.av_dict_set(&options, "protocol_whitelist", "file", 0);
-            fixed (AVFormatContext** format = &_format) Check(ffmpeg.avformat_open_input(format, path, null, &options));
+            fixed (AVFormatContext** format = &_format) Check(ffmpeg.avformat_open_input(format, input.Path, null, &options));
             Check(ffmpeg.avformat_find_stream_info(_format, null));
             _stream = ffmpeg.av_find_best_stream(_format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
             Check(_stream);
@@ -64,8 +67,18 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
             _packet = ffmpeg.av_packet_alloc();
             _frame = ffmpeg.av_frame_alloc();
             if (_packet == null || _frame == null) throw new OutOfMemoryException();
-            Duration = stream->duration > 0 ? stream->duration * ffmpeg.av_q2d(stream->time_base)
-                : _format->duration / (double)ffmpeg.AV_TIME_BASE;
+            if (input.SampleRange is { } range)
+            {
+                _crop = new(range, _format, stream, _format->pb != null && (_format->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
+                if (range.StartSample != 0 && !_crop.Seek(_format, _stream, range.StartSample))
+                    throw new InvalidDataException("Audio range seek failed.");
+                Duration = range.FrameCount / (double)range.SampleRate;
+            }
+            else
+            {
+                Duration = stream->duration > 0 ? stream->duration * ffmpeg.av_q2d(stream->time_base)
+                    : _format->duration / (double)ffmpeg.AV_TIME_BASE;
+            }
             if (!double.IsFinite(Duration) || Duration <= 0 || Duration > 86400) throw new InvalidDataException("Unknown audio duration.");
         }
         catch { Dispose(); throw; }
@@ -79,14 +92,29 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
         int channels = Math.Min(Channels, 2), lastProgress = -1;
         int invalidPackets = 0;
         bool draining = false;
-        while (true)
+        byte** offsetData = stackalloc byte*[32];
+        while (_crop is not { EndReached: true })
         {
             RefreshDeadline();
             int receive = ffmpeg.avcodec_receive_frame(_decoder, _frame);
             if (receive == 0)
             {
                 invalidPackets = 0;
-                int capacity = ffmpeg.swr_get_out_samples(_resampler, _frame->nb_samples);
+                int inputFrames = _frame->nb_samples;
+                byte** input = _frame->extended_data;
+                if (_crop is not null)
+                {
+                    _crop.Crop(_frame, out int skip, out inputFrames);
+                    if (inputFrames == 0)
+                    {
+                        ffmpeg.av_frame_unref(_frame);
+                        continue;
+                    }
+                    if (_frame->ch_layout.nb_channels is < 1 or > 32)
+                        throw new InvalidDataException("Unsupported audio layout.");
+                    input = PcmSampleRange.OffsetInput(_frame, skip, offsetData);
+                }
+                int capacity = ffmpeg.swr_get_out_samples(_resampler, inputFrames);
                 Check(capacity);
                 int needed = checked(capacity * channels);
                 if (needed > 2097152) throw new InvalidDataException("Audio frame too large.");
@@ -95,7 +123,7 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
                 fixed (float* output = buffer)
                 {
                     byte* target = (byte*)output;
-                    count = ffmpeg.swr_convert(_resampler, &target, buffer.Length / channels, _frame->extended_data, _frame->nb_samples);
+                    count = ffmpeg.swr_convert(_resampler, &target, buffer.Length / channels, input, inputFrames);
                 }
                 Check(count);
                 accumulator.Add(buffer.AsSpan(0, count * channels));
@@ -132,6 +160,7 @@ internal sealed unsafe class SpectrogramDecoder : IDisposable
                 if (!RecoverInvalidData(sent, ref invalidPackets)) Check(sent);
             }
         }
+        if (_crop is { EndReached: false }) throw new InvalidDataException("Audio ended inside the requested range.");
         while (true)
         {
             int count;

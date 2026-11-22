@@ -40,6 +40,9 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music
     {
+        public string LocalTrackKey => Path;
+        public bool IsCueContainer { get; set; }
+        public bool CanEditFile => !IsRemote && !IsCueContainer;
         public bool IsMissing { get; set; }
         public int SongId { get; set; }
         public TimeSpan Duration { get; set; }
@@ -153,6 +156,7 @@ namespace WinUIMusicPlayer.ViewModel
             set => Queue.Replace(value);
         }
         public List<Music> SongsSource { get; } = [];
+        public Music? FindById(int id) => SongsSource.FirstOrDefault(m => m.Id == id);
         public void SetBrowseQueue(BulkObservableCollection<Music> songs, bool exactFiles = false, int? sourceScope = null)
         {
             Queue.Replace(songs, sourceScope ?? State.Browse.SourceFilterId, exactFiles);
@@ -219,7 +223,7 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
         public static string GetString(string key) => key;
-        public static bool DeleteFileFromDisk(string path) => throw new NotSupportedException("No disk writes in fixture");
+        public static Task<bool> DeleteFileFromDiskAsync(Music music) => throw new NotSupportedException("No disk writes in fixture");
         public static ObservableCollection<MenuModel> BuildConvertMenuChildren(ICommand command) => [];
         public static void UpdateMusicMenuAvailability(IEnumerable<MenuModel> menus, List<Music> selected, Music song) { }
         public static void UpdateUsbSendMenu(IEnumerable<MenuModel> menus, ICommand command) { }

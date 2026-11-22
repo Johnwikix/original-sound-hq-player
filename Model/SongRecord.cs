@@ -113,7 +113,7 @@ public sealed class SongVersionOperationRecord
 [Table("SongVersionSchema")]
 public sealed class SongVersionSchemaRecord
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
     /// <summary>获取或设置唯一记录键。</summary>
     [PrimaryKey] public int Id { get; set; } = 1;
     /// <summary>获取或设置已完成结构版本。</summary>

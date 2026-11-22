@@ -70,7 +70,7 @@ namespace WinUIMusicPlayer.Services
         {
             if (music.Id > 0) return (await Lyrics.GetAsync(music.Id, token)).Document;
             token.ThrowIfCancellationRequested();
-            return OneShotLyricsCache.Load(music.Path)?.Document ?? _lyricsParser.Import(music.EmbeddedLyrics, token: token);
+            return OneShotLyricsCache.Load(music.LocalTrackKey)?.Document ?? _lyricsParser.Import(music.EmbeddedLyrics, token: token);
         }
 
         // 数据库就绪信号：Begin() 在 OnLaunched 早期启动的一次性解析早于 Host/数据库初始化，
@@ -108,6 +108,8 @@ namespace WinUIMusicPlayer.Services
         private async Task InitializeSchemaAsync(SQLiteAsyncConnection db, bool upgrading)
         {
             await db.CreateTableAsync<Music>();
+            await CueLibrarySchema.InitializeAsync(db);
+            await CueMetadataOverrides.EnsureSchemaAsync(db);
             await db.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
             await db.CreateTableAsync<WebDavSource>();
             await db.CreateTableAsync<RemoteTrack>();
@@ -437,7 +439,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 int musicId = await _dbConnection.ExecuteScalarAsync<int>(
-                    "SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE AND IsDetached=0 LIMIT 1", path);
+                    "SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE AND IsDetached=0 AND COALESCE(CueTrackNo,0)=0 ORDER BY Id LIMIT 1", path);
                 if (musicId <= 0) return null;
                 return await _dbConnection.FindAsync<Music>(musicId);
             }
@@ -497,7 +499,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task AddMusicListToPlayList(IEnumerable<Music> musics, int playListId)
+        public async Task AddMusicListToPlayList(IEnumerable<Music> musics, int playListId, bool pinCueTracks = false)
         {
             var ids = musics.Select(static music => music.Id).ToArray();
             await _dbConnection.RunInTransactionAsync(db =>
@@ -507,8 +509,12 @@ namespace WinUIMusicPlayer.Services
                 {
                     var music = db.Find<Music>(id);
                     if (music is null || music.IsDetached) continue;
-                    if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM PlayListMusic WHERE PlayListId=? AND SongId=?", playListId, music.SongId) > 0) continue;
-                    db.Insert(new PlayListMusic { PlayListId = playListId, MusicId = id, SongId = music.SongId, Order = ++order });
+                    bool pin = pinCueTracks && music.IsCueTrack;
+                    int exists = pin
+                        ? db.ExecuteScalar<int>("SELECT COUNT(*) FROM PlayListMusic WHERE PlayListId=? AND RequestedMusicId=?", playListId, id)
+                        : db.ExecuteScalar<int>("SELECT COUNT(*) FROM PlayListMusic WHERE PlayListId=? AND SongId=?", playListId, music.SongId);
+                    if (exists > 0) continue;
+                    db.Insert(new PlayListMusic { PlayListId = playListId, MusicId = id, SongId = music.SongId, RequestedMusicId = pin ? id : null, Order = ++order });
                 }
             });
             await GetPlayListMusic();

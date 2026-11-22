@@ -219,7 +219,9 @@ public sealed partial class PlaybackEngine
         if (_currentStream != Guid.Empty && _streamSlots.TryGetValue(_currentStream, out var old)) RemoveStream(old);
         DisposeSession();
         _currentStream = slot.Id;
-        MusicUrl = slot.Source.Location;
+        _requestedInput = _activeInput = new(slot.Source.Location);
+        _hasPendingInput = false;
+        _requestedPlaybackId = _activePlaybackId = 0;
         SetSession(slot.Prepared);
         slot.Prepared = null;
         ResetAtmosAttempt();
@@ -240,7 +242,9 @@ public sealed partial class PlaybackEngine
             Interlocked.Increment(ref _playGen);
             _recovery = null;
             _currentStream = Guid.Empty;
-            MusicUrl = string.Empty;
+            _requestedInput = _activeInput = null;
+            _hasPendingInput = false;
+            _requestedPlaybackId = _activePlaybackId = 0;
             DisposeSession();
             IsPlaying = false;
             _ipc.PlayStateUpdate(false);

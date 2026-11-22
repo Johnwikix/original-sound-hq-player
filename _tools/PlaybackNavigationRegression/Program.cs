@@ -65,6 +65,7 @@ internal static class Regression
 #endif
         await SongVersionsAsync();
         await ConfirmedStartsAsync();
+        await CueRangesAsync();
         await CheckHandoffOrderingAsync();
         await CacheSizeRegression.RunAsync();
         await SingleEntryLoopAsync();
@@ -880,6 +881,52 @@ internal static class Regression
                 "disabling transitions retries an unconfirmed cancellation and stops preload work when acknowledged");
         }
         finally { AppSettings.Dsp = savedSettings; }
+    }
+
+    private static async Task CueRangesAsync()
+    {
+        var settings = AppSettings.Dsp;
+        AppSettings.Dsp = settings with { GaplessPlayback = true, TransitionStyle = TrackTransitionStyle.Smart };
+        try
+        {
+            using var test = new Scenario();
+            string image = Path.GetFullPath("image.flac");
+            string cue = Path.ChangeExtension(image, "cue");
+            Music Clip(int track, long start) => new(300 + track)
+            {
+                Path = image, CuePath = cue, IsCueTrack = true, CueTrackNo = track,
+                SampleRate = 44100, StartSample = start, EndSample = start + 44100,
+                Duration = TimeSpan.FromSeconds(1),
+            };
+
+            var first = Clip(1, 0);
+            var adjacent = Clip(2, 44100);
+            var later = Clip(3, 88200);
+            test.State.CurrentPlayingList = [first, adjacent, later];
+            test.State.CurrentPlayingMusic = first;
+            test.State.State.Queue.SelectEntry(test.State.State.Queue.EntryIdAt(0), first);
+            test.Ipc.Progress = new(1, 70, 150, 1000, 0, true, PlaybackId: 70);
+            test.Coordinator.StartGapless();
+            test.State.IsPlaying = true;
+            var plan = test.Ipc.Queued.Last();
+            Check(plan.SampleRange == new AudioSampleRange(44100, 88200, 44100) && plan.PreserveAlbumBoundary,
+                "adjacent CUE tracks in the same image preserve their boundary and target sample range");
+            test.State.CurrentPlayingList.Remove(adjacent);
+            await WaitAsync(() => test.Ipc.Queued.Last().SampleRange?.StartSample == 88200);
+            Check(!test.Ipc.Queued.Last().PreserveAlbumBoundary,
+                "jumping across a CUE track in the same image uses the normal transition policy");
+
+            await test.Coordinator.PlayAsync(later);
+            long expectedPlaybackId = test.Player.LastPlaybackId;
+            test.Ipc.Progress = new(2, 71, 400, 1000, 0, true, PlaybackId: 70);
+            await Task.Delay(100);
+            Check(test.State.State.Playback.TransitionPresentation?.Music == later && test.Statistics.Starts == 0,
+                "an outgoing seek to a new epoch cannot confirm a different clip from the same image");
+            test.Ipc.Progress = new(3, 72, 1, 1000, 0, true, PlaybackId: expectedPlaybackId);
+            await WaitAsync(() => test.State.State.Playback.TransitionPresentation == null && test.Statistics.Starts == 1);
+            Check(test.State.CurrentPlayingMusic == later, "the matching occurrence confirms the selected CUE track");
+        }
+        finally { AppSettings.Dsp = settings; }
     }
 
     private static async Task ManualNextTransitionsAsync()

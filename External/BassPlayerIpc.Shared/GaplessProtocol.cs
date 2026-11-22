@@ -8,7 +8,8 @@ namespace BassPlayerIpc.Shared;
 /// <param name="Token">The positive identity of a queued track, or zero for cancellation.</param>
 /// <param name="Path">The next track path, or empty for cancellation.</param>
 /// <param name="PreserveAlbumBoundary">Keep the original track boundary in Smart mode.</param>
-public sealed record GaplessRequest(long Epoch, long Token, string Path, bool PreserveAlbumBoundary = false)
+/// <param name="SampleRange">An optional interval in the original audio stream.</param>
+public sealed record GaplessRequest(long Epoch, long Token, string Path, bool PreserveAlbumBoundary = false, AudioSampleRange? SampleRange = null)
 {
     private const int HeaderSize = 16;
     private const int MaxPathBytes = 2032;
@@ -16,17 +17,33 @@ public sealed record GaplessRequest(long Epoch, long Token, string Path, bool Pr
     private const long AlbumBoundaryFlag = long.MinValue;
     private static readonly UTF8Encoding PathEncoding = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
+    public AudioInput Input => new(Path, SampleRange);
+
     public byte[] Write()
     {
         ArgumentNullException.ThrowIfNull(Path);
+        if (SampleRange.HasValue) throw new ArgumentException("Use the range-aware command for this request.");
         Validate(Epoch, Token, Path.AsSpan(), PreserveAlbumBoundary);
         int pathLength = PathEncoding.GetByteCount(Path.AsSpan());
         if (pathLength > MaxPathBytes) throw new ArgumentException("Invalid next-track request.");
         byte[] bytes = new byte[HeaderSize + pathLength];
-        BinaryPrimitives.WriteInt64LittleEndian(bytes, Epoch);
-        BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(8), PreserveAlbumBoundary ? Token | AlbumBoundaryFlag : Token);
+        WriteIdentity(bytes);
         PathEncoding.GetBytes(Path.AsSpan(), bytes.AsSpan(HeaderSize));
         return bytes;
+    }
+
+    public byte[] WriteRanged()
+    {
+        Validate(Epoch, Token, Path.AsSpan(), PreserveAlbumBoundary);
+        byte[] bytes = AudioInputProtocol.Write(Input, HeaderSize);
+        WriteIdentity(bytes);
+        return bytes;
+    }
+
+    private void WriteIdentity(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt64LittleEndian(bytes, Epoch);
+        BinaryPrimitives.WriteInt64LittleEndian(bytes[8..], PreserveAlbumBoundary ? Token | AlbumBoundaryFlag : Token);
     }
 
     public static GaplessRequest Read(ReadOnlySpan<byte> bytes)
@@ -39,6 +56,19 @@ public sealed record GaplessRequest(long Epoch, long Token, string Path, bool Pr
         string path = PathEncoding.GetString(bytes[HeaderSize..]);
         Validate(epoch, token, path.AsSpan(), preserveAlbumBoundary);
         return new(epoch, token, path, preserveAlbumBoundary);
+    }
+
+    public static GaplessRequest ReadRanged(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length is <= HeaderSize or > IpcConstants.MaxRequestSize)
+            throw new ArgumentException("Invalid next-track payload.");
+        long epoch = BinaryPrimitives.ReadInt64LittleEndian(bytes);
+        long encodedToken = BinaryPrimitives.ReadInt64LittleEndian(bytes[8..]);
+        long token = encodedToken & long.MaxValue;
+        bool preserveAlbumBoundary = (encodedToken & AlbumBoundaryFlag) != 0;
+        var input = AudioInputProtocol.Read(bytes[HeaderSize..]);
+        Validate(epoch, token, input.Path.AsSpan(), preserveAlbumBoundary);
+        return new(epoch, token, input.Path, preserveAlbumBoundary, input.SampleRange);
     }
 
     private static void Validate(long epoch, long token, ReadOnlySpan<char> path, bool preserveAlbumBoundary)

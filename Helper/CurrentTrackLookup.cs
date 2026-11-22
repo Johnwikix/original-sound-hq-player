@@ -34,5 +34,5 @@ public static class CurrentTrackLookup
     public static bool Matches(Music candidate, Music current)
         => current.Id != 0 ? candidate.Id == current.Id
             : candidate.Id == 0 && !string.IsNullOrEmpty(current.Path)
-                && string.Equals(candidate.Path, current.Path, StringComparison.OrdinalIgnoreCase);
+                && string.Equals(candidate.LocalTrackKey, current.LocalTrackKey, StringComparison.OrdinalIgnoreCase);
 }

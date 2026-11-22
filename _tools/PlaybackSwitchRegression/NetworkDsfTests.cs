@@ -134,7 +134,7 @@ internal static unsafe partial class Program
             var session = (Session)slot.GetType().GetField("Prepared")!.GetValue(slot)!;
             Require(session.Kind == (mode == "ASIO" ? RenderKind.NativeDsd : mode == "WasapiShared" ? RenderKind.Pcm : RenderKind.Dop), "wrong prepared render kind");
             Set(engine, "_currentStream", id);
-            using var fallback = (Session?)Invoke(engine, "OpenSession", source.Location, false, RenderKind.Dop);
+            using var fallback = OpenTestSession(engine, source.Location, false, RenderKind.Dop);
             Require(fallback?.Kind == RenderKind.Dop, "remote Native -> DoP fallback forced PCM");
         }
         finally

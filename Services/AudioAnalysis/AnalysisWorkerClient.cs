@@ -1,4 +1,5 @@
 using System;
+using BassPlayerIpc.Shared;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -11,8 +12,11 @@ public sealed class AnalysisWorkerClient : IAsyncDisposable
 {
     private Process? _process;
     /// <summary>发送单个固定任务；没有网络或播放进程依赖。</summary>
-    public async Task<float[]> AnalyzeAsync(string path, CancellationToken token)
+    public Task<float[]> AnalyzeAsync(string path, CancellationToken token) => AnalyzeAsync(new AudioInput(path), token);
+
+    public async Task<float[]> AnalyzeAsync(AudioInput input, CancellationToken token)
     {
+        input.Validate();
         if (_process is null || _process.HasExited)
         {
             await DisposeAsync();
@@ -27,7 +31,9 @@ public sealed class AnalysisWorkerClient : IAsyncDisposable
         deadline.CancelAfter(TimeSpan.FromMinutes(4));
         try
         {
-            await _process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new AnalysisRequest(path), AnalysisJsonContext.Default.AnalysisRequest).AsMemory(), deadline.Token);
+            // 老版 worker 只识别 Path。区间任务不给它整轨路径，接错版本时明确失败。
+            var request = input.SampleRange is null ? new AnalysisRequest(input.Path) : new AnalysisRequest("", input);
+            await _process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(request, AnalysisJsonContext.Default.AnalysisRequest).AsMemory(), deadline.Token);
             await _process.StandardInput.FlushAsync(deadline.Token);
             string line = await _process.StandardOutput.ReadLineAsync(deadline.Token) ?? throw new IOException("Analysis worker exited.");
             if (line.Length > 32768) throw new InvalidDataException("Invalid analysis reply.");

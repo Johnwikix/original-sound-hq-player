@@ -1,4 +1,5 @@
 using SQLite;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
 internal static class MigrationBackupChecks
@@ -130,6 +131,61 @@ internal static class MigrationBackupChecks
         check(await resumed.ExecuteScalarAsync<int>("PRAGMA user_version") == LibraryDatabaseMigration.CurrentVersion,
             "startup recovers a zero-length database left by an interrupted first install");
         await resumed.CloseAsync();
+        await CheckCueUpgradeAsync(root, check);
+    }
+
+    private static async Task CheckCueUpgradeAsync(string root, Action<bool, string> check)
+    {
+        string directory = Directory.CreateDirectory(Path.Combine(root, "cue-v4")).FullName;
+        string active = Path.Combine(directory, LibraryDatabaseMigration.ActiveFile);
+        using (var v4 = new SQLiteConnection(active))
+        {
+            v4.Execute("CREATE TABLE Music(Id INTEGER PRIMARY KEY,Path TEXT,SourceId INTEGER,SongId INTEGER)");
+            v4.Execute("INSERT INTO Music VALUES(17,'X:/offline/local.flac',0,61),(18,'remote.flac',4,62)");
+            v4.Execute("PRAGMA user_version=4");
+        }
+        string backup = "";
+        try
+        {
+            await LibraryDatabaseMigration.OpenAsync(null, directory, async (db, _) =>
+            {
+                await CreateCueSchemaAsync(db);
+                throw new InvalidOperationException("Interrupted CUE upgrade");
+            }, path => backup = path);
+            throw new Exception("Expected interrupted CUE upgrade");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "Interrupted CUE upgrade") { }
+        string restoredPath = Path.Combine(directory, "independent-v4.db");
+        File.Copy(backup, restoredPath);
+        using (var restored = new SQLiteConnection(restoredPath, SQLiteOpenFlags.ReadOnly))
+            check(restored.ExecuteScalar<int>("PRAGMA user_version") == 4 &&
+                restored.ExecuteScalar<int>("SELECT COUNT(*) FROM Music WHERE Id IN (17,18)") == 2 &&
+                restored.ExecuteScalar<int>("SELECT COUNT(*) FROM sqlite_master WHERE name='CueSheet'") == 0,
+                "the isolated v4 backup independently restores original local and remote identities");
+        var migrated = await LibraryDatabaseMigration.OpenAsync(null, directory, async (db, upgrading) =>
+        {
+            check(upgrading && await db.ExecuteScalarAsync<int>("PRAGMA user_version") == 4, "interrupted CUE upgrade leaves the global version uncommitted");
+            await CreateCueSchemaAsync(db);
+        }, path => check(path == backup, "CUE migration reuses the original v4 backup"));
+        var rows = await migrated.QueryAsync<Music>("SELECT * FROM Music ORDER BY Id");
+        check(rows.Count == 2 && rows[0].Id == 17 && rows[0].SongId == 61 && rows[1].Id == 18 && rows[1].SourceId == 4 &&
+            rows.All(row => !row.IsCueTrack && !row.IsCueContainer) &&
+            await migrated.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE name='IX_Music_CurrentCueTrack' AND sql LIKE '%WHERE CueMappingActive=1%'") == 1,
+            "v4 upgrades without mounting the source and preserves old rows with active-only track uniqueness");
+        await migrated.CloseAsync();
+        var reopened = await LibraryDatabaseMigration.OpenAsync(null, directory, async (db, upgrading) =>
+        {
+            check(!upgrading, "same-generation CUE schema reopens without a backup");
+            await CreateCueSchemaAsync(db);
+        }, _ => throw new Exception("Unexpected v5 backup"));
+        await reopened.CloseAsync();
+
+        static async Task CreateCueSchemaAsync(SQLiteAsyncConnection database)
+        {
+            await database.CreateTableAsync<Music>();
+            await CueLibrarySchema.InitializeAsync(database);
+            await CueMetadataOverrides.EnsureSchemaAsync(database);
+        }
     }
 
     private static async Task ExpectFailureAsync(string directory, Action<bool, string> check, string message, bool future = false)

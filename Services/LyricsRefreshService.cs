@@ -45,7 +45,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
             else if (music.Id <= 0)
             {
                 // 一次性播放没有数据库行；已保存的歌词缓存承担相同的来源优先级。
-                cached = OneShotLyricsCache.Load(music.Path);
+                cached = OneShotLyricsCache.Load(music.LocalTrackKey);
                 externalRevision = cached?.Revision ?? 0;
                 userEdited = cached?.SourceKind == "User";
                 if (cached is not null && parser.HasLyrics(cached.Document, token)) document = cached.Document;
@@ -53,7 +53,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         }
         if (document is null)
         {
-            if (!music.IsRemote) document = await ReadLocalAsync(music.Path, order, token).ConfigureAwait(false);
+            if (!music.IsRemote) document = await ReadLocalAsync(LyricsFilePolicy.SidecarBase(music), order, token).ConfigureAwait(false);
             else
             {
                 if (hasStoredLyrics)
@@ -77,7 +77,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         }
         if (document is null && music.Id <= 0 && !databaseFirst)
         {
-            cached = OneShotLyricsCache.Load(music.Path);
+            cached = OneShotLyricsCache.Load(music.LocalTrackKey);
             externalRevision = cached?.Revision ?? 0;
             userEdited = cached?.SourceKind == "User";
             if (cached is not null && parser.HasLyrics(cached.Document, token)) document = cached.Document;
@@ -93,8 +93,8 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                     bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token, expectedOwnerId: stored.OwnerId).ConfigureAwait(false);
                     if (!saved) document = (await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false)).Document;
                 }
-                else if (!OneShotLyricsCache.TrySave(music.Path, document, externalRevision))
-                    document = OneShotLyricsCache.Load(music.Path)?.Document ?? document;
+                else if (!OneShotLyricsCache.TrySave(music.LocalTrackKey, document, externalRevision))
+                    document = OneShotLyricsCache.Load(music.LocalTrackKey)?.Document ?? document;
             }
         }
 
@@ -120,7 +120,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 }
                 if (accepted && !music.IsRemote)
                 {
-                    try { await LyricsExporter.SaveTranslationFileAsync(music.Path, translation, token).ConfigureAwait(false); }
+                    try { await LyricsExporter.SaveTranslationFileAsync(LyricsFilePolicy.SidecarBase(music), translation, token).ConfigureAwait(false); }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     { logger.LogWarning(ex, "无法写入大模型翻译侧车文件: {Path}", music.Path); }
                 }

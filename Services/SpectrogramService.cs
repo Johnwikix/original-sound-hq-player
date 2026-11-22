@@ -1,4 +1,5 @@
 using System;
+using BassPlayerIpc.Shared;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -16,7 +17,7 @@ public sealed class SpectrogramService(MusicDatabaseService database, RemoteAudi
     private readonly Dictionary<CacheKey, SpectrogramData> _cache = [];
     private readonly Queue<CacheKey> _order = [];
     private int _bytes;
-    private readonly record struct CacheKey(string Path, long Length, long Modified, int FftSize);
+    private readonly record struct CacheKey(AudioInput Input, long Length, long Modified, int FftSize);
 
     public Task<SpectrogramData?> AnalyzeAsync(SpectrogramInput input, int fftSize, IProgress<double> progress, CancellationToken token)
         => Task.Run(async () =>
@@ -42,11 +43,12 @@ public sealed class SpectrogramService(MusicDatabaseService database, RemoteAudi
                     if (!Path.IsPathFullyQualified(path) || path.EndsWith(".part", StringComparison.OrdinalIgnoreCase))
                         throw new IOException("No complete audio file.");
                     var before = new FileInfo(path);
-                    var key = new CacheKey(path, before.Length, before.LastWriteTimeUtc.Ticks, fftSize);
+                    var source = new AudioInput(path, input.SampleRange);
+                    var key = new CacheKey(source, before.Length, before.LastWriteTimeUtc.Ticks, fftSize);
                     if (_cache.TryGetValue(key, out var cachedResult)) return cachedResult;
                     // 共享读取允许现有播放句柄继续工作；文件写入导致版本变化时丢弃结果。
                     using var read = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1);
-                    var result = await SpectrogramWorkerClient.AnalyzeAsync(path, fftSize, progress, token).ConfigureAwait(false);
+                    var result = await SpectrogramWorkerClient.AnalyzeAsync(source, fftSize, progress, token).ConfigureAwait(false);
                     var after = new FileInfo(path);
                     if (after.Length != key.Length || after.LastWriteTimeUtc.Ticks != key.Modified || lease is { IsCurrent: false })
                         throw new IOException("Audio file changed during analysis.");

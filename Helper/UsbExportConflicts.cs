@@ -29,7 +29,8 @@ internal static class UsbExportConflicts
             if (!available[i]) continue;
             var music = songs[i];
             var targets = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            AddTargets(targets, UsbExportPaths.GetRelativeFilePath(music, music.Extension));
+            if (format is null || !music.IsCueTrack)
+                AddTargets(targets, UsbExportPaths.GetRelativeFilePath(music, music.Extension));
             if (format is not null)
                 AddTargets(targets, UsbExportPaths.GetRelativeFilePath(music, AudioConverterService.GetExtensionForFormat(format)));
             foreach (var target in targets)
@@ -74,15 +75,15 @@ internal static class UsbExportConflicts
                 foreach (int index in group.Indices)
                 {
                     var music = songs[index];
-                    bool sameName = string.Equals(Path.GetFileNameWithoutExtension(music.Path), Path.GetFileNameWithoutExtension(record.Path),
-                        StringComparison.OrdinalIgnoreCase);
+                    string stem = music.IsCueTrack ? UsbExportPaths.GetCueTrackFileStem(music) : Path.GetFileNameWithoutExtension(music.Path);
+                    bool sameName = string.Equals(stem, Path.GetFileNameWithoutExtension(record.Path), StringComparison.OrdinalIgnoreCase);
                     bool hasSource = !string.IsNullOrEmpty(record.ExportSourceIdentity);
                     bool sameSource = hasSource
                         && string.Equals(UsbExportPaths.GetSourceIdentity(music), record.ExportSourceIdentity, StringComparison.OrdinalIgnoreCase);
                     bool sameMetadata = record.ScanMetadataRead != false && music.Title == record.Title
                         && music.Author == record.Author && music.Album == record.Album;
                     // 音频覆盖要求同源；只有歌词路径相交时，保留同曲不同格式共享侧车的既有语义。
-                    bool audioOwnerMatches = hasSource ? sameSource : sameMetadata;
+                    bool audioOwnerMatches = hasSource ? sameSource : !music.IsCueTrack && sameMetadata;
                     bool sameOwner = sameName && (target.Value || group.Audio
                         ? audioOwnerMatches
                         : sameSource || sameMetadata);
@@ -94,12 +95,16 @@ internal static class UsbExportConflicts
     }
 
     private static bool SameSource(Music left, Music right)
-        => string.Equals(left.Path, right.Path, StringComparison.OrdinalIgnoreCase)
-            && left.Title == right.Title && left.Author == right.Author && left.Album == right.Album;
+        => left.IsCueTrack || right.IsCueTrack
+            ? left.IsCueTrack && right.IsCueTrack
+                && string.Equals(UsbExportPaths.GetSourceIdentity(left), UsbExportPaths.GetSourceIdentity(right), StringComparison.OrdinalIgnoreCase)
+            : string.Equals(left.Path, right.Path, StringComparison.OrdinalIgnoreCase)
+                && left.Title == right.Title && left.Author == right.Author && left.Album == right.Album;
 
     private static bool SameLyricsOwner(Music left, Music right)
-        => left.Title == right.Title && left.Author == right.Author && left.Album == right.Album
-            && string.Equals(Path.GetFileNameWithoutExtension(left.Path), Path.GetFileNameWithoutExtension(right.Path), StringComparison.OrdinalIgnoreCase);
+        => left.IsCueTrack || right.IsCueTrack ? SameSource(left, right)
+            : left.Title == right.Title && left.Author == right.Author && left.Album == right.Album
+                && string.Equals(Path.GetFileNameWithoutExtension(left.Path), Path.GetFileNameWithoutExtension(right.Path), StringComparison.OrdinalIgnoreCase);
 
     private static void AddTargets(Dictionary<string, bool> targets, string audioPath)
     {

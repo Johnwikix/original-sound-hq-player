@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -29,7 +30,7 @@ public sealed class OneShotPlaybackService : IDisposable
     private readonly ILogger<OneShotPlaybackService> _logger;
     private readonly object _gate = new();
     private string? _pendingPath;
-    private Task<Music?>? _resolveTask;
+    private Task<IReadOnlyList<Music>>? _resolveTask;
     // 每次播放请求递增；已派发的迟到回调（被更新的打开请求覆盖）按代差丢弃。
     private int _generation;
     private int _dispatchedGeneration;
@@ -59,7 +60,7 @@ public sealed class OneShotPlaybackService : IDisposable
         {
             if (_disposed || _pendingPath is not null) return;
             _pendingPath = path;
-            _resolveTask = ResolveAsync(path);
+            _resolveTask = Task.Run(() => ResolveAsync(path));
             _generation = 1;
         }
         TryDispatchPending();
@@ -74,7 +75,7 @@ public sealed class OneShotPlaybackService : IDisposable
             if (_disposed) return;
             // 同一路径也可能已移出曲库或上次解析失败；每个显式打开请求重新确认库内身份。
             _pendingPath = path;
-            _resolveTask = ResolveAsync(path);
+            _resolveTask = Task.Run(() => ResolveAsync(path));
             _generation++;
         }
         TryDispatchPending();
@@ -86,11 +87,32 @@ public sealed class OneShotPlaybackService : IDisposable
     {
         lock (_gate)
         {
-            return _resolveTask is { IsCompletedSuccessfully: true } task ? task.Result : null;
+            return _resolveTask is { IsCompletedSuccessfully: true } task && task.Result.Count > 0 ? task.Result[0] : null;
         }
     }
 
-    private async Task<Music?> ResolveAsync(string path)
+    private async Task<IReadOnlyList<Music>> ResolveAsync(string path)
+    {
+        if (!AddFolderService.IsCueFile(path))
+        {
+            var track = await ResolveAudioAsync(path).ConfigureAwait(false);
+            return track is null ? [] : [track];
+        }
+
+        if (LibraryPath.IsFixedLocalDrive(path))
+        {
+            try
+            {
+                await _databaseService.WhenInitialized.ConfigureAwait(false);
+                var tracks = await _databaseService.ImportCueAsync(path).ConfigureAwait(false);
+                if (tracks.Count > 0) return tracks;
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "CUE import failed: {Path}", path); }
+        }
+        return await AddFolderService.ReadCueTracksAsync(path).ConfigureAwait(false);
+    }
+
+    private async Task<Music?> ResolveAudioAsync(string path)
     {
         // 固定盘先查库：已在库内的文件直接返回权威行，免去重复元数据解析。
         bool fixedDrive = LibraryPath.IsFixedLocalDrive(path);
@@ -158,7 +180,7 @@ public sealed class OneShotPlaybackService : IDisposable
         {
             var snapshot = await _databaseService.Lyrics.GetAsync(imported.Id).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(snapshot.Document.Original.Content) || snapshot.SourceKind == "User") return;
-            var cached = OneShotLyricsCache.Load(imported.Path);
+            var cached = OneShotLyricsCache.Load(imported.LocalTrackKey);
             if (cached is null || (string.IsNullOrWhiteSpace(cached.Document.Original.Content) && cached.SourceKind != "User")) return;
             await _databaseService.Lyrics.SaveAsync(imported.Id, cached.Document, snapshot.Revision,
                 cached.SourceKind == "User" ? "User" : "OneShotCache", expectedOwnerId: snapshot.OwnerId)
@@ -180,41 +202,42 @@ public sealed class OneShotPlaybackService : IDisposable
 
     private void TryDispatchPending()
     {
+        string path;
+        Task<IReadOnlyList<Music>> resolve;
+        int generation;
         lock (_gate)
         {
             if (_disposed || _pendingPath is null || _resolveTask is null) return;
             if (_dispatchedGeneration == _generation) return;
             if (!_lifecycle.IsReady || !_appViewModel.IsPlaybackEngineReady) return;
-            _dispatchedGeneration = _generation;
+            generation = _dispatchedGeneration = _generation;
+            path = _pendingPath;
+            resolve = _resolveTask;
         }
-        _ = PlayPendingAsync();
+        _ = PlayPendingAsync(path, resolve, generation);
     }
 
-    private async Task PlayPendingAsync()
+    private async Task PlayPendingAsync(string path, Task<IReadOnlyList<Music>> resolve, int generation)
     {
-        string path;
-        Task<Music?> resolve;
-        int generation;
-        lock (_gate)
-        {
-            path = _pendingPath!;
-            resolve = _resolveTask!;
-            generation = _generation;
-        }
         try
         {
             // 解析结果是唯一事实源：固定盘文件（新导入或库内已有）返回库内行（Id>0），
             // 统一走库内播放链路（统计/歌词/当前曲存档为标准库内语义）；非固定盘或入库
             // 失败返回 Id=0 实例，走一次性播放。禁止在派发时另行查库判定——解析中的
             // 入库写仍在飞行，查空会误入一次性分支（不发布列表、不建文件夹队列）。
-            Music? music = await resolve.ConfigureAwait(false);
-            if (music is null)
+            var tracks = await resolve.ConfigureAwait(false);
+            lock (_gate) if (_disposed || generation != _generation) return;
+            if (tracks.Count == 0)
             {
                 NotifyFailure(path);
                 return;
             }
+            var music = tracks[0];
+            bool cue = AddFolderService.IsCueFile(path);
             bool isLibraryRow = music.Id > 0;
             // 首次入库的条目增量发布到内存索引、文件夹计数与页面投影（先于播放派发完成，保证随后同帧可见）。
+            if (isLibraryRow && cue)
+                await _databaseService.PublishLibrarySnapshotAsync(default, preserveRows: true).ConfigureAwait(false);
             if (isLibraryRow) await PublishImportedOnUiAsync(music).ConfigureAwait(false);
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
@@ -228,13 +251,16 @@ public sealed class OneShotPlaybackService : IDisposable
                 // 条目尚未同步进内存索引（如发布失败）时退回数据库行实例。
                 Music target = isLibraryRow ? (_appViewModel.FindById(music.Id) ?? music) : music;
                 var browse = App.Services.GetRequiredService<MusicBrowseViewModel>();
-                if (isLibraryRow) browse.PlayMusicWithFolderQueue(target);
+                if (cue) browse.PlayCueTracks(tracks);
+                else if (isLibraryRow) browse.PlayMusicWithFolderQueue(target);
                 else _ = browse.PlayMusic(target);
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "一次性播放外部文件失败: {Path}", path);
+            lock (_gate) if (_disposed || generation != _generation) return;
+            NotifyFailure(path);
         }
     }
 

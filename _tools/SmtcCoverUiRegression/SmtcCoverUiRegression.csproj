@@ -39,4 +39,5 @@
     <Page Include="../../Controls/ShadowImage.xaml" Link="Controls/ShadowImage.xaml" />
     <Content Include="../../Assets/default_cover_*.png" Link="Assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../../Utils/LocalCoverSource.cs" /></ItemGroup>
 </Project>

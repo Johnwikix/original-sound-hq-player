@@ -12,10 +12,12 @@ internal static class SpectrogramWorker
             string? line = Console.ReadLine();
             if (line is null || line.Length > 32768) return 1;
             var request = JsonSerializer.Deserialize(line, SpectrogramJsonContext.Default.SpectrogramRequest);
-            if (request is null || !Path.IsPathFullyQualified(request.Path) || !SpectrogramData.ValidFftSize(request.FftSize)
-                || request.Path.EndsWith(".part", StringComparison.OrdinalIgnoreCase)) return 1;
+            if (request is null || !SpectrogramData.ValidFftSize(request.FftSize)) return 1;
+            var source = request.GetInput();
+            source.Validate();
+            if (!Path.IsPathFullyQualified(source.Path) || source.Path.EndsWith(".part", StringComparison.OrdinalIgnoreCase)) return 1;
             using var writer = new BinaryWriter(Console.OpenStandardOutput());
-            using var decoder = new SpectrogramDecoder(request.Path);
+            using var decoder = new SpectrogramDecoder(source);
             var result = decoder.Analyze(request.FftSize, value =>
             {
                 writer.Write((byte)0);

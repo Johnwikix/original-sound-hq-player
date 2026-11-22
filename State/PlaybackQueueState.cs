@@ -270,7 +270,7 @@ public sealed class PlaybackQueueState : ObservableObject
             var entry = _entries[i];
             songs.TryGetValue(entry.Music.Id, out var refreshed);
             bool currentFile = entry.Music.Id == current?.Id && (_currentEntryId == 0 || entry.Id == _currentEntryId);
-            var music = currentFile ? entry.Music : refreshed;
+            var music = currentFile || entry.Music.Id == 0 ? entry.Music : refreshed;
             if ((refreshed is null || refreshed.IsMissing) && entry.Music.SongId > 0 && RequestedVersion(entry.Id) == 0)
                 music = findDisplayVersion?.Invoke(refreshed?.SongId ?? entry.Music.SongId, SourceScope(entry.Id)) ?? music;
             if (music is null) continue;
@@ -399,7 +399,7 @@ public sealed class PlaybackQueueState : ObservableObject
             if (ReferenceEquals(Playing[i], current)) return i;
         for (int i = 0; i < Playing.Count; i++)
             if (current.Id != 0 ? Playing[i].Id == current.Id
-                : Playing[i].Id == 0 && string.Equals(Playing[i].Path, current.Path, StringComparison.OrdinalIgnoreCase)) return i;
+                : Playing[i].Id == 0 && string.Equals(Playing[i].LocalTrackKey, current.LocalTrackKey, StringComparison.OrdinalIgnoreCase)) return i;
         if (current.SongId > 0)
             for (int i = 0; i < Playing.Count; i++) if (Playing[i].SongId == current.SongId) return i;
         return -1;

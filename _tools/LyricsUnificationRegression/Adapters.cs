@@ -23,6 +23,10 @@ namespace WinUIMusicPlayer.Model
         public string? EmbeddedLyrics { get; set; }
         public bool IsLrcSearched { get; set; }
         public bool IsKrcSearched { get; set; }
+        public int CueTrackNo { get; set; }
+        public string CuePath { get; set; } = "";
+        [Ignore] public bool IsCueTrack => CueTrackNo > 0;
+        [Ignore] public string LocalTrackKey => IsCueTrack ? $"{CuePath}|{CueTrackNo}" : Path;
     }
     public static class AppSettings
     {

@@ -63,12 +63,12 @@ public sealed class AlbumDetailsViewModel : ObservableObject
     /// <summary>获取是否需要重试初始化读取。</summary>
     public bool LoadFailed { get; private set => SetProperty(ref field, value); }
     /// <summary>获取标签是否可编辑；远程专辑沿用只读策略。</summary>
-    public bool CanEditTags => !_stopped && !IsLoading && Album.CanEditFile;
+    public bool CanEditTags => !_stopped && !IsLoading && Album.IsLocal;
     private bool CanSave => !_stopped && !IsLoading && !IsSaving && !IsCoverBusy;
     /// <summary>获取是否可以写入文件；远程来源没有文件通道。</summary>
-    public bool CanSaveFile => CanSave && Album.CanEditFile;
+    public bool CanSaveFile => CanSave && _tracks.TrueForAll(static music => music.CanEditFile);
     /// <summary>获取是否可以仅保存数据库；远程专辑没有可用的落盘通道，两个保存入口一并禁用。</summary>
-    public bool CanSaveDatabase => CanSave && Album.CanEditFile;
+    public bool CanSaveDatabase => CanSave && Album.IsLocal;
     private bool CanOperate => !_stopped && !IsLoading && !IsSaving && !IsCoverBusy;
     /// <summary>获取加载或失败重试命令。</summary>
     public IAsyncRelayCommand LoadCommand { get; }
@@ -107,7 +107,7 @@ public sealed class AlbumDetailsViewModel : ObservableObject
         _initialGenre = Draft.Genre;
         _tracks = [];
         foreach (var music in app.SongsSource)
-            if (music.Album == album.Album && music.SourceId == album.SourceId) _tracks.Add(music);
+            if (!music.IsCueContainer && (!music.IsMissing || music.IsRemote) && music.Album == album.Album && music.SourceId == album.SourceId) _tracks.Add(music);
         _tracks.Sort((a, b) => a.DiskNumber != b.DiskNumber ? a.DiskNumber.CompareTo(b.DiskNumber)
             : a.TrackNumber != b.TrackNumber ? a.TrackNumber.CompareTo(b.TrackNumber) : string.CompareOrdinal(a.Title, b.Title));
         Tracks = BuildTrackItems(_tracks);
@@ -116,8 +116,8 @@ public sealed class AlbumDetailsViewModel : ObservableObject
         LoadCommand = new AsyncRelayCommand(LoadAsync, () => CanOperate);
         SaveFileCommand = new AsyncRelayCommand(() => SaveAsync(true), () => CanSaveFile);
         SaveDatabaseCommand = new AsyncRelayCommand(() => SaveAsync(false), () => CanSaveDatabase);
-        FindCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(true), () => CanOperate && Album.CanEditFile);
-        ChooseCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(false), () => CanOperate && Album.CanEditFile);
+        FindCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(true), () => CanOperate && Album.IsLocal);
+        ChooseCoverCommand = new AsyncRelayCommand(() => ChangeCoverAsync(false), () => CanOperate && Album.IsLocal);
         ExportCoverCommand = new AsyncRelayCommand(ExportCoverAsync, () => CanOperate && _cover is not null);
         Draft.PropertyChanged += DraftChanged;
     }
@@ -206,7 +206,7 @@ public sealed class AlbumDetailsViewModel : ObservableObject
     }
 
     private Task ChangeCoverAsync(bool online)
-        => CanOperate && Album.CanEditFile ? _operationTask = ChangeCoverCoreAsync(online) : Task.CompletedTask;
+        => CanOperate && Album.IsLocal ? _operationTask = ChangeCoverCoreAsync(online) : Task.CompletedTask;
     private async Task ChangeCoverCoreAsync(bool online)
     {
         IsCoverBusy = true;

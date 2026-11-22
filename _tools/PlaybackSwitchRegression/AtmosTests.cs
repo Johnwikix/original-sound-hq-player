@@ -151,8 +151,8 @@ internal static unsafe partial class Program
                 File.WriteAllBytes(copy, file);
                 var engine = Engine("WasapiExclusiveEvent");
                 engine.ExperimentalAtmosPassthrough = true;
-                engine.MusicUrl = copy;
-                using var failed = (Session?)Invoke(engine, "OpenSession", copy, false, null);
+                SetTestInput(engine, copy);
+                using var failed = OpenTestSession(engine, copy, false, null);
                 Require(failed?.Kind == RenderKind.Eac3, "encoded session not selected");
                 Require(SpinWait.SpinUntil(() => failed!.DecodeFailure != null, 2000), "decode failure not published");
                 Require(!failed!.IsDrained, "failure reported as natural EOF");
@@ -228,9 +228,9 @@ internal static unsafe partial class Program
             {
                 var engine = Engine(mode);
                 engine.ExperimentalAtmosPassthrough = enabled;
-                using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
+                using var session = OpenTestSession(engine, path, false, null);
                 Require(session?.Kind == (enabled && mode != "ASIO" ? RenderKind.Eac3 : RenderKind.Pcm), "experimental path escaped scope");
-                using var ordinary = (Session?)Invoke(engine, "OpenSession", Path.Combine(root, "_tools", "test_tone.wav"), false, null);
+                using var ordinary = OpenTestSession(engine, Path.Combine(root, "_tools", "test_tone.wav"), false, null);
                 Require(ordinary?.Kind == RenderKind.Pcm && ordinary.Channels == 2, "ordinary PCM behavior changed");
             });
         Run("Atmos transport: compressed format has 52-byte extension, proper carrier and encoded layout", () =>

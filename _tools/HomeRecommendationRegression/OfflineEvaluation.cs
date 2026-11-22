@@ -81,9 +81,19 @@ internal static class OfflineEvaluation
             await db.ExecuteAsync("DROP TABLE IF EXISTS main.AnalysisRecord");
             await db.ExecuteAsync("CREATE TABLE main.AnalysisRecord AS SELECT * FROM evaluation_features.AnalysisRecord");
             await db.ExecuteAsync("CREATE UNIQUE INDEX evaluation_analysis_id ON AnalysisRecord(MusicId)");
+            // Older snapshots predate the CUE schema; add its defaults to the working copy.
+            var columns = (await db.QueryScalarsAsync<string>("SELECT name FROM pragma_table_info('Music')")).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (string column in new[] { "IsMissing", "IsDetached", "IsCueContainer", "CueSheetId", "CueTrackNo", "CueMappingActive", "StartSample", "EndSample", "SampleRate" })
+                if (!columns.Contains(column))
+                    await db.ExecuteAsync($"ALTER TABLE Music ADD COLUMN {column} INTEGER DEFAULT 0");
+            await db.ExecuteAsync("""
+                CREATE TABLE IF NOT EXISTS CueSource(CueSheetId INTEGER NOT NULL, Path TEXT NOT NULL COLLATE NOCASE,
+                    Length INTEGER NOT NULL, LastWriteUtcTicks INTEGER NOT NULL, SampleRate INTEGER NOT NULL,
+                    TotalSamples INTEGER NOT NULL, PRIMARY KEY(CueSheetId,Path)) WITHOUT ROWID
+                """);
             var repository = new AnalysisRepository(db);
             var playlist = (await db.QueryScalarsAsync<int>("SELECT DISTINCT pm.MusicId FROM PlayListMusic pm JOIN PlayList p ON p.Id=pm.PlayListId")).ToHashSet();
-            var rows = await db.QueryAsync<MusicRow>("SELECT Id,Author,Title,Album,AlbumArtist,Genre,Year,IsFavorite,PlayCount FROM Music WHERE Id>0 ORDER BY Id");
+            var rows = await db.QueryAsync<MusicRow>("SELECT Id,Author,Title,Album,AlbumArtist,Genre,Year,IsFavorite,PlayCount FROM Music WHERE Id>0 AND COALESCE(IsCueContainer,0)=0 ORDER BY Id");
             var splitters = manifest.ArtistSplitSymbols.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
                 .SelectMany(s => s.Split(',', StringSplitOptions.RemoveEmptyEntries)).ToArray();
             var tracks = rows.Select(row => new RecommendationTrack(row.Id, SplitArtists(row.Author, splitters), row.Album,

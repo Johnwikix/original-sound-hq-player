@@ -119,7 +119,7 @@ internal static unsafe partial class Program
             var engine = Engine("WasapiShared");
             engine.OutputMode = "DirectSound";
             engine.Volume = 0;
-            using var session = (Session)Invoke(engine, "OpenSession", Path.Combine(root, "_tools/test_tone.wav"), false, null)!;
+            using var session = OpenTestSession(engine, Path.Combine(root, "_tools/test_tone.wav"), false, null)!;
             Require(session.Gain!.Target == 0, "new source still has unity gain");
             var scratch = new double[256];
             Require(SpinWait.SpinUntil(() => session.ReadyFrames >= 128, 2000), "no decoded data");

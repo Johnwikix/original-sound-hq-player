@@ -9,8 +9,12 @@ using WinUIMusicPlayer.Services;
 // 封面写入、取色、展示服务、任务屏障和 SMTC 均编译生产源码。
 namespace WinUIMusicPlayer.Model
 {
-    public sealed class Music
+    public sealed class Music : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public long CoverAudioWriteTicks { get; set; }
+        public string CoverSourceStamp { get; set { if (field == value) return; field = value; PropertyChanged?.Invoke(this, new(nameof(CoverSourceStamp))); } } = "";
+        public string CoverOverridePath { get; set; } = "";
         public string ImageHash { get; init; } = "";
         public string Path { get; init; } = "";
         public string Title { get; init; } = "";

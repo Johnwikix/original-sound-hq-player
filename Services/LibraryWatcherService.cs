@@ -16,6 +16,7 @@ internal sealed class WatchedFolderChanges
 {
     public int Count => Files.Count + Directories.Count;
     public HashSet<string> Files { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, string> Renames { get; } = new(StringComparer.Ordinal);
     // A case-only rename needs both spellings: SQLite NOCASE only folds ASCII.
     public Dictionary<string, string> Directories { get; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -28,7 +29,18 @@ internal sealed class WatchedFolderChanges
     public void Append(WatchedFolderChanges newer)
     {
         Files.UnionWith(newer.Files);
+        foreach (var (original, current) in newer.Renames) AddFile(current, original);
         foreach (var (original, current) in newer.Directories) AddDirectory(current, original);
+    }
+
+    public void AddFile(string current, string? previous)
+    {
+        Files.Add(current);
+        if (previous is null) return;
+        Files.Add(previous);
+        if (current == previous) return;
+        string source = Renames.FirstOrDefault(pair => pair.Value == previous).Key ?? previous;
+        Renames[source] = current;
     }
 }
 
@@ -175,7 +187,8 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
         }
 
         static string? RelevantFile(string? path) =>
-            path is not null && ToolUtils.IsMusicFile(Path.GetExtension(path)) && !AudioFileWriteGate.IsOwnWriteEvent(path)
+            path is not null && (AddFolderService.IsCueFile(path) || LocalCoverSource.IsCandidate(path) ||
+                ToolUtils.IsMusicFile(Path.GetExtension(path)) && !AudioFileWriteGate.IsOwnWriteEvent(path))
                 ? path : null;
     }
 
@@ -195,10 +208,7 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
                 if (watcher.NotifyFilter == NotifyFilters.DirectoryName)
                     paths.AddDirectory(path, oldPath);
                 else
-                {
-                    paths.Files.Add(path);
-                    if (oldPath is not null) paths.Files.Add(oldPath);
-                }
+                    paths.AddFile(path, oldPath);
                 if (paths.Count > MaxPendingPathsPerRoot) _pending[root] = null;
             }
             _changes.Writer.TryWrite(true);

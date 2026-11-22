@@ -59,7 +59,7 @@ namespace WinUIMusicPlayer.ViewModel
             UpdateAlbumMenuOptionsPlayList();
             UpDateUsbDeviceMenuflyout();
             var songs = AppViewModel.SongsSource.Where(m =>
-                m.Album is not null && SelectedItem is not null &&
+                LibraryQueries.IsBrowsable(m) && m.Album is not null && SelectedItem is not null &&
                 m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase));
             ToolUtils.UpdateMusicMenuAvailability(AlbumMenuOptions, songs, SelectedItem);
         }
@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = 0; i < srcSpan.Length; i++)
                 {
                     var m = srcSpan[i];
-                    if (m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+                    if (LibraryQueries.IsBrowsable(m) && m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                     {
                         buf[count++] = m;
                     }
@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (count == 0 || MusicBrowseViewModel is null) return;
 
                 var slice = buf.AsSpan(0, count);
-                slice.Sort((a, b) => a.TrackNumber.CompareTo(b.TrackNumber));
+                slice.Sort(static (a, b) => (a.DiskNumber, a.TrackNumber, a.Id).CompareTo((b.DiskNumber, b.TrackNumber, b.Id)));
 
                 AppViewModel.SetBrowseQueue(new BulkObservableCollection<Music>(slice.ToArray()));
                 await MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true);
@@ -159,8 +159,8 @@ namespace WinUIMusicPlayer.ViewModel
         private void AddToFavour()
         {
             var albums = AppViewModel.SongsSource.AsValueEnumerable()
-               .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
-               .OrderByDescending(m => m.TrackNumber);
+               .Where(m => LibraryQueries.IsBrowsable(m) && m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+               .OrderByDescending(m => m.DiskNumber).ThenByDescending(m => m.TrackNumber);
             foreach (var album in albums)
             {
                 MusicCommands.AddToFavouriteCommand.Execute(album);
@@ -177,8 +177,8 @@ namespace WinUIMusicPlayer.ViewModel
         private void AddToPlayList(int playListId)
         {
             var albums = AppViewModel.SongsSource
-              .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
-              .OrderBy(m => m.TrackNumber);
+              .Where(m => LibraryQueries.IsBrowsable(m) && m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+              .OrderBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber).ThenBy(m => m.Id);
             _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
         }
 
@@ -186,8 +186,8 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task TransmitFileToUsb(UsbSendTarget? target)
         {
             var albums = AppViewModel.SongsSource
-                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.TrackNumber);
+                .Where(m => LibraryQueries.IsBrowsable(m) && m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber).ThenBy(m => m.Id);
             if (target?.Device is null) return;
             await AppViewModel.TransmitFileToUsb(albums, target.Device, target.Format, target.BitrateKbps);
         }
