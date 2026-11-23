@@ -1,3 +1,21 @@
+## 2026-11-23 固定播放页设置对话框高度
+
+- `View/SubView/SettingsDialog.xaml` 以六行歌词页为基准固定分页内容高度，切换常规、歌词和歌词空间效果时不再改变对话框尺寸；歌曲信息对齐移至常规页最后单独一行，不再拉高同排字段。
+
+## 2026-11-23 合并播放页设置页签
+
+- `View/SubView/SettingsDialog.xaml` 将背景并入常规、逐字歌词并入歌词，保留歌词空间效果页；三个页面均维持原三列字段布局。
+- `Strings/*/Resources.resw` 将空间页签改为“歌词空间效果”并同步各语言，移除不再使用的独立背景页签资源。
+
+## 2026-11-23 修复播放页设置分页的构造异常
+
+- `View/SubView/SettingsDialog.xaml`、`Strings/*/Resources.resw` 为三列字段标题改用独立 `PlaybackLyrics*` 资源名，避免普通 `TextBlock` 与共享卡片的 `.Header` 资源共用 `x:Uid` 时解析失败，导致对话框实例未创建。
+
+## 2026-11-23 播放页设置按原三列布局分页
+
+- `View/SubView/SettingsDialog.xaml` 保留原有 250×3 字段网格、控件样式和间距，仅用页签与 `SwitchPresenter` 拆分常规、歌词、逐字动效、空间动效和背景页面；特效参数按相同样式平铺，移除滚动区与对话框内的展开器。
+- `Strings/*/Resources.resw` 补充新页签及平铺特效字段的本地化文本；共享歌词设置控件保持不变。
+
 ## 2026-11-23 减少曲库页面切换和歌单重访的重复工作
 
 - `View/MainPage.xaml`、`View/FolderBrowsePage.xaml.cs`、`View/PlayListPage.xaml.cs` 在曲库外层预留四个缓存槽位，复用曲库、目录、歌单和设置页面。目录和歌单重入时恢复滚动初始位置。快速重入后，目录选择、方向键及歌单编辑仍可使用。

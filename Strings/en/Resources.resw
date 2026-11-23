@@ -2856,4 +2856,37 @@ See the log for full details.</value></data>
   <data name="LyricsTiltDepth.Header" xml:space="preserve">
     <value>Perspective depth</value>
   </data>
+  <data name="PlaybackLyricsWordAnimation.Text" xml:space="preserve">
+    <value>Word-by-word animation</value>
+  </data>
+  <data name="PlaybackLyricsEdgeFeathering.Text" xml:space="preserve">
+    <value>Fade lyrics at edges</value>
+  </data>
+  <data name="PlaybackLyricsFan.Text" xml:space="preserve">
+    <value>Fan-shaped lyrics</value>
+  </data>
+  <data name="PlaybackLyricsFanAngle.Text" xml:space="preserve">
+    <value>Fan angle (°)</value>
+  </data>
+  <data name="PlaybackLyricsParallaxTilt.Text" xml:space="preserve">
+    <value>Parallax tilt</value>
+  </data>
+  <data name="PlaybackLyricsTiltAuto.Text" xml:space="preserve">
+    <value>Follow pointer</value>
+  </data>
+  <data name="PlaybackLyricsTiltXAngle.Text" xml:space="preserve">
+    <value>X rotation (°)</value>
+  </data>
+  <data name="PlaybackLyricsTiltYAngle.Text" xml:space="preserve">
+    <value>Y rotation (°)</value>
+  </data>
+  <data name="PlaybackLyricsTiltZAngle.Text" xml:space="preserve">
+    <value>Z rotation (°)</value>
+  </data>
+  <data name="PlaybackLyricsTiltDepth.Text" xml:space="preserve">
+    <value>Perspective depth</value>
+  </data>
+  <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
+    <value>Lyrics Spatial Effects</value>
+  </data>
 </root>

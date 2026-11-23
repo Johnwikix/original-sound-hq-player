@@ -5,10 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
-    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     CornerRadius="10"
     mc:Ignorable="d">
@@ -19,10 +17,8 @@
         </DataTemplate>
     </ContentDialog.Resources>
 
-    <Grid RowDefinitions="Auto,*">
-
-        <!--  标题区域  -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <Grid Grid.Row="0" Margin="10,0,0,0">
             <TextBlock
                 x:Uid="Settings"
                 VerticalAlignment="Center"
@@ -39,588 +35,829 @@
             </Button>
         </Grid>
 
-        <ScrollViewer Grid.Row="1">
-            <Grid
-                Padding="4,0,4,16"
-                ColumnDefinitions="250,250,250"
-                ColumnSpacing="16"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                RowSpacing="8">
+        <SelectorBar
+            x:Name="SectionSelector"
+            Grid.Row="1"
+            Margin="0,0,0,16">
+            <SelectorBarItem
+                x:Uid="SettingsSectionGeneral"
+                FontSize="16"
+                IsSelected="True"
+                Tag="General" />
+            <SelectorBarItem
+                x:Uid="SettingsSectionLyrics"
+                FontSize="16"
+                Tag="Lyrics" />
+            <SelectorBarItem
+                x:Uid="PlaybackSettingsSectionSpatial"
+                FontSize="16"
+                Tag="SpatialEffects" />
+        </SelectorBar>
 
-                <!--  Row 0: 输出设备 | 目标帧率 | 歌词字号  -->
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <TextBlock x:Uid="SettingOutputDevice" FontSize="14" />
-                    <ComboBox
-                        x:Name="OutputDeviceComboBox"
-                        Width="250"
-                        VerticalAlignment="Center"
-                        ItemsSource="{x:Bind VM.BassOutputDevices, Mode=OneWay}"
-                        SelectedItem="{x:Bind VM.SelectedDevice, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="model:BassOutputDevice">
-                                <TextBlock Text="{x:Bind Tag}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="TargetFrameRate"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ItemsSource="{x:Bind VM.TargetFrameRateOptions}"
-                        SelectedItem="{x:Bind VM.TargetFrameRate, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="x:Double">
-                                <TextBlock>
-                                    <Run Text="{x:Bind Mode=OneWay}" />
-                                    <Run Text=" hz" />
-                                </TextBlock>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="0"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="LyricsFontSize"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <ToggleSwitch
-                            Grid.Column="0"
-                            MinWidth="0"
-                            Margin="0,0,10,0"
-                            IsOn="{x:Bind VM.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
-                        <NumberBox
-                            Grid.Column="1"
-                            VerticalAlignment="Center"
-                            LargeChange="10"
-                            Minimum="0"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind VM.GlobalFontSize, Mode=TwoWay}" />
-                    </Grid>
-                </StackPanel>
+        <controls:SwitchPresenter
+            Grid.Row="2"
+            Height="420"
+            Margin="10,0,10,0"
+            Value="{x:Bind SectionSelector.SelectedItem.Tag, Mode=OneWay}">
+            <controls:SwitchPresenter.ContentTransitions>
+                <TransitionCollection>
+                    <PopupThemeTransition />
+                </TransitionCollection>
+            </controls:SwitchPresenter.ContentTransitions>
 
-                <!--  Row 1: 歌词字体 | 歌词对齐 | 歌词边距  -->
-                <StackPanel
-                    Grid.Row="1"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="LyricsFontFamily"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <Grid Width="250" ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                        <ToggleSwitch
-                            MinWidth="0"
-                            VerticalAlignment="Center"
-                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
-                            ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
-                            IsOn="{x:Bind VM.UseIndependentLyricsFont, Mode=TwoWay}" />
-                        <ComboBox
-                            Grid.Column="1"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind VM.UseIndependentLyricsFont, Mode=OneWay}"
-                            ItemTemplate="{StaticResource FontComboboxTemplate}"
-                            ItemsSource="{x:Bind VM.FontFamilyList, Mode=OneWay}"
-                            SelectedItem="{x:Bind VM.FontFamily, Mode=TwoWay}" />
-                    </Grid>
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="1"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="LyricsAlignment"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        SelectedValue="{x:Bind VM.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
-                        SelectedValuePath="Tag">
-                        <ComboBoxItem x:Uid="Left" Tag="Left" />
-                        <ComboBoxItem x:Uid="Center" Tag="Center" />
-                        <ComboBoxItem x:Uid="Right" Tag="Right" />
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="1"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="LyricsMargin"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <NumberBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        LargeChange="10"
-                        Minimum="0"
-                        SmallChange="1"
-                        SpinButtonPlacementMode="Inline"
-                        Value="{x:Bind VM.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
-                </StackPanel>
-
-                <!--  Row 2: 歌词模糊 | 播放行偏移 | 未播放透明度  -->
-                <StackPanel
-                    Grid.Row="2"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="LyricsBlurAmount"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatF1(VM.LyricsBlurAmount), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="10"
-                        Minimum="0"
-                        SnapsTo="Ticks"
-                        TickFrequency="0.1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.LyricsBlurAmount, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="2"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="PlayingLineTopOffset"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatPercent(VM.PlayingLineTopOffsetPercent), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="70"
-                        Minimum="30"
-                        SnapsTo="Ticks"
-                        TickFrequency="1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="2"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="UnplayedOpacity"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatPercent(VM.UnplayedOpacityPercent), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="100"
-                        Minimum="0"
-                        SnapsTo="Ticks"
-                        TickFrequency="1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.UnplayedOpacityPercent, Mode=TwoWay}" />
-                </StackPanel>
-
-                <!--  Row 3: 翻译透明度 | 发光强度 | 字符浮动  -->
-                <StackPanel
-                    Grid.Row="3"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="TranslatedOpacity"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatPercent(VM.TranslatedOpacityPercent), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="100"
-                        Minimum="0"
-                        SnapsTo="Ticks"
-                        TickFrequency="1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.TranslatedOpacityPercent, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="3"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="GlowAmount"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatF1(VM.GlowAmount), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="10"
-                        Minimum="0"
-                        SnapsTo="Ticks"
-                        TickFrequency="0.1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.GlowAmount, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="3"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="CharFloatAmount"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatF1(VM.CharFloatAmount), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="10"
-                        Minimum="0"
-                        SnapsTo="Ticks"
-                        TickFrequency="0.1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.CharFloatAmount, Mode=TwoWay}" />
-                </StackPanel>
-
-                <!--  Row 4: 字符缩放 | 长音节阈值 | 雾化效果  -->
-                <StackPanel
-                    Grid.Row="4"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="CharScaleAmount"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatF0(VM.CharScaleAmount), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="150"
-                        Minimum="50"
-                        SnapsTo="Ticks"
-                        TickFrequency="1"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.CharScaleAmount, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="4"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="LongSyllableThreshold"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                        <TextBlock
-                            Grid.Column="1"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind tool:BindUtils.FormatMs(VM.LongSyllableThreshold), Mode=OneWay}" />
-                    </Grid>
-                    <Slider
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        Maximum="1000"
-                        Minimum="400"
-                        SnapsTo="Ticks"
-                        TickFrequency="10"
-                        TickPlacement="Outside"
-                        Value="{x:Bind VM.LongSyllableThreshold, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="4"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="FogEffect"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
-                        IsOn="{x:Bind VM.IsFogEffectEnabled, Mode=TwoWay}" />
-                </StackPanel>
-
-                <!--  Row 5: 飘雪效果 | 雨滴效果  -->
-                <StackPanel
-                    Grid.Row="5"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="SnowEffect"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
-                        IsOn="{x:Bind VM.IsSnowEffectEnabled, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="5"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="RaindropEffect"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
-                        IsOn="{x:Bind VM.IsRaindropEffectEnabled, Mode=TwoWay}" />
-                </StackPanel>
-
-                <StackPanel
-                    Grid.Row="5"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="EnableCustomLyricsColor"
+            <controls:Case Value="General">
+                <Grid
+                    Padding="4,0,4,16"
+                    ColumnDefinitions="250,250,250"
+                    ColumnSpacing="16"
+                    RowDefinitions="Auto,Auto,Auto"
+                    RowSpacing="8">
+                    <StackPanel
+                        Grid.Row="0"
                         Grid.Column="0"
-                        VerticalAlignment="Center"
-                        FontSize="14" />
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <ToggleSwitch
-                            Grid.Column="0"
-                            MinWidth="0"
-                            Margin="0,0,10,0"
-                            IsOn="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
-                        <controls:ColorPickerButton
-                            Grid.Column="1"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=OneWay}"
-                            SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
-                    </Grid>
-                </StackPanel>
-                <!--  Row 6: 音频信息可见 | 滚动缓动类型 | 滚动缓动模式  -->
-                <StackPanel
-                    Grid.Row="6"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="MusicInfoVisible"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="6"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="ScrollEasingType"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                    </Grid>
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        SelectedIndex="{x:Bind VM.ScrollEasingTypeIndex, Mode=TwoWay}">
-                        <ComboBoxItem x:Uid="EasingTypeLinear" />
-                        <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
-                        <ComboBoxItem x:Uid="EasingTypeSine" />
-                        <ComboBoxItem x:Uid="EasingTypeQuad" />
-                        <ComboBoxItem x:Uid="EasingTypeCubic" />
-                        <ComboBoxItem x:Uid="EasingTypeQuart" />
-                        <ComboBoxItem x:Uid="EasingTypeQuint" />
-                        <ComboBoxItem x:Uid="EasingTypeExpo" />
-                        <ComboBoxItem x:Uid="EasingTypeCircle" />
-                        <ComboBoxItem x:Uid="EasingTypeBack" />
-                        <ComboBoxItem x:Uid="EasingTypeElastic" />
-                        <ComboBoxItem x:Uid="EasingTypeBounce" />
-                        <ComboBoxItem x:Uid="EasingTypeFlowWave" />
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="6"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <TextBlock
-                            x:Uid="ScrollEasingMode"
-                            Grid.Column="0"
-                            FontSize="14"
-                            FontWeight="SemiBold" />
-                    </Grid>
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        SelectedIndex="{x:Bind VM.ScrollEasingModeIndex, Mode=TwoWay}">
-                        <ComboBoxItem x:Uid="EaseModeIn" />
-                        <ComboBoxItem x:Uid="EaseModeOut" />
-                        <ComboBoxItem x:Uid="EaseModeInOut" />
-                        <ComboBoxItem x:Uid="EaseModeContinuous" />
-                        <ComboBoxItem x:Uid="EaseModeFlowWave" />
-                    </ComboBox>
-                </StackPanel>
-                <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->
-                <StackPanel
-                    Grid.Row="7"
-                    Grid.Column="0"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="ShaderBackground"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <Grid
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ColumnDefinitions="Auto,*">
-                        <ToggleSwitch
-                            Grid.Column="0"
-                            MinWidth="0"
-                            Margin="0,0,10,0"
-                            IsOn="{x:Bind VM.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                        Spacing="4">
+                        <TextBlock x:Uid="SettingOutputDevice" FontSize="14" />
                         <ComboBox
-                            Grid.Column="1"
-                            HorizontalAlignment="Stretch"
+                            x:Name="OutputDeviceComboBox"
+                            Width="250"
                             VerticalAlignment="Center"
-                            IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
-                            SelectedIndex="{x:Bind VM.BackgroundShaderIndex, Mode=TwoWay}">
-                            <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
-                            <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
-                            <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
-                            <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
-                            <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
-                            <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
-                            <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
+                            ItemsSource="{x:Bind VM.BassOutputDevices, Mode=OneWay}"
+                            SelectedItem="{x:Bind VM.SelectedDevice, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:BassOutputDevice">
+                                    <TextBlock Text="{x:Bind Tag}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
                         </ComboBox>
-                    </Grid>
-                </StackPanel>
-                <!--  Row 7: 歌曲信息对齐  -->
-                <StackPanel
-                    Grid.Row="7"
-                    Grid.Column="1"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="PlayingDetailAlignment"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <TextBlock
-                        x:Uid="UseAlignmentInPortrait"
-                        FontSize="12"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <Grid Width="250" ColumnDefinitions="Auto,*">
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="MusicInfoVisible"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="ShaderBackground"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <ToggleSwitch
+                                Grid.Column="0"
+                                MinWidth="0"
+                                Margin="0,0,10,0"
+                                IsOn="{x:Bind VM.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                            <ComboBox
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                SelectedIndex="{x:Bind VM.BackgroundShaderIndex, Mode=TwoWay}">
+                                <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
+                                <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                                <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
+                                <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
+                                <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                                <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
+                                <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="FogEffect"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
                         <ToggleSwitch
-                            Grid.Column="0"
                             MinWidth="0"
-                            Margin="0,0,10,0"
-                            IsOn="{x:Bind VM.UsePlayingDetailAlignmentInPortrait, Mode=TwoWay}" />
+                            IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
+                            IsOn="{x:Bind VM.IsFogEffectEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="SnowEffect"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch
+                            MinWidth="0"
+                            IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
+                            IsOn="{x:Bind VM.IsSnowEffectEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="RaindropEffect"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch
+                            MinWidth="0"
+                            IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
+                            IsOn="{x:Bind VM.IsRaindropEffectEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="PlayingDetailAlignment"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Uid="UseAlignmentInPortrait"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <Grid Width="250" ColumnDefinitions="Auto,*">
+                            <ToggleSwitch
+                                Grid.Column="0"
+                                MinWidth="0"
+                                Margin="0,0,10,0"
+                                IsOn="{x:Bind VM.UsePlayingDetailAlignmentInPortrait, Mode=TwoWay}" />
+                            <ComboBox
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                                SelectedValuePath="Tag">
+                                <ComboBoxItem x:Uid="Left" Tag="Left" />
+                                <ComboBoxItem x:Uid="Center" Tag="Center" />
+                                <ComboBoxItem x:Uid="Right" Tag="Right" />
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </controls:Case>
+
+            <controls:Case Value="Lyrics">
+                <Grid
+                    Padding="4,0,4,16"
+                    ColumnDefinitions="250,250,250"
+                    ColumnSpacing="16"
+                    RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                    RowSpacing="8">
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="LyricsFontFamily"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Grid
+                            Width="250"
+                            ColumnDefinitions="Auto,*"
+                            ColumnSpacing="10">
+                            <ToggleSwitch
+                                MinWidth="0"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                                IsOn="{x:Bind VM.UseIndependentLyricsFont, Mode=TwoWay}"
+                                ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}" />
+                            <ComboBox
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                IsEnabled="{x:Bind VM.UseIndependentLyricsFont, Mode=OneWay}"
+                                ItemTemplate="{StaticResource FontComboboxTemplate}"
+                                ItemsSource="{x:Bind VM.FontFamilyList, Mode=OneWay}"
+                                SelectedItem="{x:Bind VM.FontFamily, Mode=TwoWay}" />
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="LyricsFontSize"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <ToggleSwitch
+                                Grid.Column="0"
+                                MinWidth="0"
+                                Margin="0,0,10,0"
+                                IsOn="{x:Bind VM.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
+                            <NumberBox
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind VM.GlobalFontSize, Mode=TwoWay}" />
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="LyricsAlignment"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
                         <ComboBox
-                            Grid.Column="1"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Center"
-                            SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            SelectedValue="{x:Bind VM.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
                             SelectedValuePath="Tag">
                             <ComboBoxItem x:Uid="Left" Tag="Left" />
                             <ComboBoxItem x:Uid="Center" Tag="Center" />
                             <ComboBoxItem x:Uid="Right" Tag="Right" />
                         </ComboBox>
-                    </Grid>
-                </StackPanel>
-                <settings:LyricsEffectsSettingsControl Grid.Row="8" Grid.ColumnSpan="3" />
-            </Grid>
-        </ScrollViewer>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="LyricsMargin"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <NumberBox
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            LargeChange="10"
+                            Minimum="0"
+                            SmallChange="1"
+                            SpinButtonPlacementMode="Inline"
+                            Value="{x:Bind VM.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="EnableCustomLyricsColor"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <ToggleSwitch
+                                Grid.Column="0"
+                                MinWidth="0"
+                                Margin="0,0,10,0"
+                                IsOn="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
+                            <controls:ColorPickerButton
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                IsEnabled="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=OneWay}"
+                                SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="PlaybackLyricsWordAnimation"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ComboBox
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            SelectedIndex="{x:Bind VM.WordByWordEffectModeIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="LyricsWordAnimationAuto" />
+                            <ComboBoxItem x:Uid="LyricsWordAnimationNever" />
+                            <ComboBoxItem x:Uid="LyricsWordAnimationAlways" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="LyricsBlurAmount"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF1(VM.LyricsBlurAmount), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="10"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="0.1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.LyricsBlurAmount, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="PlayingLineTopOffset"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatPercent(VM.PlayingLineTopOffsetPercent), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="70"
+                            Minimum="30"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="UnplayedOpacity"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatPercent(VM.UnplayedOpacityPercent), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="100"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.UnplayedOpacityPercent, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="3"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="TranslatedOpacity"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatPercent(VM.TranslatedOpacityPercent), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="100"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.TranslatedOpacityPercent, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="3"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="PlaybackLyricsEdgeFeathering"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsLyricsEdgeFeatheringEffectEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="3"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="TargetFrameRate"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ComboBox
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ItemsSource="{x:Bind VM.TargetFrameRateOptions}"
+                            SelectedItem="{x:Bind VM.TargetFrameRate, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="x:Double">
+                                    <TextBlock>
+                                        <Run Text="{x:Bind Mode=OneWay}" />
+                                        <Run Text=" hz" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="4"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="CharFloatAmount"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF1(VM.CharFloatAmount), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="10"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="0.1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.CharFloatAmount, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="4"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="CharScaleAmount"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF0(VM.CharScaleAmount), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="150"
+                            Minimum="50"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.CharScaleAmount, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="4"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="GlowAmount"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF1(VM.GlowAmount), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="10"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="0.1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.GlowAmount, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="5"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="LongSyllableThreshold"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatMs(VM.LongSyllableThreshold), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            Maximum="1000"
+                            Minimum="400"
+                            SnapsTo="Ticks"
+                            TickFrequency="10"
+                            TickPlacement="Outside"
+                            Value="{x:Bind VM.LongSyllableThreshold, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="5"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="ScrollEasingType"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                        </Grid>
+                        <ComboBox
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            SelectedIndex="{x:Bind VM.ScrollEasingTypeIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="EasingTypeLinear" />
+                            <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
+                            <ComboBoxItem x:Uid="EasingTypeSine" />
+                            <ComboBoxItem x:Uid="EasingTypeQuad" />
+                            <ComboBoxItem x:Uid="EasingTypeCubic" />
+                            <ComboBoxItem x:Uid="EasingTypeQuart" />
+                            <ComboBoxItem x:Uid="EasingTypeQuint" />
+                            <ComboBoxItem x:Uid="EasingTypeExpo" />
+                            <ComboBoxItem x:Uid="EasingTypeCircle" />
+                            <ComboBoxItem x:Uid="EasingTypeBack" />
+                            <ComboBoxItem x:Uid="EasingTypeElastic" />
+                            <ComboBoxItem x:Uid="EasingTypeBounce" />
+                            <ComboBoxItem x:Uid="EasingTypeFlowWave" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="5"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="ScrollEasingMode"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                        </Grid>
+                        <ComboBox
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            SelectedIndex="{x:Bind VM.ScrollEasingModeIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="EaseModeIn" />
+                            <ComboBoxItem x:Uid="EaseModeOut" />
+                            <ComboBoxItem x:Uid="EaseModeInOut" />
+                            <ComboBoxItem x:Uid="EaseModeContinuous" />
+                            <ComboBoxItem x:Uid="EaseModeFlowWave" />
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+            </controls:Case>
+
+            <controls:Case Value="SpatialEffects">
+                <Grid
+                    Padding="4,0,4,16"
+                    ColumnDefinitions="250,250,250"
+                    ColumnSpacing="16"
+                    RowDefinitions="Auto,Auto,Auto"
+                    RowSpacing="8">
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="PlaybackLyricsFan"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsFanLyricsEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="PlaybackLyricsFanAngle"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF0(VM.FanLyricsAngle), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{x:Bind VM.IsFanLyricsEnabled, Mode=OneWay}"
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind VM.FanLyricsAngle, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="PlaybackLyricsParallaxTilt"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.Is3DLyricsEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <TextBlock
+                            x:Uid="PlaybackLyricsTiltAuto"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <ToggleSwitch
+                            MinWidth="0"
+                            IsEnabled="{x:Bind VM.Is3DLyricsEnabled, Mode=OneWay}"
+                            IsOn="{x:Bind VM.IsAuto3DLyricsEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="PlaybackLyricsTiltXAngle"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF0(VM.Lyrics3DXAngle), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{x:Bind VM.Is3DLyricsAdjustable, Mode=OneWay}"
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind VM.Lyrics3DXAngle, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="PlaybackLyricsTiltYAngle"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF0(VM.Lyrics3DYAngle), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{x:Bind VM.Is3DLyricsAdjustable, Mode=OneWay}"
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind VM.Lyrics3DYAngle, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="PlaybackLyricsTiltZAngle"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF0(VM.Lyrics3DZAngle), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{x:Bind VM.Is3DLyricsAdjustable, Mode=OneWay}"
+                            Maximum="90"
+                            Minimum="-90"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            Value="{x:Bind VM.Lyrics3DZAngle, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Spacing="4">
+                        <Grid
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            ColumnDefinitions="Auto,*">
+                            <TextBlock
+                                x:Uid="PlaybackLyricsTiltDepth"
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:BindUtils.FormatF0(VM.Lyrics3DDepth), Mode=OneWay}" />
+                        </Grid>
+                        <Slider
+                            Width="250"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{x:Bind VM.Is3DLyricsAdjustable, Mode=OneWay}"
+                            Maximum="1000"
+                            Minimum="100"
+                            SnapsTo="Ticks"
+                            TickFrequency="10"
+                            Value="{x:Bind VM.Lyrics3DDepth, Mode=TwoWay}" />
+                    </StackPanel>
+                </Grid>
+            </controls:Case>
+        </controls:SwitchPresenter>
     </Grid>
 </ContentDialog>

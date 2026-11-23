@@ -2856,4 +2856,37 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="LyricsTiltDepth.Header" xml:space="preserve">
     <value>Profundidad de perspectiva</value>
   </data>
+  <data name="PlaybackLyricsWordAnimation.Text" xml:space="preserve">
+    <value>Animación palabra por palabra</value>
+  </data>
+  <data name="PlaybackLyricsEdgeFeathering.Text" xml:space="preserve">
+    <value>Desvanecer la letra en los bordes</value>
+  </data>
+  <data name="PlaybackLyricsFan.Text" xml:space="preserve">
+    <value>Letra en abanico</value>
+  </data>
+  <data name="PlaybackLyricsFanAngle.Text" xml:space="preserve">
+    <value>Ángulo del abanico (°)</value>
+  </data>
+  <data name="PlaybackLyricsParallaxTilt.Text" xml:space="preserve">
+    <value>Inclinación con paralaje</value>
+  </data>
+  <data name="PlaybackLyricsTiltAuto.Text" xml:space="preserve">
+    <value>Seguir el puntero</value>
+  </data>
+  <data name="PlaybackLyricsTiltXAngle.Text" xml:space="preserve">
+    <value>Rotación X (°)</value>
+  </data>
+  <data name="PlaybackLyricsTiltYAngle.Text" xml:space="preserve">
+    <value>Rotación Y (°)</value>
+  </data>
+  <data name="PlaybackLyricsTiltZAngle.Text" xml:space="preserve">
+    <value>Rotación Z (°)</value>
+  </data>
+  <data name="PlaybackLyricsTiltDepth.Text" xml:space="preserve">
+    <value>Profundidad de perspectiva</value>
+  </data>
+  <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
+    <value>Efectos espaciales de letras</value>
+  </data>
 </root>
