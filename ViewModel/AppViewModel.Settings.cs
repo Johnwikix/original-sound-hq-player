@@ -233,6 +233,23 @@ namespace WinUIMusicPlayer.ViewModel
 
         public int DsdPcmFreq { get => State.Preferences.DsdPcmFreq; set => State.Preferences.DsdPcmFreq = value; }
 
+        /// <summary>采样率下拉框索引；保存值不在候选列表时回落到首项。</summary>
+        public int DsdPcmFreqIndex
+        {
+            get
+            {
+                int index = DsdPcmFreqs.IndexOf(DsdPcmFreq);
+                return index < 0 ? 0 : index;
+            }
+            set
+            {
+                if (value >= 0 && value < DsdPcmFreqs.Count)
+                {
+                    DsdPcmFreq = DsdPcmFreqs[value];
+                }
+            }
+        }
+
         public bool IsLyricsEdgeFeatheringEffectEnabled { get => State.Preferences.IsLyricsEdgeFeatheringEffectEnabled; set => State.Preferences.IsLyricsEdgeFeatheringEffectEnabled = value; }
         public bool IsFanLyricsEnabled { get => State.Preferences.IsFanLyricsEnabled; set => State.Preferences.IsFanLyricsEnabled = value; }
         public int FanLyricsAngle { get => State.Preferences.FanLyricsAngle; set => State.Preferences.FanLyricsAngle = value; }

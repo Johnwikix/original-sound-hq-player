@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -13,6 +14,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Controls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -22,10 +24,12 @@ namespace WinUIMusicPlayer.View.SubView
     public sealed partial class SettingsDialog : ContentDialog
     {
         public AppViewModel VM { get; }
+        public PlaybackTransitionsViewModel PlaybackTransitions { get; }
         public SettingsDialog(AppViewModel appViewModel)
         {
             InitializeComponent();
             VM = appViewModel;
+            PlaybackTransitions = App.Services.GetRequiredService<PlaybackTransitionsViewModel>();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
