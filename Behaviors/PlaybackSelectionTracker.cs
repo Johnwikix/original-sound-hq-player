@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Dispatching;
 using System.Threading;
@@ -114,19 +115,34 @@ public sealed class PlaybackSelectionTracker
                 return;
             }
             if (_app.SelectedPlaybackMusic is not { } current) return;
+            // 歌曲页直接绑定托管投影。逐项枚举 ListView.Items 会反复跨越 WinRT 边界。
+            var songs = _app.ListSongs;
+            IEnumerable<object> items = ReferenceEquals(_list.ItemsSource, songs) && _list.Items.Count == songs.Count
+                ? songs
+                : _list.Items;
             object? match = null;
-            long queueEntry = _app.SelectedPlaybackEntryId;
-            int playlistEntry = _app.State.Queue.PlaylistEntry(queueEntry);
-            foreach (var item in _list.Items)
+            int playlistEntry = _app.State.Queue.PlaylistEntry(_app.SelectedPlaybackEntryId);
+            foreach (var item in items)
             {
                 var music = item is PlayListMusicItem wrapper ? wrapper.Music : item as Music;
                 if (music is null) continue;
-                if (item is PlayListMusicItem occurrence && playlistEntry > 0 && occurrence.EntryId == playlistEntry)
-                { match = item; break; }
-                if (item is PlayListMusicItem && playlistEntry > 0) continue;
-                if (ReferenceEquals(music, current)) { match = item; break; }
-                if (match is null && CurrentTrackLookup.Matches(music, current)) match = item;
-                if (match is null && music.SongId > 0 && music.SongId == current.SongId) match = item;
+                if (item is PlayListMusicItem occurrence && playlistEntry > 0)
+                {
+                    if (occurrence.EntryId == playlistEntry)
+                    {
+                        match = item;
+                        break;
+                    }
+                    continue;
+                }
+                if (ReferenceEquals(music, current))
+                {
+                    match = item;
+                    break;
+                }
+                if (match is null && (CurrentTrackLookup.Matches(music, current) ||
+                    (music.SongId > 0 && music.SongId == current.SongId)))
+                    match = item;
             }
             if (match is not null && !ReferenceEquals(_list.SelectedItem, match)) _list.SelectedItem = match;
         }

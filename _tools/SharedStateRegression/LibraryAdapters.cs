@@ -11,6 +11,7 @@ namespace WinUIMusicPlayer.State
     }
     public sealed class LibraryViews
     {
+        public Model.BulkObservableCollection<Model.Music> ListSongs { get; } = new();
         public Microsoft.UI.Xaml.Data.CollectionViewSource AlbumPageSource { get; } = new();
     }
 }
@@ -41,10 +42,7 @@ namespace WinUIMusicPlayer.Utils
         public static string[] GetArtistNames(string name) => name.Split(';');
         public static Model.Music CreateArtistTile(Model.Music music, string artist) => music with { Author = artist, ArtistTileSource = music };
     }
-    public static class CjkStringComparer
-    {
-        public static int Compare(string? left, string? right) => string.Compare(left, right, StringComparison.Ordinal);
-    }
+
 }
 namespace WinUIMusicPlayer.Helper { public class Unused { } }
 namespace Microsoft.UI.Xaml.Data { public sealed class CollectionViewSource { public object? Source { get; set; } } }

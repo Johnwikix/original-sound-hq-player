@@ -1,8 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using Windows.Foundation.Collections;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Helper;
@@ -24,6 +27,8 @@ namespace WinUIMusicPlayer.View
         private readonly ListViewCentering _centering;
         private readonly PlaybackSelectionTracker _playbackSelection;
         private readonly Music?[] _selectedBuffer = new Music?[256];
+        private bool _waitingForFirstFavoriteFrame;
+        private bool _observedFirstFavoriteFrame;
 
         public FavouritePlayListPage()
         {
@@ -47,12 +52,82 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.ReceiveNavigation();
             Bindings.Initialize();
+            if (_observedFirstFavoriteFrame || _waitingForFirstFavoriteFrame) return;
+            _waitingForFirstFavoriteFrame = true;
+            WaitForFavoriteItems();
         }
 
         void ILibraryTab.Deactivate()
         {
+            if (_waitingForFirstFavoriteFrame)
+            {
+                _waitingForFirstFavoriteFrame = false;
+                StopWatchingFavoriteFrame();
+            }
             _centering.Cancel();
             Bindings.StopTracking();
+        }
+
+        private bool HasVisibleFavoriteRow() =>
+            MusicListView.IsLoaded &&
+            MusicListView.ItemsPanelRoot is ItemsStackPanel { FirstVisibleIndex: >= 0 } panel &&
+            MusicListView.ContainerFromIndex(panel.FirstVisibleIndex) is ListViewItem { IsLoaded: true, ActualHeight: > 0, Content: Music };
+
+        private void WaitForFavoriteItems()
+        {
+            MusicListView.Items.VectorChanged += OnFavoriteItemsChanged;
+            WatchFavoriteLayoutIfPopulated();
+        }
+
+        private void OnFavoriteItemsChanged(IObservableVector<object> sender, IVectorChangedEventArgs args)
+        {
+            if (_waitingForFirstFavoriteFrame) WatchFavoriteLayoutIfPopulated();
+        }
+
+        private void WatchFavoriteLayoutIfPopulated()
+        {
+            MusicListView.LayoutUpdated -= OnFavoriteLayoutUpdated;
+            if (MusicListView.Items.Count > 0)
+                MusicListView.LayoutUpdated += OnFavoriteLayoutUpdated;
+        }
+
+        private void StopWatchingFavoriteFrame()
+        {
+            MusicListView.Items.VectorChanged -= OnFavoriteItemsChanged;
+            MusicListView.LayoutUpdated -= OnFavoriteLayoutUpdated;
+            CompositionTarget.Rendering -= OnFavoriteRendering;
+        }
+
+        private void OnFavoriteLayoutUpdated(object? sender, object e)
+        {
+            if (!_waitingForFirstFavoriteFrame || !HasVisibleFavoriteRow()) return;
+            MusicListView.Items.VectorChanged -= OnFavoriteItemsChanged;
+            MusicListView.LayoutUpdated -= OnFavoriteLayoutUpdated;
+            CompositionTarget.Rendering += OnFavoriteRendering;
+        }
+
+        private void OnFavoriteRendering(object? sender, object e)
+        {
+            CompositionTarget.Rendering -= OnFavoriteRendering;
+            if (!_waitingForFirstFavoriteFrame) return;
+            if (!HasVisibleFavoriteRow())
+            {
+                WaitForFavoriteItems();
+                return;
+            }
+
+            // 让首个有内容的收藏画面先提交，再安排后台比较器准备。
+            if (!DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, PrepareSongTitleSort))
+                _waitingForFirstFavoriteFrame = false;
+        }
+
+        private void PrepareSongTitleSort()
+        {
+            if (!_waitingForFirstFavoriteFrame) return;
+            _waitingForFirstFavoriteFrame = false;
+            _observedFirstFavoriteFrame = true;
+            StopWatchingFavoriteFrame();
+            ViewModel.AppViewModel.PrepareDefaultSongTitleSort();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)

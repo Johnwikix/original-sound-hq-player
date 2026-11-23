@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
@@ -50,6 +51,43 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private readonly Dictionary<BulkObservableCollection<Music>, Task> _inflight = new();
     private readonly SemaphoreSlim _computeGate = new(1, 1);
     private bool _stopped;
+    private Task? _titleSortPreparation;
+
+    internal void PrepareDefaultSongTitleSort()
+    {
+        if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || _titleSortPreparation is not null ||
+            (SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder") != "DefaultOrder") return;
+        var target = state.LibraryViews.ListSongs;
+        if (_published.ContainsKey(target) || _inflight.ContainsKey(target)) return;
+
+        int sourceId = state.Browse.SourceFilterId;
+        int chineseTitles = 0;
+        int japaneseTitles = 0;
+        foreach (var music in SongsSource)
+        {
+            if (!LibraryQueries.MatchesSource(music, sourceId) || !LibraryQueries.IsBrowsable(music) ||
+                music.Title is not { Length: > 0 } title || Ascii.IsValid(title)) continue;
+            if (CjkStringComparer.UsesJapaneseCollation(title)) japaneseTitles++;
+            else chineseTitles++;
+            if (chineseTitles >= 2 && japaneseTitles >= 2) break;
+        }
+
+        _titleSortPreparation = chineseTitles >= 2 || japaneseTitles >= 2
+            ? PrepareTitleSortAsync(chineseTitles >= 2, japaneseTitles >= 2)
+            : Task.CompletedTask;
+    }
+
+    private async Task PrepareTitleSortAsync(bool chinese, bool japanese)
+    {
+        try
+        {
+            await Task.Run(() => CjkStringComparer.PrepareCollation(chinese, japanese)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "准备歌曲标题排序失败");
+        }
+    }
 
     /// <summary>清空歌曲投影，并同步使其已发布的查询缓存失效。</summary>
     /// <param name="target">需要清空的歌曲集合。</param>
@@ -74,6 +112,13 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         return _inflight[target] = RefreshSongsAsync(target);
     }
 
+    private Task? PendingTitleSortPreparation(BulkObservableCollection<Music> target) =>
+        _titleSortPreparation is { IsCompleted: false } preparation &&
+        ReferenceEquals(target, state.LibraryViews.ListSongs) &&
+        _requested[target].Kind == SongViewType.All &&
+        (SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder") == "DefaultOrder"
+            ? preparation : null;
+
     private async Task RefreshSongsAsync(BulkObservableCollection<Music> target)
     {
         await Task.Yield(); // 登记任务后才执行，避免同步完成留下已完成任务条目。
@@ -81,13 +126,17 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         {
             while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
             {
+                // 复用在途的比较器初始化，等候期间留出其他库投影的计算通道。
+                if (PendingTitleSortPreparation(target) is { } preparation) await preparation;
                 await _computeGate.WaitAsync();
                 try
                 {
                     if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
+                    if (PendingTitleSortPreparation(target) is not null) continue;
                     var request = _requested[target];
                     var key = SongKey(request.Kind);
                     if (_published.TryGetValue(target, out var published) && published == key) return;
+
                     var rows = ArrayPool<SongRow>.Shared.Rent(Math.Max(1, SongsSource.Count));
                     var result = ArrayPool<Music>.Shared.Rent(Math.Max(1, SongsSource.Count));
                     int count = 0;
@@ -153,6 +202,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     {
         _stopped = true;
         await Task.WhenAll(_inflight.Values.ToArray());
+        if (_titleSortPreparation is { } preparation) await preparation;
         _requested.Clear();
         _published.Clear();
     }

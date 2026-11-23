@@ -28,6 +28,7 @@
     <Compile Include="../../Model/Stats/HourlyActivityItem.cs" />
     <Compile Include="../../Model/Stats/MonthLabel.cs" />
     <Compile Include="../../Services/LibraryProjectionService.cs" />
+    <Compile Include="../../Utils/CjkStringComparer.cs" />
     <Compile Include="../../Services/LibraryQueries.cs" />
     <Compile Include="../../Model/MusicGroup.cs;../../Model/ObservableListUpdates.cs" />
     <Compile Include="../../Services/SongVersionPolicy.cs" />

@@ -466,6 +466,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshDataSource() => App.Services.GetRequiredService<LibraryBrowseCoordinator>().RefreshDataSource();
         public void RefreshAllViews() => App.Services.GetRequiredService<LibraryBrowseCoordinator>().RefreshAllViews();
+        internal void PrepareDefaultSongTitleSort()
+        {
+            if (CanPublishState && AppData.CurrentPage == typeof(FavouritePlayListPage))
+                _projections.PrepareDefaultSongTitleSort();
+        }
+
         public Task RefreshPlayListSongMapping() => _projections.RefreshPlayListSongMapping(PlayListSongs);
         public void OnSelectSortChanged() => RefreshDataSource();
 

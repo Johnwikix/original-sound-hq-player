@@ -34,6 +34,15 @@ namespace WinUIMusicPlayer.Utils
             return (xTier == TierKana ? s_ja : s_zhCN).Compare(x, y);
         }
 
+        internal static bool UsesJapaneseCollation(string title) => GetTier(title) == TierKana;
+
+        internal static void PrepareCollation(bool chinese, bool japanese)
+        {
+            // 使用和实际排序相同的区域规则和大小写选项，触发首次比较的整理器初始化。
+            if (chinese) _ = s_zhCN.Compare("音", "歌");
+            if (japanese) _ = s_ja.Compare("か", "が");
+        }
+
         private const int TierLatin = 0;
         private const int TierKana = 1;
         private const int TierHan = 2;

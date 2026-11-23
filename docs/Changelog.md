@@ -1,3 +1,11 @@
+## 2026-11-23 缩短从最爱首次切换到歌曲的排序等待
+
+- `View/FavouritePlayListPage.xaml.cs`、`Services/LibraryProjectionService.cs` 在最爱列表首帧后按需后台准备歌曲标题比较器，减少首次切到歌曲时的默认排序等待。
+
+## 2026-11-23 减少歌曲列表恢复播放选中的耗时
+
+- `Behaviors/PlaybackSelectionTracker.cs` 直接在歌曲页的托管投影中匹配正在播放的歌曲，减少首次打开歌曲页和切歌时的 WinRT 项目读取。
+
 ## 2026-11-23 缺失音频的封面回退
 
 - `Utils/LocalCoverSource.cs` 跳过缺失音频的内嵌封面解析，继续查找目录封面并保留网络回退。音频恢复后可重新读取内嵌封面。
