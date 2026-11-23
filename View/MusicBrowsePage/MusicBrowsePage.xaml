@@ -130,12 +130,22 @@
                     Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
                     Severity="Informational" />
                 <Grid Grid.Row="2">
-                    <Frame
-                        x:Name="ContentFrame"
+                    <controls:SwitchPresenter
+                        x:Name="TabPresenter"
                         Margin="6,6,0,0"
-                        CacheSize="4"
-                        IsNavigationStackEnabled="False"
-                        Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(EmptyLibraryGrid.Visibility), Mode=OneWay}" />
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(EmptyLibraryGrid.Visibility), Mode=OneWay}">
+                        <controls:SwitchPresenter.ContentTransitions>
+                            <TransitionCollection>
+                                <PopupThemeTransition />
+                            </TransitionCollection>
+                        </controls:SwitchPresenter.ContentTransitions>
+                        <controls:Case x:Name="SongTab" Value="song" />
+                        <controls:Case x:Name="AlbumTab" Value="album" />
+                        <controls:Case x:Name="ArtistTab" Value="artist" />
+                        <controls:Case x:Name="FavouriteTab" Value="favourite" />
+                    </controls:SwitchPresenter>
 
                     <!--  空音乐库占位：整个库无任何歌曲时覆盖内容区，顶栏标签保留  -->
                     <Grid

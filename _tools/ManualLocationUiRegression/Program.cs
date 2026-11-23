@@ -98,7 +98,7 @@ internal sealed partial class TestWindow : Window
         AddAction(actions, "VerifyReentry", VerifyReentry);
         AddAction(actions, "Navigation", CheckNavigation);
         AddAction(actions, "Positions", CheckBrowsePositions);
-        AddAction(actions, "TabEntrance", CheckTabEntrance);
+        AddAction(actions, "TabPresenter", CheckTabPresenter);
         AddAction(actions, "Edges", CheckEdges);
         AddAction(actions, "ImportSelection", CheckSelectionBatch);
         AddAction(actions, "DoubleTapSelection", CheckDoubleTapSelectionAsync);
@@ -127,9 +127,19 @@ internal sealed partial class TestWindow : Window
                 Close();
                 return;
             }
-            _songPage = InnerFrame.Content as SongListPage;
+            _songPage = ActiveTab as SongListPage;
             Check(_songPage is not null, "initial browser defaults to the actual songs page");
             Check(Selector.SelectedItem?.Tag?.ToString() == "song", "selector visually selects initial string tag");
+            if (Environment.GetEnvironmentVariable("LIBRARY_PRESENTER_CHECK") == "1")
+            {
+                await CheckTabPresenter();
+                await CheckNavigation();
+                await CheckCrossDetailsNavigation();
+                await CheckBrowsePositions();
+                await CheckEmptyAndFavourite();
+                DispatcherQueue.TryEnqueue(Close);
+                return;
+            }
             if (Environment.GetEnvironmentVariable("FOLDER_NAVIGATION_CHECK") == "1")
             {
                 await CheckNavigation();
@@ -143,7 +153,7 @@ internal sealed partial class TestWindow : Window
         }, null, 0, 10);
         Closed += (_, _) => _monitor.Dispose();
     }
-    private Frame InnerFrame => (Frame)_shell.CurrentLibraryPage!.FindName("ContentFrame");
+    private Page? ActiveTab => _shell.CurrentLibraryPage?.ActiveTabPage;
     private SelectorBar Selector => (SelectorBar)_shell.CurrentLibraryPage!.FindName("selectPage");
     private static ListView Songs(Page page) => (ListView)page.FindName("MusicListView");
     private static Button Locate(Page page) => (Button)page.FindName("LocateCurrentTrackButton");
@@ -254,9 +264,9 @@ internal sealed partial class TestWindow : Window
     private async Task PrepareFavorites()
     {
         _shell.CurrentLibraryPage!.SelectBarItem("favourite");
-        await Wait(() => InnerFrame.Content is FavouritePlayListPage { IsLoaded: true });
+        await Wait(() => ActiveTab is FavouritePlayListPage { IsLoaded: true });
         await Task.Delay(400);
-        _favoritePage = (FavouritePlayListPage)InnerFrame.Content;
+        _favoritePage = (FavouritePlayListPage)ActiveTab;
         CheckFloatingButton(_favoritePage, "favorites");
         _app.SelectedPlaybackMusic = new Music { Id = 477 };
         _favoritePage.ViewModel.ReceiveNavigation();
@@ -299,16 +309,14 @@ internal sealed partial class TestWindow : Window
             await Task.Delay(120);
         }
         await Task.Delay(600);
-        _favoritePage = (FavouritePlayListPage)InnerFrame.Content;
+        _favoritePage = (FavouritePlayListPage)ActiveTab;
         var scrolling = (ListViewCentering)typeof(FavouritePlayListPage).GetField("_centering", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_favoritePage)!;
         var pending = scrolling.LocateAsync(_app.FavoriteSongs[^20]);
         _shell.CurrentLibraryPage!.SelectBarItem("song");
         Check(!await pending, "unloading cancels an in-flight virtualized location");
         await Task.Delay(300);
-        _songPage = (SongListPage)InnerFrame.Content;
+        _songPage = (SongListPage)ActiveTab;
         Check(ReferenceEquals(_songPage, previousSong), "rapid reentry reuses the songs page");
-        Check(_songPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
-            "songs page opts into navigation caching");
         var returned = Songs(_songPage);
         double top = (returned.ContainerFromIndex(810) as FrameworkElement)?.TransformToVisual(returned).TransformPoint(new Point()).Y ?? double.NaN;
         _measurements.Add(new { Label = "cached return anchor", ErrorDip = double.IsFinite(top) ? Math.Abs(top - _savedSongTop) : (double?)null });
@@ -336,14 +344,13 @@ internal sealed partial class TestWindow : Window
         {
             Selector.SelectedItem = Selector.Items.Single(item => Equals(item.Tag, tag));
             await Task.Delay(100);
-            Check(InnerFrame.Content.GetType() == type, "tag navigation maps " + tag);
+            Check(ActiveTab?.GetType() == type, "tag navigation maps " + tag);
             Check(Selector.SelectedItem?.Tag?.ToString() == tag, "selector highlights " + tag);
-            Check(!InnerFrame.IsNavigationStackEnabled, "native Frame keeps the configured stack behavior for " + tag);
         }
         vm.SelectedPageTag = "folder";
         await Task.Delay(150);
         Check(_shell.ShellFrame.Content is FolderBrowsePage && _shell.CurrentLibraryPage is null,
-            "folder navigation uses the main shell Frame rather than the library child Frame");
+            "folder navigation uses the main shell Frame and updates the active browser");
         _app.PageType = "folder";
         _app.IsBackBtnEnable = true;
         _shell.NavigateToMusicBrowsePage();
@@ -357,16 +364,16 @@ internal sealed partial class TestWindow : Window
         Check(ReferenceEquals(browser, _shell.CurrentLibraryPage), "cross-link reuses the cached outer browser");
         Check(browser.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
             "outer browser opts into navigation caching");
-        Check(InnerFrame.Content is AlbumPage && vm.SelectedPageTag == "album", "album cross-link resolves shell without VM page field");
+        Check(ActiveTab is AlbumPage && vm.SelectedPageTag == "album", "album cross-link resolves shell without VM page field");
         vm.SelectBarArtist("Artist");
         await Task.Delay(150);
-        Check(InnerFrame.Content is ArtistPage && vm.SelectedPageTag == "artist", "artist cross-link resolves the active browser");
+        Check(ActiveTab is ArtistPage && vm.SelectedPageTag == "artist", "artist cross-link resolves the active browser");
         var replacement = new MusicBrowsePage();
         _shell.ShellFrame.Content = replacement;
         replacement.SelectBarItem("favourite");
         await Wait(() => replacement.IsLoaded);
         await Task.Delay(500);
-        Check(InnerFrame.Content is FavouritePlayListPage, "cross-link before initial Loaded restores the requested child page");
+        Check(ActiveTab is FavouritePlayListPage, "cross-link before initial Loaded restores the requested child page");
         Check(Selector.SelectedItem?.Tag?.ToString() == "favourite", "cross-link before initial Loaded preserves the highlighted selector item");
         _shell.ShellFrame.Content = browser;
         await Task.Delay(250);
@@ -380,7 +387,7 @@ internal sealed partial class TestWindow : Window
         var browser = _shell.CurrentLibraryPage!;
         browser.SelectBarItem("song");
         await Task.Delay(250);
-        _songPage = (SongListPage)InnerFrame.Content;
+        _songPage = (SongListPage)ActiveTab;
         var list = Songs(_songPage);
         var centering = new ListViewCentering(list);
         Check(!await centering.LocateAsync(null), "null request is ignored");

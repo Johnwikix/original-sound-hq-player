@@ -1,3 +1,4 @@
+global using WinUIMusicPlayer.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -70,8 +71,9 @@ namespace WinUIMusicPlayer.Model
     public sealed class SortOption { public string Tag { get; set; } = "DefaultOrder"; public string DisplayText { get; set; } = ""; public string UidKey { get; set; } = ""; }
     public sealed class UsbSendTarget { public object? Device { get; set; } public string Format { get; set; } = ""; public int BitrateKbps { get; set; } }
     public enum PlayMode { SingleLoop, ListLoop, RandomLoop, RepeatOff }
-    public static class AppData { public static Type CurrentPage { get; set; } = typeof(SongListPage); }
+
 }
+namespace WinUIMusicPlayer.Utils { public static class AppData { public static Type CurrentPage { get; set; } = typeof(SongListPage); } }
 namespace WinUIMusicPlayer.DesktopLyrics { public sealed class DesktopLyricsViewModel { } }
 namespace WinUIMusicPlayer.Services
 {
@@ -122,6 +124,11 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> ListSongs { get; } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; } = [];
         public bool IsInitialized => false;
+        public Microsoft.UI.Xaml.Visibility LibraryEmptyVisibility
+        {
+            get => field;
+            set => SetProperty(ref field, value);
+        } = Microsoft.UI.Xaml.Visibility.Collapsed;
         public void AddToFavoriteSongs(Music song) => FavoriteSongs.Add(song);
         public void RemoveFromFavoriteSongs(Music song) => FavoriteSongs.Remove(song);
         public void RemoveFromPlayListSongs(Music song) { }
@@ -188,7 +195,8 @@ namespace WinUIMusicPlayer.ViewModel
         public PlayMode CurrentPlayMode { get; set; }
         public Visibility FavoriteEmptyVisibility => Visibility.Collapsed;
         public List<object> UILyrics { get; set; } = [];
-        public void RefreshDataSource() { }
+        public int RefreshCount { get; private set; }
+        public void RefreshDataSource() => RefreshCount++;
         public void LoadLyricsToUI(Music song) { }
         public Music? FindFirstByAlbum(string name) => SongsSource.FirstOrDefault(m => m.Album == name);
         public Music? FindFirstByArtist(string name) => SongsSource.FirstOrDefault(m => m.Author == name);

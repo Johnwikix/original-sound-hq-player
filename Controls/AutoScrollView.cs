@@ -18,38 +18,6 @@ public partial class AutoScrollView : RedirectVisualView
     {
         RedirectVisualEnabled = false;
 
-        compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
-
-        propSet = compositor.CreatePropertySet();
-        propSet.InsertScalar(nameof(Spacing), (float)Spacing);
-
-        visual1 = compositor.CreateSpriteVisual();
-        visual1.Brush = ChildVisualBrush;
-
-        visual2 = compositor.CreateSpriteVisual();
-        visual2.Brush = ChildVisualBrush;
-
-        offsetBind1 = compositor.CreateExpressionAnimation("Vector3(visual.Offset.X, visual.Offset.Y, 0)");
-        offsetBind2 = compositor.CreateExpressionAnimation("Vector3(visual.Offset.X + visual.Size.X + propSet.Spacing, visual.Offset.Y, 0)");
-
-        offsetBind2.SetReferenceParameter("propSet", propSet);
-
-        sizeBind = compositor.CreateExpressionAnimation("visual.Size");
-
-        RootVisual.Brush = null;
-        RootVisual.Children.InsertAtTop(visual2);
-        RootVisual.Children.InsertAtTop(visual1);
-        RootVisual.IsPixelSnappingEnabled = true;
-
-        linearEasingFunc = compositor.CreateLinearEasingFunction();
-
-        animation = compositor.CreateScalarKeyFrameAnimation();
-        animation.InsertKeyFrame(0, 0);
-        animation.InsertExpressionKeyFrame(1, "-visual.Size.X - propSet.Spacing", linearEasingFunc);
-        animation.Duration = TimeSpan.FromSeconds(1);
-        animation.IterationBehavior = AnimationIterationBehavior.Forever;
-        animation.SetReferenceParameter("propSet", propSet);
-
         MeasureChildInBoundingBox = !IsPlaying;
         updateAnimationHandler = UpdateAnimationState;
 
@@ -62,19 +30,17 @@ public partial class AutoScrollView : RedirectVisualView
     private InsetClip? viewportClip;
     private CompositionClip? previousClip;
 
-    private Compositor compositor;
+    // Published after all scrolling visuals and animations are ready.
+    private CompositionPropertySet? propSet;
 
-    private CompositionPropertySet propSet;
+    private SpriteVisual visual1 = null!;
+    private SpriteVisual visual2 = null!;
 
-    private SpriteVisual visual1;
-    private SpriteVisual visual2;
+    private ExpressionAnimation offsetBind1 = null!;
+    private ExpressionAnimation offsetBind2 = null!;
+    private ExpressionAnimation sizeBind = null!;
 
-    private ExpressionAnimation offsetBind1;
-    private ExpressionAnimation offsetBind2;
-    private ExpressionAnimation sizeBind;
-
-    private LinearEasingFunction linearEasingFunc;
-    private ScalarKeyFrameAnimation animation;
+    private ScalarKeyFrameAnimation animation = null!;
 
     /// <inheritdoc/>
     protected override bool ChildVisualBrushOffsetEnabled => false;
@@ -109,7 +75,7 @@ public partial class AutoScrollView : RedirectVisualView
                 var value = Convert.ToSingle(a.NewValue);
                 if (!float.IsFinite(value) || value < 0) throw new ArgumentException(nameof(Spacing));
 
-                sender.propSet.InsertScalar(nameof(Spacing), value);
+                sender.propSet?.InsertScalar(nameof(Spacing), value);
             }
         }));
 
@@ -139,24 +105,71 @@ public partial class AutoScrollView : RedirectVisualView
         }));
 
 
+    protected override void OnApplyTemplate()
+    {
+        RedirectVisualEnabled = false;
+        base.OnApplyTemplate();
+        UpdateAnimationState();
+    }
+
     private void AutoScrollView_Loaded(object sender, RoutedEventArgs e)
     {
         UpdateAnimationState();
     }
 
 
+    private void EnsureScrollingResources(SpriteVisual scrollingVisual)
+    {
+        if (propSet is not null) return;
+
+        var compositor = scrollingVisual.Compositor;
+
+        var properties = compositor.CreatePropertySet();
+        properties.InsertScalar(nameof(Spacing), (float)Spacing);
+
+        var first = compositor.CreateSpriteVisual();
+        first.Brush = ChildVisualBrush;
+
+        var second = compositor.CreateSpriteVisual();
+        second.Brush = ChildVisualBrush;
+
+        var firstOffset = compositor.CreateExpressionAnimation("Vector3(visual.Offset.X, visual.Offset.Y, 0)");
+        var secondOffset = compositor.CreateExpressionAnimation("Vector3(visual.Offset.X + visual.Size.X + propSet.Spacing, visual.Offset.Y, 0)");
+        var size = compositor.CreateExpressionAnimation("visual.Size");
+
+        var animation = compositor.CreateScalarKeyFrameAnimation();
+        animation.InsertKeyFrame(0, 0);
+        animation.InsertExpressionKeyFrame(1, "-visual.Size.X - propSet.Spacing", compositor.CreateLinearEasingFunction());
+        animation.Duration = TimeSpan.FromSeconds(1);
+        animation.IterationBehavior = AnimationIterationBehavior.Forever;
+
+        scrollingVisual.Brush = null;
+        scrollingVisual.Children.InsertAtTop(second);
+        scrollingVisual.Children.InsertAtTop(first);
+        scrollingVisual.IsPixelSnappingEnabled = true;
+
+        visual1 = first;
+        visual2 = second;
+        offsetBind1 = firstOffset;
+        offsetBind2 = secondOffset;
+        sizeBind = size;
+        this.animation = animation;
+        propSet = properties;
+    }
+
     /// <inheritdoc/>
     protected override void OnAttachVisuals()
     {
         base.OnAttachVisuals();
 
-        if (ChildPresenter != null && LayoutRoot != null)
+        if (RootVisual is { } scrollingVisual && ChildPresenter != null && LayoutRoot != null)
         {
             var childVisual = ElementCompositionPreview.GetElementVisual(ChildPresenter);
             var rootVisual = ElementCompositionPreview.GetElementVisual(LayoutRoot);
 
+            EnsureScrollingResources(scrollingVisual);
             previousClip = rootVisual.Clip;
-            viewportClip = compositor.CreateInsetClip();
+            viewportClip = rootVisual.Compositor.CreateInsetClip();
             rootVisual.Clip = viewportClip;
 
             offsetBind1.SetReferenceParameter("visual", childVisual);
@@ -167,7 +180,6 @@ public partial class AutoScrollView : RedirectVisualView
             sizeBind.SetReferenceParameter("visual", childVisual);
 
             animation.SetReferenceParameter("visual", childVisual);
-            animation.SetReferenceParameter("visual2", rootVisual);
             animation.SetReferenceParameter("propSet", propSet);
             animation.Duration = GetAnimationDuration();
 
@@ -176,8 +188,8 @@ public partial class AutoScrollView : RedirectVisualView
             visual2.StartAnimation("Offset", offsetBind2);
             visual2.StartAnimation("Size", sizeBind);
 
-            RootVisual.Offset = Vector3.Zero;
-            RootVisual.StartAnimation("Offset.X", animation);
+            scrollingVisual.Offset = Vector3.Zero;
+            scrollingVisual.StartAnimation("Offset.X", animation);
         }
     }
 
@@ -185,20 +197,21 @@ public partial class AutoScrollView : RedirectVisualView
     protected override void OnDetachVisuals()
     {
         base.OnDetachVisuals();
+        if (propSet is null || RootVisual is not { } scrollingVisual) return;
 
         visual1.StopAnimation("Offset");
         visual1.StopAnimation("Size");
         visual2.StopAnimation("Offset");
         visual2.StopAnimation("Size");
 
-        RootVisual.StopAnimation("Offset.X");
+        scrollingVisual.StopAnimation("Offset.X");
 
         offsetBind1.ClearAllParameters();
         offsetBind2.ClearAllParameters();
         sizeBind.ClearAllParameters();
         // 释放对旧模板视觉的引用；重载时重新设置表达式参数。
         animation.ClearAllParameters();
-        RootVisual.Offset = Vector3.Zero;
+        scrollingVisual.Offset = Vector3.Zero;
         if (LayoutRoot is not null)
         {
             var root = ElementCompositionPreview.GetElementVisual(LayoutRoot);
@@ -253,7 +266,15 @@ public partial class AutoScrollView : RedirectVisualView
 
     private void AutoScrollView_Unloaded(object sender, RoutedEventArgs e)
     {
-        // 基类停止所有动画并释放源视觉引用；迟到队列回调也会检查 IsLoaded。
+        if (IsLoaded) DispatcherQueue.TryEnqueue(ResetScrollingIfUnloaded);
+        else ResetScrollingIfUnloaded();
+    }
+
+    private void ResetScrollingIfUnloaded()
+    {
+        if (IsLoaded) return;
+        // 重新加载后先测量内容，再决定是否挂接滚动视觉。
+        RedirectVisualEnabled = false;
         updateQueued = false;
     }
 
@@ -262,25 +283,25 @@ public partial class AutoScrollView : RedirectVisualView
 
     private void UpdateAnimationSpeed()
     {
-        if (RedirectVisualAttached && ChildPresenter != null)
+        if (RedirectVisualAttached && propSet is not null && RootVisual is { } scrollingVisual && ChildPresenter != null)
         {
             var duration = GetAnimationDuration();
             if (animation.Duration == duration) return;
             var progress = 0f;
-            var animationController = RootVisual.TryGetAnimationController("Offset.X");
+            var animationController = scrollingVisual.TryGetAnimationController("Offset.X");
             if (animationController != null)
             {
                 animationController.Pause();
                 progress = animationController.Progress;
             }
-            RootVisual.StopAnimation("Offset.X");
+            scrollingVisual.StopAnimation("Offset.X");
 
             animation.Duration = duration;
-            RootVisual.StartAnimation("Offset.X", animation);
+            scrollingVisual.StartAnimation("Offset.X", animation);
 
             if (progress > 0)
             {
-                animationController = RootVisual.TryGetAnimationController("Offset.X");
+                animationController = scrollingVisual.TryGetAnimationController("Offset.X");
                 if (animationController != null)
                 {
                     animationController.Pause();

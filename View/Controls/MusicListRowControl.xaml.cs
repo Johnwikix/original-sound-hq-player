@@ -89,7 +89,17 @@ public sealed partial class MusicListRowControl : UserControl
         if (AlbumScroll is not null) AlbumScroll.IsPlaying = false;
     }
 
-    private void Row_Unloaded(object sender, RoutedEventArgs e) => StopAutoScroll();
+    private void Row_Unloaded(object sender, RoutedEventArgs e)
+    {
+        // 旧 Unloaded 可能在快速重入的新 Loaded 后发出。
+        if (IsLoaded) DispatcherQueue.TryEnqueue(StopAutoScrollIfUnloaded);
+        else StopAutoScroll();
+    }
+
+    private void StopAutoScrollIfUnloaded()
+    {
+        if (!IsLoaded) StopAutoScroll();
+    }
 
     private void TitleButton_Click(object sender, RoutedEventArgs e)
     {

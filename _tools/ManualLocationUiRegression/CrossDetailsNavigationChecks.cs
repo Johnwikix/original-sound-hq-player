@@ -18,29 +18,29 @@ internal sealed partial class TestWindow
             foreach (bool artist in new[] { false, true })
             {
                 browser.SelectBarItem("song");
-                await Wait(() => InnerFrame.Content is SongListPage { IsLoaded: true });
+                await Wait(() => ActiveTab is SongListPage { IsLoaded: true });
                 _app.IsBackBtnEnable = false;
                 _shell.ShowMusicDetails(new MusicDetailsRequest(_all[0], typeof(SongListPage)));
                 await Wait(() => _shell.HasMusicDetails && ((ContentControl)browser.FindName("MusicDetailsOverlay")).IsLoaded);
                 await Task.Delay(100);
                 if (artist) browser.ViewModel.ArtistButtonCommand.Execute(_all[0].Author);
                 else browser.ViewModel.AlbumButtonCommand.Execute(_all[0].Album);
-                await Wait(() => artist ? InnerFrame.Content is ArtistPage { IsLoaded: true } : InnerFrame.Content is AlbumPage { IsLoaded: true });
+                await Wait(() => artist ? ActiveTab is ArtistPage { IsLoaded: true } : ActiveTab is AlbumPage { IsLoaded: true });
                 Check(!_shell.HasMusicDetails && ((ContentControl)browser.FindName("MusicDetailsOverlay")).Content is null,
-                    "real footer command closes details before inner-Frame navigation to " + (artist ? "artist" : "album"));
+                    "real footer command closes details before library tab switching to " + (artist ? "artist" : "album"));
                 _shell.CloseMusicDetails();
                 await Task.Delay(200);
                 Check(_app.IsBackBtnEnable && ReferenceEquals(browser, _shell.CurrentLibraryPage),
                     "cross-link keeps the same browser and the new group's back availability");
             }
             browser.SelectBarItem("song");
-            await Wait(() => InnerFrame.Content is SongListPage { IsLoaded: true });
+            await Wait(() => ActiveTab is SongListPage { IsLoaded: true });
             _app.IsBackBtnEnable = false;
             _shell.ShowMusicDetails(new MusicDetailsRequest(_all[0], typeof(SongListPage)));
             await Task.Delay(150);
             _shell.CloseMusicDetails();
             browser.ViewModel.AlbumButtonCommand.Execute(_all[0].Album);
-            await Wait(() => InnerFrame.Content is AlbumPage { IsLoaded: true });
+            await Wait(() => ActiveTab is AlbumPage { IsLoaded: true });
             await Task.Delay(300);
             Check(!_shell.HasMusicDetails && _app.IsBackBtnEnable,
                 "a close callback queued before a cross-link cannot restore the old back snapshot over the new group");

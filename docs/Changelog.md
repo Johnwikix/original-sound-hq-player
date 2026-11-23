@@ -1,3 +1,9 @@
+## 2026-11-23 曲库页签切换
+
+- `View/MusicBrowsePage/MusicBrowsePage.xaml` 中的曲库歌曲、专辑、艺术家和收藏页签使用 SwitchPresenter 与 PopupThemeTransition。首次打开时创建各页，之后复用已有视图，离开时停止页签绑定并取消临时交互。曲库 WinUI 回归通过 97 项检查。
+- `Controls/AutoScrollView.cs`、`Controls/RedirectVisualView.cs` 在首次挂接时创建合成资源。滚动文字仅在启用且内容超出可用宽度时挂接。
+- `View/Controls/MusicListRowControl.xaml.cs` 在快速重入后检查实际挂接状态，避免上次卸载的迟到事件停止当前悬停滚动。
+
 ## 2026-11-23 播放页常规设置补齐输出选项
 
 - `View/SubView/SettingsDialog.xaml` 常规页按现有 250×3 样式接入输出设备之后的输出设置：缓冲区大小、DSD 采样率与增益、DSD Dop、5.1 输出、Atmos 直通与输出设备、曲间过渡与交叉淡化时长、手动操作淡入淡出。常规页与歌词页同为六行，对话框固定高度不变。

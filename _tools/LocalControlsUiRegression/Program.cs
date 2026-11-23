@@ -35,10 +35,10 @@ internal static class Program
 public sealed partial class ScrollProbe : AutoScrollView
 {
     public bool Attached => RedirectVisualAttached;
-    public SpriteVisual ScrollingVisual => RootVisual;
+    public SpriteVisual ScrollingVisual => RootVisual!;
     public ContentPresenter Presenter => ChildPresenter!;
     public Grid Viewport => LayoutRoot!;
-    public CompositionVisualSurface Source => (CompositionVisualSurface)((CompositionSurfaceBrush)ChildVisualBrush).Surface;
+    public CompositionVisualSurface? Source => (ChildVisualBrush as CompositionSurfaceBrush)?.Surface as CompositionVisualSurface;
 }
 
 internal sealed partial class RegressionApplication : Application, IXamlMetadataProvider
@@ -109,6 +109,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             window.AppWindow.Show(false);
             await Wait(() => host.IsLoaded, "window load");
             await ScrollTests(panel, window);
+            await RedirectTests(panel);
             await BreathingPropertyTests(panel);
             await ShadowTests(panel, window);
             await EdgeColorTests(panel);
@@ -180,16 +181,32 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         await RemoveAsync(panel, shadow);
     }
 
+    private static int ScrollResourceCount(ScrollProbe scroll)
+    {
+        string[] redirectResources = ["childVisualSurface", "childVisualBrush", "redirectVisual", "offsetBind"];
+        string[] scrollingResources = ["propSet", "visual1", "visual2", "offsetBind1", "offsetBind2", "sizeBind", "animation"];
+        return redirectResources.Count(name => typeof(RedirectVisualView).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(scroll) is not null)
+            + scrollingResources.Count(name => typeof(AutoScrollView).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(scroll) is not null);
+    }
+
     private async Task ScrollTests(StackPanel panel, Window window)
     {
         var text = new TextBlock { Text = "Local scrolling control — long artist and song name with a repeating composition surface", FontSize = 24, Foreground = new SolidColorBrush(Colors.Black), TextTrimming = TextTrimming.CharacterEllipsis };
         var scroll = new ScrollProbe { Child = text, Width = 210, IsPlaying = false, HorizontalAlignment = HorizontalAlignment.Left };
         panel.Children.Add(scroll);
         await Wait(() => scroll.IsLoaded && scroll.ActualWidth > 0, "scroll load");
-        Check(!scroll.Attached && scroll.Source.SourceVisual is null, "Stopped content uses the original XAML visual");
+        var shortScroll = new ScrollProbe { Child = new TextBlock { Text = "short" }, Width = 210 };
+        panel.Children.Add(shortScroll);
+        await Wait(() => shortScroll.IsLoaded && shortScroll.Presenter.ActualWidth > 0, "short scroll load");
+        int stoppedResources = ScrollResourceCount(scroll);
+        int shortResources = ScrollResourceCount(shortScroll);
+        Check(stoppedResources == 0 && shortResources == 0, $"Stopped and short controls do not construct native scrolling resources (stopped={stoppedResources}, short={shortResources})");
+        Check(!scroll.Attached && scroll.Source?.SourceVisual is null, "Stopped content uses the original XAML visual");
+        await RemoveAsync(panel, shortScroll);
         scroll.IsPlaying = true;
         await Wait(() => scroll.Attached, "scroll start");
-        Check(scroll.Presenter.ActualWidth > scroll.Viewport.ActualWidth && scroll.Source.SourceVisual is not null, "Overflow is measured unbounded and redirected");
+        Check(scroll.Presenter.ActualWidth > scroll.Viewport.ActualWidth && scroll.Source?.SourceVisual is not null, "Overflow is measured unbounded and redirected");
+        Check(ScrollResourceCount(scroll) == 10, "First overflow creates the composition resource set");
         Check(scroll.ScrollingVisual.Children.Count == 2 && scroll.ScrollingVisual.TryGetAnimationController("Offset.X") is not null, "Two copies and a compositor animation are attached");
         await Task.Delay(150);
         var before = WindowCapture.ReadFrame(window);
@@ -203,17 +220,17 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         Check(scroll.ScrollingVisual.TryGetAnimationController("Offset.X") is not null, "Spacing and speed can change during scrolling");
         scroll.IsPlaying = false;
         await Wait(() => !scroll.Attached, "scroll stop");
-        Check(scroll.Source.SourceVisual is null && scroll.ScrollingVisual.Offset == Vector3.Zero, "Stop releases the source and resets the offset");
+        Check(scroll.Source?.SourceVisual is null && scroll.ScrollingVisual.Offset == Vector3.Zero, "Stop releases the source and resets the offset");
         scroll.IsPlaying = true;
         await Wait(() => scroll.Attached, "scroll restart");
         await RemoveAsync(panel, scroll);
-        Check(!scroll.Attached && scroll.Source.SourceVisual is null && scroll.ScrollingVisual.TryGetAnimationController("Offset.X") is null, "Unload stops animation and releases the source");
+        Check(!scroll.Attached && scroll.Source?.SourceVisual is null && scroll.ScrollingVisual.TryGetAnimationController("Offset.X") is null, "Unload stops animation and releases the source");
         panel.Children.Add(scroll);
         await Wait(() => scroll.Attached, "scroll reload");
         Check(scroll.ScrollingVisual.TryGetAnimationController("Offset.X") is not null, "Reload restores scrolling without activation");
         scroll.Child = new TextBlock { Text = "short" };
         await Wait(() => !scroll.Attached, "short child replacement");
-        Check(scroll.Source.SourceVisual is null, "Short replacement does not keep scrolling");
+        Check(scroll.Source?.SourceVisual is null, "Short replacement does not keep scrolling");
         scroll.Child = new TextBlock();
         await Task.Delay(100);
         Check(!scroll.Attached, "Empty content does not create a zero-duration animation");
@@ -223,6 +240,14 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         await Wait(() => !scroll.Attached, "viewport grow");
         scroll.Width = 210;
         await Wait(() => scroll.Attached, "viewport shrink");
+        var surfaceBeforeRapidReentry = scroll.Source;
+        panel.Children.Remove(scroll);
+        panel.Children.Add(scroll);
+        await Task.Delay(100);
+        await Wait(() => scroll.IsLoaded && scroll.Attached, "same-turn remove and reattach");
+        Check(ReferenceEquals(scroll.Source, surfaceBeforeRapidReentry) && scroll.Source?.SourceVisual is not null
+            && scroll.ScrollingVisual.TryGetAnimationController("Offset.X") is not null,
+            "Same-turn reattachment preserves scrolling on the active control");
         var template = scroll.Template;
         scroll.Template = (ControlTemplate)XamlReader.Load("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:controls='using:WinUIMusicPlayer.Controls' TargetType='controls:AutoScrollView'><Grid /></ControlTemplate>");
         scroll.ApplyTemplate();
@@ -231,9 +256,27 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
         scroll.Template = template;
         scroll.ApplyTemplate();
         await Wait(() => scroll.Attached, "template restore");
-        Check(scroll.Source.SourceVisual is not null, "Replacing the template reattaches the new source");
+        Check(scroll.Source?.SourceVisual is not null, "Replacing the template reattaches the new source");
         await WindowCapture.CaptureAsync(window, "scroll.png");
         await RemoveAsync(panel, scroll);
+    }
+
+    private async Task RedirectTests(StackPanel panel)
+    {
+        var redirect = new RedirectVisualView { Child = new TextBlock { Text = "redirected" }, Width = 200 };
+        var field = typeof(RedirectVisualView).GetField("childVisualSurface", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        CompositionVisualSurface? Source() => (CompositionVisualSurface?)field.GetValue(redirect);
+        Check(Source() is null, "Ordinary redirect does not create a surface in the constructor");
+        panel.Children.Add(redirect);
+        await Wait(() => Source()?.SourceVisual is not null, "redirect attaches");
+        var surface = Source()!;
+        Check(surface.SourceVisual is not null, "Ordinary redirect still redirects on load");
+        await RemoveAsync(panel, redirect);
+        Check(surface.SourceVisual is null, "Ordinary redirect stops sampling on unload");
+        panel.Children.Add(redirect);
+        await Wait(() => surface.SourceVisual is not null, "redirect reattaches");
+        Check(ReferenceEquals(surface, Source()), "Ordinary redirect reuses its surface on reload");
+        await RemoveAsync(panel, redirect);
     }
 
     private async Task ShadowTests(StackPanel panel, Window window)

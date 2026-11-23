@@ -20,6 +20,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
+    <EmbeddedResource Include="../../View/MusicBrowsePage/MusicBrowsePage.xaml" LogicalName="ProductionMusicBrowsePage.xaml" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
     <Compile Include="../../View/MainPage.LibraryNavigation.cs;../../Helper/MusicDetailsPresenter.cs" />
     <Compile Include="../HomeUiRegression/WindowCapture.cs" Link="WindowCapture.cs" />

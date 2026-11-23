@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Utils;
@@ -24,9 +23,6 @@ public sealed class LibraryNavigationService(Func<MainPage> getShell, ILogger<Li
         var shell = getShell();
         await shell.EqualizerDialog.ShowThemedAsync(shell.XamlRoot);
     }
-
-    public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? transition = null)
-        => getShell().CurrentLibraryPage?.NavigatePage(pageType, parameter, transition);
 
     public void ShowFolders() => getShell().NavigateToFoldersPage();
 

@@ -23,16 +23,16 @@ internal sealed partial class TestWindow
     private async Task CycleLibrary()
     {
         _shell.NavigateToMusicBrowsePage();
-        await Wait(() => _shell.CurrentLibraryPage?.IsLoaded == true && InnerFrame.Content is Page);
+        await Wait(() => _shell.CurrentLibraryPage?.IsLoaded == true && ActiveTab is Page);
         ObserveCachePage(_shell.CurrentLibraryPage!);
-        ObserveCachePage((Page)InnerFrame.Content);
+        ObserveCachePage((Page)ActiveTab);
         for (int i = 0; i < 4; i++)
         {
             foreach (string tag in new[] { "favourite", "album", "artist", "song" })
             {
                 _shell.CurrentLibraryPage!.SelectBarItem(tag);
                 await Task.Delay(120);
-                ObserveCachePage((Page)InnerFrame.Content);
+                ObserveCachePage((Page)ActiveTab);
             }
         }
         _shell.ShellFrame.Navigate(typeof(FolderBrowsePage));

@@ -26,9 +26,9 @@ internal sealed partial class TestWindow
     private async Task<Page> Open(string tag)
     {
         _shell.CurrentLibraryPage!.SelectBarItem(tag);
-        await Wait(() => InnerFrame.Content is Page { IsLoaded: true });
+        await Wait(() => ActiveTab is Page { IsLoaded: true });
         await Task.Delay(650);
-        return (Page)InnerFrame.Content;
+        return (Page)ActiveTab;
     }
 
     private static double Top(ListViewBase list, int index)
@@ -71,7 +71,7 @@ internal sealed partial class TestWindow
             Check(ReferenceEquals(page, await Open(tag)), tag + " reuses the original page");
             CheckTop(list, index, top, tag + " list after tab switch");
             await ReturnToLibrary();
-            Check(ReferenceEquals(page, InnerFrame.Content), tag + " stays selected after returning to the library");
+            Check(ReferenceEquals(page, ActiveTab), tag + " stays selected after returning to the library");
             CheckTop(list, index, top, tag + " list after returning to the library");
         }
         _app.CurrentAlbumObj = _app.CurrentArtistObj = _app.CurrentFolderObj = null;
@@ -99,8 +99,8 @@ internal sealed partial class TestWindow
             await Task.Delay(250);
             double beforeDetail = await Position((GridView)page.FindName(name), 636);
 
-            if (tag == "album") { _app.CurrentAlbumObj = _tiles[636]; ((AlbumPage)page).ReceiveNavigationParameter(new()); }
-            if (tag == "artist") { _app.CurrentArtistObj = _tiles[636]; ((ArtistPage)page).ReceiveNavigationParameter(new()); }
+            if (tag == "album") { _app.CurrentAlbumObj = _tiles[636]; ((ILibraryTab)page).Activate(); }
+            if (tag == "artist") { _app.CurrentArtistObj = _tiles[636]; ((ILibraryTab)page).Activate(); }
             await Task.Delay(250);
             var detail = (WinUIMusicPlayer.View.Controls.MusicGroupDetailControl)page.FindName("DetailView");
             double detailTop = await Position((ListViewBase)detail.FindName("MusicListView"), 817);
@@ -111,7 +111,7 @@ internal sealed partial class TestWindow
             var detailList = (ListViewBase)detail.FindName("MusicListView");
             CheckTop(detailList, 817, detailTop, tag + " detail list");
             await ReturnToLibrary();
-            Check(ReferenceEquals(page, InnerFrame.Content) && _app.IsBackBtnEnable,
+            Check(ReferenceEquals(page, ActiveTab) && _app.IsBackBtnEnable,
                 tag + " keeps details selected and restores back availability after returning");
             CheckTop(detailList, 817, detailTop, tag + " detail list after returning to the library");
             if (page is AlbumPage album) album.CollapseDetail();
@@ -135,7 +135,7 @@ internal sealed partial class TestWindow
         await Task.Delay(150);
         _app.IsBackBtnEnable = false;
         _shell.NavigateToMusicBrowsePage();
-        await Wait(() => InnerFrame.Content is Page { IsLoaded: true });
+        await Wait(() => ActiveTab is Page { IsLoaded: true });
         await Task.Delay(400);
     }
 }

@@ -1,4 +1,19 @@
-# 手动定位与导航引用清理：第一批验证报告
+# 曲库页签 SwitchPresenter 回归
+
+在仓库根目录执行。
+
+```powershell
+dotnet restore _tools/ManualLocationUiRegression/ManualLocationUiRegression.csproj -p:Platform=x64
+& ./_tools/ManualLocationUiRegression/Run.ps1 -LibraryPresenter
+```
+
+此模式自动运行 x64 WinUI 窗口内的页签检查并退出。它复用生产浏览页、歌曲页及收藏页的代码后置，使用真实 SelectorBar、SwitchPresenter、列表和分组网格，并检查嵌入的生产曲库 XAML。窗口不激活，结果写入项目输出目录的 `artifacts/result.json`。
+
+覆盖范围包括按需创建和重复点击、同一调度回合快切、离开后的视觉树脱离、SelectorBar 焦点、外层实例切换、跨链接与详情返回、缓存滚动位置、活动源刷新、隐藏页集合变化与空库收藏占位。生产曲库的命令栏、导入/数据库、全量本地化及剪裁产物仍由完整应用验证。
+
+## 旧版 Frame 验证记录（2026-10-30）
+
+以下记录对应切换到 SwitchPresenter 之前的夹具和应用。
 
 本批保留 Frame 与官方进入/左右切页动画。HomePage 显式设置 `NavigationCacheMode.Disabled`，其他页面的缓存策略沿用原值；不增加统一活跃页状态或延迟刷新队列，也不改变播放详情渲染的启停条件。
 

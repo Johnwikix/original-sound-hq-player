@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -37,10 +36,19 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 // 兼容旧入口调用，目录页已提升为主侧栏导航。
                 if (value == "folder") { _navigation.ShowFolders(); return; }
-                if (value is not ("song" or "album" or "artist" or "favourite")) return;
-                if (SetProperty(ref field, value)) NavigateSelectedPage();
+                if (IsLibraryTab(value)) SetProperty(ref field, value);
             }
         } = string.Empty;
+        internal static bool IsLibraryTab(string tag) => tag is "song" or "album" or "artist" or "favourite";
+
+        internal void InitializeSelectedPage()
+        {
+            if (!IsLibraryTab(AppViewModel.DefaultPlayListComboBoxTag))
+                AppViewModel.DefaultPlayListComboBoxTag = "song";
+            if (SelectedPageTag.Length == 0)
+                SelectedPageTag = AppViewModel.DefaultPlayListComboBoxTag;
+        }
+
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private readonly LibraryNavigationService _navigation;
@@ -199,38 +207,6 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async Task OnEqualizerButton() => await _navigation.ShowEqualizerAsync();
 
-        public void NavigateSelectedPage()
-        {
-            // 各 tab 的 detail 状态(CurrentXxxObj)在切换时保留,切回时由
-            // ReceiveNavigation/RefreshFromAppState 按 PageType 恢复;退出详情
-            // 由各页返回按钮(CollapseDetail)显式清空。
-
-            AppData.CurrentPage = typeof(SongListPage);
-            switch (SelectedPageTag)
-            {
-                case "song":
-                    AppViewModel.PageType = "song";
-                    AppData.CurrentPage = typeof(SongListPage);
-                    break;
-                case "album":
-                    AppData.CurrentPage = typeof(AlbumPage);
-                    AppViewModel.PageType = AppViewModel.CurrentAlbumObj is { } a && !string.IsNullOrEmpty(a.Album)
-                        ? "album" : "albumBrowse";
-                    break;
-                case "artist":
-                    AppData.CurrentPage = typeof(ArtistPage);
-                    AppViewModel.PageType = AppViewModel.CurrentArtistObj is { } ar && !string.IsNullOrEmpty(ar.Author)
-                        ? "artist" : "artistBrowse";
-                    break;
-                case "favourite":
-                    AppViewModel.PageType = "favourite";
-                    AppData.CurrentPage = typeof(FavouritePlayListPage);
-                    break;
-            }
-            AppViewModel.RefreshDataSource();
-            _navigation.NavigatePage(AppData.CurrentPage);
-        }
-
         public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false, long entryId = 0)
             => _coordinator.PlayAsync(music, entryId);
 
@@ -306,9 +282,6 @@ namespace WinUIMusicPlayer.ViewModel
         public void SelectBarAlbum(string album) => _navigation.SelectAlbum(album);
 
         public Task<bool> AreUSureDeleteFromDisk() => _navigation.ConfirmDeleteFromDiskAsync();
-
-        public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
-            => _navigation.NavigatePage(pageType, parameter, navigationTransitionInfo);
 
         public void BackButton() => _navigation.Back();
     }

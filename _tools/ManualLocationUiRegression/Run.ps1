@@ -1,4 +1,4 @@
-param([switch]$SkipBuild, [switch]$Baseline, [string[]]$OnlyActions)
+param([switch]$SkipBuild, [switch]$Baseline, [switch]$LibraryPresenter, [string[]]$OnlyActions)
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
@@ -11,7 +11,13 @@ $output = Join-Path (Split-Path $executable) 'artifacts'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $statePath = Join-Path $output 'state.json'
 if (Test-Path -LiteralPath $statePath) { Remove-Item -LiteralPath $statePath }
-$process = Start-Process -FilePath $executable -WindowStyle Hidden -PassThru
+$oldPresenterCheck = $env:LIBRARY_PRESENTER_CHECK
+try {
+    if ($LibraryPresenter) { $env:LIBRARY_PRESENTER_CHECK = '1' }
+    $process = Start-Process -FilePath $executable -WindowStyle Hidden -PassThru
+} finally {
+    $env:LIBRARY_PRESENTER_CHECK = $oldPresenterCheck
+}
 $script:index = 0
 function Wait-State([string]$Action, [int]$Sequence) {
     $watch = [Diagnostics.Stopwatch]::StartNew()
@@ -54,8 +60,14 @@ function Invoke-Button([string]$Id) {
 }
 try {
     $state = Wait-State 'ready' 0
+    if ($LibraryPresenter) {
+        if (-not $process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw 'Library presenter fixture did not exit cleanly' }
+        [IO.File]::WriteAllText((Join-Path $output 'result.json'), ($state | ConvertTo-Json -Depth 8).ReplaceLineEndings("`r`n"))
+        Write-Output "Library presenter: $($state.Status) ($($state.Checks.Count) checks). Results: $output"
+        return
+    }
     $script:hwnd = $state.Hwnd
-    $actions = if ($OnlyActions) { $OnlyActions } else { @('TabEntrance','PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges','ImportSelection','CrossDetails') }
+    $actions = if ($OnlyActions) { $OnlyActions } else { @('TabPresenter','PrepareSongs','VerifySongs','PrepareFavorites','VerifyFavorites','Lifecycle','VerifyReentry','Navigation','Positions','Edges','ImportSelection','CrossDetails') }
     foreach ($action in $actions) {
         Invoke-Button $action
         $state = Wait-State $action $state.Sequence

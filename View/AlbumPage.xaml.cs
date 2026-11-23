@@ -2,17 +2,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Navigation;
 using WinRT;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View
 {
-    public sealed partial class AlbumPage : Page, INavigatable
+    public sealed partial class AlbumPage : Page, ILibraryTab
     {
         private readonly ConnectedAnimationScope _coverAnimation;
         public AlbumViewModel ViewModel { get; }
@@ -21,22 +19,22 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = App.Services.GetRequiredService<AlbumViewModel>();
             this.InitializeComponent();
-            Unloaded += PageUnloaded;
             _coverAnimation = new ConnectedAnimationScope(this, "AlbumCover");
             DataContext = this;
-            NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
-        public void ReceiveNavigationParameter(object parameter)
+        void ILibraryTab.Activate()
         {
-            ViewModel.ReceiveNavigation();
-        }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
             DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.ReceiveNavigation();
+            Bindings.Initialize();
+        }
+
+        void ILibraryTab.Deactivate()
+        {
+            _coverAnimation.Cancel();
+            DetailView.ViewModel.IsClosingForTransition = false;
+            Bindings.StopTracking();
         }
 
         private void Album_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -79,19 +77,6 @@ namespace WinUIMusicPlayer.View
         {
             DetailView.ViewModel.IsClosingForTransition = false;
             DetailView.ViewModel.RefreshFromAppState();
-        }
-
-        private void PageUnloaded(object sender, RoutedEventArgs args)
-        {
-            _coverAnimation.Cancel();
-            DetailView.ViewModel.IsClosingForTransition = false;
-        }
-
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            _coverAnimation.Cancel();
-            DetailView.ViewModel.IsClosingForTransition = false;
-            base.OnNavigatedFrom(e);
         }
 
         private static Border? FindCoverBorderInItem(GridViewItem? item)

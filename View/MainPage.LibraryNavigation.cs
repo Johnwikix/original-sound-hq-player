@@ -57,7 +57,7 @@ public sealed partial class MainPage
 
     public void NavigateToMusicBrowsePage()
     {
-        // 即便主 Frame 已在曲库，底栏仍可能要切换内层 Frame；先释放临时详情及旧返回回调。
+        // 即便主 Frame 已在曲库，底栏仍可能要切换曲库页签；先释放临时详情及旧返回回调。
         PrepareForBrowseNavigation();
         if (MainFrame.Content is not MusicBrowsePage)
         {

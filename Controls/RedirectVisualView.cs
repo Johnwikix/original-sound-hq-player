@@ -22,26 +22,6 @@ public partial class RedirectVisualView : Control
     {
         this.DefaultStyleKey = typeof(RedirectVisualView);
 
-        childVisualBrushOffsetEnabled = ChildVisualBrushOffsetEnabled;
-
-        hostVisual = ElementCompositionPreview.GetElementVisual(this);
-        compositor = hostVisual.Compositor;
-
-        childVisualSurface = compositor.CreateVisualSurface();
-        childVisualBrush = compositor.CreateSurfaceBrush(childVisualSurface);
-        childVisualBrush.HorizontalAlignmentRatio = 0;
-        childVisualBrush.VerticalAlignmentRatio = 0;
-        childVisualBrush.Stretch = CompositionStretch.None;
-
-        redirectVisual = compositor.CreateSpriteVisual();
-        redirectVisual.RelativeSizeAdjustment = Vector2.One;
-        redirectVisual.Brush = childVisualBrush;
-
-        if (childVisualBrushOffsetEnabled)
-        {
-            offsetBind = compositor.CreateExpressionAnimation("Vector2(visual.Offset.X, visual.Offset.Y)");
-        }
-
         this.Loaded += RedirectVisualView_Loaded;
         this.Unloaded += RedirectVisualView_Unloaded;
         RegisterPropertyChangedCallback(PaddingProperty, OnPaddingPropertyChanged);
@@ -98,7 +78,6 @@ public partial class RedirectVisualView : Control
 
     private bool attached;
     private bool redirectVisualEnabled = true;
-    private bool childVisualBrushOffsetEnabled;
 
     private Grid? layoutRoot;
     private ContentPresenter? childPresenter;
@@ -180,23 +159,40 @@ public partial class RedirectVisualView : Control
         private set => opacityMaskContainer = value;
     }
 
-    private Visual hostVisual;
-    private Compositor compositor;
-
-    private CompositionVisualSurface childVisualSurface;
-    private CompositionSurfaceBrush childVisualBrush;
-
-    private SpriteVisual redirectVisual;
+    private CompositionVisualSurface? childVisualSurface;
+    private CompositionSurfaceBrush? childVisualBrush;
+    private SpriteVisual? redirectVisual;
     private ExpressionAnimation? offsetBind;
 
-    /// <summary>Gets the brush that samples the child visual.</summary>
-    protected CompositionBrush ChildVisualBrush => childVisualBrush;
+    /// <summary>Gets the brush that samples the child visual after the first attach.</summary>
+    protected CompositionBrush? ChildVisualBrush => childVisualBrush;
 
-    /// <summary>Gets or sets the visual displayed in place of the child.</summary>
-    protected SpriteVisual RootVisual
+    /// <summary>Gets the redirected output visual after the first attach.</summary>
+    protected SpriteVisual? RootVisual => redirectVisual;
+
+    private void EnsureCompositionResources()
     {
-        get => redirectVisual;
-        set => redirectVisual = value;
+        if (redirectVisual is not null) return;
+
+        var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
+        var surface = compositor.CreateVisualSurface();
+        var brush = compositor.CreateSurfaceBrush(surface);
+        brush.HorizontalAlignmentRatio = 0;
+        brush.VerticalAlignmentRatio = 0;
+        brush.Stretch = CompositionStretch.None;
+
+        ExpressionAnimation? offset = null;
+        if (ChildVisualBrushOffsetEnabled)
+            offset = compositor.CreateExpressionAnimation("Vector2(visual.Offset.X, visual.Offset.Y)");
+
+        var visual = compositor.CreateSpriteVisual();
+        visual.RelativeSizeAdjustment = Vector2.One;
+        visual.Brush = brush;
+
+        childVisualSurface = surface;
+        childVisualBrush = brush;
+        offsetBind = offset;
+        redirectVisual = visual;
     }
 
     /// <inheritdoc/>
@@ -234,6 +230,7 @@ public partial class RedirectVisualView : Control
         // 模板未就绪或卸载时不挂接，避免空模板被误记为已挂接。
         if (attached || !IsLoaded || LayoutRoot is null || ChildPresenter is null || ChildHost is null) return;
 
+        EnsureCompositionResources();
         attached = true;
 
         if (LayoutRoot != null)
@@ -242,12 +239,12 @@ public partial class RedirectVisualView : Control
             {
                 var childBorderVisual = ElementCompositionPreview.GetElementVisual(ChildPresenter);
 
-                childVisualSurface.SourceVisual = childBorderVisual;
+                childVisualSurface!.SourceVisual = childBorderVisual;
 
                 if (offsetBind != null)
                 {
                     offsetBind.SetReferenceParameter("visual", childBorderVisual);
-                    childVisualBrush.StartAnimation("Offset", offsetBind);
+                    childVisualBrush!.StartAnimation("Offset", offsetBind);
                 }
             }
 
@@ -280,11 +277,11 @@ public partial class RedirectVisualView : Control
 
         if (LayoutRoot != null)
         {
-            childVisualSurface.SourceVisual = null;
+            childVisualSurface!.SourceVisual = null;
 
             if (offsetBind != null)
             {
-                childVisualBrush.StopAnimation("Offset");
+                childVisualBrush!.StopAnimation("Offset");
                 offsetBind.ClearAllParameters();
             }
 
@@ -309,7 +306,13 @@ public partial class RedirectVisualView : Control
 
     private void RedirectVisualView_Unloaded(object sender, RoutedEventArgs e)
     {
-        DetachVisuals();
+        if (IsLoaded) DispatcherQueue.TryEnqueue(DetachVisualsIfUnloaded);
+        else DetachVisuals();
+    }
+
+    private void DetachVisualsIfUnloaded()
+    {
+        if (!IsLoaded) DetachVisuals();
     }
 
     private void RedirectVisualView_Loaded(object sender, RoutedEventArgs e)
@@ -342,7 +345,7 @@ public partial class RedirectVisualView : Control
         {
             if (ChildPresenter != null)
             {
-                childVisualSurface.SourceSize = new Vector2((float)ChildPresenter.ActualWidth, (float)ChildPresenter.ActualHeight);
+                childVisualSurface!.SourceSize = new Vector2((float)ChildPresenter.ActualWidth, (float)ChildPresenter.ActualHeight);
             }
         }
 

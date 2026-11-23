@@ -26,17 +26,38 @@ internal sealed partial class RegressionApplication
         var exited = typeof(MusicListRowControl).GetMethod("AutoScrollHover_PointerExited", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var canceled = typeof(MusicListRowControl).GetMethod("AutoScrollHover_PointerCanceled", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var sourceField = typeof(RedirectVisualView).GetField("childVisualSurface", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        CompositionVisualSurface Source(AutoScrollView scroll) => (CompositionVisualSurface)sourceField.GetValue(scroll)!;
+        CompositionVisualSurface? Source(AutoScrollView scroll) => (CompositionVisualSurface?)sourceField.GetValue(scroll);
+        Check(scrolls.All(scroll => Source(scroll) is null), "shipping row does not create any redirected surface before hover");
         entered.Invoke(row, [scrolls[0], null]);
-        await Wait(() => Source(scrolls[0]).SourceVisual is not null);
+        await Wait(() => Source(scrolls[0])?.SourceVisual is not null);
         Check(scrolls[0].IsPlaying, "shipping hover handler starts the local composition surface");
+        Check(scrolls.Skip(1).All(scroll => Source(scroll) is null), "hover creates only the surface for the selected column");
         canceled.Invoke(row, [scrolls[0], null]);
-        await Wait(() => Source(scrolls[0]).SourceVisual is null);
+        await Wait(() => Source(scrolls[0])?.SourceVisual is null);
         Check(!scrolls[0].IsPlaying, "shipping pointer cancellation stops scrolling");
         entered.Invoke(row, [scrolls[0], null]);
-        await Wait(() => Source(scrolls[0]).SourceVisual is not null);
+        await Wait(() => Source(scrolls[0])?.SourceVisual is not null);
         exited.Invoke(row, [scrolls[0], null]);
-        Check(!scrolls[0].IsPlaying && Source(scrolls[0]).SourceVisual is null, "shipping pointer exit restores the original XAML visual");
+        Check(!scrolls[0].IsPlaying && Source(scrolls[0])?.SourceVisual is null, "shipping pointer exit restores the original XAML visual");
+        entered.Invoke(row, [scrolls[0], null]);
+        await Wait(() => Source(scrolls[0])?.SourceVisual is not null);
+        var reentryEvents = new List<string>();
+        void ReenterHoverOnLoaded(object sender, RoutedEventArgs args)
+        {
+            entered.Invoke(row, [scrolls[0], null]);
+            reentryEvents.Add($"Loaded[IsLoaded={row.IsLoaded}, IsPlaying={scrolls[0].IsPlaying}]");
+        }
+        void RecordUnloaded(object sender, RoutedEventArgs args) => reentryEvents.Add($"Unloaded[IsLoaded={row.IsLoaded}, IsPlaying={scrolls[0].IsPlaying}]");
+        row.Loaded += ReenterHoverOnLoaded;
+        row.Unloaded += RecordUnloaded;
+        panel.Children.Remove(row);
+        panel.Children.Add(row);
+        await Wait(() => row.IsLoaded && reentryEvents.Count >= 2);
+        await Task.Delay(100);
+        Check(scrolls[0].IsPlaying && Source(scrolls[0])?.SourceVisual is not null,
+            "shipping row can hover-scroll after same-turn reattachment: " + string.Join(", ", reentryEvents));
+        row.Loaded -= ReenterHoverOnLoaded;
+        row.Unloaded -= RecordUnloaded;
         foreach (var scroll in scrolls) entered.Invoke(row, [scroll, null]);
         row.Music = new Music { Id = 10001, Title = "replacement", Author = "artist", Album = "album" };
         Check(scrolls.All(scroll => !scroll.IsPlaying), "shipping recycled-row binding stops every scrolling control");
@@ -46,7 +67,7 @@ internal sealed partial class RegressionApplication
         row.Unloaded += (_, _) => unloaded.TrySetResult();
         panel.Children.Remove(row);
         await unloaded.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Check(scrolls.All(scroll => !scroll.IsPlaying && Source(scroll).SourceVisual is null), "shipping row unload clears hover state and composition sources");
+        Check(scrolls.All(scroll => !scroll.IsPlaying && Source(scroll)?.SourceVisual is null), "shipping row unload clears hover state and composition sources");
         panel.Children.Add(row);
         await Wait(() => row.IsLoaded);
         Check(((TextBlock)scrolls[0].Child!).Text == "replacement" && scrolls.All(scroll => !scroll.IsPlaying),

@@ -1,36 +1,34 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.ComponentModel;
 using Windows.ApplicationModel.DataTransfer;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
-using static WinUIMusicPlayer.Utils.ToolUtils;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace WinUIMusicPlayer.View
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
+    internal interface ILibraryTab
+    {
+        void Activate();
+        void Deactivate();
+    }
+
+    /// <summary>曲库页签宿主。页签视图按需创建，并在当前曲库实例内复用。</summary>
     public sealed partial class MusicBrowsePage : Page
     {
+        private bool _active;
+        private bool _navigatedAway;
+
         public MusicBrowseViewModel ViewModel { get; }
 
-        // x:Bind 函数绑定用：空库占位可见时隐藏内容 Frame（空子页可能残留表头/滚动条）
+        internal Page? ActiveTabPage => _active ? TabPresenter.Content as Page : null;
+
+        // 空库占位覆盖整个内容区；收藏在仍有曲目时继续显示。
         public static Visibility GetEmptyVisibility(Visibility libraryEmpty, string tab, int favoriteCount) =>
             tab == "favourite" && favoriteCount > 0 ? Visibility.Collapsed : libraryEmpty;
 
@@ -39,98 +37,109 @@ namespace WinUIMusicPlayer.View
 
         public MusicBrowsePage()
         {
-            InitializeComponent();
             ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
-            DataContext = this;
-            Focus(FocusState.Programmatic);
+            InitializeComponent();
             Loaded += OnPageLoaded;
+            Unloaded += OnPageUnloaded;
             NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            RestoreSubPageState();
+            _navigatedAway = false;
+            ActivateView();
         }
 
-        private void RestoreSubPageState()
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            // 外层 Frame 返回时，内层页面仍是 Content，不会再触发 OnNavigatedTo。
-            var app = ViewModel.AppViewModel;
-            switch (ContentFrame.Content)
-            {
-                case AlbumPage page:
-                    AppData.CurrentPage = typeof(AlbumPage);
-                    page.ViewModel.ReceiveNavigation();
-                    break;
-                case ArtistPage page:
-                    AppData.CurrentPage = typeof(ArtistPage);
-                    page.ViewModel.ReceiveNavigation();
-                    break;
-                case SongListPage page:
-                    AppData.CurrentPage = typeof(SongListPage);
-                    app.PageType = "song";
-                    page.ViewModel.ReceiveNavigation();
-                    break;
-                case FavouritePlayListPage page:
-                    AppData.CurrentPage = typeof(FavouritePlayListPage);
-                    app.PageType = "favourite";
-                    page.ViewModel.ReceiveNavigation();
-                    break;
-                default:
-                    return;
-            }
-            app.RefreshDataSource();
+            _navigatedAway = true;
+            DeactivateView();
+            base.OnNavigatedFrom(e);
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            var valid = new[] { "song", "album", "artist", "favourite" };
-            var saved = ViewModel.AppViewModel.DefaultPlayListComboBoxTag;
-            if (!valid.Contains(saved))
-            {
-                ViewModel.AppViewModel.DefaultPlayListComboBoxTag = "song";
-            }
-            if (ContentFrame.Content is null)
-            {
-                SelectBarItem(string.IsNullOrEmpty(ViewModel.SelectedPageTag)
-                    ? ViewModel.AppViewModel.DefaultPlayListComboBoxTag : ViewModel.SelectedPageTag);
-            }
-            Loaded -= OnPageLoaded;
+            if (!_navigatedAway) ActivateView();
         }
 
-        public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
+        private void OnPageUnloaded(object sender, RoutedEventArgs e)
         {
-            ContentFrame.Navigate(pageType, parameter, navigationTransitionInfo ?? new EntranceNavigationTransitionInfo());
+            if (!IsLoaded) DeactivateView();
         }
 
-        private bool _syncingSelectorBar;
+        private void ActivateView()
+        {
+            if (_active) return;
+            ViewModel.InitializeSelectedPage();
+            _active = true;
+            ViewModel.PropertyChanged += OnBrowsePropertyChanged;
+            ShowSelectedTab();
+            Bindings.Initialize();
+        }
+
+        private void DeactivateView()
+        {
+            if (!_active) return;
+            if (ActiveTabPage is ILibraryTab tab) tab.Deactivate();
+            _active = false;
+            ViewModel.PropertyChanged -= OnBrowsePropertyChanged;
+            Bindings.StopTracking();
+        }
+
+        private void OnBrowsePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModel.SelectedPageTag)) ShowSelectedTab();
+        }
+
+        private void ShowSelectedTab()
+        {
+            var tag = ViewModel.SelectedPageTag;
+            var selected = tag switch
+            {
+                "album" => AlbumTab,
+                "artist" => ArtistTab,
+                "favourite" => FavouriteTab,
+                _ => SongTab
+            };
+            // SwitchPresenter snapshots Case.Content when Value changes. Populate each case
+            // on its first visit so it attaches only the selected page and reuses that page later.
+            var page = (Page)(selected.Content ??= tag switch
+            {
+                "album" => new AlbumPage(),
+                "artist" => new ArtistPage(),
+                "favourite" => new FavouritePlayListPage(),
+                _ => new SongListPage()
+            });
+
+            if (ActiveTabPage is ILibraryTab previous && !ReferenceEquals(previous, page))
+                previous.Deactivate();
+
+            AppData.CurrentPage = page.GetType();
+            if (tag is "song" or "favourite")
+                ViewModel.AppViewModel.PageType = tag;
+            ((ILibraryTab)page).Activate();
+            TabPresenter.Value = tag;
+            ViewModel.AppViewModel.RefreshDataSource();
+        }
 
         private void SelectPage_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
-            if (_syncingSelectorBar || sender.SelectedItem is not SelectorBarItem item) return;
-            ViewModel.SelectedPageTag = item.Tag?.ToString() ?? string.Empty;
+            if (sender.SelectedItem?.Tag is string tag)
+                SelectBarItem(tag);
         }
 
         public SelectorBarItem? SelectorItem(string tag)
         {
             foreach (var item in selectPage.Items)
-                if (item.Tag?.ToString() == tag) return item;
+                if (Equals(item.Tag, tag)) return item;
             return null;
         }
 
         public void SelectBarItem(string name)
         {
-            if (SelectorItem(name) is not { } item) return;
-            _syncingSelectorBar = true;
-            try
-            {
-                selectPage.SelectedItem = item;
+            if (MusicBrowseViewModel.IsLibraryTab(name))
                 ViewModel.SelectedPageTag = name;
-                // 新视图可能沿用同一个页签，此时不会触发属性变更通知。
-                if (ContentFrame.Content is null) ViewModel.NavigateSelectedPage();
-            }
-            finally { _syncingSelectorBar = false; }
         }
 
         // USB 设备选择由 ComboBox SelectedItem 双向绑定 UsbDeviceService.SelectedDevice 完成，
@@ -183,7 +192,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.AppViewModel.PageType = "album";
             ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.FindFirstByAlbum(Album);
-            if (ContentFrame?.Content is AlbumPage albumPage)
+            if (ActiveTabPage is AlbumPage albumPage)
             {
                 albumPage.EnterDetailFromCrossLink();
             }
@@ -197,7 +206,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.AppViewModel.PageType = "artist";
             ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.FindFirstByArtist(artist);
-            if (ContentFrame?.Content is ArtistPage artistPage)
+            if (ActiveTabPage is ArtistPage artistPage)
             {
                 artistPage.EnterDetailFromCrossLink();
             }
@@ -209,12 +218,12 @@ namespace WinUIMusicPlayer.View
 
         public void BackButton()
         {
-            if (ContentFrame.Content is AlbumPage albumPage && albumPage.ViewModel.IsInDetailMode)
+            if (ActiveTabPage is AlbumPage albumPage && albumPage.ViewModel.IsInDetailMode)
             {
                 albumPage.CollapseDetail();
                 return;
             }
-            if (ContentFrame.Content is ArtistPage artistPage && artistPage.ViewModel.IsInDetailMode)
+            if (ActiveTabPage is ArtistPage artistPage && artistPage.ViewModel.IsInDetailMode)
             {
                 artistPage.CollapseDetail();
                 return;

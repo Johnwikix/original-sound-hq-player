@@ -2,14 +2,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.View.Controls;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -20,7 +18,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SongListPage : Page, INavigatable
+    public sealed partial class SongListPage : Page, ILibraryTab
     {
         public SongListViewModel ViewModel { get; }
         private readonly ListViewCentering _centering;
@@ -32,30 +30,21 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SongListViewModel>();
             DataContext = this;
-            NavigationCacheMode = NavigationCacheMode.Enabled;
             _centering = new ListViewCentering(MusicListView);
             _playbackSelection = new PlaybackSelectionTracker(MusicListView, ViewModel.AppViewModel);
-            Unloaded += OnUnloaded;
         }
 
-        public void ReceiveNavigationParameter(object parameter)
+        void ILibraryTab.Activate()
         {
             ViewModel.ReceiveNavigation();
+            Bindings.Initialize();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
-        }
-
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        void ILibraryTab.Deactivate()
         {
             _centering.Cancel();
-            base.OnNavigatedFrom(e);
+            Bindings.StopTracking();
         }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e) => _centering.Cancel();
 
         private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
             => await _centering.LocateAsync(ViewModel.LocateCurrentTrack());

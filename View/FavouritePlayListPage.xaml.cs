@@ -2,14 +2,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Navigation;
 using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.View.Controls;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -20,7 +18,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class FavouritePlayListPage : Page, INavigatable
+    public sealed partial class FavouritePlayListPage : Page, ILibraryTab
     {
         public FavouritePlayListViewModel ViewModel { get; }
         private readonly ListViewCentering _centering;
@@ -33,10 +31,8 @@ namespace WinUIMusicPlayer.View
             ViewModel = App.Services.GetRequiredService<FavouritePlayListViewModel>();
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            NavigationCacheMode = NavigationCacheMode.Enabled;
             _centering = new ListViewCentering(MusicListView);
             _playbackSelection = new PlaybackSelectionTracker(MusicListView, ViewModel.AppViewModel);
-            Unloaded += OnUnloaded;
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
@@ -44,26 +40,19 @@ namespace WinUIMusicPlayer.View
             await ViewModel.DragItems();
         }
 
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            _centering.Cancel();
-            base.OnNavigatedFrom(e);
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e) => _centering.Cancel();
-
         private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)
             => await _centering.LocateAsync(ViewModel.LocateCurrentTrack());
 
-        public void ReceiveNavigationParameter(object parameter)
+        void ILibraryTab.Activate()
         {
             ViewModel.ReceiveNavigation();
+            Bindings.Initialize();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        void ILibraryTab.Deactivate()
         {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
+            _centering.Cancel();
+            Bindings.StopTracking();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
