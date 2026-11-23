@@ -308,7 +308,26 @@ static async Task CheckDirectoryCoverAsync(string fixtures, string jpeg, string 
         byte[] Embedded(WinUIMusicPlayer.Model.Music _) { Interlocked.Increment(ref opens); return []; }
         var reads = await Task.WhenAll(Enumerable.Range(0, 9).Select(_ =>
             WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, stamp, Embedded, default)));
-        Check(opens == 1 && reads.All(b => b.AsSpan().SequenceEqual(File.ReadAllBytes(jpeg))), "Nine CUE tracks share one read of the front cover");
+        Check(opens == 0 && reads.All(b => b.AsSpan().SequenceEqual(File.ReadAllBytes(jpeg))),
+            "Missing CUE image bypasses embedded parsing and retains the directory cover");
+        byte[] absent = await WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, "", Embedded, default);
+        Check(absent.Length == 0 && opens == 0, "No directory art reports empty to the caller so its fallback can run");
+        // Restoration uses a fresh existence check even when the surrounding directory revision stays unchanged.
+        File.WriteAllBytes(music.Path, [1]);
+        // Windows treats a zero FILETIME on SetFileTime as a request to leave the timestamp unchanged.
+        // Give the absent cache entry the restored file's metadata to exercise an equal-timestamp collision.
+        const System.Reflection.BindingFlags slotFlags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+        var coverSlot = typeof(WinUIMusicPlayer.Utils.LocalCoverSource).GetMethod("SlotFor", slotFlags)!.Invoke(null, [music.Path])!;
+        coverSlot.GetType().GetField("AudioTime", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .SetValue(coverSlot, File.GetLastWriteTimeUtc(music.Path));
+        var restoredReads = await Task.WhenAll(Enumerable.Range(0, 9).Select(_ =>
+            WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, stamp, Embedded, default)));
+        byte[] restored = restoredReads[0];
+        Check(opens == 1 && restored.AsSpan().SequenceEqual(File.ReadAllBytes(jpeg)) &&
+            restoredReads.All(result => ReferenceEquals(restored, result)),
+            "Nine consumers share the restored audio's embedded attempt and directory cover");
+        var restoredAgain = await WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, stamp, Embedded, default);
+        Check(opens == 1 && ReferenceEquals(restored, restoredAgain), "Existing tracks share successful artwork");
         var time = File.GetLastWriteTimeUtc(cover);
         File.WriteAllBytes(cover, new byte[new FileInfo(cover).Length]);
         File.SetLastWriteTimeUtc(cover, time);
@@ -316,6 +335,7 @@ static async Task CheckDirectoryCoverAsync(string fixtures, string jpeg, string 
         Check(replaced != stamp, "Equal-size replacement with preserved timestamp invalidates artwork");
         var fallback = await WinUIMusicPlayer.Utils.LocalCoverSource.ReadAsync(music, replaced, Embedded, default);
         Check(fallback.AsSpan().SequenceEqual(File.ReadAllBytes(png)), "Damaged front cover falls back to folder.png");
+        Console.WriteLine("PASS: missing audio bypasses embedded parsing, restores artwork, and preserves directory fallback");
     }
     finally { Directory.Delete(dir, true); }
 }

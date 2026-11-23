@@ -132,7 +132,7 @@ internal static class ViewportTransformChecks
                         if (full[index].A > feather[index].A) changed++;
                     }
                 }
-                Check(changed > 0, "The 16 DIP feather must dim the selected visible edge.");
+                Check(changed > 0, "The feather must dim the selected visible edge.");
             }
 
             void CheckFanHit(int fan, bool withPerspective = false)

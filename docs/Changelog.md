@@ -1,3 +1,15 @@
+## 2026-11-23 缺失音频的封面回退
+
+- `Utils/LocalCoverSource.cs` 跳过缺失音频的内嵌封面解析，继续查找目录封面并保留网络回退。音频恢复后可重新读取内嵌封面。
+
+## 2026-11-23 缩小曲库歌曲列表的屏外缓冲
+
+- `View/SongListPage.xaml`、`View/FavouritePlayListPage.xaml`、`View/Controls/PlaylistDetailControl.xaml`、`View/Controls/MusicGroupDetailControl.xaml` 将歌曲列表的屏外缓冲设为每侧一屏，减少预先创建的歌曲行和封面控件。
+
+## 2026-11-23 调整播放页歌词边缘柔化
+
+- `External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/LyricsRenderCoordinator.cs` 根据歌词视口高度调整上下边缘的淡出宽度，并使用平滑渐变。中央歌词继续完整显示，边缘柔化开关沿用原有设置。
+
 ## 2026-11-23 曲库页签切换
 
 - `View/MusicBrowsePage/MusicBrowsePage.xaml` 中的曲库歌曲、专辑、艺术家和收藏页签使用 SwitchPresenter 与 PopupThemeTransition。首次打开时创建各页，之后复用已有视图，离开时停止页签绑定并取消临时交互。曲库 WinUI 回归通过 97 项检查。

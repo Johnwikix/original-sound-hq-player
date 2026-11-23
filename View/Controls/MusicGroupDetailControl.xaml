@@ -168,6 +168,11 @@
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
             SelectionMode="Extended">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel CacheLength="2" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
                     <local:MusicListRowControl ShowTrackNumbers="True" Music="{x:Bind Mode=OneWay}" SongInvoked="MusicRow_SongInvoked" ArtistInvoked="MusicRow_ArtistInvoked" AlbumInvoked="MusicRow_AlbumInvoked" />

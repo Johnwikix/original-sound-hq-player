@@ -167,6 +167,11 @@
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
             SelectionMode="Extended">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel CacheLength="2" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:PlayListMusicItem">
                     <local:MusicListRowControl Music="{x:Bind Music, Mode=OneWay}" RowPlayCommand="{x:Bind PlayCommand}" RowPlayParameter="{x:Bind}" SongInvoked="MusicRow_SongInvoked" ArtistInvoked="MusicRow_ArtistInvoked" AlbumInvoked="MusicRow_AlbumInvoked" />

@@ -960,12 +960,23 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 if (_edgeFadeBounds != bounds)
                 {
-                    float stop = Math.Min(0.5f, 16f / (float)bounds.Height);
+                    // Scale the fade with the visible lyric area, leaving the center at full opacity.
+                    float height = (float)bounds.Height;
+                    float edge = Math.Min(0.25f, Math.Clamp(height * 0.18f, 16f, 160f) / height);
+                    var quarter = Color.FromArgb(40, 255, 255, 255);
+                    var half = Color.FromArgb(128, 255, 255, 255);
+                    var threeQuarters = Color.FromArgb(215, 255, 255, 255);
                     CanvasGradientStop[] stops =
                     [
                         new() { Color = Colors.Transparent },
-                        new() { Position = stop, Color = Colors.White },
-                        new() { Position = 1 - stop, Color = Colors.White },
+                        new() { Position = edge * 0.25f, Color = quarter },
+                        new() { Position = edge * 0.5f, Color = half },
+                        new() { Position = edge * 0.75f, Color = threeQuarters },
+                        new() { Position = edge, Color = Colors.White },
+                        new() { Position = 1 - edge, Color = Colors.White },
+                        new() { Position = 1 - edge * 0.75f, Color = threeQuarters },
+                        new() { Position = 1 - edge * 0.5f, Color = half },
+                        new() { Position = 1 - edge * 0.25f, Color = quarter },
                         new() { Position = 1, Color = Colors.Transparent }
                     ];
                     _edgeFadeMask.Update(sender, bounds, stops, true);

@@ -134,6 +134,74 @@ B 的 ETL 为 6,067,060,736 字节、58.91 秒，采集和解析无丢失。相�
 
 D 的 ETL 为 6,023,020,544 字节、49.32 秒，xperf 和两遍解析均无丢失。相同默认堆批次为 68,540,765 B，第 4 轮歌曲页剩 4,330,146 B，末端剩 2,589,774 B（3.78%）。DirectWrite 从 38,149,077 B 降为 57,768 B，其中 99.85% 有匹配的 Free。末端以 XAML 1,488,936 B、dwmcorei 402,512 B 和 marshal 383,096 B 为主。B 的合成通道句柄表扩容栈在 D 中仍有 329,856 B，收藏区间的 19,200 B SurfaceBrush 分配也仍在。D 的默认堆枚举忙字节低于两次 A，ETW 中这一批的末端在途字节高于 A 的同口径样本。采集范围涵盖默认堆，GPU 资源和采集前出生的块须另行测量。
 
+## 37c5a649 续测与修正
+
+**分配器范围。** 本机已安装播放器进程（PID 13216）用真实 MSIX 包身份启动，PEB 默认堆签名 ddeeddee 确认使用 Segment Heap。检查了嵌入 EXE 的清单，其中未显式设置 heapType。上文和本节的未打包旧诊断进程使用 NT Heap，其默认堆容量增长归于该运行环境。为对应已安装包的分配器，另用同型 Segment Heap 比较修前和修后的诊断发布。
+
+在修前的同一诊断应用上，仅改变独立副本 EXE 的堆类型并使用相同实体 Unique 曲库。12 轮从 NT Heap 再到 Segment Heap，两个末轮 Private Bytes 为 521.59 与 458.81 MiB。另按反序各跑 8 轮，Segment Heap 与 NT Heap 末轮分别为 445.84 与 490.29 MiB。进程的实际堆签名均已核对，数据见 `artifacts/navigation-release-20261123/segment-heap-ab/summary.json`。
+
+### 长跑与路线隔离
+
+预设接近收敛的条件是取长跑末尾两个相邻且不重叠的 12 轮窗口。每个窗口在同一歌曲页采样的 Private Bytes 最小二乘斜率须 ≤0.5 MiB/轮，末 3 个样本的中位数减初 3 个样本的中位数须 ≤8 MiB，同时观察 GC 后存活量及默认堆忙块有无持续同步上涨。结果须在另一个进程复现。
+
+96 轮混合轻量探针在第 24、48、72、96 轮回到歌曲页时的 Private Bytes 依次为 552.72、597.52、633.09、653.62 MiB。第 72 至 96 轮增加 20.53 MiB，默认堆提交增加 19.41 MiB（357.38 到 376.79 MiB），枚举忙块减少 1.88 MiB（227.46 到 225.58 MiB）。与托管堆提交量匹配的 Satori 私有区在这两个端点均为 158.14 MiB。就这两个端点而言，晚段变化集中在默认堆的已提交容量。轻量模式不在每个动作后枚举完整视觉树，仍观察到了增长。该次样本的曲库有 6,600 条记录，只有用于播放验证的 WAV 有实际文件，另外 6,599 条 FLAC 路径不存在。该次最后两窗（第 73–84 与第 85–96 轮）斜率分别为 1.00 和 0.72 MiB/轮，首尾三点中位数差为 9.02 和 6.50 MiB。原始记录见 `artifacts/navigation-release-20261123/library-switch-final-reload/publish-ab/isolated-run/d-long96-light`。
+
+设置独立路线第 1、12、24 轮为 316.19、354.74、364.04 MiB，六个设置分区持续复用。旧夹具在终点固定期待八个页面，设置单路线只产生三个见证，因此这一轮只采用终点诊断前的轮末样本。修正诊断夹具后，专辑和艺术家路线 16 轮完整通过，Private Bytes 为 264.32、290.32、297.13 MiB（第 1、12、16 轮），歌曲页的行控件构造计数始终是 51。
+
+独立实体基线（PID 28620，`artifacts/navigation-release-20261123/library-long-baseline-20261123/publish-physical/isolated-run/base72-physical`）完整通过 72 轮。第 24、48、72 轮 Private Bytes 为 543.88、595.96、636.49 MiB，诊断 GC 后再等 8 秒为 637.73 MiB。第 49–60 与第 61–72 轮的斜率分别为 1.24 和 1.91 MiB/轮，首尾三点中位数差为 10.08 和 17.82 MiB。第 48 至 72 轮默认堆提交由 346.00 增到 364.20 MiB，忙块由 222.17 增到 227.14 MiB。实体文件消除了缺文件异常的额外影响，NT Heap 的晚段增长仍可复现。
+
+早期优化候选在相同实体曲库及 NT Heap 环境跑完 72 轮（PID 9212，`artifacts/navigation-release-20261123/library-long-candidate-20261123/publish-candidate/isolated-run/c0-physical72-light`）。第 24、48、72 轮 Private Bytes 为 474.96、511.96、550.11 MiB，GC 后再等 8 秒为 550.70 MiB。默认堆末端提交为 305.25 MiB，忙块为 189.57 MiB。末两窗斜率分别为 2.81 和 0.66 MiB/轮，首尾三点中位数差分别为 30.48 和 6.42 MiB，低水位和接近收敛条件在这里给出不同判断。
+
+在同一裁剪诊断二进制和实体 Unique 数据上另跑两次各 16 轮。简化组从第 3 轮起省去夹具额外的歌单进入编辑态、选择和两次主动刷新，继续核对歌单详情列表、数量和首尾对应。简化组（PID 1208）与完整组（PID 29992）的第 16 轮 Private Bytes 为 460.91、461.88 MiB，后 8 轮斜率为 2.40、2.28 MiB/轮。在这次对照中两条路线的增长接近，原始记录在 `artifacts/navigation-release-20261123/continued-route-probe/publish-browse-witness/isolated-run` 下的 unique-browse16、unique-edits16。
+
+### 歌曲列表屏外缓冲
+
+歌曲、收藏、歌单详情和分组详情的歌曲列表保留 ItemsStackPanel，CacheLength 从默认 4 改为 2。WinUI 将这项设置以可视区长度分配到两侧，2 对应每侧一屏。 [ItemsStackPanel.CacheLength](https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.itemsstackpanel.cachelength)
+
+同一裁剪诊断二进制在创建窗口前只改 CacheLength，缺失文件的合成曲库各跑 16 轮。歌曲页实测容器数从 50 减至 30，全部歌曲列表累计行控件构造数从 161 减至 107，两组从第 2 轮结束起均稳定。诊断 GC 后再等 8 秒，Private Bytes 为 524.12 和 480.95 MiB，默认堆提交为 303.98 和 264.27 MiB，枚举忙块为 219.07 和 184.79 MiB。两组从第 1 到 16 轮的 Private Bytes 增量分别为 103.82 和 104.48 MiB，该对照观察到更低的内存高水位。
+
+补做实际音频的短对照，使用与真实建库一致的 FLAC 和 WAV 扩展字段。2,199 首 FLAC 无图，4,400 首 FLAC 含封面，封面在四份样图间复用，另有 1 首 WAV。各跑 12 轮，歌曲页照样由 50 减至 30 个容器，累计歌曲行从 161 减至 107。CacheLength 4（PID 12192）与 2（PID 27180）末端 Private Bytes 为 527.91 和 464.95 MiB，默认堆提交为 298.64 和 253.09 MiB，默认堆忙块为 220.47 和 193.07 MiB。两臂内的专辑/艺术家卡片累计构造数、目录行视觉重置计数均在第 3 轮起保持稳定。样本目录位于 `artifacts/navigation-release-20261123/continued-route-probe/publish-canonical/isolated-run` 下面，名称为 canonical-cache4-12 和 canonical-cache2-12，两边均有 measurements.csv、constructions.csv 和末端堆快照。
+
+独立 WinUI 2.7 夹具用原生列表重复交错测试 4、2 和 1。CacheLength 4 与 2 时顶部/中段容器数分别为 32/32 和 19/21。全部 90 次快速跳滚和 503 次布局采样可见区均完整，定位误差约 0.01 DIP，返回滚动锚点误差为 0 DIP，页签焦点保持。使用 2 的定位时长与 4 相近，1 的一个样本更慢。
+
+### 专辑与艺术家面板的诊断对照
+
+只在诊断副本缩小两个分组 GridView 的屏外缓冲。原生面板为水平 ItemsWrapGrid。两个版本的专辑与艺术家各有 330 张卡，保持原分组、面板方向和项目模板，歌曲缓冲固定为 2。实体 Unique 数据的专辑与艺术家独立路线各跑 10 轮，默认 4（PID 21512）与候选 2（PID 11092）分别保留每页 56 与 36 个容器，两边的卡片构造数都在预热后保持稳定。诊断 GC 后再等 8 秒，Private Bytes 为 252.21 与 242.88 MiB，默认堆提交为 103.45 与 93.82 MiB，忙块为 74.96 与 69.23 MiB。第 4 至 10 轮累计托管分配斜率由 4.67 降至 3.25 MiB/轮，Private Bytes 斜率两组均约为 1.15 MiB/轮。结果来自 NT Heap，支持这条短路线的开销下降。原始数据在 `artifacts/navigation-release-20261123/continued-route-probe/publish-group-panels/isolated-run` 的 group-cache4-10 和 group-cache2-10。
+
+另用 26 个字母分组检查实际交互。两组的专辑和艺术家各完成 5 次快速跳转，每次均看到目标卡片。详情返回后的锚点均为 9242.67 DIP。直接切换原生语义缩放后，两组均回到 0 DIP，随后可重新定位到目标。输出见 `continued-route-probe/publish-group-witness/isolated-run` 的 group-letters4、group-letters2 启动日志。
+
+### 缺失音频的封面回退
+
+旧缺文件夹具在第 12 轮结束后采集了 25 秒（PID 30896）。380 个带堆栈的 GCAllocationTick 共加权 53,733,192 B，封面路径占 71.7%，其中 ATL 嵌图解析 21,361,856 B，异常格式化 11,630,296 B。原始跟踪位于 `artifacts/navigation-release-20261123/library-long-baseline-20261123/publish-long/isolated-run/base72-checked/gc-short.nettrace`，归类见 `artifacts/library-allocation-attribution/baseline.json`。这些数字来自托管分配采样。
+
+缺失本地音频现在跳过嵌图解析，目录封面与远程回退仍可工作。`_tools/SmtcCoverRegression` 的 12 项验证通过，覆盖缺文件时零嵌图调用、目录图、恢复文件及保留有效已有结果。实体长跑仍按独立数据评估。
+
+### 同安装版堆类型的长跑
+
+独立诊断发布使用与已安装版相同的 Segment Heap。修前基线（PID 28440）以 Unique 实体曲库跑完 96 轮。第 24、48、72、96 轮同歌曲页的 Private Bytes 分别为 473.77、493.80、510.17 和 518.03 MiB，诊断 GC 后再等 8 秒为 513.97 MiB。第 73–84 轮和第 85–96 轮的斜率为 0.242 和 0.234 MiB/轮，三点中位数差为 3.45 和 2.73 MiB。该进程的 Private Bytes 已满足两窗门槛。原始数据见 `artifacts/navigation-release-20261123/segment-heap-ab/publish-segment/isolated-run/segment-base96`，堆类型见 heap-backend.txt。
+
+最终源码候选 C1 在两个独立进程跑相同的 96 轮。歌曲页始终为 30 个容器。数据在 `artifacts/navigation-release-20261123/l1/segment/isolated-run` 下的 c1-segment96-a2、c1-segment96-b2，实际堆类型记录在各自 heap-backend.json。
+
+| C1 进程 | 第 24 轮 | 第 48 轮 | 第 72 轮 | 第 96 轮 | GC 后再等 8 秒 | 第 73–84 轮斜率/中位数差 | 第 85–96 轮斜率/中位数差 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| PID 9616 | 425.37 | 439.66 | 453.40 | 469.42 | 470.19 | 1.306 / 12.39 | 0.108 / 1.80 |
+| PID 28448 | 425.60 | 440.16 | 456.05 | 467.28 | 455.92 | 0.307 / 1.76 | 0.166 / 2.50 |
+
+内存与中位数差为 MiB，斜率为 MiB/轮。两次的第 96 轮均比同堆类型的修前基线低约 49–51 MiB。第 72 至 96 轮默认堆忙块分别为 183.21 到 183.95 MiB、181.42 到 181.10 MiB。GC 后的托管存活估计为 32.91 和 32.28 MiB。PID 28448 通过两窗门槛，PID 9616 通过最后一窗，96 轮的接近收敛结果尚未独立复现。
+
+全新目录的 Release x64 裁剪 MSIX 已解包验证，确认歌曲列表面板、封面回退和歌词渐变代码均保留。正式包位于 `artifacts/navigation-release-20261123/library-long-official-20261123/msix/WinUIMusicPlayer_1.3.3.0_x64_Test/WinUIMusicPlayer_1.3.3.0_x64.msix`，SHA-256 为 `DB94221B36EC7A9637E303A12ABF62BD04F89FB060887D600B59D76158C3F3A0`。正式 EXE 清单沿用 MSIX 的堆选择。
+
+### 从本轮隔离产物复跑
+
+工作区中的 `artifacts/navigation-release-20261123/library-long-baseline-20261123` 保存基线来源副本、`Run.ps1`、已裁剪的 `publish-physical` 和 `fixture`。实体长跑使用 2,199 首无图 FLAC、4,400 首带图 FLAC 和 1 首 WAV。220 个有图专辑各有独立封面，同一专辑的 20 首共享该图。实体音频由 `Install-PhysicalFixture.ps1` 放入本次独立目录，扩展字段使用正常建库的 FLAC 和 WAV 写法。长跑脚本的采样包含 `measurements.csv`、`phase-telemetry.csv`、每阶段的 `*-heaps.csv` 和 `*-vm.csv`。
+
+在仓库根目录对基线产物执行以下命令，使用从未运行过的名称。脚本启动后台私有桌面，曲库、日志、用户目录重定向与缓存均指向这次运行的 `isolated-run` 子目录。超过 1,536 MiB 时脚本结束自己的进程，并保留已采样数据。
+
+```powershell
+$probe = Join-Path $PWD 'artifacts/navigation-release-20261123/library-long-baseline-20261123'
+& "$probe/Run.ps1" -Publication publish-physical -Name verify-unique72 -Rows 6600 -Cycles 72 -Route full -NoAudio -Light -Telemetry -FixtureMode Unique -PrivateLimitMiB 1536
+```
+
 ## 从干净检出复跑
 
 在独立 Windows 账户或虚拟机运行。使用固定的 6,600 首无个人内容的测试曲库，全程不点击播放。准备一个独立目录和一份含 500 首的歌单，保存测试曲库以便两个进程从相同初始数据启动。记录 Windows 版本、.NET SDK、两份 WinUI DLL 的版本和 SHA-256、窗口尺寸、系统动画状态、数据分组数及采集配置。

@@ -14,6 +14,7 @@ internal static class LocalCoverSource
     private static readonly string[] Names =
         ["cover.jpg", "cover.jpeg", "cover.png", "folder.jpg", "folder.jpeg", "folder.png", "front.jpg", "front.jpeg", "front.png"];
     private const int ByteLimit = 16 * 1024 * 1024;
+    private static readonly DateTime MissingFileTimeUtc = DateTime.FromFileTimeUtc(0);
     private sealed record Snapshot(string Directory, string Metadata, string Revision, long Checked);
     private sealed class Slot
     {
@@ -22,6 +23,7 @@ internal static class LocalCoverSource
         internal string? AudioPath;
         internal string? Revision;
         internal DateTime AudioTime;
+        internal bool AudioExists;
         internal WeakReference<byte[]>? Picture;
     }
 
@@ -106,9 +108,11 @@ internal static class LocalCoverSource
         try
         {
             var audioTime = File.GetLastWriteTimeUtc(music.Path);
-            if (slot.AudioPath == music.Path && slot.AudioTime == audioTime && slot.Revision == revision
-                && slot.Picture is not null && slot.Picture.TryGetTarget(out var cached)) return cached;
-            byte[] bytes = embedded(music);
+            bool audioExists = audioTime != MissingFileTimeUtc || File.Exists(music.Path);
+            if (slot.AudioPath == music.Path && slot.AudioTime == audioTime && slot.AudioExists == audioExists
+                && slot.Revision == revision && slot.Picture is not null && slot.Picture.TryGetTarget(out var cached)) return cached;
+            // Skip the embedded parser when the source is unavailable, while still looking for directory art.
+            byte[] bytes = audioExists ? embedded(music) : [];
             if (bytes.Length == 0 && revision.Length != 0 && Path.GetDirectoryName(music.Path) is { } directory)
             {
                 foreach (string name in Names)
@@ -138,10 +142,15 @@ internal static class LocalCoverSource
                     }
                 }
             }
-            slot.AudioPath = music.Path;
-            slot.AudioTime = audioTime;
-            slot.Revision = revision;
-            slot.Picture = new(bytes);
+            // An unavailable file can reappear without a new library publication.
+            if (audioExists || bytes.Length > 0)
+            {
+                slot.AudioPath = music.Path;
+                slot.AudioTime = audioTime;
+                slot.AudioExists = audioExists;
+                slot.Revision = revision;
+                slot.Picture = new(bytes);
+            }
             return bytes;
         }
         finally { slot.Reader.Release(); }
