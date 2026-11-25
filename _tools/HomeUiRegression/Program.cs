@@ -17,6 +17,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Graphics.Imaging;
 using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Model.Recommendations;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.Recommendations;
 using WinUIMusicPlayer.View;
@@ -113,6 +114,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "native-diagnostics.log"), "");
             Resources.MergedDictionaries.Add(new XamlControlsResources());
             Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Style/BtnStyle.xaml") });
+            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Themes/Generic.xaml") });
             await database.CreateTableAsync<PlayListMusic>();
             await database.ExecuteAsync("CREATE TABLE PlayList(Id INTEGER PRIMARY KEY)");
             await database.ExecuteAsync("CREATE TABLE PlaybackHistory (MusicId INTEGER, StartedAt INTEGER, TotalDurationMs REAL, DurationPlayedMs REAL)");
@@ -211,6 +213,26 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 "first imported batch replaces empty state before overall scanning completes");
             Check(home.Familiar.Count == 10 && ReferenceEquals(home.Songs[0].Music, app.FindById(home.Songs[0].Music.Id)),
                 "real SQLite history and canonical music objects reach the shipping page");
+            if (Environment.GetCommandLineArgs().Contains("--recommendation-snapshot"))
+            {
+                var initialSnapshot = Field<RecommendationTrack[]>(home, "_snapshot");
+                home.Deactivate();
+                Check(initialSnapshot.Length == songs.Count && ReferenceEquals(initialSnapshot, Field<RecommendationTrack[]>(home, "_snapshot")),
+                    "a brief departure retains the current recommendation snapshot");
+
+                app.Replace(songs.GetRange(0, songs.Count - 1));
+                Check(Field<RecommendationTrack[]>(home, "_snapshot").Length == 0,
+                    "a hidden Home page immediately drops its invalid recommendation snapshot");
+                await Task.Delay(150);
+                Check(Field<RecommendationTrack[]>(home, "_snapshot").Length == 0,
+                    "a hidden Home page leaves the next recommendation snapshot unbuilt");
+
+                home.Activate(page.DispatcherQueue);
+                await Wait(() => Field<RecommendationTrack[]>(home, "_snapshot").Length == songs.Count - 1);
+                Check(!offThread, "Home rebuilds for the replacement library on reentry with UI-thread notifications");
+                File.WriteAllText(_resultPath, string.Join(Environment.NewLine, _results));
+                return;
+            }
             Check(!home.PlaySongCommand.CanExecute(home.Songs[0]), "play remains guarded until engine and lifecycle are ready");
             app.State.Lifecycle.TransitionTo(AppPhase.Initializing);
             app.State.Lifecycle.TransitionTo(AppPhase.Ready);

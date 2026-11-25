@@ -14,6 +14,9 @@ public sealed class LibraryViewState : ObservableObject
     public CollectionViewSource ArtistPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
     public BulkObservableCollection<Music> ListSongs { get; set => SetProperty(ref field, value); } = [];
     internal bool IsSongListActive { get; set; }
+    internal bool IsAlbumPageActive { get; set; }
+    internal bool IsArtistPageActive { get; set; }
+    internal bool IsFolderPageActive { get; set; }
     public bool IsSongListPreparing { get; internal set => SetProperty(ref field, value); }
     public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
     public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];

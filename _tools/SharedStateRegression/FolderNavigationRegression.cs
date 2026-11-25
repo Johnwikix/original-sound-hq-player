@@ -64,6 +64,24 @@ internal static class FolderNavigationRegression
             viewModel.SelectFolderCommand.Execute(b);
             await WaitForIdleAsync(viewModel);
             Check(viewModel.HasSongs && app.FolderSongs.Single().Id == 2, "Ordinary navigation must still publish folder B.");
+
+            Task withdrawn;
+            await gate.WaitAsync();
+            try
+            {
+                viewModel.SelectFolderCommand.Execute(a);
+                withdrawn = projections.UpdateSongCollectionsAsync(app.FolderSongs, SongViewType.Folder, a.Location.Matches);
+                await Task.Yield();
+                viewModel.Deactivate();
+                app.State.Library.Replace([new Music(3, @"D:\Music\A\replacement.flac") { FolderPath = @"D:\Music\A" }]);
+                projections.ReleaseInactiveBrowseViews();
+            }
+            finally { gate.Release(); }
+            await withdrawn;
+            Check(app.FolderSongs.Count == 0, "A folder query withdrawn on departure must not refill an obsolete snapshot.");
+            await viewModel.ActivateAsync();
+            await WaitForIdleAsync(viewModel);
+            Check(viewModel.HasSongs && app.FolderSongs.Single().Id == 3, "Reopening folders must load the selected directory from the new snapshot.");
             Check(notificationsOnUiThread, "Folder collections and availability notifications must stay on the UI context.");
         }
         finally

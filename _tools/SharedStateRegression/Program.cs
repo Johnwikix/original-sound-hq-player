@@ -466,13 +466,13 @@ static async Task RunAsync()
     await latest;
     Check(list.Count == 2, "Latest pending search must win.");
     library.LibraryViews.IsSongListActive = true;
-    projections.ReleaseInactiveSongList();
+    projections.ReleaseInactiveBrowseViews();
     Check(list.Count == 2, "Snapshot replacement must preserve the displayed list until the active refresh publishes.");
 
     library.Browse.SearchText = "no such song";
     var leavingSongPage = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     library.LibraryViews.IsSongListActive = false;
-    projections.CancelSongListRefresh();
+    projections.CancelSongCollectionRefresh(list);
     library.LibraryViews.IsSongListActive = true;
     library.Browse.SearchText = "";
     var returningToSongPage = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
@@ -490,7 +490,7 @@ static async Task RunAsync()
     var pendingSongList = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     library.LibraryViews.IsSongListActive = false;
     library.Library.Replace([new(8, "replacement.flac")]);
-    projections.ReleaseInactiveSongList();
+    projections.ReleaseInactiveBrowseViews();
     Check(list.Count == 0 && !list.Contains(oldRow), "Hidden song rows must release the replaced snapshot immediately.");
     await pendingSongList;
     Check(list.Count == 0 && !library.LibraryViews.IsSongListPreparing, "A late request must not refill the hidden list.");
@@ -515,6 +515,7 @@ static async Task RunAsync()
     Check(list.Count == 3 && list.All(m => m.IsRemote), "All remote sources excludes local songs.");
     library.Browse.SourceFilterId = -1;
     queries.SetSourceFilter(-1);
+    library.LibraryViews.IsAlbumPageActive = true;
     projections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", library.LibraryViews.AlbumPageSource);
     await Task.Yield();
     var albumGroups = (IEnumerable<MusicGroup>)library.LibraryViews.AlbumPageSource.Source!;
@@ -522,6 +523,26 @@ static async Task RunAsync()
     Check(albumGroups.SelectMany(g => g).Single(m => m.Album == "same album").SourceId == 0,
         "The local copy should represent a mirrored album when all sources are shown.");
     Check(queries.GetAlbumSongCount("same album") == 3, "Album song counts should include tracks from every source.");
+    var albumSongs = library.LibraryViews.AlbumSongs;
+    library.Browse.CurrentAlbumObj = library.Library.Songs[0];
+    await projections.UpdateSongCollectionsAsync(albumSongs, SongViewType.Album, m => m.Album == library.Browse.CurrentAlbumObj?.Album);
+    Check(albumSongs.Count == 3, "Opening album details must publish only its own songs.");
+    library.Browse.CurrentAlbumObj = library.Library.Songs[3];
+    projections.DiscardOtherSongGroup(albumSongs, SongViewType.Album);
+    Check(albumSongs.Count == 0, "The new album must not expose the previous album's songs while its query runs.");
+    await projections.UpdateSongCollectionsAsync(albumSongs, SongViewType.Album, m => m.Album == library.Browse.CurrentAlbumObj?.Album);
+    Check(albumSongs.Count == 1 && albumSongs[0].Id == 13, "The album target must contain only the latest selection.");
+
+    library.LibraryViews.IsArtistPageActive = true;
+    projections.UpdateArtistGroupedByFirstLetter(library.LibraryViews.ArtistPageSource);
+    library.LibraryViews.IsArtistPageActive = false;
+    await Task.Yield();
+    Check(library.LibraryViews.ArtistPageSource.Source is null, "A queued grouped result cannot publish after leaving the artist page.");
+
+    library.LibraryViews.IsAlbumPageActive = false;
+    library.Library.MarkSnapshotReplacement();
+    projections.ReleaseInactiveBrowseViews();
+    Check(albumSongs.Count == 0 && library.LibraryViews.AlbumPageSource.Source is null, "Snapshot replacement must release hidden album details and grouped cards.");
     await projections.UpdateSongCollectionsAsync(list, SongViewType.Album, m => m.Album == "same album");
     Check(list.Count == 3 && list.Any(m => m.Id == 10) && list.Any(m => m.Id == 11) && list.Any(m => m.Id == 12),
         "Album details should include every track from every source, including same-metadata tracks.");
@@ -661,6 +682,7 @@ static async Task RunAsync()
     Check(string.Join(",", yearList.Select(m => m.Id)) == "31,34,30,32,33",
         "Year DESC must reverse years but keep album track order and unknown years last.");
     yearState.Browse.SelectedSortOption = new() { Tag = "YearASC" };
+    yearState.LibraryViews.IsAlbumPageActive = true;
     yearProjections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", yearState.LibraryViews.AlbumPageSource);
     await Task.Yield();
     var yearAlbumCards = ((IEnumerable<MusicGroup>)yearState.LibraryViews.AlbumPageSource.Source!).SelectMany(g => g).Select(m => m.Album);

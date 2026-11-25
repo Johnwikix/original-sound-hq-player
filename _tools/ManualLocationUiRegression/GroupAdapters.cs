@@ -37,6 +37,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.IsBackBtnEnable = IsInDetailMode;
         }
         public void EnterDetailFromCrossLink() => ReceiveNavigation();
+        internal void LeaveNavigation() { }
         public void CollapseDetail() { SetCurrent(null); IsInDetailMode = false; }
         protected void Enter(ItemClickEventArgs args) { SetCurrent((Music)args.ClickedItem); IsInDetailMode = true; }
         public void RefreshDetailView() { }

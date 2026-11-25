@@ -1,9 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:WinUIMusicPlayer.Converters">
-    <!--  仅保留仍需 ConvertBack 的 TwoWay 场景与 Slider 内置转换；只读展示转换已迁移至 BindUtils 函数绑定  -->
+    <!-- 歌库字母索引直接绑定 View，确保 View 变为 null 时也更新目标。 -->
+    <converters:CollectionViewGroupsConverter x:Key="CollectionViewGroupsConverter" />
     <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
     <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
     <converters:ThicknessToDoubleConverter x:Key="ThicknessToDoubleConverter" />

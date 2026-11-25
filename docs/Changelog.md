@@ -1,3 +1,10 @@
+## 2026-11-25 推广曲库按需查询与旧投影释放
+
+- `Services/LibraryBrowseCoordinator.cs`、专辑和艺术家页只在有前台详情请求时查询曲目，离页撤回待发布结果，跨页进入时按当前对象刷新。
+- `ViewModel/Pages/FolderViewModel.cs` 收敛目录切换查询入口，空目录选择和离页不再产生多余的曲目查询。
+- `Services/LibraryProjectionService.cs` 在整库换代时释放隐藏的歌曲、专辑、艺术家及目录结果，专辑和艺术家网格及字母索引同步解除旧分组，复用现有集合和缓冲池。
+- `ViewModel/Pages/HomeViewModel.cs` 推荐输入失效时立即释放旧快照，首页保持原有的按需计算和卡片展示。
+
 ## 2026-11-25 按需准备歌曲投影并释放隐藏页旧列表
 
 - `View/FavouritePlayListPage.xaml.cs`、`Services/LibraryBrowseCoordinator.cs` 去掉隐藏歌曲页的全量预填，同轮刷新先提交前台请求。歌曲页离开后撤回尚未发布的查询，快速返回时复用仍在途的计算。

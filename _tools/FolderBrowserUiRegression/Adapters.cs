@@ -55,7 +55,13 @@ namespace WinUIMusicPlayer.State
         public int SourceFilterId { get; set => SetProperty(ref field, value); } = -1;
         public FolderLocation? CurrentFolder { get; set => SetProperty(ref field, value); }
     }
-    public sealed class AppState { public BrowseState Browse { get; } = new(); public LibraryState Library { get; } = new(); }
+    public sealed class AppState
+    {
+        public BrowseState Browse { get; } = new();
+        public LibraryState Library { get; } = new();
+        public LibraryViewState LibraryViews { get; } = new();
+    }
+    public sealed class LibraryViewState { internal bool IsFolderPageActive { get; set; } }
 }
 namespace WinUIMusicPlayer.Services
 {
@@ -87,6 +93,12 @@ namespace WinUIMusicPlayer.Services
         private int _version;
         public void RequestRefresh() { app.State.Library.NotifyChanged(); RefreshRequested?.Invoke(); }
         public void ClearSongCollection(BulkObservableCollection<Music> target) => target.Clear();
+        internal void CancelSongCollectionRefresh(BulkObservableCollection<Music> target) => _version++;
+        internal void ReleaseSongCollection(BulkObservableCollection<Music> target)
+        {
+            CancelSongCollectionRefresh(target);
+            if (target.Count > 0) target.Clear();
+        }
         // 保留真实边界的 UI 线程异步发布和迟到结果丢弃；不模拟生产排序/IPC。
         public async Task UpdateSongCollectionsAsync(BulkObservableCollection<Music> target, SongViewType kind, Func<Music, bool> filter)
         {

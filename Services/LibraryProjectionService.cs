@@ -99,17 +99,43 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         target.Clear();
     }
 
-    internal void CancelSongListRefresh()
-        => _requested.Remove(state.LibraryViews.ListSongs);
+    internal void CancelSongCollectionRefresh(BulkObservableCollection<Music> target)
+        => _requested.Remove(target);
 
-    internal void ReleaseInactiveSongList()
+    internal void ReleaseSongCollection(BulkObservableCollection<Music> target)
     {
-        if (state.LibraryViews.IsSongListActive) return;
-
-        var target = state.LibraryViews.ListSongs;
-        _requested.Remove(target);
+        CancelSongCollectionRefresh(target);
         _published.Remove(target);
         if (target.Count > 0) target.Clear();
+    }
+
+    internal void ReleaseInactiveBrowseViews()
+    {
+        var views = state.LibraryViews;
+        if (!views.IsSongListActive) ReleaseSongCollection(views.ListSongs);
+        if (!views.IsFolderPageActive) ReleaseSongCollection(views.FolderSongs);
+        if (!views.IsAlbumPageActive)
+        {
+            ReleaseSongCollection(views.AlbumSongs);
+            ReleaseGroupedSource(views.AlbumPageSource);
+        }
+        if (!views.IsArtistPageActive)
+        {
+            ReleaseSongCollection(views.ArtistSongs);
+            ReleaseGroupedSource(views.ArtistPageSource);
+        }
+    }
+
+    private void ReleaseGroupedSource(CollectionViewSource source)
+    {
+        _published.Remove(source);
+        if (source.Source is not null) source.Source = null;
+    }
+
+    internal void DiscardOtherSongGroup(BulkObservableCollection<Music> target, SongViewType kind)
+    {
+        if (_published.TryGetValue(target, out var published) && published.Group != SongKey(kind).Group)
+            ClearSongCollection(target);
     }
 
     /// <summary>同一列表最多一个在途计算；新请求替换待执行参数，不为每次输入复制音乐库。</summary>
@@ -276,9 +302,14 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         }
     }
 
+    private bool CanUpdateGroupedSource(CollectionViewSource source) =>
+        !_stopped && state.Lifecycle.Phase != AppPhase.Stopping &&
+        (!ReferenceEquals(source, state.LibraryViews.AlbumPageSource) || state.LibraryViews.IsAlbumPageActive) &&
+        (!ReferenceEquals(source, state.LibraryViews.ArtistPageSource) || state.LibraryViews.IsArtistPageActive);
+
     public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
     {
-        if (_published.TryGetValue(source, out var existing) && existing == Key()) return;
+        if (!CanUpdateGroupedSource(source) || _published.TryGetValue(source, out var existing) && existing == Key()) return;
         try
         {
             var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
@@ -319,7 +350,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
     public void UpdateArtistGroupedByFirstLetter(CollectionViewSource source)
     {
-        if (_published.TryGetValue(source, out var existing) && existing == Key()) return;
+        if (!CanUpdateGroupedSource(source) || _published.TryGetValue(source, out var existing) && existing == Key()) return;
         try
         {
             var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
@@ -418,7 +449,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || Key() != key ||
+                if (!CanUpdateGroupedSource(source) || Key() != key ||
                     _published.TryGetValue(source, out var published) && published == key) return;
                 var groups = _published.TryGetValue(source, out published) && published with { Version = key.Version } == key
                     ? source.Source as List<MusicGroup> : null;

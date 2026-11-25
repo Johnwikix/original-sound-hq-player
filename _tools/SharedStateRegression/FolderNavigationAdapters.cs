@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public State.AppState State { get; } = new();
         public List<Music> SongsSource => State.Library.Songs;
-        public BulkObservableCollection<Music> FolderSongs { get; } = [];
+        public BulkObservableCollection<Music> FolderSongs => State.LibraryViews.FolderSongs;
         public string PageType { get; set; } = "";
         public bool IsBackBtnEnable { get; set; }
     }

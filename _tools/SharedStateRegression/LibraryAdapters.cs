@@ -12,9 +12,16 @@ namespace WinUIMusicPlayer.State
     public sealed class LibraryViews
     {
         public Model.BulkObservableCollection<Model.Music> ListSongs { get; } = new();
+        public Model.BulkObservableCollection<Model.Music> AlbumSongs { get; } = new();
+        public Model.BulkObservableCollection<Model.Music> ArtistSongs { get; } = new();
+        public Model.BulkObservableCollection<Model.Music> FolderSongs { get; } = new();
         internal bool IsSongListActive { get; set; }
+        internal bool IsAlbumPageActive { get; set; }
+        internal bool IsArtistPageActive { get; set; }
+        internal bool IsFolderPageActive { get; set; }
         public bool IsSongListPreparing { get; set; }
         public Microsoft.UI.Xaml.Data.CollectionViewSource AlbumPageSource { get; } = new();
+        public Microsoft.UI.Xaml.Data.CollectionViewSource ArtistPageSource { get; } = new();
     }
 }
 namespace WinUIMusicPlayer.Model

@@ -472,7 +472,8 @@ namespace WinUIMusicPlayer.ViewModel
                 _projections.PrepareDefaultSongTitleSort();
         }
 
-        internal void CancelSongListRefresh() => _projections.CancelSongListRefresh();
+        internal void CancelSongCollectionRefresh(BulkObservableCollection<Music> target)
+            => _projections.CancelSongCollectionRefresh(target);
 
         public Task RefreshPlayListSongMapping() => _projections.RefreshPlayListSongMapping(PlayListSongs);
         public void OnSelectSortChanged() => RefreshDataSource();
@@ -518,7 +519,7 @@ namespace WinUIMusicPlayer.ViewModel
             else State.Library.MarkSnapshotReplacement();
             SongsSource.Clear();
             SongsSource.AddRange(songs);
-        if (!preserveRows) _projections.ReleaseInactiveSongList();
+            if (!preserveRows) _projections.ReleaseInactiveBrowseViews();
             PublishSongsSourceChanged(reconcilePlayback: true);
         }
 

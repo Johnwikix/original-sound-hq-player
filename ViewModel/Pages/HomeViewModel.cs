@@ -428,7 +428,11 @@ public sealed class HomeViewModel : ObservableObject
         if (_stopped) return;
         _revision++;
         _dirty = true;
-        if (invalidateSnapshot || _deferredRefresh) _snapshotVersion = -1;
+        if (invalidateSnapshot || _deferredRefresh)
+        {
+            _snapshot = [];
+            _snapshotVersion = -1;
+        }
         _deferredRefresh = false;
         if (!_active || _running) return;
         _running = true;

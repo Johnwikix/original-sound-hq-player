@@ -10,7 +10,6 @@ internal sealed partial class RegressionApplication
 {
     private async Task CheckLocalControlsAsync(Window window, Music song)
     {
-        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("ms-appx:///Themes/Generic.xaml") });
         song.Title = "A long shipping row title that must overflow its constrained column and keep its existing hover behavior";
         song.Author = "A long shipping row artist name with multiple words";
         song.Album = "A long shipping row album name with multiple words";

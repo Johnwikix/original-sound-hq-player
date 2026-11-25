@@ -23,7 +23,11 @@ public partial class FolderViewModel : ObservableObject
     private readonly ILogger<FolderViewModel> _logger;
     private readonly FolderBrowserIndex _index = new();
     private CancellationTokenSource? _read;
-    private bool _active;
+    private bool IsActive
+    {
+        get => AppViewModel.State.LibraryViews.IsFolderPageActive;
+        set => AppViewModel.State.LibraryViews.IsFolderPageActive = value;
+    }
     private bool _stopped;
     private bool _refreshPending;
     private Task _loadTask = Task.CompletedTask;
@@ -67,8 +71,8 @@ public partial class FolderViewModel : ObservableObject
 
     public Task ActivateAsync()
     {
-        if (_stopped || _active) return _loadTask;
-        _active = true;
+        if (_stopped || IsActive) return _loadTask;
+        IsActive = true;
         AppData.CurrentPage = typeof(View.FolderBrowsePage);
         AppViewModel.PageType = "folder";
         AppViewModel.IsBackBtnEnable = false;
@@ -85,7 +89,7 @@ public partial class FolderViewModel : ObservableObject
 
     private void RequestRefresh()
     {
-        if (!_active || _stopped) return;
+        if (!IsActive || _stopped) return;
         _refreshPending = true;
         if (_read is { IsCancellationRequested: false }) return;
         var request = new CancellationTokenSource();
@@ -99,12 +103,12 @@ public partial class FolderViewModel : ObservableObject
         try
         {
             await previous;
-            while (_active && !request.IsCancellationRequested && _refreshPending)
+            while (IsActive && !request.IsCancellationRequested && _refreshPending)
             {
                 _refreshPending = false;
                 // 只读扫描根表；歌曲数由内存索引统计，不反复查询全库计数。
                 var roots = await _database.GetFolders();
-                if (!_active || request.IsCancellationRequested || !ReferenceEquals(_read, request)) return;
+                if (!IsActive || request.IsCancellationRequested || !ReferenceEquals(_read, request)) return;
                 _roots = roots;
                 Rebuild();
             }
@@ -113,7 +117,7 @@ public partial class FolderViewModel : ObservableObject
         catch (Exception exception)
         {
             _logger.LogError(exception, "加载目录浏览器失败");
-            if (_active && !request.IsCancellationRequested) Error = ToolUtils.GetString("FolderBrowserLoadError");
+            if (IsActive && !request.IsCancellationRequested) Error = ToolUtils.GetString("FolderBrowserLoadError");
         }
         finally
         {
@@ -129,10 +133,11 @@ public partial class FolderViewModel : ObservableObject
 
     public void Deactivate()
     {
-        if (!_active) return;
-        _active = false;
+        if (!IsActive) return;
+        IsActive = false;
         _navigationRevision++;
         IsLoadingSongs = false;
+        _projections.CancelSongCollectionRefresh(AppViewModel.FolderSongs);
         _read?.Cancel();
         _projections.RefreshRequested -= LibraryChanged;
         AppViewModel.SongsSourceChanged -= LibraryChanged;
@@ -161,7 +166,7 @@ public partial class FolderViewModel : ObservableObject
     }
     private void Rebuild()
     {
-        if (!_active) return;
+        if (!IsActive) return;
         var state = AppViewModel.State;
         var expanded = _index.GetExpandedLocations();
         var previousNode = SelectedNode;
@@ -266,33 +271,36 @@ public partial class FolderViewModel : ObservableObject
 
     private void Navigate(FolderBrowserNode? node)
     {
-        if (!_active) return;
+        if (!IsActive) return;
         SelectedNode = node;
         // 清除不同目录的可操作列表，防止异步排序期间播放到上一个目录。
-        if (AppViewModel.State.Browse.CurrentFolder?.Identity != node?.Location.Identity)
+        if (node is not null && AppViewModel.State.Browse.CurrentFolder?.Identity != node.Location.Identity)
             _projections.ClearSongCollection(AppViewModel.FolderSongs);
         AppViewModel.State.Browse.CurrentFolder = node?.Location;
         Title = node?.Name ?? PageTitle;
         CurrentPath = node?.Path ?? string.Empty;
-        IsLoadingSongs = true;
-        _songsTask = LoadSongsAsync(++_navigationRevision);
+        int revision = ++_navigationRevision;
+        IsLoadingSongs = node is not null;
+        if (node is null)
+            _projections.ReleaseSongCollection(AppViewModel.FolderSongs);
+        else
+            _songsTask = LoadSongsAsync(revision, node.Location);
         PublishAvailability();
     }
-    private async Task LoadSongsAsync(int revision)
+    private async Task LoadSongsAsync(int revision, FolderLocation location)
     {
         try
         {
-            await _projections.UpdateSongCollectionsAsync(AppViewModel.FolderSongs, SongViewType.Folder,
-                music => AppViewModel.State.Browse.CurrentFolder?.Matches(music) == true);
+            await _projections.UpdateSongCollectionsAsync(AppViewModel.FolderSongs, SongViewType.Folder, location.Matches);
         }
         catch (Exception exception)
         {
             _logger.LogError(exception, "加载当前目录歌曲失败");
-            if (_active && revision == _navigationRevision) Error = ToolUtils.GetString("FolderBrowserLoadError");
+            if (IsActive && revision == _navigationRevision) Error = ToolUtils.GetString("FolderBrowserLoadError");
         }
         finally
         {
-            if (_active && revision == _navigationRevision)
+            if (IsActive && revision == _navigationRevision)
             {
                 IsLoadingSongs = false;
                 PublishAvailability();

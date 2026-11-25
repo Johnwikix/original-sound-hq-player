@@ -32,9 +32,10 @@ namespace WinUIMusicPlayer.View
 
         void ILibraryTab.Deactivate()
         {
+            ViewModel.LeaveNavigation();
             _coverAnimation.Cancel();
             DetailView.ViewModel.IsClosingForTransition = false;
-            Bindings.StopTracking();
+            // 缓存的网格仍需接收空 View，解除隐藏页对旧曲库分组的引用。
         }
 
         private void ArtistGridView_ItemClick(object sender, ItemClickEventArgs e)

@@ -156,8 +156,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         private void OnSongsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            if (_kind == GroupKind.None) return;
-            if (!_songsBound) return;
+            if (!_songsBound || IsClosingForTransition || !ReferenceEquals(sender, Songs)) return;
             RefreshTitlesOnly();
         }
 

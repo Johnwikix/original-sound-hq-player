@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -69,6 +69,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
+            State.LibraryViews.IsAlbumPageActive = true;
             if (AppViewModel.CurrentAlbumObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentAlbumObj.Album))
             {
                 IsInDetailMode = true;
@@ -82,6 +83,12 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.PageType = "albumBrowse";
                 AppViewModel.IsBackBtnEnable = false;
             }
+        }
+
+        internal void LeaveNavigation()
+        {
+            State.LibraryViews.IsAlbumPageActive = false;
+            AppViewModel.CancelSongCollectionRefresh(AppViewModel.AlbumSongs);
         }
 
 

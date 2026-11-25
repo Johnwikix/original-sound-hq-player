@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.ViewModel
         internal void LeaveSongPresentation()
         {
             State.LibraryViews.IsSongListActive = false;
-            AppViewModel.CancelSongListRefresh();
+            AppViewModel.CancelSongCollectionRefresh(AppViewModel.ListSongs);
             EndSongPresentation();
         }
 
