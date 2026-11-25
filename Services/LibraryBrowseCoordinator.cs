@@ -70,17 +70,22 @@ public sealed class LibraryBrowseCoordinator(AppState state, LibraryQueries quer
     {
         if (!_started || state.Lifecycle.Phase == AppPhase.Stopping) return;
         queries.Invalidate();
+        var pageType = AppData.CurrentPage;
+        // 同一轮刷新先提交前台请求，再维护跨页收藏和歌单映射。
+        RefreshDataForPageType(pageType);
         // 收藏/歌单映射用于跨页操作；其他展示投影在导航到对应页时按版本重建。
-        _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
-        _ = RefreshPlayListSongMapping();
-        RefreshDataSource();
+        if (pageType != typeof(FavouritePlayListPage))
+            _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
+        if (pageType != typeof(PlayListPage))
+            _ = RefreshPlayListSongMapping();
     }
 
     private void RefreshDataForPageType(Type pageType)
     {
         if (pageType == typeof(SongListPage))
         {
-            _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.ListSongs, SongViewType.All);
+            if (state.LibraryViews.IsSongListActive)
+                _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.ListSongs, SongViewType.All);
         }
         else if (pageType == typeof(AlbumPage))
         {

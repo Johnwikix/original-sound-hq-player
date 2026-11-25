@@ -25,7 +25,6 @@ namespace WinUIMusicPlayer.View
         private readonly ListViewCentering _centering;
         private readonly PlaybackSelectionTracker _playbackSelection;
         private readonly Music?[] _selectedBuffer = new Music?[256];
-        private bool _active;
 
         public SongListPage()
         {
@@ -39,8 +38,7 @@ namespace WinUIMusicPlayer.View
         void ILibraryTab.Activate()
         {
             ViewModel.ReceiveNavigation();
-            if (_active) return;
-            _active = true;
+            if (ViewModel.IsSongListActive) return;
             ViewModel.BeginSongPresentation();
             Bindings.Initialize();
             if (!ViewModel.IsWaitingForFirstSongRow) return;
@@ -51,9 +49,8 @@ namespace WinUIMusicPlayer.View
 
         void ILibraryTab.Deactivate()
         {
-            _active = false;
             StopWatchingFirstSongRow();
-            ViewModel.EndSongPresentation();
+            ViewModel.LeaveSongPresentation();
             _centering.Cancel();
             Bindings.StopTracking();
         }
@@ -70,7 +67,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnFirstSongLayoutUpdated(object? sender, object args)
         {
-            if (!_active || !ListViewInteraction.HasVisibleMusicRow(MusicListView)) return;
+            if (!ViewModel.IsSongListActive || !ListViewInteraction.HasVisibleMusicRow(MusicListView)) return;
             StopWatchingFirstSongRow();
             ViewModel.EndSongPresentation();
         }

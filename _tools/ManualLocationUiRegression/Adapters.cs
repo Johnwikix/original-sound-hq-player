@@ -173,8 +173,8 @@ namespace WinUIMusicPlayer.ViewModel
         public void NotifyIdIndexChanged() { }
         public void NotifySharedFavoriteChanged() { }
         public void RefreshAllViews() { }
-        internal void PrepareSongsForBrowsing() { }
-        internal void DiscardStalePreparedSongs() { }
+        internal void PrepareDefaultSongTitleSort() { }
+        internal void CancelSongListRefresh() { }
         public ObservableCollection<PlayList> AllPlayList { get; } = [];
         public ObservableCollection<SortOption> SortOptions { get; } = [];
         public SortOption SelectedSortOption { get; } = new();

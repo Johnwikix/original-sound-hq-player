@@ -466,20 +466,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshDataSource() => App.Services.GetRequiredService<LibraryBrowseCoordinator>().RefreshDataSource();
         public void RefreshAllViews() => App.Services.GetRequiredService<LibraryBrowseCoordinator>().RefreshAllViews();
-        internal void PrepareSongsForBrowsing()
+        internal void PrepareDefaultSongTitleSort()
         {
-            if (!CanPublishState || AppData.CurrentPage != typeof(FavouritePlayListPage) || _appendedSongIds is not null)
-                return;
-
-            _projections.PrepareDefaultSongTitleSort();
-            _ = _projections.UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
+            if (CanPublishState && AppData.CurrentPage == typeof(FavouritePlayListPage))
+                _projections.PrepareDefaultSongTitleSort();
         }
 
-        internal void DiscardStalePreparedSongs()
-        {
-            if (_projections.DiscardStaleSongListPreparation())
-                _appendedSongIds = null;
-        }
+        internal void CancelSongListRefresh() => _projections.CancelSongListRefresh();
 
         public Task RefreshPlayListSongMapping() => _projections.RefreshPlayListSongMapping(PlayListSongs);
         public void OnSelectSortChanged() => RefreshDataSource();
@@ -525,6 +518,7 @@ namespace WinUIMusicPlayer.ViewModel
             else State.Library.MarkSnapshotReplacement();
             SongsSource.Clear();
             SongsSource.AddRange(songs);
+        if (!preserveRows) _projections.ReleaseInactiveSongList();
             PublishSongsSourceChanged(reconcilePlayback: true);
         }
 

@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.State
     public sealed class LibraryViews
     {
         public Model.BulkObservableCollection<Model.Music> ListSongs { get; } = new();
+        internal bool IsSongListActive { get; set; }
         public bool IsSongListPreparing { get; set; }
         public Microsoft.UI.Xaml.Data.CollectionViewSource AlbumPageSource { get; } = new();
     }

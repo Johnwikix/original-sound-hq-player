@@ -111,18 +111,18 @@ namespace WinUIMusicPlayer.View
                 return;
             }
 
-            // 让首个有内容的收藏画面先提交，再准备歌曲投影。
-            if (!DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, PrepareSongsForBrowsing))
+            // 让首个有内容的收藏画面先提交，再安排后台比较器准备。
+            if (!DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, PrepareSongTitleSort))
                 _waitingForFirstFavoriteFrame = false;
         }
 
-        private void PrepareSongsForBrowsing()
+        private void PrepareSongTitleSort()
         {
             if (!_waitingForFirstFavoriteFrame) return;
             _waitingForFirstFavoriteFrame = false;
             _observedFirstFavoriteFrame = true;
             StopWatchingFavoriteFrame();
-            ViewModel.AppViewModel.PrepareSongsForBrowsing();
+            ViewModel.AppViewModel.PrepareDefaultSongTitleSort();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)

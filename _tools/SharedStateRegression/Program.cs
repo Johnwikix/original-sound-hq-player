@@ -465,12 +465,40 @@ static async Task RunAsync()
     Check(ReferenceEquals(superseded, latest), "One target must share one active refresh barrier.");
     await latest;
     Check(list.Count == 2, "Latest pending search must win.");
-    Check(!projections.DiscardStaleSongListPreparation(), "A first visit must keep a matching prepared projection.");
+    library.LibraryViews.IsSongListActive = true;
+    projections.ReleaseInactiveSongList();
+    Check(list.Count == 2, "Snapshot replacement must preserve the displayed list until the active refresh publishes.");
+
     library.Browse.SearchText = "no such song";
-    Check(projections.DiscardStaleSongListPreparation() && list.Count == 0, "A first visit must discard prepared rows for old query inputs.");
+    var leavingSongPage = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    library.LibraryViews.IsSongListActive = false;
+    projections.CancelSongListRefresh();
+    library.LibraryViews.IsSongListActive = true;
+    library.Browse.SearchText = "";
+    var returningToSongPage = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(ReferenceEquals(leavingSongPage, returningToSongPage), "Rapid reentry must reuse the in-flight refresh.");
+    await returningToSongPage;
+    Check(list.Count == 2, "An abandoned search must not replace current rows on reentry.");
+
+    library.Browse.SearchText = "no such song";
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     Check(list.Count == 0 && !library.LibraryViews.IsSongListPreparing, "A completed empty result must end song preparation.");
     library.Browse.SearchText = "";
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    var oldRow = list[0];
+    library.Browse.SearchText = "not yet published";
+    var pendingSongList = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    library.LibraryViews.IsSongListActive = false;
+    library.Library.Replace([new(8, "replacement.flac")]);
+    projections.ReleaseInactiveSongList();
+    Check(list.Count == 0 && !list.Contains(oldRow), "Hidden song rows must release the replaced snapshot immediately.");
+    await pendingSongList;
+    Check(list.Count == 0 && !library.LibraryViews.IsSongListPreparing, "A late request must not refill the hidden list.");
+    library.Browse.SearchText = "";
+    library.LibraryViews.IsSongListActive = true;
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(list.Count == 1 && list[0].Id == 8, "Returning to songs must use the new snapshot.");
+
     library.Library.Replace([
         new(10, "local") { SourceId = 0, Album = "same album", Title = "track 1", TrackNumber = 1 },
         new(11, "remote-a") { SourceId = 1, Album = "same album", Title = "track 1", TrackNumber = 1 },

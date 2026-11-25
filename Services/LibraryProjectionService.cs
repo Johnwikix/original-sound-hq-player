@@ -99,14 +99,17 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         target.Clear();
     }
 
-    internal bool DiscardStaleSongListPreparation()
-    {
-        var target = state.LibraryViews.ListSongs;
-        if (!_published.TryGetValue(target, out var published) || published == SongKey(SongViewType.All))
-            return false;
+    internal void CancelSongListRefresh()
+        => _requested.Remove(state.LibraryViews.ListSongs);
 
-        ClearSongCollection(target);
-        return true;
+    internal void ReleaseInactiveSongList()
+    {
+        if (state.LibraryViews.IsSongListActive) return;
+
+        var target = state.LibraryViews.ListSongs;
+        _requested.Remove(target);
+        _published.Remove(target);
+        if (target.Count > 0) target.Clear();
     }
 
     /// <summary>同一列表最多一个在途计算；新请求替换待执行参数，不为每次输入复制音乐库。</summary>
@@ -125,7 +128,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private Task? PendingTitleSortPreparation(BulkObservableCollection<Music> target) =>
         _titleSortPreparation is { IsCompleted: false } preparation &&
         ReferenceEquals(target, state.LibraryViews.ListSongs) &&
-        _requested[target].Kind == SongViewType.All &&
+        _requested.TryGetValue(target, out var request) && request.Kind == SongViewType.All &&
         (SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder") == "DefaultOrder"
             ? preparation : null;
 
@@ -137,7 +140,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         {
             if (isSongList && !_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
                 state.LibraryViews.IsSongListPreparing = true;
-            while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
+            while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping && _requested.ContainsKey(target))
             {
                 // 复用在途的比较器初始化，等候期间留出其他库投影的计算通道。
                 if (PendingTitleSortPreparation(target) is { } preparation) await preparation;
@@ -146,7 +149,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 {
                     if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
                     if (PendingTitleSortPreparation(target) is not null) continue;
-                    var request = _requested[target];
+                    if (!_requested.TryGetValue(target, out var request)) return;
                     var key = SongKey(request.Kind);
                     if (_published.TryGetValue(target, out var published) && published == key) return;
 
@@ -187,7 +190,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                             return matches;
                         });
                         if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
-                        if (SongKey(request.Kind) == key && _requested[target].Kind == request.Kind)
+                        if (_requested.TryGetValue(target, out var current) && current.Kind == request.Kind && SongKey(request.Kind) == key)
                         {
                             var visible = result.AsSpan(0, written);
                             if (_published.TryGetValue(target, out var previous) && previous with { Version = key.Version } == key)

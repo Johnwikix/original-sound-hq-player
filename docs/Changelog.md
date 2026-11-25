@@ -1,3 +1,8 @@
+## 2026-11-25 按需准备歌曲投影并释放隐藏页旧列表
+
+- `View/FavouritePlayListPage.xaml.cs`、`Services/LibraryBrowseCoordinator.cs` 去掉隐藏歌曲页的全量预填，同轮刷新先提交前台请求。歌曲页离开后撤回尚未发布的查询，快速返回时复用仍在途的计算。
+- `ViewModel/AppViewModel.cs` 在整库快照替换时清空隐藏歌曲页的旧行引用，歌曲页可见时继续通过正常刷新更新列表。
+
 ## 2026-11-25 缩短歌曲页首次显示等待
 
 - `View/FavouritePlayListPage.xaml.cs`、`Services/LibraryProjectionService.cs` 在最爱首帧后准备歌曲投影，首次切换复用已发布结果或在途请求。

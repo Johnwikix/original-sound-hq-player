@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsWaitingForFirstSongRow { get; private set => SetProperty(ref field, value); }
         private MusicDatabaseService _musicDatabaseService { get; }
         private MusicBrowseViewModel MusicBrowseViewModel { get; set; }
-        private bool _hasVisited;
+        internal bool IsSongListActive => State.LibraryViews.IsSongListActive;
 
         public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
@@ -88,13 +88,20 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             AppViewModel.IsBackBtnEnable = false;
-            if (_hasVisited) return;
-
-            _hasVisited = true;
-            AppViewModel.DiscardStalePreparedSongs();
         }
 
-        internal void BeginSongPresentation() => IsWaitingForFirstSongRow = AppViewModel.ListSongs.Count == 0;
+        internal void BeginSongPresentation()
+        {
+            State.LibraryViews.IsSongListActive = true;
+            IsWaitingForFirstSongRow = AppViewModel.ListSongs.Count == 0;
+        }
+
+        internal void LeaveSongPresentation()
+        {
+            State.LibraryViews.IsSongListActive = false;
+            AppViewModel.CancelSongListRefresh();
+            EndSongPresentation();
+        }
 
         internal void EndSongPresentation() => IsWaitingForFirstSongRow = false;
 
