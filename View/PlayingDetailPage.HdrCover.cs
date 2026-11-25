@@ -95,9 +95,11 @@ public sealed partial class PlayingDetailPage
     {
         if (!_isLoaded || _disposed) return;
         var app = ViewModel.AppViewModel;
-        bool enabled = ViewModel.UseHdrPresentation && CanPresentHdrCover;
+        bool coverReady = CanPresentHdrCover;
+        bool preparing = _hdrEntranceFrame is not null && app.IsPlayingDetailVisible;
+        bool enabled = ViewModel.UseHdrPresentation && (coverReady || preparing);
         NowPlaying?.SetHdrPresentation(enabled ? app.PlaybackHdrWhiteNits : 0,
-            enabled ? app.PlaybackHdrEffectivePeakNits : 0, ViewModel.IsBackgroundActive, app.PlaybackHdrDisplayId);
+            enabled ? app.PlaybackHdrEffectivePeakNits : 0, ViewModel.IsBackgroundActive, app.PlaybackHdrDisplayId, coverReady);
     }
 
     private void RefreshSceneCover()

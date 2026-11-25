@@ -499,6 +499,21 @@ static async Task RunAsync()
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     Check(list.Count == 1 && list[0].Id == 8, "Returning to songs must use the new snapshot.");
 
+    projections.PauseBrowsePublication();
+    library.Browse.SearchText = "missing during entry";
+    var entryRefresh = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    await Task.Yield();
+    Check(!entryRefresh.IsCompleted && list.Count == 1, "Playback entry defers page rows while keeping their completion barrier.");
+    library.Browse.SearchText = "";
+    var sharedFavorites = new BulkObservableCollection<Music>();
+    await projections.UpdateSongCollectionsAsync(sharedFavorites, SongViewType.Favorite);
+    var latestEntryRefresh = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(ReferenceEquals(entryRefresh, latestEntryRefresh), "Playback entry coalesces requests without holding an extra query result.");
+    projections.ResumeBrowsePublication();
+    await latestEntryRefresh;
+    Check(list.Count == 1 && list[0].Id == 8 && sharedFavorites.Count == 1,
+        "Resuming playback entry uses the last query and leaves favorites unblocked.");
+
     library.Library.Replace([
         new(10, "local") { SourceId = 0, Album = "same album", Title = "track 1", TrackNumber = 1 },
         new(11, "remote-a") { SourceId = 1, Album = "same album", Title = "track 1", TrackNumber = 1 },
@@ -516,6 +531,11 @@ static async Task RunAsync()
     library.Browse.SourceFilterId = -1;
     queries.SetSourceFilter(-1);
     library.LibraryViews.IsAlbumPageActive = true;
+    projections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", library.LibraryViews.AlbumPageSource);
+    projections.PauseBrowsePublication();
+    await Task.Yield();
+    Check(library.LibraryViews.AlbumPageSource.Source is null && projections.ResumeBrowsePublication(),
+        "A grouped result queued before playback entry is dropped and requests a fresh query on resume.");
     projections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", library.LibraryViews.AlbumPageSource);
     await Task.Yield();
     var albumGroups = (IEnumerable<MusicGroup>)library.LibraryViews.AlbumPageSource.Source!;
@@ -547,7 +567,9 @@ static async Task RunAsync()
     Check(list.Count == 3 && list.Any(m => m.Id == 10) && list.Any(m => m.Id == 11) && list.Any(m => m.Id == 12),
         "Album details should include every track from every source, including same-metadata tracks.");
     library.Browse.SearchText = "missing";
+    projections.PauseBrowsePublication();
     var pendingProjection = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    await Task.Yield();
     int fillsBeforeStop = list.FillCount;
     await projections.StopAsync();
     await pendingProjection;

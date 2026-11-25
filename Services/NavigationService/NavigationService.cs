@@ -284,9 +284,14 @@ namespace WinUIMusicPlayer.Services.NavigationService
         //  Show（overlay 滑入，带布局等待保护）
         // ────────────────────────────────────────────────────────────
 
-        public void Show(Type pageType, int animeTime = 300, Action? onCompleted = null, Action? onRevealing = null)
+        public void Show(Type pageType, int animeTime = 300, Action? onCompleted = null, Action? onRevealing = null,
+            Action? onEntranceStarted = null, Action? onPreparingHdr = null)
         {
-            if (ContentFrame is not { } frame || Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0) return;
+            if (ContentFrame is not { } frame || Interlocked.CompareExchange(ref _isAnimating, 1, 0) != 0)
+            {
+                NotifyCompleted(onCompleted, nameof(Show));
+                return;
+            }
 
             if (!_registeredPages.TryGetValue(pageType, out var resolvedType))
             {
@@ -297,11 +302,13 @@ namespace WinUIMusicPlayer.Services.NavigationService
 
             PlayingDetailPage? playingPage = null;
             bool wasHitTestVisible = frame.IsHitTestVisible;
+            Action? entranceStarted = onEntranceStarted;
             try
             {
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
                 playingPage = pageInstance as PlayingDetailPage;
                 bool prepareHdr = playingPage?.ShouldPrepareHdrEntrance == true;
+                if (prepareHdr) NotifyCompleted(onPreparingHdr, nameof(Show));
                 if (playingPage is not null)
                 {
                     _ = playingPage.SetCanvasNavigationTransitionAsync(!prepareHdr);
@@ -347,7 +354,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                             try
                             {
                                 bool completed = await page.RunHdrEntranceMotionAsync(
-                                    token => SlideHdrIntoViewAsync(frame, animeTime, token),
+                                    token => SlideHdrIntoViewAsync(frame, animeTime, NotifyEntranceStarted, token),
                                     () => frame.Opacity = 0, preparation.Token);
                                 if (!completed) continue;
                             }
@@ -359,6 +366,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                         }
 
                         preparation.Token.ThrowIfCancellationRequested();
+                        NotifyEntranceStarted();
                         _cancelPendingHdrEntrance = null;
                         // Keep the previous page visible beneath the slide until
                         // the opaque HDR frame fills the viewport.
@@ -467,6 +475,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 storyboard.Children.Add(opacity);
                 storyboard.Completed += OnAnimationCompleted;
                 storyboard.Begin();
+                NotifyEntranceStarted();
 
                 void OnAnimationCompleted(object? sender, object args)
                 {
@@ -474,6 +483,13 @@ namespace WinUIMusicPlayer.Services.NavigationService
                     storyboard.Stop();
                     FinishShow();
                 }
+            }
+
+            void NotifyEntranceStarted()
+            {
+                var callback = entranceStarted;
+                entranceStarted = null;
+                NotifyCompleted(callback, nameof(Show));
             }
 
             void FinishShow()
@@ -487,7 +503,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
             }
         }
 
-        private async Task SlideHdrIntoViewAsync(Frame frame, int duration, CancellationToken cancellationToken)
+        private async Task SlideHdrIntoViewAsync(Frame frame, int duration, Action onEntranceStarted, CancellationToken cancellationToken)
         {
             double height = SafeHeight(frame);
             var translate = new TranslateTransform { Y = height };
@@ -510,6 +526,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 storyboard.Begin();
                 // Opacity must stay at 1 as HDR content becomes visible.
                 frame.Opacity = 1;
+                onEntranceStarted();
                 await done.Task.WaitAsync(cancellationToken);
             }
             finally

@@ -1,3 +1,8 @@
+## 2026-11-25 缩短播放页 HDR 入场等待
+
+- `PlayingDetailPage`、`NowPlayingCanvas` 在解码封面的同时按视口准备 HDR 交换链，完整首帧提交后沿用上滑动画，取消或退出时释放入场资源。
+- `MainPage`、`LibraryProjectionService` 在 HDR 播放页入场时暂缓底层曲库列表和概览刷新，首帧就绪或取消后继续处理最新请求。
+
 ## 2026-11-25 推广曲库按需查询与旧投影释放
 
 - `Services/LibraryBrowseCoordinator.cs`、专辑和艺术家页只在有前台详情请求时查询曲目，离页撤回待发布结果，跨页进入时按当前对象刷新。

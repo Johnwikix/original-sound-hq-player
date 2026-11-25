@@ -315,8 +315,10 @@ namespace WinUIMusicPlayer.View
 
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
+                var app = ViewModel.AppViewModel;
                 void OnShowCompleted()
                 {
+                    app.ResumeBrowsePublication();
                     if (PlayingFrame.Visibility == Visibility.Collapsed)
                     {
                         NavigationViewControl.Visibility = Visibility.Visible;
@@ -326,10 +328,11 @@ namespace WinUIMusicPlayer.View
                     _isPageTransitioning = false;
                     OpenPendingDetails();
                 }
-                ViewModel.AppViewModel.IsPlayingDetailVisible = true;
-                ViewModel.AppViewModel.IsPointerOverTitleBar = false;
+                app.IsPlayingDetailVisible = true;
+                app.IsPointerOverTitleBar = false;
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnShowCompleted,
-                    onRevealing: () => NavigationViewControl.Visibility = Visibility.Collapsed);
+                    onRevealing: () => NavigationViewControl.Visibility = Visibility.Collapsed,
+                    onEntranceStarted: app.ResumeBrowsePublication, onPreparingHdr: app.PauseBrowsePublication);
             }
             else
             {

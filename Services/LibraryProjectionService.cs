@@ -50,6 +50,9 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private readonly Dictionary<BulkObservableCollection<Music>, (SongViewType Kind, Func<Music, bool>? Filter)> _requested = new();
     private readonly Dictionary<BulkObservableCollection<Music>, Task> _inflight = new();
     private readonly SemaphoreSlim _computeGate = new(1, 1);
+    private bool _browsePublicationPaused;
+    private bool _groupedRefreshDeferred;
+    private TaskCompletionSource? _browsePublicationResumed;
     private bool _stopped;
     private Task? _titleSortPreparation;
 
@@ -101,6 +104,29 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
     internal void CancelSongCollectionRefresh(BulkObservableCollection<Music> target)
         => _requested.Remove(target);
+
+    internal void PauseBrowsePublication() => _browsePublicationPaused = true;
+
+    internal bool ResumeBrowsePublication()
+    {
+        _browsePublicationPaused = false;
+        var resumed = _browsePublicationResumed;
+        _browsePublicationResumed = null;
+        resumed?.TrySetResult();
+        bool refreshGrouped = _groupedRefreshDeferred;
+        _groupedRefreshDeferred = false;
+        return refreshGrouped;
+    }
+
+    private bool ShouldDeferSongs(SongViewType kind) => _browsePublicationPaused && kind != SongViewType.Favorite;
+
+    private bool DeferGroupedRefresh(CollectionViewSource source)
+    {
+        if (!_browsePublicationPaused ||
+            !(ReferenceEquals(source, state.LibraryViews.AlbumPageSource) || ReferenceEquals(source, state.LibraryViews.ArtistPageSource))) return false;
+        _groupedRefreshDeferred = true;
+        return true;
+    }
 
     internal void ReleaseSongCollection(BulkObservableCollection<Music> target)
     {
@@ -166,8 +192,14 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         {
             if (isSongList && !_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
                 state.LibraryViews.IsSongListPreparing = true;
-            while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping && _requested.ContainsKey(target))
+            while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping && _requested.TryGetValue(target, out var queued))
             {
+                if (ShouldDeferSongs(queued.Kind))
+                {
+                    // 只等待刷新请求，结果数组与计算通道在等待前已归还。
+                    await (_browsePublicationResumed ??= new(TaskCreationOptions.RunContinuationsAsynchronously)).Task;
+                    continue;
+                }
                 // 复用在途的比较器初始化，等候期间留出其他库投影的计算通道。
                 if (PendingTitleSortPreparation(target) is { } preparation) await preparation;
                 await _computeGate.WaitAsync();
@@ -176,6 +208,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                     if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
                     if (PendingTitleSortPreparation(target) is not null) continue;
                     if (!_requested.TryGetValue(target, out var request)) return;
+                    if (ShouldDeferSongs(request.Kind)) continue;
                     var key = SongKey(request.Kind);
                     if (_published.TryGetValue(target, out var published) && published == key) return;
 
@@ -216,6 +249,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                             return matches;
                         });
                         if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
+                        if (ShouldDeferSongs(request.Kind)) continue;
                         if (_requested.TryGetValue(target, out var current) && current.Kind == request.Kind && SongKey(request.Kind) == key)
                         {
                             var visible = result.AsSpan(0, written);
@@ -247,6 +281,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     public async Task StopAsync()
     {
         _stopped = true;
+        ResumeBrowsePublication();
         await Task.WhenAll(_inflight.Values.ToArray());
         if (_titleSortPreparation is { } preparation) await preparation;
         _requested.Clear();
@@ -310,6 +345,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
     {
         if (!CanUpdateGroupedSource(source) || _published.TryGetValue(source, out var existing) && existing == Key()) return;
+        if (DeferGroupedRefresh(source)) return;
         try
         {
             var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
@@ -351,6 +387,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     public void UpdateArtistGroupedByFirstLetter(CollectionViewSource source)
     {
         if (!CanUpdateGroupedSource(source) || _published.TryGetValue(source, out var existing) && existing == Key()) return;
+        if (DeferGroupedRefresh(source)) return;
         try
         {
             var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
@@ -451,6 +488,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             {
                 if (!CanUpdateGroupedSource(source) || Key() != key ||
                     _published.TryGetValue(source, out var published) && published == key) return;
+                if (DeferGroupedRefresh(source)) return;
                 var groups = _published.TryGetValue(source, out published) && published with { Version = key.Version } == key
                     ? source.Source as List<MusicGroup> : null;
                 var existingGroups = groups?.ToDictionary(group => group.Key);

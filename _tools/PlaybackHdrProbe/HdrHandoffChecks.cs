@@ -654,7 +654,31 @@ public sealed partial class ProbeApp
         }
     }
 
-    private static async Task CheckHdrHandoffAsync(Window window, Grid root)
+    private static async Task CheckHdrPreparationAsync(NowPlayingCanvas host, CanvasSwapChainPanel panel,
+        ulong displayId, double white, double peak)
+    {
+        var preparedTarget = typeof(NowPlayingCanvas).GetField("_preparedHdrSwapChain",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing the entrance target.");
+        host.SetHdrPresentation(white, peak, true, displayId, frameReady: false);
+        await host.SetHdrNavigationTransitionAsync(false);
+        await WaitUntilAsync(() => preparedTarget.GetValue(host) is CanvasSwapChain, "HDR target ahead of the first scene");
+        if (host.IsHdrFramePresented || panel.SwapChain is not null)
+            throw new InvalidOperationException("HDR preparation submitted an incomplete scene.");
+        host.PauseRendering();
+        if (preparedTarget.GetValue(host) is not null || panel.SwapChain is not null)
+            throw new InvalidOperationException("Canceling entrance retained the prepared target.");
+        host.ResumeRendering();
+        await WaitUntilAsync(() => preparedTarget.GetValue(host) is CanvasSwapChain, "new HDR target after cancel");
+        var target = preparedTarget.GetValue(host);
+        host.SetHdrPresentation(white, peak, true, displayId, frameReady: true);
+        await WaitUntilAsync(() => host.IsHdrFramePresented, "first completed HDR frame");
+        if (!ReferenceEquals(panel.SwapChain, target) || preparedTarget.GetValue(host) is not null)
+            throw new InvalidOperationException("The first HDR present did not adopt the prepared target.");
+        Console.WriteLine("PASS HDR preparation stays hidden, releases on cancel, and reuses its swap chain on present");
+    }
+
+    private static async Task CheckHdrHandoffAsync(Window window, Grid root, bool preparationOnly)
     {
         var areas = DisplayArea.FindAll();
         DisplayArea? output = null;
@@ -683,6 +707,21 @@ public sealed partial class ProbeApp
 
         var bounds = output.OuterBounds;
         Console.WriteLine($"HDR output {bounds.Width}x{bounds.Height} at {bounds.X},{bounds.Y}, effective peak {peak:F0} nit");
+        if (preparationOnly)
+        {
+            using var preparationHost = new NowPlayingCanvas();
+            root.Children.Add(preparationHost);
+            window.Activate();
+            await WaitUntilAsync(() => preparationHost.IsLoaded && preparationHost.ActualWidth > 0, "HDR preparation host laid out");
+            var preparationPanel = FindChild<CanvasSwapChainPanel>(preparationHost, "PART_HdrPanel")
+                ?? throw new InvalidOperationException("Missing HDR panel.");
+            await CheckHdrPreparationAsync(preparationHost, preparationPanel, output.DisplayId.Value, white, peak);
+            preparationHost.PauseRendering();
+            if (preparationPanel.SwapChain is not null || preparationHost.IsHdrFramePresented)
+                throw new InvalidOperationException("Leaving playback retained the active HDR presentation.");
+            Console.WriteLine("PASS HDR exit detaches the active swap chain");
+            return;
+        }
         await CheckPlaybackNavigationEntranceAsync(window, root, output.DisplayId.Value, Math.Min(500, peak), peak);
         if (Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TIMING_WITHOUT_CAPTURE") == "1" ||
             Environment.GetEnvironmentVariable("PLAYBACK_HDR_PROBE_TITLE_ENTRANCE_ONLY") == "1") return;
@@ -747,7 +786,7 @@ public sealed partial class ProbeApp
                 throw new InvalidOperationException("The SDR preview did not survive the entry animation.");
             overlay.Opacity = 1;
             overlay.RenderTransform = null;
-            await host.SetHdrNavigationTransitionAsync(false);
+            await CheckHdrPreparationAsync(host, panel, output.DisplayId.Value, white, peak);
             await WaitUntilAsync(() => active && committed > 0, "first completed HDR frame");
             if (firstSdrOpacity != 0 || firstTitleOpacity != 1 || firstPreviewOpacity != 1 || !firstPanelVisible)
                 throw new InvalidOperationException("The first successful HDR commit did not replace the background while keeping unready title and cover previews.");

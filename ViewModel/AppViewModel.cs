@@ -475,6 +475,14 @@ namespace WinUIMusicPlayer.ViewModel
         internal void CancelSongCollectionRefresh(BulkObservableCollection<Music> target)
             => _projections.CancelSongCollectionRefresh(target);
 
+        internal void PauseBrowsePublication() => _projections.PauseBrowsePublication();
+
+        internal void ResumeBrowsePublication()
+        {
+            if (_projections.ResumeBrowsePublication())
+                App.MainWindow.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, RefreshDataSource);
+        }
+
         public Task RefreshPlayListSongMapping() => _projections.RefreshPlayListSongMapping(PlayListSongs);
         public void OnSelectSortChanged() => RefreshDataSource();
 

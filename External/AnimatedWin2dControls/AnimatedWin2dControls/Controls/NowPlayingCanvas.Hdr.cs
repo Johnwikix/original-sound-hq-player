@@ -22,6 +22,7 @@ public sealed partial class NowPlayingCanvas
     private const int HdrNavigationFrameRate = 60;
     private CanvasSwapChainPanel? _hdrPanel;
     private CanvasSwapChain? _hdrSwapChain;
+    private CanvasSwapChain? _preparedHdrSwapChain;
     private CanvasDevice? _hdrDevice;
     private CanvasSolidColorBrush? _hdrClear;
     private Size _hdrTargetSize;
@@ -43,6 +44,7 @@ public sealed partial class NowPlayingCanvas
     private bool _hdrNavigationAnimating;
     private long _hdrNavigationMotionGeneration;
     private HdrFrameSubmission? _hdrSubmission;
+    private bool _hdrFrameReady = true;
     private Task? _retiringHdrSwapChain;
     private volatile bool _hdrOwnsFrame;
     private bool _hdrPresented;
@@ -74,6 +76,10 @@ public sealed partial class NowPlayingCanvas
 
     /// <summary>Updates the display configuration and retires the previous output's swap chain.</summary>
     public void SetHdrPresentation(double whiteNits, double peakNits, bool sdrAllowed, ulong displayId)
+        => SetHdrPresentation(whiteNits, peakNits, sdrAllowed, displayId, frameReady: true);
+
+    /// <summary>Allows preparing the HDR target before the complete scene is ready to draw.</summary>
+    public void SetHdrPresentation(double whiteNits, double peakNits, bool sdrAllowed, ulong displayId, bool frameReady)
     {
         var color = PlaybackHdrColor.FromNits(whiteNits, peakNits);
         bool displayChanged = _hdrDisplayId != displayId;
@@ -85,6 +91,7 @@ public sealed partial class NowPlayingCanvas
         _hdrDisplayId = displayId;
         _hdrColor = color;
         _sdrAllowed = sdrAllowed;
+        _hdrFrameReady = frameReady;
         UpdateCanvasPaused(replaceHdr: displayChanged);
     }
 
@@ -152,6 +159,24 @@ public sealed partial class NowPlayingCanvas
         CanvasSwapChain? replacement = null;
         try
         {
+            if (!_hdrFrameReady)
+            {
+                if (_hdrSwapChain is null && _hdrSubmission is null)
+                {
+                    var layoutSize = new Size(ActualWidth, ActualHeight);
+                    float layoutDpi = (float)((XamlRoot?.RasterizationScale ?? 1) * 96d);
+                    if (layoutSize.Width * layoutDpi >= 96 && layoutSize.Height * layoutDpi >= 96 &&
+                        (_preparedHdrSwapChain is null || _hdrTargetSize != layoutSize || _hdrTargetDpi != layoutDpi))
+                    {
+                        DisposePreparedHdrSwapChain();
+                        _preparedHdrSwapChain = CreateHdrSwapChain(_hdrDevice ??= new CanvasDevice(), layoutSize, layoutDpi);
+                        _hdrTargetSize = layoutSize;
+                        _hdrTargetDpi = layoutDpi;
+                    }
+                }
+                return;
+            }
+
             if (_hdrSubmission is { } submitted)
             {
                 if (!submitted.Present.IsCompleted) return;
@@ -180,8 +205,15 @@ public sealed partial class NowPlayingCanvas
             var cover = _sceneCover;
             elapsed = elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed;
             if (replace)
-                replacement = new CanvasSwapChain(device, (float)size.Width, (float)size.Height, dpi,
-                    DirectXPixelFormat.R16G16B16A16Float, 2, CanvasAlphaMode.Ignore);
+            {
+                if (_hdrTargetSize == size && _hdrTargetDpi == dpi)
+                {
+                    replacement = _preparedHdrSwapChain;
+                    _preparedHdrSwapChain = null;
+                }
+                DisposePreparedHdrSwapChain();
+                replacement ??= CreateHdrSwapChain(device, size, dpi);
+            }
 
             var swapChain = replacement ?? _hdrSwapChain!;
             var frame = new PlaybackCanvasFrame(device, swapChain.Size, dpi, _hdrColor);
@@ -229,6 +261,17 @@ public sealed partial class NowPlayingCanvas
         {
             replacement?.Dispose();
         }
+    }
+
+    private static CanvasSwapChain CreateHdrSwapChain(CanvasDevice device, Size size, float dpi) =>
+        new(device, (float)size.Width, (float)size.Height, dpi,
+            DirectXPixelFormat.R16G16B16A16Float, 2, CanvasAlphaMode.Ignore);
+
+    private void DisposePreparedHdrSwapChain()
+    {
+        var prepared = _preparedHdrSwapChain;
+        _preparedHdrSwapChain = null;
+        prepared?.Dispose();
     }
 
     private void AdoptHdrSwapChain(CanvasSwapChainPanel panel, ref CanvasSwapChain? replacement, Size size, float dpi)
@@ -355,6 +398,7 @@ public sealed partial class NowPlayingCanvas
     private bool StopHdrPresentation(bool releaseDevice)
     {
         CancelSdrHandoff();
+        DisposePreparedHdrSwapChain();
         _hdrClock?.Dispose();
         _hdrClock = null;
         _hdrFrameClock = default;
@@ -412,6 +456,7 @@ public sealed partial class NowPlayingCanvas
     {
         var clear = _hdrClear;
         var device = _hdrDevice;
+        if (device is null && pending is null) return;
         var outstanding = pending?.Present ?? _retiringHdrSwapChain;
         _retiringHdrSwapChain = null;
         _hdrClear = null;
@@ -436,7 +481,7 @@ public sealed partial class NowPlayingCanvas
         finally
         {
             if (outstanding is not null)
-                _ = ReleaseSubmittedFrameAsync(outstanding, pending?.Replacement, pending is not null ? swapChain : null, device);
+                _retiringHdrSwapChain = ReleaseSubmittedFrameAsync(outstanding, pending?.Replacement, pending is not null ? swapChain : null, device);
             else
                 device?.Dispose();
         }

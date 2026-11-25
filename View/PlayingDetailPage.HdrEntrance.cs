@@ -30,6 +30,7 @@ public sealed partial class PlayingDetailPage
             if (NowPlaying is { IsLoaded: true } canvas)
                 ObserveHdrEntrance(canvas);
             _ = SetCanvasNavigationTransitionAsync(false);
+            UpdateHdrPresentation();
             if (!ShouldPrepareHdrEntrance || (_coverRequested && !_coverReady && _sceneCoverRequest is null))
                 RejectHdrEntrance();
             return await frame.Task.WaitAsync(cancellationToken);
@@ -37,7 +38,10 @@ public sealed partial class PlayingDetailPage
         finally
         {
             if (ReferenceEquals(_hdrEntranceFrame, frame))
+            {
                 ClearHdrEntranceObservation();
+                if (!CanPresentHdrCover) UpdateHdrPresentation();
+            }
         }
     }
 

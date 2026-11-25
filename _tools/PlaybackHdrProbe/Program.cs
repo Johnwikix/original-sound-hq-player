@@ -110,11 +110,12 @@ public sealed partial class ProbeApp : Application
                 await CheckPageCoverAsync(window);
                 return;
             }
-            if (Environment.GetCommandLineArgs().Contains("--check-hdr-handoff"))
+            bool preparationOnly = Environment.GetCommandLineArgs().Contains("--check-hdr-preparation");
+            if (preparationOnly || Environment.GetCommandLineArgs().Contains("--check-hdr-handoff"))
             {
                 var handoffRoot = new Grid();
                 window = new Window { Content = handoffRoot, Title = "Playback HDR handoff check" };
-                await CheckHdrHandoffAsync(window, handoffRoot);
+                await CheckHdrHandoffAsync(window, handoffRoot, preparationOnly);
                 return;
             }
             if (Environment.GetCommandLineArgs().Contains("--check-hdr-memory"))
