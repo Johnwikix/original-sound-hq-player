@@ -76,9 +76,11 @@ namespace WinUIMusicPlayer.Utils
     {
         public static int Reads;
         public static TaskCompletionSource? ReadGate;
+        public static Action<Music>? ReadStarted;
         public static async Task<byte[]> GetRawImage(Music music, bool manual, CancellationToken token)
         {
             Interlocked.Increment(ref Reads);
+            ReadStarted?.Invoke(music);
             if (ReadGate is { } gate) await gate.Task.WaitAsync(token);
             return await File.ReadAllBytesAsync(music.Path, token);
         }

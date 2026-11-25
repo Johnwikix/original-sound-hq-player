@@ -1,3 +1,8 @@
+## 2026-11-25 缩短歌单详情打开等待
+
+- `PlayListPage`、`PlaylistDetailControl` 用正常布局结果启动歌单封面连接动画，避免入场时强制布局，快速返回时保留有效的详情订阅。
+- `AlbumCoverBehavior`、`CoverLoadQueue` 优先处理当前详情封面，直接写入已解码像素，离页时撤回该封面请求。
+
 ## 2026-11-25 缩短播放页 HDR 入场等待
 
 - `PlayingDetailPage`、`NowPlayingCanvas` 在解码封面的同时按视口准备 HDR 交换链，完整首帧提交后沿用上滑动画，取消或退出时释放入场资源。

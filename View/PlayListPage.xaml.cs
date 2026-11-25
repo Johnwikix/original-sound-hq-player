@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
@@ -25,6 +26,7 @@ namespace WinUIMusicPlayer.View
         private bool _isCurrent;
         private bool _viewHandlersAttached;
         private bool _resetScrollOnEntry;
+        private bool _waitingForDetailHeader;
 
         public PlayListPage()
         {
@@ -71,6 +73,7 @@ namespace WinUIMusicPlayer.View
 
         private void DetachViewHandlers()
         {
+            CancelDetailHeaderWait();
             _coverAnimation.Cancel();
             DetailView.ViewModel.IsClosingForTransition = false;
             if (_viewHandlersAttached)
@@ -90,6 +93,8 @@ namespace WinUIMusicPlayer.View
             {
                 ApplyEditMode();
             }
+            else if (e.PropertyName == nameof(PlayListViewModel.IsInDetailMode) && !ViewModel.IsInDetailMode)
+                CancelDetailHeaderWait();
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -177,8 +182,32 @@ namespace WinUIMusicPlayer.View
             if (e.ClickedItem is PlayList playList)
             {
                 ViewModel.EnterPlayList(playList);
+                if (animate) WaitForDetailHeader();
             }
-            if (animate) _coverAnimation.StartDeferred(() => DetailView.DetailCoverBorder);
+        }
+
+        private void WaitForDetailHeader()
+        {
+            if (_waitingForDetailHeader) return;
+            _waitingForDetailHeader = true;
+            CompositionTarget.Rendering += OnDetailHeaderRendering;
+        }
+
+        private void OnDetailHeaderRendering(object? sender, object args)
+        {
+            CompositionTarget.Rendering -= OnDetailHeaderRendering;
+            _waitingForDetailHeader = false;
+            if (_isCurrent && IsLoaded && ViewModel.IsInDetailMode)
+                _coverAnimation.StartNow(DetailView.DetailCoverBorder);
+            else
+                _coverAnimation.Cancel();
+        }
+
+        private void CancelDetailHeaderWait()
+        {
+            if (!_waitingForDetailHeader) return;
+            CompositionTarget.Rendering -= OnDetailHeaderRendering;
+            _waitingForDetailHeader = false;
         }
 
         private void PlayListGridView_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -189,10 +218,12 @@ namespace WinUIMusicPlayer.View
         public void CollapseDetail()
         {
             if (!ViewModel.IsInDetailMode) return;
+            bool headerPending = _waitingForDetailHeader;
+            CancelDetailHeaderWait();
             var item = ViewModel.AppViewModel.CurrentPlayList is { } selected
                 ? PlayListGridView.ContainerFromItem(selected)?.As<GridViewItem>() : null;
             var source = FindCoverBorderInItem(item);
-            bool animate = source is not null && _coverAnimation.Prepare(DetailView.DetailCoverBorder);
+            bool animate = !headerPending && source is not null && _coverAnimation.Prepare(DetailView.DetailCoverBorder);
             if (!animate) _coverAnimation.Cancel();
             SetExitTransitions();
             DetailView.ViewModel.IsClosingForTransition = animate;

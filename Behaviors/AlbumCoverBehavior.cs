@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -28,6 +28,8 @@ public class AlbumCoverBehavior : Behavior<Image>
         set => SetValue(MusicProperty, value);
     }
 
+    public bool Prioritize { get; set; }
+
     private static void OnMusicChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is AlbumCoverBehavior b)
@@ -43,11 +45,21 @@ public class AlbumCoverBehavior : Behavior<Image>
     protected override void OnAttached()
     {
         base.OnAttached();
+        if (Prioritize)
+        {
+            AssociatedObject.Loaded += OnPriorityImageLoaded;
+            AssociatedObject.Unloaded += OnPriorityImageUnloaded;
+        }
         if (Music != null) Load(Music);
     }
 
     protected override void OnDetaching()
     {
+        if (Prioritize && AssociatedObject is { } image)
+        {
+            image.Loaded -= OnPriorityImageLoaded;
+            image.Unloaded -= OnPriorityImageUnloaded;
+        }
         CancelLoad();
         if (_fadeInStoryboard != null)
         {
@@ -63,6 +75,26 @@ public class AlbumCoverBehavior : Behavior<Image>
             AssociatedObject.Opacity = 0;
         }
         base.OnDetaching();
+    }
+
+    private void OnPriorityImageLoaded(object sender, RoutedEventArgs args)
+    {
+        if (_cts is null && Music is { } music) Load(music);
+    }
+
+    private void OnPriorityImageUnloaded(object sender, RoutedEventArgs args)
+    {
+        if (AssociatedObject is { IsLoaded: true } image)
+            image.DispatcherQueue.TryEnqueue(ClearUnloadedPriorityImage);
+        else
+            ClearUnloadedPriorityImage();
+    }
+
+    private void ClearUnloadedPriorityImage()
+    {
+        if (AssociatedObject is not { IsLoaded: false }) return;
+        CancelLoad();
+        SetSource(null);
     }
 
     public void CancelLoad()
@@ -84,6 +116,7 @@ public class AlbumCoverBehavior : Behavior<Image>
             AssociatedObject.Opacity = 0;
             return;
         }
+        if (Prioritize && !AssociatedObject.IsLoaded) return;
 
         AssociatedObject.Opacity = 0;
         _cts = new CancellationTokenSource();
@@ -102,7 +135,7 @@ public class AlbumCoverBehavior : Behavior<Image>
             Task<Microsoft.UI.Xaml.Media.ImageSource?> task;
             try
             {
-                task = CoverLoadQueue.EnqueueAsync(music, token);
+                task = CoverLoadQueue.EnqueueAsync(music, token, Prioritize);
             }
             catch (Exception ex)
             {

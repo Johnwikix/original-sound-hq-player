@@ -52,6 +52,17 @@ namespace WinUIMusicPlayer.View.Controls
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            if (IsLoaded)
+            {
+                DispatcherQueue.TryEnqueue(DetachIfUnloaded);
+                return;
+            }
+            DetachIfUnloaded();
+        }
+
+        private void DetachIfUnloaded()
+        {
+            if (IsLoaded) return;
             _centering.Cancel();
             ViewModel.Dispose();
         }

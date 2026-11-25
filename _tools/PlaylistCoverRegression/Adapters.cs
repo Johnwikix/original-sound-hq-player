@@ -74,7 +74,7 @@ namespace WinUIMusicPlayer.Utils
     }
     public static class CoverLoadQueue
     {
-        public static async Task<ImageSource> EnqueueAsync(Music music, CancellationToken token)
+        public static async Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token, bool prioritize = false)
         {
             await Task.Delay(20, token);
             return music.Cover!;

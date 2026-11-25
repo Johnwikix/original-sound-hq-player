@@ -146,6 +146,7 @@ public sealed partial class App : Application
             Check(album.Music is null && artist.Music is null && song.Music is null, "reentry resolves retained rows against current library");
             await stats.StopAsync();
             await stats.StopAsync();
+            await CheckCoverPriorityAsync(cover);
             File.WriteAllLines(_result, _checks);
         }
         catch (Exception ex)
@@ -162,6 +163,50 @@ public sealed partial class App : Application
             Exit();
         }
     }
+
+    private async Task CheckCoverPriorityAsync(string cover)
+    {
+        var order = new System.Collections.Concurrent.ConcurrentQueue<int>();
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        ToolUtils.ReadStarted = music => order.Enqueue(music.Id);
+        ToolUtils.ReadGate = gate;
+        try
+        {
+            // Remote covers have a single worker. Keep it busy until both queued items have a waiter.
+            var current = CoverLoadQueue.EnqueueAsync(new Music { Id = 21, Path = cover, IsRemote = true }, default);
+            await Until(() => order.Count == 1, "single cover worker occupied");
+            var ordinary = CoverLoadQueue.EnqueueAsync(new Music { Id = 22, Path = cover, IsRemote = true }, default);
+            var next = new Music { Id = 23, Path = cover, IsRemote = true };
+            var queued = CoverLoadQueue.EnqueueAsync(next, default);
+            var foreground = CoverLoadQueue.EnqueueAsync(next, default, prioritize: true);
+            gate.TrySetResult();
+            var sources = await Task.WhenAll(current, ordinary, queued, foreground).WaitAsync(TimeSpan.FromSeconds(10));
+            try
+            {
+                Check(order.SequenceEqual(new[] { 21, 23, 22 }), "foreground cover promotes the existing request without a duplicate read");
+                Check(sources.All(source => source is not null) && !ReferenceEquals(sources[2], sources[3]),
+                    "the ordinary queue drains and promoted waiters own independent image sources");
+                var bitmap = sources[3] as Microsoft.UI.Xaml.Media.Imaging.WriteableBitmap
+                    ?? throw new InvalidOperationException("Foreground cover did not use the direct bitmap path.");
+                using var pixels = bitmap.PixelBuffer.AsStream();
+                byte[] firstPixel = new byte[4];
+                pixels.ReadExactly(firstPixel);
+                Check(firstPixel.AsSpan().SequenceEqual(new byte[] { 0, 128, 255, 255 }),
+                    "foreground cover preserves decoded premultiplied BGRA pixels");
+            }
+            finally
+            {
+                foreach (var source in sources) (source as IDisposable)?.Dispose();
+            }
+        }
+        finally
+        {
+            gate.TrySetResult();
+            ToolUtils.ReadGate = null;
+            ToolUtils.ReadStarted = null;
+        }
+    }
+
     private void Check(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);

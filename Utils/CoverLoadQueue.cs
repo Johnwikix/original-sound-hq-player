@@ -1,5 +1,6 @@
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -43,6 +44,8 @@ internal static class CoverLoadQueue
     private static readonly List<Thread> _workers = new();
     private static readonly Channel<PendingCover> _remoteChannel = Channel.CreateBounded<PendingCover>(
         new BoundedChannelOptions(64) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
+    private static PendingCover? _localPriority;
+    private static PendingCover? _remotePriority;
     private static readonly CancellationTokenSource _shutdownCts = new();
     private static readonly object _initLock = new();
     private static int _initialized;
@@ -65,6 +68,7 @@ internal static class CoverLoadQueue
         private int _waiters;
         private int _completed;
         private int _disposed;
+        private int _loading;
 
         public Music Music { get; } = Music;
         public string CacheKey { get; } = CacheKey;
@@ -73,6 +77,8 @@ internal static class CoverLoadQueue
             new(TaskCreationOptions.RunContinuationsAsynchronously);
         public CancellationToken Token => _workCts.Token;
         public int WaiterCount => Volatile.Read(ref _waiters);
+        public bool HasStarted => Volatile.Read(ref _loading) != 0;
+        public bool TryStart() => Interlocked.Exchange(ref _loading, 1) == 0;
 
         public void AddWaiter() => Interlocked.Increment(ref _waiters);
 
@@ -108,10 +114,10 @@ internal static class CoverLoadQueue
     }
 
     /// <summary>返回由调用者独立拥有的封面源，沿用现有列表缩略图尺寸。</summary>
-    public static async Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token)
+    public static async Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token, bool prioritize = false)
     {
-        var decoded = await EnqueuePixelsAsync(music, token, CoverSize);
-        return decoded is null || token.IsCancellationRequested ? null : await CreateImageSourceAsync(decoded, token);
+        var decoded = await EnqueuePixelsAsync(music, token, CoverSize, prioritize).ConfigureAwait(!prioritize);
+        return decoded is null || token.IsCancellationRequested ? null : await CreateImageSourceAsync(decoded, token, prioritize);
     }
 
     /// <summary>保存自有图片源与封面左侧边缘色，不向控件暴露 URL 或共享可释放的图片源。</summary>
@@ -146,7 +152,7 @@ internal static class CoverLoadQueue
             : Windows.UI.Color.FromArgb(255, 32, 32, 32);
     }
 
-    private static async Task<DecodedCover?> EnqueuePixelsAsync(Music music, CancellationToken token, int pixelSize)
+    private static async Task<DecodedCover?> EnqueuePixelsAsync(Music music, CancellationToken token, int pixelSize, bool prioritize = false)
     {
         EnsureInitialized();
         var cacheKey = string.Concat(CacheKey(music), ":", pixelSize.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -184,12 +190,12 @@ internal static class CoverLoadQueue
         bool waiterReleased = false;
         try
         {
+            var channel = music.IsRemote ? _remoteChannel : _channel;
             if (isNew)
             {
-                var channel = music.IsRemote ? _remoteChannel : _channel;
                 try
                 {
-                    await channel.Writer.WriteAsync(pending, token);
+                    await channel.Writer.WriteAsync(pending, token).ConfigureAwait(!prioritize);
                 }
                 catch (OperationCanceledException)
                 {
@@ -203,7 +209,7 @@ internal static class CoverLoadQueue
                         // real consumer can cancel both the work and the write.
                         pending.ReleaseWaiter();
                         waiterReleased = true;
-                        try { await channel.Writer.WriteAsync(pending, pending.Token); }
+                        try { await channel.Writer.WriteAsync(pending, pending.Token).ConfigureAwait(!prioritize); }
                         catch (OperationCanceledException)
                         {
                             RemovePending(pending);
@@ -233,7 +239,9 @@ internal static class CoverLoadQueue
                 }
             }
 
-            var decoded = await pending.Tcs.Task.WaitAsync(token);
+            if (prioritize && !token.IsCancellationRequested) Promote(pending, channel);
+            // 前台请求从工作线程直接安排高优先级图像发布，减少一次普通 UI 排队。
+            var decoded = await pending.Tcs.Task.WaitAsync(token).ConfigureAwait(!prioritize);
             if (decoded is null || token.IsCancellationRequested) return null;
             return decoded;
         }
@@ -243,6 +251,19 @@ internal static class CoverLoadQueue
                 pending.ReleaseWaiter();
         }
     }
+
+    // 前台封面复用已排队的请求。原队列中的同一项由 TryStart 跳过。
+    private static void Promote(PendingCover request, Channel<PendingCover> channel)
+    {
+        if (_shutdownCts.IsCancellationRequested || request.HasStarted || request.Tcs.Task.IsCompleted) return;
+        ref var slot = ref PrioritySlot(channel);
+        Interlocked.Exchange(ref slot, request);
+        if (_shutdownCts.IsCancellationRequested || request.HasStarted || request.Tcs.Task.IsCompleted)
+            Interlocked.CompareExchange(ref slot, null, request);
+    }
+
+    private static ref PendingCover? PrioritySlot(Channel<PendingCover> channel)
+        => ref (ReferenceEquals(channel, _remoteChannel) ? ref _remotePriority : ref _localPriority);
 
     private static void EnsureInitialized()
     {
@@ -286,16 +307,18 @@ internal static class CoverLoadQueue
     private static void InnerLoop(Channel<PendingCover> channel)
     {
         var ct = _shutdownCts.Token;
+        ref var priority = ref PrioritySlot(channel);
         while (!ct.IsCancellationRequested)
         {
             PendingCover req;
             try
             {
-                req = channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
+                req = Interlocked.Exchange(ref priority, null) ?? channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) { return; }
             catch (ChannelClosedException) { return; }
 
+            if (!req.TryStart()) continue;
             try
             {
                 var src = LoadAndDecodeAsync(req).GetAwaiter().GetResult();
@@ -513,7 +536,7 @@ internal static class CoverLoadQueue
         finally { softwareBitmap?.Dispose(); }
     }
 
-    private static async Task<ImageSource?> CreateImageSourceAsync(DecodedCover decoded, CancellationToken token)
+    private static async Task<ImageSource?> CreateImageSourceAsync(DecodedCover decoded, CancellationToken token, bool prioritize = false)
     {
         ImageSource? result = null;
         SoftwareBitmapSource? source = null;
@@ -522,6 +545,17 @@ internal static class CoverLoadQueue
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
                 token.ThrowIfCancellationRequested();
+                if (prioritize)
+                {
+                    // 解码结果已经是预乘 BGRA8，直接写入当前封面的位图缓冲。
+                    var bitmap = new WriteableBitmap(decoded.Width, decoded.Height);
+                    using var pixels = bitmap.PixelBuffer.AsStream();
+                    pixels.Write(decoded.Pixels);
+                    bitmap.Invalidate();
+                    result = bitmap;
+                    return;
+                }
+
                 using var softwareBitmap = new SoftwareBitmap(
                     BitmapPixelFormat.Bgra8,
                     decoded.Width,
@@ -532,7 +566,7 @@ internal static class CoverLoadQueue
                 await source.SetBitmapAsync(softwareBitmap);
                 result = source;
                 source = null;
-            });
+            }, prioritize ? DispatcherQueuePriority.High : DispatcherQueuePriority.Normal);
             token.ThrowIfCancellationRequested();
             var completed = result;
             result = null;
@@ -568,10 +602,13 @@ internal static class CoverLoadQueue
     {
         if (Interlocked.Exchange(ref _initialized, 0) == 0) return;
         _shutdownCts.Cancel();
+        Interlocked.Exchange(ref _localPriority, null);
+        Interlocked.Exchange(ref _remotePriority, null);
         _channel.Writer.TryComplete();
         _remoteChannel.Writer.TryComplete();
         while (_channel.Reader.TryRead(out var request) || _remoteChannel.Reader.TryRead(out request))
         {
+            if (!request.TryStart()) continue;
             RemovePending(request);
             request.Tcs.TrySetCanceled();
             request.Complete();

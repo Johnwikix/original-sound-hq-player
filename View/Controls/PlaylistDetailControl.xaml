@@ -53,7 +53,7 @@
                             Canvas.ZIndex="1"
                             Stretch="UniformToFill">
                             <interactivity:Interaction.Behaviors>
-                                <behaviors:AlbumCoverBehavior Music="{x:Bind ViewModel.CoverSource, Mode=OneWay}" />
+                                <behaviors:AlbumCoverBehavior Music="{x:Bind ViewModel.CoverSource, Mode=OneWay}" Prioritize="True" />
                             </interactivity:Interaction.Behaviors>
                         </Image>
                     </Grid>
