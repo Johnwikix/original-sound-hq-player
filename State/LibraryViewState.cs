@@ -13,6 +13,7 @@ public sealed class LibraryViewState : ObservableObject
     public CollectionViewSource AlbumPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
     public CollectionViewSource ArtistPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
     public BulkObservableCollection<Music> ListSongs { get; set => SetProperty(ref field, value); } = [];
+    public bool IsSongListPreparing { get; internal set => SetProperty(ref field, value); }
     public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
     public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
     public BulkObservableCollection<Music> FolderSongs { get; set => SetProperty(ref field, value); } = [];

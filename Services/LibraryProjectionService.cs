@@ -99,6 +99,16 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         target.Clear();
     }
 
+    internal bool DiscardStaleSongListPreparation()
+    {
+        var target = state.LibraryViews.ListSongs;
+        if (!_published.TryGetValue(target, out var published) || published == SongKey(SongViewType.All))
+            return false;
+
+        ClearSongCollection(target);
+        return true;
+    }
+
     /// <summary>同一列表最多一个在途计算；新请求替换待执行参数，不为每次输入复制音乐库。</summary>
     public Task UpdateSongCollectionsAsync(BulkObservableCollection<Music> target, SongViewType kind, Func<Music, bool>? filterPredicate = null)
     {
@@ -122,8 +132,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private async Task RefreshSongsAsync(BulkObservableCollection<Music> target)
     {
         await Task.Yield(); // 登记任务后才执行，避免同步完成留下已完成任务条目。
+        bool isSongList = ReferenceEquals(target, state.LibraryViews.ListSongs);
         try
         {
+            if (isSongList && !_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
+                state.LibraryViews.IsSongListPreparing = true;
             while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
             {
                 // 复用在途的比较器初始化，等候期间留出其他库投影的计算通道。
@@ -195,7 +208,11 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             }
         }
         catch (Exception ex) { logger.LogError(ex, "刷新音乐列表失败"); }
-        finally { _inflight.Remove(target); }
+        finally
+        {
+            _inflight.Remove(target);
+            if (isSongList) state.LibraryViews.IsSongListPreparing = false;
+        }
     }
 
     public async Task StopAsync()

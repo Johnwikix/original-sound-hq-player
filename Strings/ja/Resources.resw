@@ -2889,4 +2889,7 @@ SHA-256: {5}
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
     <value>歌詞の空間エフェクト</value>
   </data>
+  <data name="SongListPreparing.Text" xml:space="preserve">
+    <value>曲を準備しています…</value>
+  </data>
 </root>

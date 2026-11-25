@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.State
         public FixturePlaybackState Playback { get; } = new();
         public BrowseState Browse { get; } = new();
         public ShellState Shell { get; } = new();
+        public LibraryViewState LibraryViews { get; } = new();
     }
 }
 namespace AnimatedWin2dControls.Messages { }
@@ -121,7 +122,7 @@ namespace WinUIMusicPlayer.ViewModel
     public sealed class AppViewModel : ObservableObject
     {
         public WinUIMusicPlayer.State.AppState State { get; } = new();
-        public BulkObservableCollection<Music> ListSongs { get; } = [];
+        public BulkObservableCollection<Music> ListSongs => State.LibraryViews.ListSongs;
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; } = [];
         public bool IsInitialized => false;
         public Microsoft.UI.Xaml.Visibility LibraryEmptyVisibility
@@ -172,7 +173,8 @@ namespace WinUIMusicPlayer.ViewModel
         public void NotifyIdIndexChanged() { }
         public void NotifySharedFavoriteChanged() { }
         public void RefreshAllViews() { }
-        internal void PrepareDefaultSongTitleSort() { }
+        internal void PrepareSongsForBrowsing() { }
+        internal void DiscardStalePreparedSongs() { }
         public ObservableCollection<PlayList> AllPlayList { get; } = [];
         public ObservableCollection<SortOption> SortOptions { get; } = [];
         public SortOption SelectedSortOption { get; } = new();

@@ -414,10 +414,13 @@ static async Task RunAsync()
     library.Library.Replace([new(1, "b.flac") { Title = "needle" }, new(2, "a.flac") { Title = "A" }]);
     var queries = new LibraryQueries(library.Library);
     var projections = new LibraryProjectionService(library, queries, Microsoft.Extensions.Logging.Abstractions.NullLogger<LibraryProjectionService>.Instance);
-    var list = new BulkObservableCollection<Music>();
+    var list = library.LibraryViews.ListSongs;
+    bool preparedWhilePublishing = false;
+    list.CollectionChanged += (_, _) => preparedWhilePublishing |= library.LibraryViews.IsSongListPreparing;
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     Check(list.FillCount == 1 && list[0].Title == "A", "Unchanged query must reuse its published projection.");
+    Check(preparedWhilePublishing && !library.LibraryViews.IsSongListPreparing, "Song preparation must cover publication and then clear.");
     var notifications = new List<System.Collections.Specialized.NotifyCollectionChangedAction>();
     list.CollectionChanged += (_, change) => notifications.Add(change.Action);
     var untouched = list[0];
@@ -462,6 +465,12 @@ static async Task RunAsync()
     Check(ReferenceEquals(superseded, latest), "One target must share one active refresh barrier.");
     await latest;
     Check(list.Count == 2, "Latest pending search must win.");
+    Check(!projections.DiscardStaleSongListPreparation(), "A first visit must keep a matching prepared projection.");
+    library.Browse.SearchText = "no such song";
+    Check(projections.DiscardStaleSongListPreparation() && list.Count == 0, "A first visit must discard prepared rows for old query inputs.");
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(list.Count == 0 && !library.LibraryViews.IsSongListPreparing, "A completed empty result must end song preparation.");
+    library.Browse.SearchText = "";
     library.Library.Replace([
         new(10, "local") { SourceId = 0, Album = "same album", Title = "track 1", TrackNumber = 1 },
         new(11, "remote-a") { SourceId = 1, Album = "same album", Title = "track 1", TrackNumber = 1 },
@@ -494,6 +503,7 @@ static async Task RunAsync()
     await projections.StopAsync();
     await pendingProjection;
     Check(list.FillCount == fillsBeforeStop, "Stopping must suppress delayed list publication.");
+    Check(!library.LibraryViews.IsSongListPreparing, "Stopping must leave song preparation idle.");
     Console.WriteLine("PASS: library cache, version invalidation, shared refresh barrier, latest search and stop suppression.");
     var groupedState = new WinUIMusicPlayer.State.AppState();
     groupedState.Library.Replace([

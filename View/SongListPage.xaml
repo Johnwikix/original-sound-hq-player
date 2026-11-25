@@ -8,6 +8,7 @@
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:viewModel="using:WinUIMusicPlayer.ViewModel"
     IsTabStop="True"
     TabIndex="0"
     mc:Ignorable="d">
@@ -43,6 +44,16 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <StackPanel
+            x:Name="SongPreparation"
+            x:Load="{x:Bind viewModel:SongListViewModel.ShowSongPreparation(ViewModel.IsWaitingForFirstSongRow, ViewModel.State.LibraryViews.IsSongListPreparing, ViewModel.AppViewModel.ListSongs.Count), Mode=OneWay}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsHitTestVisible="False"
+            Spacing="8">
+            <ProgressRing Width="24" Height="24" IsActive="True" AutomationProperties.AccessibilityView="Raw" />
+            <TextBlock x:Uid="SongListPreparing" AutomationProperties.LiveSetting="Polite" />
+        </StackPanel>
         <Border Style="{StaticResource FloatingLocateSurfaceStyle}">
             <Button Margin="0"
                 x:Name="LocateCurrentTrackButton"

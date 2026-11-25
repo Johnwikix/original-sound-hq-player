@@ -22,8 +22,10 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
         public AppViewModel AppViewModel { get; }
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
+        public bool IsWaitingForFirstSongRow { get; private set => SetProperty(ref field, value); }
         private MusicDatabaseService _musicDatabaseService { get; }
         private MusicBrowseViewModel MusicBrowseViewModel { get; set; }
+        private bool _hasVisited;
 
         public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
@@ -86,7 +88,18 @@ namespace WinUIMusicPlayer.ViewModel
         public void ReceiveNavigation()
         {
             AppViewModel.IsBackBtnEnable = false;
+            if (_hasVisited) return;
+
+            _hasVisited = true;
+            AppViewModel.DiscardStalePreparedSongs();
         }
+
+        internal void BeginSongPresentation() => IsWaitingForFirstSongRow = AppViewModel.ListSongs.Count == 0;
+
+        internal void EndSongPresentation() => IsWaitingForFirstSongRow = false;
+
+        public static bool ShowSongPreparation(bool waitingForFirstRow, bool preparing, int songCount) =>
+            waitingForFirstRow && (preparing || songCount > 0);
 
         public async Task<bool> IsDeleteFromDisk()
         {

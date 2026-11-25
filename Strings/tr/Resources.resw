@@ -2889,4 +2889,7 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
     <value>Şarkı sözü uzamsal efektleri</value>
   </data>
+  <data name="SongListPreparing.Text" xml:space="preserve">
+    <value>Şarkılar hazırlanıyor…</value>
+  </data>
 </root>

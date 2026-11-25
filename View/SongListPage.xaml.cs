@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using Windows.Foundation.Collections;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Helper;
@@ -24,6 +25,7 @@ namespace WinUIMusicPlayer.View
         private readonly ListViewCentering _centering;
         private readonly PlaybackSelectionTracker _playbackSelection;
         private readonly Music?[] _selectedBuffer = new Music?[256];
+        private bool _active;
 
         public SongListPage()
         {
@@ -37,13 +39,46 @@ namespace WinUIMusicPlayer.View
         void ILibraryTab.Activate()
         {
             ViewModel.ReceiveNavigation();
+            if (_active) return;
+            _active = true;
+            ViewModel.BeginSongPresentation();
             Bindings.Initialize();
+            if (!ViewModel.IsWaitingForFirstSongRow) return;
+
+            MusicListView.Items.VectorChanged += OnSongItemsChanged;
+            WatchFirstSongLayout();
         }
 
         void ILibraryTab.Deactivate()
         {
+            _active = false;
+            StopWatchingFirstSongRow();
+            ViewModel.EndSongPresentation();
             _centering.Cancel();
             Bindings.StopTracking();
+        }
+
+        private void OnSongItemsChanged(IObservableVector<object> sender, IVectorChangedEventArgs args)
+            => WatchFirstSongLayout();
+
+        private void WatchFirstSongLayout()
+        {
+            MusicListView.LayoutUpdated -= OnFirstSongLayoutUpdated;
+            if (MusicListView.Items.Count > 0)
+                MusicListView.LayoutUpdated += OnFirstSongLayoutUpdated;
+        }
+
+        private void OnFirstSongLayoutUpdated(object? sender, object args)
+        {
+            if (!_active || !ListViewInteraction.HasVisibleMusicRow(MusicListView)) return;
+            StopWatchingFirstSongRow();
+            ViewModel.EndSongPresentation();
+        }
+
+        private void StopWatchingFirstSongRow()
+        {
+            MusicListView.Items.VectorChanged -= OnSongItemsChanged;
+            MusicListView.LayoutUpdated -= OnFirstSongLayoutUpdated;
         }
 
         private async void LocateCurrentTrackButton_Click(object sender, RoutedEventArgs e)

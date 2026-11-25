@@ -2889,4 +2889,7 @@ See the log for full details.</value></data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
     <value>Lyrics Spatial Effects</value>
   </data>
+  <data name="SongListPreparing.Text" xml:space="preserve">
+    <value>Preparing songs…</value>
+  </data>
 </root>

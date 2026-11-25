@@ -68,11 +68,6 @@ namespace WinUIMusicPlayer.View
             Bindings.StopTracking();
         }
 
-        private bool HasVisibleFavoriteRow() =>
-            MusicListView.IsLoaded &&
-            MusicListView.ItemsPanelRoot is ItemsStackPanel { FirstVisibleIndex: >= 0 } panel &&
-            MusicListView.ContainerFromIndex(panel.FirstVisibleIndex) is ListViewItem { IsLoaded: true, ActualHeight: > 0, Content: Music };
-
         private void WaitForFavoriteItems()
         {
             MusicListView.Items.VectorChanged += OnFavoriteItemsChanged;
@@ -100,7 +95,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnFavoriteLayoutUpdated(object? sender, object e)
         {
-            if (!_waitingForFirstFavoriteFrame || !HasVisibleFavoriteRow()) return;
+            if (!_waitingForFirstFavoriteFrame || !ListViewInteraction.HasVisibleMusicRow(MusicListView)) return;
             MusicListView.Items.VectorChanged -= OnFavoriteItemsChanged;
             MusicListView.LayoutUpdated -= OnFavoriteLayoutUpdated;
             CompositionTarget.Rendering += OnFavoriteRendering;
@@ -110,24 +105,24 @@ namespace WinUIMusicPlayer.View
         {
             CompositionTarget.Rendering -= OnFavoriteRendering;
             if (!_waitingForFirstFavoriteFrame) return;
-            if (!HasVisibleFavoriteRow())
+            if (!ListViewInteraction.HasVisibleMusicRow(MusicListView))
             {
                 WaitForFavoriteItems();
                 return;
             }
 
-            // 让首个有内容的收藏画面先提交，再安排后台比较器准备。
-            if (!DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, PrepareSongTitleSort))
+            // 让首个有内容的收藏画面先提交，再准备歌曲投影。
+            if (!DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, PrepareSongsForBrowsing))
                 _waitingForFirstFavoriteFrame = false;
         }
 
-        private void PrepareSongTitleSort()
+        private void PrepareSongsForBrowsing()
         {
             if (!_waitingForFirstFavoriteFrame) return;
             _waitingForFirstFavoriteFrame = false;
             _observedFirstFavoriteFrame = true;
             StopWatchingFavoriteFrame();
-            ViewModel.AppViewModel.PrepareDefaultSongTitleSort();
+            ViewModel.AppViewModel.PrepareSongsForBrowsing();
         }
 
         private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)

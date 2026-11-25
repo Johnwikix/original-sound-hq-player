@@ -33,6 +33,25 @@
         </Setter>
     </Style>
 
+    <!-- 歌曲行的文字视口始终拉伸，根布局同时承载文本和滚动视觉。 -->
+    <ControlTemplate x:Key="MusicRowAutoScrollTemplate" TargetType="local:AutoScrollView">
+        <Grid x:Name="LayoutRoot">
+            <Grid x:Name="ChildPresenterContainer">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentPresenter
+                    x:Name="ChildPresenter"
+                    Margin="{TemplateBinding Padding}"
+                    Content="{TemplateBinding Child}" />
+            </Grid>
+            <Canvas x:Name="ChildHost" />
+        </Grid>
+    </ControlTemplate>
+
     <Style x:Key="DefaultCompositionShadowStyle" TargetType="local:CompositionShadow">
         <Setter Property="Template">
             <Setter.Value>

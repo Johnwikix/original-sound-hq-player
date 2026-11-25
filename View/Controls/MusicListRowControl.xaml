@@ -33,27 +33,23 @@
             BorderThickness="0"
             CornerRadius="5"
             Style="{StaticResource PlayHoverButtonStyle}">
-            <Grid x:Name="CoverArtwork" Width="40" Height="40">
+            <Grid
+                x:Name="CoverArtwork"
+                Width="40"
+                Height="40"
+                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
+                <FontIcon
+                    FontSize="15"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Glyph="&#xE93C;" />
                 <Image
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Canvas.ZIndex="1"
                     Stretch="UniformToFill">
                     <interactivity:Interaction.Behaviors>
                         <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
                     </interactivity:Interaction.Behaviors>
                 </Image>
-                <Grid
-                    Width="40"
-                    Height="40"
-                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                    Canvas.ZIndex="0">
-                    <FontIcon
-                        Canvas.ZIndex="0"
-                        FontSize="15"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Glyph="&#xE93C;" />
-                </Grid>
             </Grid>
         </Button>
         <Button
@@ -77,6 +73,7 @@
             Click="TitleButton_Click" AutomationProperties.Name="{x:Bind Music.Title, Mode=OneWay}"
             ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('MusicDetailTitle')}">
             <localControls:AutoScrollView x:Name="TitleScroll" IsPlaying="False"
+                Template="{StaticResource MusicRowAutoScrollTemplate}"
                 PointerCanceled="AutoScrollHover_PointerCanceled" PointerEntered="AutoScrollHover_PointerEntered"
                 PointerExited="AutoScrollHover_PointerExited">
                 <TextBlock x:Name="MusicTitleText" VerticalAlignment="Center" Text="{x:Bind Music.Title, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
@@ -95,6 +92,7 @@
                 <localControls:AutoScrollView x:Name="AuthorScroll"
                     Margin="0"
                     IsPlaying="False"
+                    Template="{StaticResource MusicRowAutoScrollTemplate}"
                     PointerCanceled="AutoScrollHover_PointerCanceled"
                     PointerEntered="AutoScrollHover_PointerEntered"
                     PointerExited="AutoScrollHover_PointerExited">
@@ -118,6 +116,7 @@
                 <localControls:AutoScrollView x:Name="AlbumScroll"
                     Margin="0"
                     IsPlaying="False"
+                    Template="{StaticResource MusicRowAutoScrollTemplate}"
                     PointerCanceled="AutoScrollHover_PointerCanceled"
                     PointerEntered="AutoScrollHover_PointerEntered"
                     PointerExited="AutoScrollHover_PointerExited">

@@ -2889,4 +2889,7 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
     <value>Räumliche Songtext-Effekte</value>
   </data>
+  <data name="SongListPreparing.Text" xml:space="preserve">
+    <value>Titel werden vorbereitet…</value>
+  </data>
 </root>

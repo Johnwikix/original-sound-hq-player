@@ -1,3 +1,9 @@
+## 2026-11-25 缩短歌曲页首次显示等待
+
+- `View/FavouritePlayListPage.xaml.cs`、`Services/LibraryProjectionService.cs` 在最爱首帧后准备歌曲投影，首次切换复用已发布结果或在途请求。
+- `View/SongListPage.xaml` 在首次等待歌曲时显示加载提示，首行完成布局、查询返回空结果或失败后收起。
+- `View/Controls/MusicListRowControl.xaml` 配合 `Themes/Generic.xaml` 精简封面占位和三列滚动文字的布局层级，减少首屏和滚动时创建的视觉元素。
+
 ## 2026-11-23 缩短从最爱首次切换到歌曲的排序等待
 
 - `View/FavouritePlayListPage.xaml.cs`、`Services/LibraryProjectionService.cs` 在最爱列表首帧后按需后台准备歌曲标题比较器，减少首次切到歌曲时的默认排序等待。
