@@ -14,6 +14,8 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public sealed class SettingsViewModel
     {
+        internal string? LastSectionTag { get; set; }
+
         public AppViewModel AppViewModel { get; } = new();
     }
     public sealed class AppViewModel

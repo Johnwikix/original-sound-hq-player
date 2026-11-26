@@ -11,12 +11,12 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View
 {
-    /// <summary>设置页分区按需创建，重入时恢复界面初始位置。</summary>
+    /// <summary>设置页按需创建分区，返回时恢复上次选中的分区。</summary>
     public sealed partial class SettingsPage : Page
     {
         private readonly ConditionalWeakTable<FrameworkElement, SectionViewState> _sections = new();
         private int _visit;
-        private bool _resetSectionOnLoad;
+        private bool _restoreSectionOnLoad;
 
         public SettingsViewModel ViewModel { get; }
 
@@ -25,6 +25,7 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             WinUIMusicPlayer.Services.UiLayoutDiagnostics.Track(this);
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
+            SectionSelector.SelectedItem = GetRememberedSection();
             DataContext = this;
             NavigationCacheMode = NavigationCacheMode.Enabled;
         }
@@ -33,22 +34,38 @@ namespace WinUIMusicPlayer.View
         {
             base.OnNavigatedTo(e);
             _visit++;
-            _resetSectionOnLoad = true;
-            SectionSelector.SelectedItem = GeneralSection;
+            _restoreSectionOnLoad = true;
             ViewModel.AppViewModel.IsRealDevceChange = false;
             _ = ViewModel.AppViewModel.GetWasapiDeviceAsync();
         }
 
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            base.OnNavigatingFrom(e);
+            if (SectionSelector.SelectedItem?.Tag is string tag)
+                ViewModel.LastSectionTag = tag;
+        }
+
+        private SelectorBarItem GetRememberedSection()
+        {
+            foreach (var item in SectionSelector.Items)
+                if (item.Tag is string tag && tag == ViewModel.LastSectionTag)
+                    return item;
+
+            return GeneralSection;
+        }
+
         private void OnSectionSelectorLoaded(object sender, RoutedEventArgs e)
         {
-            if (!_resetSectionOnLoad) return;
+            if (!_restoreSectionOnLoad) return;
 
-            _resetSectionOnLoad = false;
-            if (SectionSelector.SelectedItem == GeneralSection && GeneralSection.IsSelected) return;
+            _restoreSectionOnLoad = false;
+            var section = GetRememberedSection();
+            if (SectionSelector.SelectedItem == section && section.IsSelected) return;
 
             // Reapply the selection once the cached SelectorBar can update its item highlights.
             SectionSelector.SelectedItem = null;
-            SectionSelector.SelectedItem = GeneralSection;
+            SectionSelector.SelectedItem = section;
         }
 
         private void OnSectionLoaded(object sender, RoutedEventArgs e)

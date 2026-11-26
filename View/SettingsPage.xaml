@@ -32,7 +32,6 @@
                                 x:Name="GeneralSection"
                                 x:Uid="SettingsSectionGeneral"
                                 FontSize="18"
-                                IsSelected="True"
                                 Tag="General" />
                             <SelectorBarItem
                                 x:Uid="SettingsSectionShortcuts"

@@ -36,10 +36,11 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         _results.Add("PASS: " + name);
     }
 
-    private void CheckGeneralSelection(SelectorBar selector, string description)
+    private void CheckSelection(SelectorBar selector, int expectedIndex, string description)
     {
         var selectedTags = string.Join(", ", selector.Items.Where(item => item.IsSelected).Select(item => item.Tag));
-        Check(selector.SelectedItem == selector.Items[0] && selectedTags == "General",
+        var expected = selector.Items[expectedIndex];
+        Check(selector.SelectedItem == expected && selectedTags == (string)expected.Tag,
             $"{description} (SelectedItem: {selector.SelectedItem?.Tag}, highlighted: {selectedTags})");
     }
 
@@ -69,6 +70,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Check(general.Expander.IsExpanded && general.Scroll.VerticalOffset > 0, "General can expand and scroll");
             var page = (SettingsPage)frame.Content;
             var selector = (SelectorBar)page.FindName("SectionSelector");
+            CheckSelection(selector, 0, "First entry selects and highlights General");
             for (int i = 1; i < selector.Items.Count; i++)
             {
                 selector.SelectedItem = selector.Items[i];
@@ -98,18 +100,20 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             var currentSelector = (SelectorBar)currentPage.FindName("SectionSelector");
             Check(currentPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
                 "Settings participates in the bounded Frame cache");
-            CheckGeneralSelection(currentSelector, "Repeated entry selects and highlights General after DSP had focus");
-            Check(ProbeSection.Created.Count == 6 && general.IsLoaded && !dsp.IsLoaded,
-                "Repeated entry reattaches General and creates no sections");
-            Check(dsp.Loads == 2, "Reentry does not reload the previously focused DSP section");
+            CheckSelection(currentSelector, 2, "Repeated entry keeps DSP selected and highlighted");
+            Check(ProbeSection.Created.Count == 6 && dsp.IsLoaded && !general.IsLoaded && dsp.Loads == 3,
+                "Repeated entry reloads the existing DSP section once");
             Check(currentPage.ViewModel.AppViewModel.RefreshCount == 2, "Every entry still refreshes output devices");
+            currentSelector.SelectedItem = currentSelector.Items[0];
+            await Settle(frame);
             Check(!general.Expander.IsExpanded && general.Scroll.VerticalOffset < 1, "General restores its collapsed state and top scroll position");
             currentSelector.SelectedItem = currentSelector.Items[5];
             await Settle(frame);
             Check(about.IsLoaded && about.Expander.IsExpanded, "Cached About restores its expanded default on the next visit");
             currentSelector.SelectedItem = currentSelector.Items[4];
             await Settle(frame);
-            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created.OfType<LyricsSettingsControl>().Single().IsLoaded,
+            var lyrics = ProbeSection.Created.OfType<LyricsSettingsControl>().Single();
+            Check(ProbeSection.Created.Count == 6 && lyrics.IsLoaded,
                 "Selector binding reattaches an already visited section");
             Check(currentSelector.Items[4].Focus(FocusState.Keyboard), "Lyrics can receive keyboard focus before navigating away");
             frame.Navigate(typeof(Page));
@@ -119,9 +123,9 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             var historyPage = (SettingsPage)frame.Content;
             var historySelector = (SelectorBar)historyPage.FindName("SectionSelector");
             Check(ReferenceEquals(currentPage, historyPage), "History reentry keeps the cached settings page");
-            CheckGeneralSelection(historySelector, "History reentry selects and highlights General after Lyrics had focus");
-            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
-                "History reentry restores the existing General section only");
+            CheckSelection(historySelector, 4, "History reentry keeps Lyrics selected and highlighted");
+            Check(ProbeSection.Created.Count == 6 && lyrics.IsLoaded && !general.IsLoaded,
+                "History reentry restores the existing Lyrics section only");
             Check(historyPage.ViewModel.AppViewModel.RefreshCount == 3, "History reentry still refreshes devices");
             frame.GoForward();
             await Settle(frame);
@@ -129,8 +133,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             frame.GoBack();
             await Settle(frame);
             Check(ReferenceEquals(historyPage, frame.Content), "Back after forward keeps the cached settings page");
-            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
-                "Back after forward reuses General");
+            Check(ProbeSection.Created.Count == 6 && lyrics.IsLoaded, "Back after forward reuses Lyrics");
+            CheckSelection(historySelector, 4, "Back after forward keeps Lyrics selected and highlighted");
 
             for (int i = 1; i < historySelector.Items.Count; i++)
             {
@@ -144,10 +148,24 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
                 frame.Navigate(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
                 frame.BackStack.Clear();
                 await Settle(frame);
-                Check(ReferenceEquals(historyPage, frame.Content) && general.IsLoaded,
-                    $"Returning from {item.Tag} shows General on the cached settings page");
-                CheckGeneralSelection(historySelector, $"Returning from {item.Tag} selects and highlights General");
+                Check(ReferenceEquals(historyPage, frame.Content) && ProbeSection.Created.Count == 6 && ProbeSection.Created[i].IsLoaded,
+                    $"Returning from {item.Tag} shows the same content on the cached settings page");
+                CheckSelection(historySelector, i, $"Returning from {item.Tag} keeps that section selected and highlighted");
             }
+
+            frame.Navigate(typeof(Page));
+            frame.BackStack.Clear();
+            frame.CacheSize = 0;
+            await Settle(frame);
+            frame.CacheSize = 4;
+            frame.Navigate(typeof(SettingsPage));
+            frame.BackStack.Clear();
+            await Settle(frame);
+            var rebuiltPage = (SettingsPage)frame.Content;
+            Check(!ReferenceEquals(historyPage, rebuiltPage), "Eviction creates a new settings page");
+            CheckSelection((SelectorBar)rebuiltPage.FindName("SectionSelector"), 5, "Rebuilt page still selects and highlights About");
+            Check(ProbeSection.Created.Count == 7 && ProbeSection.Created[^1] is AboutSettingsControl { IsLoaded: true },
+                "Rebuilt settings page creates only the remembered section");
 
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), string.Join("\r\n", _results) + "\r\n");
         }

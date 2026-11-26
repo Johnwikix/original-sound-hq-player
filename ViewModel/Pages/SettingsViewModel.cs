@@ -10,6 +10,8 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public string FolderBrowserTitle => ToolUtils.GetString("FolderBrowserTitle");
 
+        internal string? LastSectionTag { get; set; }
+
         public AppViewModel AppViewModel { get; }
         public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         public DesktopLyrics.DesktopLyricsViewModel DesktopLyrics { get; }
