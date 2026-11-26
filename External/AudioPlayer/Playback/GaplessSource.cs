@@ -126,12 +126,12 @@ internal sealed class GaplessSource(Session current) : IRenderSource
     }
 
     /// <summary>与渲染及曲目交接使用同一屏障；控制端必须已暂停输出。</summary>
-    internal void RetireInactiveConvolution()
+    internal void RetireInactiveEffects()
     {
         lock (_gate)
         {
-            _current.Effects?.RetireInactiveConvolution();
-            _next?.Effects?.RetireInactiveConvolution();
+            _current.Effects?.RetireInactiveEffects();
+            _next?.Effects?.RetireInactiveEffects();
         }
     }
 

@@ -7,7 +7,7 @@ internal sealed class PcmEffects : IDisposable
 {
     internal event Action? StateChanged;
 
-    private sealed record Target(DspSettings Settings, double Gain, ConvolutionFilter? Filter = null, double ConvolutionGain = 1, double CrossfeedAlpha = 0, ConvolutionStatus Preparation = ConvolutionStatus.Off);
+    private sealed record Target(DspSettings Settings, double Gain, ConvolutionFilter? Filter = null, double ConvolutionGain = 1, double CrossfeedAlpha = 0, ConvolutionStatus Preparation = ConvolutionStatus.Off, ConcertHallReverb? Hall = null);
     private ConvolutionFilter? _filter, _renderFilter;
     private ConvolutionFilter? _continuedFilter, _continuedTargetFilter;
     private string? _impulsePath;
@@ -56,6 +56,7 @@ internal sealed class PcmEffects : IDisposable
     private uint _channelMask;
     private TruePeakLimiter? _limiter;
     private bool _limiterActive;
+    private ConcertHallReverb? _hall, _renderHall, _renderHallTarget;
     internal bool IsPrepared
     {
         get
@@ -66,8 +67,17 @@ internal sealed class PcmEffects : IDisposable
     }
     internal bool DitherEnabled => Volatile.Read(ref _target).Settings.DitherEnabled;
     internal int DelayFrames => Volatile.Read(ref _target).Settings is { IsEnabled: true, TruePeakLimiterEnabled: true } ? _limiter?.DelayFrames ?? 0 : 0;
-    internal int TailFrames => Math.Max(Volatile.Read(ref _target).Filter?.TailFrames ?? 0,
-        Math.Max(_renderFilter?.TailFrames ?? 0, _oldFilter?.TailFrames ?? 0));
+    internal int TailFrames
+    {
+        get
+        {
+            var target = Volatile.Read(ref _target);
+            int convolutionTail = Math.Max(target.Filter?.TailFrames ?? 0,
+                Math.Max(_renderFilter?.TailFrames ?? 0, _oldFilter?.TailFrames ?? 0));
+            // 音乐厅混响接收卷积的尾音，排空时间按串联累加。
+            return convolutionTail + (target.Hall?.TailFrames ?? 0);
+        }
+    }
     private bool _disposed, _attempted;
     private int _resetVersion, _renderResetVersion;
     private double _gain = 1, _gainStep;
@@ -101,6 +111,10 @@ internal sealed class PcmEffects : IDisposable
             // 控制线程先准备完整实例，再发布启用快照；默认旁路不创建前瞻缓冲。
             if (settings.IsEnabled && settings.TruePeakLimiterEnabled && _limiter == null && _channels is >= 1 and <= 8)
                 Volatile.Write(ref _limiter, new TruePeakLimiter(_rate, _channels));
+            _hall = settings is { IsEnabled: true, ConcertHallEnabled: true }
+                && _channels is 1 or 2 && _rate is >= 8000 and <= 768000
+                ? _hall ?? new ConcertHallReverb(_rate, _channels)
+                : null;
             _settings = settings;
             ConfigureConvolution();
             if (!settings.IsEnabled || !settings.NormalizeLoudness)
@@ -282,7 +296,7 @@ internal sealed class PcmEffects : IDisposable
         Volatile.Write(ref _target, new Target(_settings, _settings.IsEnabled
             ? Math.Pow(10, (normalization + (_settings.AutoPreamp == true ? _preampDb : _settings.HeadroomDb)) / 20) : 1,
             _settings.IsEnabled && _settings.ConvolutionEnabled ? _filter : null, _settings.AutoPreamp.HasValue ? 1 : Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20),
-            1 - Math.Exp(-2 * Math.PI * Math.Min(_settings.CrossfeedCutoffHz, _rate * 0.45) / _rate), _convolutionStatus));
+            1 - Math.Exp(-2 * Math.PI * Math.Min(_settings.CrossfeedCutoffHz, _rate * 0.45) / _rate), _convolutionStatus, _hall));
     }
 
     /// <summary>
@@ -306,10 +320,11 @@ internal sealed class PcmEffects : IDisposable
     /// <summary>seek 仅投递代数，滤波历史由渲染线程在下一块清空。</summary>
     internal void RequestReset() => Interlocked.Increment(ref _resetVersion);
 
-    /// <summary>仅在输出渲染屏障内调用。暂停后不再等待下一音频块来退休已关闭的卷积。</summary>
-    internal void RetireInactiveConvolution()
+    /// <summary>仅在输出渲染屏障内调用。暂停时直接释放已关闭的滤波和混响历史。</summary>
+    internal void RetireInactiveEffects()
     {
         var target = Volatile.Read(ref _target);
+        if (target.Hall == null) _renderHall = _renderHallTarget = null;
         if (target.Settings is { IsEnabled: true, ConvolutionEnabled: true }) return;
         _renderTarget = null;
         _renderFilter = _oldFilter = null;
@@ -317,14 +332,16 @@ internal sealed class PcmEffects : IDisposable
         _convolutionMix = 0;
     }
 
-    /// <summary>仅由渲染线程或停机屏障内调用；总开关旁路时同时退休卷积工作区。</summary>
-    internal void ResetRenderState(bool releaseConvolution = false)
+    /// <summary>仅由渲染线程或停机屏障内调用；总开关旁路时释放渲染工作区。</summary>
+    internal void ResetRenderState(bool releaseEffects = false)
     {
         _continuedFilter = _continuedTargetFilter = null;
         _dynamics.Reset();
+        _renderHall?.Reset();
+        if (releaseEffects) _renderHall = _renderHallTarget = null;
         _limiter?.Reset(); _limiterActive = false;
         _renderTarget = null;
-        if (releaseConvolution) _renderFilter = null;
+        if (releaseEffects) _renderFilter = null;
         else _renderFilter?.Reset();
         _oldFilter = null;
         _convolutionMix = 0;
@@ -367,9 +384,16 @@ internal sealed class PcmEffects : IDisposable
         _lowPassAlpha = previous._lowPassAlpha;
         if (_limiter != null && previous._limiter != null) _limiter.ContinueFrom(previous._limiter);
         _limiterActive = previous._limiterActive;
+        var target = Volatile.Read(ref _target);
+        if (target.Hall != null && previous._renderHallTarget != null && previous._renderHall != null
+            && ReferenceEquals(previous._renderHallTarget, Volatile.Read(ref previous._target).Hall))
+        {
+            _renderHallTarget = target.Hall;
+            _renderHall = previous._renderHall;
+            previous._renderHall = previous._renderHallTarget = null;
+        }
         // 只复用完全相同的滤波器，通过转移独占渲染所有权来保留状态，
         // 无需复制历史；缓存曲线比较引用，文件脉冲响应比较系数。
-        var target = Volatile.Read(ref _target);
         if (target.Filter != null && previous._renderFilter is { } filter
             && target.Filter.HasSameCoefficients(filter))
         {
@@ -411,6 +435,7 @@ internal sealed class PcmEffects : IDisposable
             _lowLeft = _lowRight = 0;
             _renderFilter?.Reset();
             _oldFilter = null;
+            _renderHall?.Reset();
             _renderResetVersion = reset;
         }
         if (_gain == target.Gain)
@@ -427,6 +452,16 @@ internal sealed class PcmEffects : IDisposable
             }
             for (int ch = 0; ch < _channels; ch++) samples[frame * _channels + ch] *= _gain;
         }
+    }
+
+    internal void ApplyConcertHall(Span<double> samples, int frames)
+    {
+        var hall = _renderTarget?.Hall;
+        if (hall != null && !ReferenceEquals(hall, _renderHallTarget))
+            _renderHall = hall;
+        _renderHallTarget = hall;
+        if (_renderHall?.Process(samples, frames, hall != null) == false)
+            _renderHall = null;
     }
 
     /// <summary>处理双声道空间设置；其他声道布局明确直通。</summary>

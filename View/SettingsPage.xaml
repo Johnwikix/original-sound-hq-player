@@ -24,7 +24,10 @@
                             Margin="16,16,16,16"
                             VerticalAlignment="Center"
                             FontSize="28" />
-                        <SelectorBar x:Name="SectionSelector" VerticalAlignment="Center">
+                        <SelectorBar
+                            x:Name="SectionSelector"
+                            VerticalAlignment="Center"
+                            Loaded="OnSectionSelectorLoaded">
                             <SelectorBarItem
                                 x:Name="GeneralSection"
                                 x:Uid="SettingsSectionGeneral"

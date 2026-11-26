@@ -2892,4 +2892,46 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Şarkılar hazırlanıyor…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>Hızlı ses ön ayarları</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>Sahneler stereo genişliğini, çapraz beslemeyi, sıkıştırmayı, yankıyı ve ekolayzırı ayarlar. Ekolayzırlı sahneler geçici olarak kendi ses eğrilerini kullanır.</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>Orijinal</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>Geniş stereo</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>Konser salonu</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>Net vokaller</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>Sıcak bas</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>Retro radyo</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>Kulüp</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>Parlak ve berrak</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>Mono veya stereo PCM sese daha belirgin salon yansımaları ve daha uzun yankı ekler. Kendi ekolayzer ayarlarınızla birlikte kullanabilirsiniz.</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>Seçili ekolayzır eğrisi: {0}. Kişisel ayarlarınız saklanır.</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>Kendi ekolayzırımı kullan</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>Özel</value>
+  </data>
 </root>

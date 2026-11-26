@@ -24,7 +24,7 @@ public readonly record struct DspPreview(long Sequence, long Generation, string 
     public static DspPreview Read(ReadOnlySpan<byte> data)
     {
         int settingsSize = data.Length - TargetSize;
-        if (settingsSize is not (DspProtocol.SettingsV7Size or DspProtocol.SettingsV8Size or DspProtocol.SettingsSize))
+        if (settingsSize is not (DspProtocol.SettingsV7Size or DspProtocol.SettingsV8Size or DspProtocol.SettingsV9Size or DspProtocol.SettingsSize))
             throw new ArgumentException("Invalid preview payload.");
         var target = data[settingsSize..];
         int length = BinaryPrimitives.ReadUInt16LittleEndian(target[17..]);

@@ -37,6 +37,32 @@
                         IsOn="{x:Bind ViewModel.MasterEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('DspQuickPresetTitle')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspQuickPresetDescription')}"
+                    IsEnabled="{x:Bind ViewModel.QuickPresetEditable, Mode=OneWay}">
+                    <ComboBox Width="220"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspQuickPresetTitle')}"
+                        SelectedIndex="{x:Bind ViewModel.QuickPresetIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetOriginal')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetWide')}"
+                            IsEnabled="{x:Bind ViewModel.StereoImagePresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetConcertHall')}"
+                            IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetClearVocals')}"
+                            IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetWarmBass')}"
+                            IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetRadio')}"
+                            IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetClub')}"
+                            IsEnabled="{x:Bind ViewModel.ClubPresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetBright')}"
+                            IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspQuickPresetCustom')}"
+                            IsEnabled="False" />
+                    </ComboBox>
+                </controls:SettingsCard>
+                <controls:SettingsCard
                     Header="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementTitle')}"
                     IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}"
                     Description="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementDescription')}">
@@ -102,6 +128,14 @@
                     Header="{x:Bind tool:ToolUtils.GetString('DspEqualizer')}"
                     IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
                     <Button x:Uid="DspOpenEqualizer" Click="OpenEqualizer_Click" />
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('DspQuickPresetConcertHall')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspConcertHallDescription')}"
+                    IsEnabled="{x:Bind ViewModel.ConcertHallEditable, Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspQuickPresetConcertHall')}"
+                        IsOn="{x:Bind ViewModel.ConcertHallEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}"

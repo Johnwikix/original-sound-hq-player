@@ -13,6 +13,7 @@ public sealed class AudioSettingsSynchronizer(BassPlayerCommandService player) :
         AppSettings.OutputSettingsChanged += OutputChanged;
         AppSettings.OutputSettingsUpdated += OutputUpdated;
         AppSettings.EqUpdated += EqUpdated;
+        AppSettings.SceneEqualizerChanged += EqUpdated;
     }
     private void OutputChanged(object? sender, EventArgs e) => player.ChangingSetting();
     private void OutputUpdated(object? sender, EventArgs e) => player.UpdateSettings();
@@ -24,5 +25,6 @@ public sealed class AudioSettingsSynchronizer(BassPlayerCommandService player) :
         AppSettings.OutputSettingsChanged -= OutputChanged;
         AppSettings.OutputSettingsUpdated -= OutputUpdated;
         AppSettings.EqUpdated -= EqUpdated;
+        AppSettings.SceneEqualizerChanged -= EqUpdated;
     }
 }

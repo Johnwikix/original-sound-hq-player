@@ -2892,4 +2892,46 @@ SHA-256: {5}
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Подготовка композиций…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>Быстрые настройки звука</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>Сцены настраивают ширину стерео, перекрёстное подмешивание, компрессию, реверберацию и эквалайзер. Сцены с эквалайзером временно применяют собственную кривую.</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>Исходный звук</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>Широкое стерео</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>Концертный зал</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>Чёткий вокал</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>Тёплый бас</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>Ретрорадио</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>Клуб</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>Яркий и прозрачный звук</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>Добавляет более яркие отражения зала и длительное затухание для моно- и стереосигнала PCM. Можно сочетать с личным эквалайзером.</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>Выбранная кривая эквалайзера: {0}. Ваши настройки сохранены.</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>Использовать мой эквалайзер</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>Пользовательский</value>
+  </data>
 </root>

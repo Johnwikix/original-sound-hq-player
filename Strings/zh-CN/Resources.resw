@@ -2894,4 +2894,46 @@ SHA-256：{5}
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>正在准备歌曲…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>快速音效预设</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>快速场景联动立体声宽度、交叉馈送、压缩、混响和均衡器。带均衡器的场景会临时应用场景曲线。</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>原声</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>宽广声场</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>音乐厅</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>清晰人声</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>温暖低频</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>复古收音机</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>俱乐部</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>明亮通透</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>为单声道或立体声 PCM 添加更明显的厅堂反射和更长的混响尾音，可与个人均衡器叠加。</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>已选用“{0}”均衡曲线。你的个人均衡器设置已保留。</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>使用我的均衡器</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>自定义</value>
+  </data>
 </root>

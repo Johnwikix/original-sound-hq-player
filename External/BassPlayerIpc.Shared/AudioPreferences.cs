@@ -2,10 +2,22 @@ using System.Text;
 
 namespace BassPlayerIpc.Shared;
 
+public enum SceneEqualizer
+{
+    Personal = 0,
+    ConcertHall = 1,
+    ClearVocals = 2,
+    WarmBass = 3,
+    Radio = 4,
+    Club = 5,
+    Bright = 6
+}
+
 /// <summary>全局音频偏好；设备校正、曲线预设、EQ 库和播放进度各自独立保存。</summary>
 public sealed record AudioPreferences
 {
     public DspSettings Dsp { get; init; } = new();
+    public SceneEqualizer SceneEqualizer { get; init; }
     public string OutputMode { get; init; } = "DirectSound";
     public int Latency { get; init; } = 300;
     public int BassOutputDeviceId { get; init; } = -1;
@@ -35,6 +47,7 @@ public sealed record AudioPreferences
         return this with
         {
             Dsp = Dsp.Sanitize(),
+            SceneEqualizer = Enum.IsDefined(SceneEqualizer) ? SceneEqualizer : SceneEqualizer.Personal,
             SpectralEnhancement = Enum.IsDefined(SpectralEnhancement) ? SpectralEnhancement : SpectralEnhancementMode.Off,
             OutputMode = OutputMode is "DirectSound" or "WasapiShared" or "WasapiExclusiveEvent" or "WasapiExclusivePush" or "ASIO"
                 ? OutputMode : "DirectSound",

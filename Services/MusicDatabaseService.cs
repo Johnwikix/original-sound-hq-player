@@ -1076,6 +1076,7 @@ namespace WinUIMusicPlayer.Services
             {
                 var audio = await LoadAudioPreferencesAsync(settings);
                 AppSettings.Dsp = audio.Dsp;
+                AppSettings.SceneEqualizer = audio.SceneEqualizer;
                 _audioCorrectionStore = new BassPlayerIpc.Shared.AudioCorrectionStore(Path.Combine(Path.GetDirectoryName(SettingsPath)!, "AudioCorrections.json"));
                 try
                 {

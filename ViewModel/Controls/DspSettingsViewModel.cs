@@ -106,7 +106,10 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Mono);
+            if (!SetProperty(ref field, value)) return;
+            OnPropertyChanged(nameof(StereoImagePresetEditable));
+            OnPropertyChanged(nameof(ClubPresetEditable));
+            SettingChanged(LicenseFeature.Mono);
         }
     }
 
@@ -244,6 +247,7 @@ public partial class DspSettingsViewModel : ObservableObject
         if (_stopping || _loaded) return Task.CompletedTask;
         _loaded = true;
         _lastRevision = 0;
+        AppSettings.SceneEqualizerChanged += OnSceneEqualizerChanged;
         _ipc.DspStateChanged += OnDspStateChanged;
         _ipc.CorrectionSyncChanged += OnCorrectionSyncChanged;
         _license.StateChanged += OnLicenseStateChanged;
@@ -286,6 +290,7 @@ public partial class DspSettingsViewModel : ObservableObject
     public async Task OnViewUnloadedAsync()
     {
         _loaded = false;
+        AppSettings.SceneEqualizerChanged -= OnSceneEqualizerChanged;
         _ipc.DspStateChanged -= OnDspStateChanged;
         _ipc.CorrectionSyncChanged -= OnCorrectionSyncChanged;
         _license.StateChanged -= OnLicenseStateChanged;
@@ -312,6 +317,7 @@ public partial class DspSettingsViewModel : ObservableObject
             CrossfadeMilliseconds = saved.CrossfadeMilliseconds
         };
         AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(defaults, saved, _license.RestrictedFeatures);
+        AppSettings.SceneEqualizer = SceneEqualizer.Personal;
         LoadValues();
         ApplyState(_lastState);
         _dirty = true;
@@ -327,6 +333,7 @@ public partial class DspSettingsViewModel : ObservableObject
         LoadPcmValues(settings, effectsActive);
         PlaybackRate = settings.PlaybackRate;
         CompressorEnabled = effectsActive && settings.CompressorEnabled;
+        ConcertHallEnabled = effectsActive && settings.ConcertHallEnabled;
         CompressorThresholdDb = settings.CompressorThresholdDb;
         CompressorRatio = settings.CompressorRatio;
         CompressorMakeupDb = settings.CompressorMakeupDb;
@@ -343,6 +350,7 @@ public partial class DspSettingsViewModel : ObservableObject
         Mono = effectsActive && settings.Mono;
         OnPropertyChanged(nameof(CrossfeedIndex));
         StereoWidth = settings.StereoWidth * 100;
+        OnPropertyChanged(nameof(QuickPresetIndex));
         _syncing = false;
     }
 
@@ -386,6 +394,11 @@ public partial class DspSettingsViewModel : ObservableObject
             RetryCorrectionCommand.NotifyCanExecuteChanged();
         }
         StereoSupported = available && state!.Value.Channels is 0 or 2;
+        OnPropertyChanged(nameof(QuickPresetEditable));
+        OnPropertyChanged(nameof(StereoImagePresetEditable));
+        OnPropertyChanged(nameof(GraphicEqPresetEditable));
+        OnPropertyChanged(nameof(ClubPresetEditable));
+        OnPropertyChanged(nameof(ConcertHallEditable));
         RefreshPcmAvailability();
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
@@ -451,6 +464,7 @@ public partial class DspSettingsViewModel : ObservableObject
             CompressorThresholdDb = CompressorThresholdDb,
             CompressorRatio = CompressorRatio,
             CompressorMakeupDb = CompressorMakeupDb,
+            ConcertHallEnabled = ConcertHallEnabled,
             ConvolutionEnabled = ConvolutionEnabled,
             AutoPreamp = AutoPreamp, ConvolutionTrimDb = 0, AutoConvolutionHeadroom = false,
             IsEnabled = AppSettings.Dsp.IsEnabled,
@@ -462,6 +476,8 @@ public partial class DspSettingsViewModel : ObservableObject
             StereoWidth = StereoWidth / 100
         }).Sanitize();
         AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(candidate, saved, _license.RestrictedFeatures);
+        if (DspQuickPreset.GetIndex(saved, AppSettings.SceneEqualizer) != QuickPresetIndex)
+            OnPropertyChanged(nameof(QuickPresetIndex));
         _dirty = true;
         _commitTimer.Stop();
         _commitTimer.Start();

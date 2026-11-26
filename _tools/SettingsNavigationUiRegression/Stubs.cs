@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.ViewModel
 }
 namespace WinUIMusicPlayer.View.SubView.Settings
 {
-    public class ProbeSection : UserControl
+    public partial class ProbeSection : UserControl
     {
         public static List<ProbeSection> Created { get; } = [];
         public int Loads { get; private set; }
@@ -43,10 +43,10 @@ namespace WinUIMusicPlayer.View.SubView.Settings
             Unloaded += (_, _) => Unloads++;
         }
     }
-    public sealed class GeneralSettingsControl : ProbeSection { }
-    public sealed class ShortcutsSettingsControl : ProbeSection { }
-    public sealed class DspSettingsControl : ProbeSection { }
-    public sealed class CoverBackgroundSettingsControl : ProbeSection { }
-    public sealed class LyricsSettingsControl : ProbeSection { }
-    public sealed class AboutSettingsControl() : ProbeSection(expanded: true) { }
+    public sealed partial class GeneralSettingsControl : ProbeSection { }
+    public sealed partial class ShortcutsSettingsControl : ProbeSection { }
+    public sealed partial class DspSettingsControl : ProbeSection { }
+    public sealed partial class CoverBackgroundSettingsControl : ProbeSection { }
+    public sealed partial class LyricsSettingsControl : ProbeSection { }
+    public sealed partial class AboutSettingsControl() : ProbeSection(expanded: true) { }
 }

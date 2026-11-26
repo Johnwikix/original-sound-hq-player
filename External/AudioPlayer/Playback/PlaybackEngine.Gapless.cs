@@ -279,15 +279,15 @@ public sealed partial class PlaybackEngine
         }
         else _session?.ConfigureDsp(settings);
         if (!settings.IsEnabled || !settings.ConvolutionEnabled) PreparedCorrectionCache.Clear();
-        RetireInactiveConvolution();
+        RetireInactiveEffects();
     }
 
-    private void RetireInactiveConvolution()
+    private void RetireInactiveEffects()
     {
         if (IsPlaying || _pauseFadeActive) return;
-        if (_gaplessSource is { } source) source.RetireInactiveConvolution();
+        if (_gaplessSource is { } source) source.RetireInactiveEffects();
         // 所有实际 PCM 输出均经 OutputSource 包装；无包装且无输出的会话尚未开始渲染。
-        else if (_output == null) _session?.Effects?.RetireInactiveConvolution();
+        else if (_output == null) _session?.Effects?.RetireInactiveEffects();
     }
 
     public Task StopGaplessAsync()

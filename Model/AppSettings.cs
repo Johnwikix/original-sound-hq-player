@@ -1,3 +1,4 @@
+using BassPlayerIpc.Shared;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -82,6 +83,21 @@ namespace WinUIMusicPlayer.Model
         /// <summary>运行时 10 段均衡器状态（含预留 Q 值），UI 与 IPC 的唯一数据源。</summary>
         public static EqBand[] EqualizerBands { get; set; } = EqualizerHelper.CreateDefaultBands();
         public static bool IsEqualizerEnabled { get; set; } = false;
+        internal static event EventHandler? SceneEqualizerChanged;
+        internal static SceneEqualizer SceneEqualizer
+        {
+            get => field;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                SceneEqualizerChanged?.Invoke(null, EventArgs.Empty);
+            }
+        }
+        internal static EqBand[] EffectiveEqualizerBands =>
+            SceneEqualizerCurves.GetBands(SceneEqualizer) ?? EqualizerBands;
+        internal static bool IsEffectiveEqualizerEnabled =>
+            SceneEqualizer != SceneEqualizer.Personal || IsEqualizerEnabled;
         /// <summary>当前预设名：内置预设键、自定义预设名，或 "Custom"（手动调整中）。</summary>
         public static string EqualizerPreset { get; set; } = "Flat";
         public static bool IsCustomAppSize { get; set; } = false;

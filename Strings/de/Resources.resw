@@ -2892,4 +2892,46 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Titel werden vorbereitet…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>Schnelle Klangvoreinstellungen</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>Szenen passen Stereobreite, Crossfeed, Kompression, Hall und Equalizer an. Szenen mit Equalizer verwenden vorübergehend eine eigene Klangkurve.</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>Breites Stereo</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>Konzertsaal</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>Klare Stimmen</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>Warmer Bass</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>Retro-Radio</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>Club</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>Hell und klar</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>Fügt Mono- oder Stereo-PCM stärkere Saalreflexionen und einen längeren Nachhall hinzu. Lässt sich mit dem eigenen Equalizer kombinieren.</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>Ausgewählte Equalizerkurve: {0}. Deine persönlichen Einstellungen bleiben gespeichert.</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>Meinen Equalizer verwenden</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
 </root>

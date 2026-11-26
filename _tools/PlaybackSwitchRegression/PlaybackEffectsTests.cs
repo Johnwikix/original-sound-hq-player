@@ -113,6 +113,128 @@ internal static unsafe partial class Program
             Require((settings with { PlaybackRate = 0.1 }).Sanitize().PlaybackRate == 0.25, "Lower bound");
             Require((settings with { PlaybackRate = 6 }).Sanitize().PlaybackRate == 5, "Upper bound");
         });
+        Run("Concert hall: reflections and decay follow sample rate and reset at seek", () =>
+        {
+            foreach (int rate in new[] { 44100, 96000 })
+            {
+                var settings = new DspSettings { ConcertHallEnabled = true };
+                using var effects = new PcmEffects(rate, 2);
+                effects.Configure(settings);
+                var silence = new double[rate * 2];
+                effects.ApplyInput(silence, rate);
+                effects.ApplyConcertHall(silence, rate);
+                double[] response = new double[rate * 7];
+                response[0] = 1;
+                response[1] = 1;
+                effects.ApplyConcertHall(response, response.Length / 2);
+                int firstLeft = (int)Math.Round(rate * 0.017) * 2;
+                int firstRight = (int)Math.Round(rate * 0.023) * 2 + 1;
+                Require(response.AsSpan(2, firstLeft - 2).IndexOfAnyExcept(0) < 0 &&
+                    Math.Abs(response[0] - 0.82) < 1e-14 && Math.Abs(response[1] - 0.82) < 1e-14 &&
+                    response[firstLeft] > 0.18 && response[firstLeft + 1] == 0 && response[firstRight] > 0.17,
+                    "Stereo early reflections did not follow sample rate");
+
+                static double Peak(Span<double> window)
+                {
+                    double peak = 0;
+                    foreach (double value in window) peak = Math.Max(peak, Math.Abs(value));
+                    return peak;
+                }
+
+                double depth = Peak(response.AsSpan(3 * rate / 2, 3 * rate / 2));
+                double late = Peak(response.AsSpan(5 * rate, 3 * rate / 2));
+                Require(depth > 4e-4 && late < depth * 0.02 && effects.TailFrames == 13 * rate / 4,
+                    "Hall did not sustain and decay within the extended tail budget");
+
+                using var mono = new PcmEffects(rate, 1);
+                mono.Configure(settings);
+                var monoSilence = new double[rate];
+                mono.ApplyInput(monoSilence, rate);
+                mono.ApplyConcertHall(monoSilence, rate);
+                var monoResponse = new double[response.Length / 2];
+                monoResponse[0] = 1;
+                for (int start = 0; start < monoResponse.Length; start += 257)
+                {
+                    var block = monoResponse.AsSpan(start, Math.Min(257, monoResponse.Length - start));
+                    mono.ApplyConcertHall(block, block.Length);
+                }
+                for (int frame = 0; frame < monoResponse.Length; frame++)
+                    Require(Math.Abs(monoResponse[frame] - 0.5 * (response[2 * frame] + response[2 * frame + 1])) < 1e-14,
+                        "Mono fold-down or rendering across blocks changed");
+                effects.RequestReset();
+                effects.ApplyInput(silence, rate);
+                effects.ApplyConcertHall(silence, rate);
+                Require(silence.AsSpan().IndexOfAnyExcept(0) < 0, "Seek leaked old history");
+            }
+            using var surround = new PcmEffects(48000, 6);
+            surround.Configure(new() { ConcertHallEnabled = true });
+            double[] samples = [0.1, -0.2, 0.3, -0.4, 0.5, -0.6];
+            surround.ApplyInput(samples, 1);
+            surround.ApplyConcertHall(samples, 1);
+            Require(samples.AsSpan().SequenceEqual([0.1, -0.2, 0.3, -0.4, 0.5, -0.6]) && surround.TailFrames == 0,
+                "Concert hall applied to an unsupported multichannel layout");
+        });
+        Run("Concert hall: hot mono, stereo and widened preset preserve PCM headroom", () =>
+        {
+            const int rate = 48000;
+            foreach ((int channels, bool preset) in new[] { (1, false), (2, false), (2, true) })
+            {
+                using var effects = new PcmEffects(rate, channels);
+                effects.Configure(new() { ConcertHallEnabled = true, StereoWidth = preset ? 1.3 : 1 });
+                var eq = new Equalizer();
+                if (preset) eq.Configure(rate, true, [-2, -1, 0, 0, -0.5f, 0, 0, -0.5f, -1.5f, -2.5f]);
+                const int frameCount = 2 * rate;
+                var samples = new double[frameCount * channels];
+                for (int frame = 0; frame < frameCount; frame++)
+                {
+                    double sample = Math.Sin(2 * Math.PI * 440 * frame / rate);
+                    for (int channel = 0; channel < channels; channel++)
+                        samples[frame * channels + channel] = sample;
+                }
+                effects.ApplyInput(samples, frameCount);
+                eq.Process(samples, frameCount, channels);
+                effects.ApplyConcertHall(samples, frameCount);
+                effects.ApplyStereo(samples, frameCount);
+                effects.ApplyFinal(samples, frameCount);
+                Require(effects.DelayFrames == 0 && samples.All(sample => Math.Abs(sample) <= 1 + 1e-12),
+                    "Hall exceeded PCM headroom with the independent limiter off");
+
+                effects.Configure(new DspSettings());
+                Array.Clear(samples);
+                effects.ApplyInput(samples, frameCount);
+                effects.ApplyConcertHall(samples, frameCount);
+                Require(samples.AsSpan(rate * channels / 20).IndexOfAnyExcept(0) < 0 && effects.TailFrames == 0,
+                    "Disabled hall continued rendering after the gain ramp");
+
+                effects.Configure(new() { ConcertHallEnabled = true });
+                Array.Clear(samples);
+                effects.ApplyInput(samples, frameCount);
+                effects.ApplyConcertHall(samples, frameCount);
+                Require(samples.AsSpan().IndexOfAnyExcept(0) < 0, "Re-enabled hall leaked old history");
+            }
+        });
+        Run("Concert hall settings: v10 round-trip, v9 compatibility and invalid flag rejection", () =>
+        {
+            var settings = new DspSettings { ConcertHallEnabled = true, CrossfadeMilliseconds = 1250 };
+            var preview = new DspPreview(17, 3, "device", false, settings);
+            var payload = new byte[DspPreview.Size];
+            preview.Write(payload);
+            Require(DspPreview.Read(payload) == preview, "Concert hall was lost in v10 preview");
+
+            payload[0] = 9;
+            int sizeV9 = DspProtocol.SettingsSize - 1;
+            payload.AsSpan(DspProtocol.SettingsSize).CopyTo(payload.AsSpan(sizeV9));
+            Require(DspPreview.Read(payload.AsSpan(0, payload.Length - 1)) ==
+                preview with { Settings = settings with { ConcertHallEnabled = false } }, "v9 preview changed");
+            preview.Write(payload);
+            payload[sizeV9] = 2;
+            try
+            {
+                DspPreview.Read(payload);
+                throw new Exception("Invalid concert hall flag accepted");
+            }
+            catch (ArgumentException) { }
+        });
         Run("Gapless: splice inside a callback, with exact sample order and continuous submitted frames", () =>
         {
             var engine = Engine("WasapiShared");
@@ -140,13 +262,13 @@ internal static unsafe partial class Program
             source.FillPcm(new double[8], 4);
             Require(source.Current == first && second.SubmittedFrames == 0 && source.CompletedToken == 0, "Cancelled track became audible");
         });
-        Run("Gapless: EQ, convolution, stereo and compressor histories match uninterrupted processing", () =>
+        Run("Gapless: EQ, convolution, concert hall, stereo and compressor histories match uninterrupted processing", () =>
         {
             string impulse = Path.Combine(AppContext.BaseDirectory, "gapless-impulse.wav");
             double[] taps = new double[512];
             taps[0] = 0.8; taps[17] = 0.1; taps[300] = 0.1;
             WriteIr(impulse, taps);
-            var settings = new DspSettings { CompressorEnabled = true, Crossfeed = 0.2, StereoWidth = 1.2,
+            var settings = new DspSettings { CompressorEnabled = true, ConcertHallEnabled = true, Crossfeed = 0.2, StereoWidth = 1.2,
                 ConvolutionEnabled = true, ConvolutionSource = ConvolutionSource.Wave, ImpulsePath = impulse,
                 AutoPreamp = false, ConvolutionTrimDb = 0 };
             var engine = Engine("WasapiShared");

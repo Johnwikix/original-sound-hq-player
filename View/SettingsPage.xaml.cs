@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer.View
     {
         private readonly ConditionalWeakTable<FrameworkElement, SectionViewState> _sections = new();
         private int _visit;
+        private bool _resetSectionOnLoad;
 
         public SettingsViewModel ViewModel { get; }
 
@@ -32,9 +33,22 @@ namespace WinUIMusicPlayer.View
         {
             base.OnNavigatedTo(e);
             _visit++;
+            _resetSectionOnLoad = true;
             SectionSelector.SelectedItem = GeneralSection;
             ViewModel.AppViewModel.IsRealDevceChange = false;
             _ = ViewModel.AppViewModel.GetWasapiDeviceAsync();
+        }
+
+        private void OnSectionSelectorLoaded(object sender, RoutedEventArgs e)
+        {
+            if (!_resetSectionOnLoad) return;
+
+            _resetSectionOnLoad = false;
+            if (SectionSelector.SelectedItem == GeneralSection && GeneralSection.IsSelected) return;
+
+            // Reapply the selection once the cached SelectorBar can update its item highlights.
+            SectionSelector.SelectedItem = null;
+            SectionSelector.SelectedItem = GeneralSection;
         }
 
         private void OnSectionLoaded(object sender, RoutedEventArgs e)

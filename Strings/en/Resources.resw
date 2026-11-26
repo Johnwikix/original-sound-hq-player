@@ -2892,4 +2892,46 @@ See the log for full details.</value></data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Preparing songs…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>Quick sound presets</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>Quick scenes adjust stereo width, crossfeed, compression, reverb, and EQ. Scenes with EQ temporarily use their own sound curve.</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>Wide stereo</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>Concert hall</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>Clear vocals</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>Warm bass</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>Retro radio</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>Club</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>Bright and clear</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>Adds stronger hall reflections and a longer reverb tail to mono or stereo PCM. You can combine it with your own EQ.</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>EQ curve selected: {0}. Your personal equalizer settings are saved.</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>Use my equalizer</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
 </root>

@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     CornerRadius="10"
     mc:Ignorable="d">
 
@@ -45,6 +46,7 @@
             </StackPanel>
             <!--  预设管理行  -->
             <StackPanel
+                x:Name="PersonalPresetControls"
                 Grid.Column="1"
                 Margin="10,4,0,0"
                 Orientation="Horizontal"
@@ -157,7 +159,7 @@
             Grid.Row="2"
             Padding="15,0"
             VerticalScrollBarVisibility="Auto">
-            <Grid RowDefinitions="Auto,Auto,Auto">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto">
 
                 <!--  均衡器编辑区（dB 刻度 + 频段滑条）  -->
                 <InfoBar
@@ -167,15 +169,28 @@
                     IsClosable="False"
                     IsOpen="False"
                     Severity="Informational" />
+                <InfoBar
+                    Grid.Row="1"
+                    Margin="0,4,0,0"
+                    IsClosable="False"
+                    IsOpen="{x:Bind SceneViewModel.HasSceneEqualizer, Mode=OneWay}"
+                    Message="{x:Bind SceneViewModel.SceneEqualizerMessage, Mode=OneWay}"
+                    Severity="Informational">
+                    <InfoBar.ActionButton>
+                        <Button
+                            Command="{x:Bind SceneViewModel.UsePersonalEqualizerCommand}"
+                            Content="{x:Bind tool:ToolUtils.GetString('DspSceneUsePersonalEqualizer')}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
                 <controls:FrequencyResponseControl
                     x:Name="Response"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Margin="4,12,4,8" />
                 <controls:EqualizerControl
                     x:Name="Equalizer"
-                    Grid.Row="2"
+                    Grid.Row="3"
                     Margin="4,8,4,8"
-                    IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
+                    IsEnabled="False" />
             </Grid>
         </ScrollViewer>
     </Grid>

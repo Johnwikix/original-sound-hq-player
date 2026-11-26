@@ -35,6 +35,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         App.Services.GetRequiredService<IpcService>().DspStateChanged += StateChanged;
         App.Services.GetRequiredService<LicenseService>().StateChanged += StateChanged;
         AppSettings.EqUpdated += EqChanged;
+        AppSettings.SceneEqualizerChanged += EqChanged;
         AppSettings.AudioResponseChanged += EqChanged;
         Refresh();
     }
@@ -44,6 +45,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         App.Services.GetRequiredService<IpcService>().DspStateChanged -= StateChanged;
         App.Services.GetRequiredService<LicenseService>().StateChanged -= StateChanged;
         AppSettings.EqUpdated -= EqChanged;
+        AppSettings.SceneEqualizerChanged -= EqChanged;
         AppSettings.AudioResponseChanged -= EqChanged;
         _cancellation?.Cancel();
     }
@@ -77,8 +79,8 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         var dsp = LicensePolicy.ApplyDspRestrictions(
             AppSettings.ResolveResponseSettings(state?.OutputDeviceId, state?.OutputGeneration ?? 0),
             App.Services.GetRequiredService<LicenseService>().RestrictedFeatures);
-        bool eqEnabled = AppSettings.IsEqualizerEnabled;
-        var eq = AppSettings.EqualizerBands.Select(b => PeakCoefficients.Create(b.FrequencyHz, (float)b.GainDb, (float)b.Q, rate)).ToArray();
+        bool eqEnabled = AppSettings.IsEffectiveEqualizerEnabled;
+        var eq = AppSettings.EffectiveEqualizerBands.Select(b => PeakCoefficients.Create(b.FrequencyHz, (float)b.GainDb, (float)b.Q, rate)).ToArray();
         string key = rate + ":" + (CorrectionCurve.UsesCurve(dsp) ? "curve:" + dsp.CurvePoints : "wave:" + dsp.ImpulsePath);
         var cachedImpulse = key == _cacheKey ? _cacheImpulse : null;
         var cachedSpectra = key == _cacheKey ? _cacheSpectra : null;

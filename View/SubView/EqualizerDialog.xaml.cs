@@ -13,6 +13,7 @@ using WinUIMusicPlayer.Controls.Equalizer;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.ViewModel.Controls;
 
 namespace WinUIMusicPlayer.View.SubView
 {
@@ -51,8 +52,11 @@ namespace WinUIMusicPlayer.View.SubView
         /// <summary>均衡器状态变更（防抖后）提交完成：订阅方负责 IPC 全量同步。</summary>
         public event EventHandler? EqualizerCommitted;
 
+        public DspSettingsViewModel SceneViewModel { get; }
+
         public EqualizerDialog()
         {
+            SceneViewModel = App.Services.GetRequiredService<DspSettingsViewModel>();
             InitializeComponent();
             ToolTipService.SetToolTip(AddPresetButton, ToolUtils.GetString("EqAddPresetToolTip"));
             ToolTipService.SetToolTip(SavePresetButton, ToolUtils.GetString("EqSavePresetToolTip"));
@@ -77,6 +81,7 @@ namespace WinUIMusicPlayer.View.SubView
             Opened += async (_, _) =>
             {
                 _dialogOpen = true;
+                AppSettings.SceneEqualizerChanged += SceneEqualizerChanged;
                 EqScroll.MaxHeight = Math.Max(180, XamlRoot.Size.Height - 120);
                 _stateGeneration++;
                 _isLoaded = false;
@@ -89,13 +94,19 @@ namespace WinUIMusicPlayer.View.SubView
                 _stateTimer.Start();
                 await RefreshPlaybackStateAsync();
             };
-            Closed += (_, _) => { _dialogOpen = false; _stateGeneration++; _stateTimer.Stop(); };
+            Closed += (_, _) =>
+            {
+                AppSettings.SceneEqualizerChanged -= SceneEqualizerChanged;
+                _dialogOpen = false;
+                _stateGeneration++;
+                _stateTimer.Stop();
+            };
 
             // Esc/系统关闭同样走持久化，防止挂起的调整丢失
             Closing += (_, _) =>
             {
                 _commitTimer.Stop();
-                if (_isLoaded) CommitChanges();
+                if (_isLoaded && !SceneViewModel.HasSceneEqualizer) CommitChanges();
             };
             Equalizer.BandEdited += OnBandEdited;
         }
@@ -110,10 +121,28 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 _customPresets = new List<SaveEqualizerPreset>();
             }
-            Equalizer.SetBands(AppSettings.EqualizerBands);
+            DisplayEqualizerBands();
             RebuildPresetItems();
             _isLoaded = true;
             UpdatePresetButtonState();
+            await RefreshPlaybackStateAsync();
+        }
+
+        private void DisplayEqualizerBands()
+        {
+            SceneViewModel.RefreshSceneEqualizer();
+            bool scene = SceneViewModel.HasSceneEqualizer;
+            PersonalPresetControls.Visibility = scene ? Visibility.Collapsed : Visibility.Visible;
+            var bands = AppSettings.EffectiveEqualizerBands;
+            Equalizer.SetBands(scene ? EqualizerHelper.Snapshot("", bands).Bands.ToArray() : bands);
+        }
+
+        private async void SceneEqualizerChanged(object? sender, EventArgs args)
+        {
+            if (!_dialogOpen || !_isLoaded) return;
+            Equalizer.IsEnabled = false;
+            ToggleSwitchEqualizer.IsEnabled = false;
+            DisplayEqualizerBands();
             await RefreshPlaybackStateAsync();
         }
 
@@ -129,8 +158,10 @@ namespace WinUIMusicPlayer.View.SubView
                 if (!_dialogOpen || _eqCommitInFlight || generation != _stateGeneration) return;
                 _isSyncingUi = true;
                 bool available = state is { RenderKind: 0, Channels: <= 2, IsEnabled: true };
-                ToggleSwitchEqualizer.IsEnabled = available;
+                bool editable = available && !SceneViewModel.HasSceneEqualizer;
+                ToggleSwitchEqualizer.IsEnabled = editable;
                 ToggleSwitchEqualizer.IsOn = available && state!.Value.EqualizerActive;
+                Equalizer.IsEnabled = editable && ToggleSwitchEqualizer.IsOn;
                 DspAvailabilityBar.IsOpen = !available;
                 DspAvailabilityBar.Message = ToolUtils.GetString(state == null ? "DspStateUnavailable"
                     : state.Value.RenderKind != 0 ? "DspBitstreamBypass"
@@ -331,6 +362,7 @@ namespace WinUIMusicPlayer.View.SubView
             if (_isSyncingUi || !_isLoaded) return;
 
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
+            Equalizer.IsEnabled = ToggleSwitchEqualizer.IsOn;
             Response.Refresh();
             _stateGeneration++;
             _eqCommitInFlight = true;

@@ -587,7 +587,7 @@ internal sealed class Session : IRenderSource, IDisposable
         {
             bool dspEnabled = Volatile.Read(ref _dspEnabled);
             if (dspEnabled) Eq.ResetHistory();
-            Effects?.ResetRenderState(releaseConvolution: !dspEnabled);
+            Effects?.ResetRenderState(releaseEffects: !dspEnabled);
             _tailStarted = _hasRenderedPcm = false; _tailRemaining = _tailFramesRendered = 0;
             _renderDspResetVersion = reset;
         }
@@ -630,6 +630,7 @@ internal sealed class Session : IRenderSource, IDisposable
             if (!inputGainApplied) Effects?.ApplyInput(buffer, frames);
             Eq.Process(buffer, frames, _channels);
             Effects?.ApplyConvolution(buffer, frames);
+            Effects?.ApplyConcertHall(buffer, frames);
             Effects?.ApplyStereo(buffer, frames);
             Effects?.ApplyDynamics(buffer, frames);
         }

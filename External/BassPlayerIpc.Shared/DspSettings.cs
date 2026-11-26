@@ -74,6 +74,9 @@ public sealed record DspSettings
     /// <summary>获取或设置立体声宽度，1 为原始宽度。</summary>
     public double StereoWidth { get; init; } = 1;
 
+    /// <summary>是否为单声道或双声道 PCM 添加音乐厅混响。</summary>
+    public bool ConcertHallEnabled { get; init; }
+
     public ConvolutionSource ConvolutionSource { get; init; }
     public string CurvePoints { get; init; } = CorrectionCurve.Flat;
     /// <summary>UI-only preset identity, persisted locally and intentionally omitted from audio IPC.</summary>
@@ -171,7 +174,8 @@ public readonly record struct DspState(byte RenderKind, bool EqualizerActive, in
 public static class DspProtocol
 {
     /// <summary>设置载荷字节数。</summary>
-    public const int SettingsSize = SettingsV7Size + 3;
+    public const int SettingsSize = SettingsV9Size + 1;
+    internal const int SettingsV9Size = SettingsV7Size + 3;
     internal const int SettingsV7Size = 1654;
     internal const int SettingsV8Size = SettingsV7Size + 2;
     /// <summary>状态载荷字节数。</summary>
@@ -181,7 +185,8 @@ public static class DspProtocol
     public static void WriteSettings(Span<byte> data, DspSettings settings)
     {
         data[..SettingsSize].Clear();
-        data[0] = 9;
+        data[0] = 10;
+        data[SettingsV9Size] = settings.ConcertHallEnabled ? (byte)1 : (byte)0;
         data[SettingsV7Size] = (byte)DspSettings.NormalizeTransitionStyle(settings.TransitionStyle);
         BinaryPrimitives.WriteUInt16LittleEndian(data[(SettingsV7Size + 1)..],
             (ushort)DspSettings.NormalizeCrossfadeMilliseconds(settings.CrossfadeMilliseconds));
@@ -228,7 +233,9 @@ public static class DspProtocol
         bool legacy = data.Length == 44 && data[0] == 1;
         bool v2 = data.Length == 45 && data[0] == 2;
         bool v3 = data.Length == 1080 && data[0] == 3;
-        bool v9 = data.Length == SettingsSize && data[0] == 9;
+        bool v10 = data.Length == SettingsSize && data[0] == 10;
+        if (v10 && data[SettingsV9Size] > 1) throw new ArgumentException("Invalid concert hall flag.");
+        bool v9 = (data.Length == SettingsV9Size && data[0] == 9) || v10;
         bool v8 = data.Length == SettingsV8Size && data[0] == 8 || v9;
         bool v7 = (data.Length == SettingsV7Size && data[0] == 7) || v8;
         if (v7 && (data[1630] > 2 || data[1631] > 1 || data[1632] > 1 || data[1633] != 0))
@@ -267,6 +274,7 @@ public static class DspProtocol
             TransitionStyle = v8 ? (TrackTransitionStyle)data[SettingsV7Size] : TrackTransitionStyle.Gapless,
             CrossfadeMilliseconds = v9 ? BinaryPrimitives.ReadUInt16LittleEndian(data[(SettingsV7Size + 1)..])
                 : v8 ? DspSettings.FromLegacyCrossfadeSeconds(data[SettingsV7Size + 1]) : DspSettings.DefaultCrossfadeMilliseconds,
+            ConcertHallEnabled = v10 && data[SettingsV9Size] != 0,
             CompressorEnabled = v6 && data[1597] != 0,
             PlaybackRate = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1598..]) : 1,
             CompressorThresholdDb = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1606..]) : -18,

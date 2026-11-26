@@ -30,6 +30,7 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static DspSettings Dsp { get; set; } = new();
+        public static SceneEqualizer SceneEqualizer { get; set; }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int BassOutputDeviceId => -1;
         public static string? WasapiEndpointId => null;

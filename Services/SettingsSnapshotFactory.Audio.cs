@@ -10,6 +10,7 @@ public sealed partial class SettingsSnapshotFactory
     public AudioPreferences CaptureAudio() => new()
     {
         Dsp = AppSettings.Dsp,
+        SceneEqualizer = AppSettings.SceneEqualizer,
         OutputMode = AppSettings.OutputMode,
         Latency = state.Preferences.Latency,
         BassOutputDeviceId = AppSettings.BassOutputDeviceId,

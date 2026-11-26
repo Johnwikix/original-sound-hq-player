@@ -2892,4 +2892,46 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Preparando canciones…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>Ajustes rápidos de sonido</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>Las escenas ajustan la amplitud estéreo, la alimentación cruzada, la compresión, la reverberación y la ecualización. Las escenas con ecualización usan temporalmente su propia curva.</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>Estéreo amplio</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>Sala de conciertos</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>Voces claras</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>Graves cálidos</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>Radio retro</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>Club</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>Brillante y claro</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>Añade reflejos de sala más marcados y una reverberación más larga al PCM mono o estéreo. Se puede combinar con tu propio ecualizador.</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>Curva de ecualización seleccionada: {0}. Tu configuración personal se conserva.</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>Usar mi ecualizador</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>Personalizado</value>
+  </data>
 </root>

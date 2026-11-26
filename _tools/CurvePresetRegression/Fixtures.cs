@@ -43,6 +43,9 @@ namespace WinUIMusicPlayer.Model
     {
         public static bool IsEqualizerEnabled { get; set; }
         public static EqBand[] EqualizerBands { get; set; } = [new() { FrequencyHz = 1000 }];
+        public static bool IsEffectiveEqualizerEnabled => IsEqualizerEnabled;
+        public static EqBand[] EffectiveEqualizerBands => EqualizerBands;
+        public static event EventHandler? SceneEqualizerChanged { add { } remove { } }
         public static event EventHandler? EqUpdated;
         public static void OnEqUpdated() => EqUpdated?.Invoke(null, EventArgs.Empty);
     }

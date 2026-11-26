@@ -328,7 +328,7 @@ namespace WinUIMusicPlayer.Services
                 AtmosEndpointId = AppViewModel.AtmosEndpointId,
                 DsdGain = AppViewModel.DsdGain,
                 DsdPcmFreq = AppViewModel.DsdPcmFreq,
-                IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
+                IsEqualizerEnabled = AppSettings.IsEffectiveEqualizerEnabled,
                 Volume = (float)(App.Services.GetRequiredService<AppViewModel>().Volume / 100.0),
                 IsSettingChanged = isSettingChanged,
                 IsFadeEnabled = AppViewModel.IsFadeEnabled,
@@ -538,10 +538,10 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         private static UpdateEqRequest ConvertBandsToUpdateEqRequest()
         {
-            var bands = AppSettings.EqualizerBands;
+            var bands = AppSettings.EffectiveEqualizerBands;
             return new UpdateEqRequest
             {
-                IsEnabled = AppSettings.IsEqualizerEnabled,
+                IsEnabled = AppSettings.IsEffectiveEqualizerEnabled,
                 Band0 = (float)bands[0].GainDb,
                 Band1 = (float)bands[1].GainDb,
                 Band2 = (float)bands[2].GainDb,

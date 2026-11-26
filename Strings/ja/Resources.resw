@@ -2892,4 +2892,46 @@ SHA-256: {5}
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>曲を準備しています…</value>
   </data>
+  <data name="DspQuickPresetTitle" xml:space="preserve">
+    <value>クイックサウンドプリセット</value>
+  </data>
+  <data name="DspQuickPresetDescription" xml:space="preserve">
+    <value>シーンはステレオ幅、クロスフィード、コンプレッション、リバーブ、イコライザーを調整します。イコライザー付きのシーンでは専用のカーブを一時的に適用します。</value>
+  </data>
+  <data name="DspQuickPresetOriginal" xml:space="preserve">
+    <value>オリジナル</value>
+  </data>
+  <data name="DspQuickPresetWide" xml:space="preserve">
+    <value>ワイドステレオ</value>
+  </data>
+  <data name="DspQuickPresetConcertHall" xml:space="preserve">
+    <value>コンサートホール</value>
+  </data>
+  <data name="DspQuickPresetClearVocals" xml:space="preserve">
+    <value>クリアなボーカル</value>
+  </data>
+  <data name="DspQuickPresetWarmBass" xml:space="preserve">
+    <value>温かみのある低音</value>
+  </data>
+  <data name="DspQuickPresetRadio" xml:space="preserve">
+    <value>レトロラジオ</value>
+  </data>
+  <data name="DspQuickPresetClub" xml:space="preserve">
+    <value>クラブ</value>
+  </data>
+  <data name="DspQuickPresetBright" xml:space="preserve">
+    <value>明るくクリア</value>
+  </data>
+  <data name="DspConcertHallDescription" xml:space="preserve">
+    <value>モノラルまたはステレオの PCM に、ホールの強い反射音と長い残響を加えます。個人用イコライザーと併用できます。</value>
+  </data>
+  <data name="DspSceneEqualizerMessage" xml:space="preserve">
+    <value>選択中のイコライザーカーブ: {0}。個人設定は保持されています。</value>
+  </data>
+  <data name="DspSceneUsePersonalEqualizer" xml:space="preserve">
+    <value>自分のイコライザーを使用</value>
+  </data>
+  <data name="DspQuickPresetCustom" xml:space="preserve">
+    <value>カスタム</value>
+  </data>
 </root>

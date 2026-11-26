@@ -3,6 +3,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
+using Microsoft.UI.Xaml.Media.Animation;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView.Settings;
 using WinUIMusicPlayer.ViewModel;
@@ -23,7 +24,8 @@ internal static class Program
 internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
 {
     private readonly IXamlMetadataProvider _native = new Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider();
-    private readonly IXamlMetadataProvider _local = (IXamlMetadataProvider)Activator.CreateInstance(typeof(Program).Assembly.GetTypes().Single(t => t.FullName!.EndsWith(".XamlMetaDataProvider")))!;
+    private readonly IXamlMetadataProvider _local = (IXamlMetadataProvider)Activator.CreateInstance(Type.GetType(
+        "SettingsNavigationUiRegression.SettingsNavigationUiRegression_XamlTypeInfo.XamlMetaDataProvider", throwOnError: true)!)!;
     public IXamlType GetXamlType(Type type) => _local.GetXamlType(type) ?? _native.GetXamlType(type);
     public IXamlType GetXamlType(string name) => _local.GetXamlType(name) ?? _native.GetXamlType(name);
     public XmlnsDefinition[] GetXmlnsDefinitions() => [];
@@ -33,6 +35,14 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         if (!condition) throw new InvalidOperationException(name);
         _results.Add("PASS: " + name);
     }
+
+    private void CheckGeneralSelection(SelectorBar selector, string description)
+    {
+        var selectedTags = string.Join(", ", selector.Items.Where(item => item.IsSelected).Select(item => item.Tag));
+        Check(selector.SelectedItem == selector.Items[0] && selectedTags == "General",
+            $"{description} (SelectedItem: {selector.SelectedItem?.Tag}, highlighted: {selectedTags})");
+    }
+
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         Window? window = null;
@@ -75,6 +85,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             selector.SelectedItem = selector.Items[2];
             await Settle(frame);
             Check(ProbeSection.Created.Count == 6 && dsp.Loads == 2, "Returning to DSP reuses its view and runs Loaded again");
+            Check(selector.Items[2].Focus(FocusState.Pointer), "DSP can receive pointer focus before navigating away");
             frame.Navigate(typeof(Page));
             frame.BackStack.Clear();
             await Settle(frame);
@@ -87,9 +98,10 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             var currentSelector = (SelectorBar)currentPage.FindName("SectionSelector");
             Check(currentPage.NavigationCacheMode == Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled,
                 "Settings participates in the bounded Frame cache");
-            Check(currentSelector.SelectedItem == currentSelector.Items[0], "Repeated entry keeps the General default");
-            Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
+            CheckGeneralSelection(currentSelector, "Repeated entry selects and highlights General after DSP had focus");
+            Check(ProbeSection.Created.Count == 6 && general.IsLoaded && !dsp.IsLoaded,
                 "Repeated entry reattaches General and creates no sections");
+            Check(dsp.Loads == 2, "Reentry does not reload the previously focused DSP section");
             Check(currentPage.ViewModel.AppViewModel.RefreshCount == 2, "Every entry still refreshes output devices");
             Check(!general.Expander.IsExpanded && general.Scroll.VerticalOffset < 1, "General restores its collapsed state and top scroll position");
             currentSelector.SelectedItem = currentSelector.Items[5];
@@ -99,14 +111,15 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await Settle(frame);
             Check(ProbeSection.Created.Count == 6 && ProbeSection.Created.OfType<LyricsSettingsControl>().Single().IsLoaded,
                 "Selector binding reattaches an already visited section");
+            Check(currentSelector.Items[4].Focus(FocusState.Keyboard), "Lyrics can receive keyboard focus before navigating away");
             frame.Navigate(typeof(Page));
             await Settle(frame);
             frame.GoBack();
             await Settle(frame);
             var historyPage = (SettingsPage)frame.Content;
             var historySelector = (SelectorBar)historyPage.FindName("SectionSelector");
-            Check(ReferenceEquals(currentPage, historyPage) && historySelector.SelectedItem == historySelector.Items[0],
-                "History reentry restores General on the cached page");
+            Check(ReferenceEquals(currentPage, historyPage), "History reentry keeps the cached settings page");
+            CheckGeneralSelection(historySelector, "History reentry selects and highlights General after Lyrics had focus");
             Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
                 "History reentry restores the existing General section only");
             Check(historyPage.ViewModel.AppViewModel.RefreshCount == 3, "History reentry still refreshes devices");
@@ -118,6 +131,24 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Check(ReferenceEquals(historyPage, frame.Content), "Back after forward keeps the cached settings page");
             Check(ProbeSection.Created.Count == 6 && ProbeSection.Created[0].IsLoaded,
                 "Back after forward reuses General");
+
+            for (int i = 1; i < historySelector.Items.Count; i++)
+            {
+                var item = historySelector.Items[i];
+                historySelector.SelectedItem = item;
+                await Settle(frame);
+                Check(item.Focus(FocusState.Pointer), $"{item.Tag} can receive pointer focus");
+                frame.Navigate(typeof(Page), null, new EntranceNavigationTransitionInfo());
+                frame.BackStack.Clear();
+                await Settle(frame);
+                frame.Navigate(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
+                frame.BackStack.Clear();
+                await Settle(frame);
+                Check(ReferenceEquals(historyPage, frame.Content) && general.IsLoaded,
+                    $"Returning from {item.Tag} shows General on the cached settings page");
+                CheckGeneralSelection(historySelector, $"Returning from {item.Tag} selects and highlights General");
+            }
+
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), string.Join("\r\n", _results) + "\r\n");
         }
         catch (Exception error)

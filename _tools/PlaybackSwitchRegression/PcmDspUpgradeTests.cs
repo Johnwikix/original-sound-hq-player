@@ -33,10 +33,14 @@ internal static unsafe partial class Program
                 byte[] payload = new byte[DspProtocol.SettingsSize];
                 DspProtocol.WriteSettings(payload, new() { ResampleMode = PcmResampleMode.IntegerMultiple,
                     ResampleTargetRate = 192000, TruePeakLimiterEnabled = true, DitherEnabled = true, CrossfeedCutoffHz = 1200,
-                    TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeMilliseconds = 1300 });
+                    TransitionStyle = TrackTransitionStyle.Crossfade, CrossfadeMilliseconds = 1300, ConcertHallEnabled = true });
                 Require(client.RequestAsync(CommandId.UpdateDsp, payload, response).GetAwaiter().GetResult().Type == MessageTypeId.Success,
+                    "NativeAOT player rejected DSP v10");
+                var v9Payload = payload[..^1];
+                v9Payload[0] = 9;
+                Require(client.RequestAsync(CommandId.UpdateDsp, v9Payload, response).GetAwaiter().GetResult().Type == MessageTypeId.Success,
                     "NativeAOT player rejected DSP v9");
-                var legacyPayload = payload.AsSpan(0, payload.Length - 1).ToArray();
+                var legacyPayload = payload[..^2];
                 legacyPayload[0] = 8;
                 legacyPayload[^1] = 2;
                 Require(client.RequestAsync(CommandId.UpdateDsp, legacyPayload, response).GetAwaiter().GetResult().Type == MessageTypeId.Success,

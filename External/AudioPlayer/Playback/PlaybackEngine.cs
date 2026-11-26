@@ -716,7 +716,7 @@ public sealed partial class PlaybackEngine : IDisposable
                     if (!IsPlaying && _session != null)
                     {
                         _output?.Pause();
-                        RetireInactiveConvolution();
+                        RetireInactiveEffects();
                     }
                 }
             });
@@ -725,7 +725,7 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             _output?.Pause();
             IsPlaying = false;
-            RetireInactiveConvolution();
+            RetireInactiveEffects();
             _ipc.PlayStateUpdate(false);
         }
     }
@@ -869,7 +869,7 @@ public sealed partial class PlaybackEngine : IDisposable
             }
             catch { }
             IsPlaying = false;
-            RetireInactiveConvolution();
+            RetireInactiveEffects();
         }
     }
 
