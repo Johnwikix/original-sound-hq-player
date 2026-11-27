@@ -64,7 +64,7 @@ public sealed partial class NowPlayingCanvas
         (_spectrum ??= new()).Update(latest, Environment.TickCount64, elapsed, _spectrumOptions);
     }
 
-    private void DrawSpectrum(PlaybackCanvasFrame frame, CanvasDrawContext session)
+    private void DrawSpectrum(PlaybackCanvasFrame frame, CanvasDrawContext session, CanvasDrawContext backdrop = default)
     {
         if (_spectrum is not { } spectrum) return;
         Rect artwork = default;
@@ -73,6 +73,6 @@ public sealed partial class NowPlayingCanvas
         {
             if (_sceneCover?.TryGetArtworkBounds(out artwork, out radius) != true) return;
         }
-        spectrum.Draw(frame, session, _spectrumOptions, artwork, radius, _lastPalette, _isDark);
+        spectrum.Draw(frame, session, _spectrumOptions, artwork, radius, _lastPalette, _isDark, backdrop);
     }
 }

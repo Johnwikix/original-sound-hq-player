@@ -1,3 +1,8 @@
+## 2026-11-28 播放页着色器背景为歌词着色
+
+- `NowPlayingCanvas`、`NowPlayingCanvas.LyricsBackdrop` 在 GPU 合成着色器背景和未唱歌词，字形保留所在位置的底色，已唱部分沿用高亮。
+- `LyricsRenderCoordinator` 让逐字进度、辅助歌词、边缘淡出和 3D 投影复用同一份字形覆盖。SDR 和 HDR 各自使用当前输出范围，图片背景和自定义歌词颜色沿用原绘制路径。
+
 ## 2026-11-27 修复听歌报告导出后显存持续增长
 
 - `ListeningReportPoster` 读取现有海报布局并用可释放的软件绘制资源生成 1080 × 1350 PNG。

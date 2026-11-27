@@ -93,8 +93,9 @@ internal sealed partial class ProbeApplication
             {
                 Line = line, IsPlaying = false, PlayedFillColor = Colors.White, UnplayedFillColor = Colors.White
             };
-            typeof(LyricsLineRenderer).GetMethod("SetPlaybackColor", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(renderer, [Hdr, 0d]);
+            var setPlaybackColor = typeof(LyricsLineRenderer).GetMethod("SetPlaybackColor", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var drawAll = Enum.Parse(setPlaybackColor.GetParameters()[2].ParameterType, "All");
+            setPlaybackColor.Invoke(renderer, [Hdr, 0d, drawAll]);
             var local = line.PrimaryTextLayout!.LayoutBounds;
             var primaryBounds = new Rect(local.X + line.CachedPrimaryPosition.X + x - 10,
                 local.Y + line.CachedPrimaryPosition.Y + y - 10, local.Width + 20, local.Height + 20);

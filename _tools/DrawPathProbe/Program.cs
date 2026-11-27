@@ -92,6 +92,19 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
                 File.WriteAllText(resultPath, JsonSerializer.Serialize(new { Status = "PASS", Backdrop = result }));
                 return;
             }
+            if (Environment.GetCommandLineArgs().Contains("--check-lyric-backdrop-tint"))
+            {
+                var tint = CheckLyricBackdropTint();
+                File.WriteAllText(resultPath, JsonSerializer.Serialize(new
+                {
+                    Status = "PASS",
+                    Evidence = "Off-screen BGRA8 and FP16 GPU readback",
+                    ControlsPath = typeof(LyricsRenderCoordinator).Assembly.Location,
+                    Tint = tint,
+                    ManagedSubmission = _measurements
+                }));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--playback-hdr"))
             {
                 var result = MeasurePlaybackHdr();

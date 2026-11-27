@@ -271,14 +271,18 @@ internal sealed partial class ProbeApplication
 
     private static (float Rgb, float Alpha, bool HasSoftAlpha) ReadMax(byte[] pixels)
     {
+        // FP16 rounds alpha and its premultiplied RGB independently. One RGB
+        // quantization unit can remain when a subpixel HDR alpha rounds to zero.
+        const float halfQuantum = 1f / (1 << 24);
         float rgb = 0, alpha = 0;
         bool softAlpha = false;
         for (int i = 0; i < pixels.Length; i += 8)
         {
-            var color = Math.Max(ReadHalf(pixels, i), Math.Max(ReadHalf(pixels, i + 2), ReadHalf(pixels, i + 4)));
-            var opacity = ReadHalf(pixels, i + 6);
+            float red = ReadHalf(pixels, i), green = ReadHalf(pixels, i + 2), blue = ReadHalf(pixels, i + 4);
+            float color = Math.Max(red, Math.Max(green, blue));
+            float opacity = ReadHalf(pixels, i + 6);
             if (!float.IsFinite(color) || !float.IsFinite(opacity) || opacity is < 0 or > 1
-                || opacity == 0 && color != 0)
+                || opacity == 0 && (Math.Abs(red) > halfQuantum || Math.Abs(green) > halfQuantum || Math.Abs(blue) > halfQuantum))
                 throw new InvalidOperationException($"Invalid premultiplied FP16 pixel at {i / 8}: {color}, {opacity}.");
             rgb = Math.Max(rgb, color);
             alpha = Math.Max(alpha, opacity);

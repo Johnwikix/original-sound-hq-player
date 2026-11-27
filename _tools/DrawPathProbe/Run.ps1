@@ -3,7 +3,8 @@ param(
     [switch]$Trace,
     [switch]$InputCapture,
     [switch]$PlaybackHdr,
-    [switch]$Backdrop
+    [switch]$Backdrop,
+    [switch]$LyricBackdropTint
 )
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
@@ -19,6 +20,7 @@ $probeArguments = @()
 if ($InputCapture) { $probeArguments += '--input', '--interactive-input' }
 if ($PlaybackHdr) { $probeArguments += '--playback-hdr' }
 if ($Backdrop) { $probeArguments += '--check-backdrop' }
+if ($LyricBackdropTint) { $probeArguments += '--check-lyric-backdrop-tint' }
 if ($Trace) {
     $traceTool = Join-Path $env:USERPROFILE '.dotnet/tools/dotnet-trace.exe'
     if (-not (Test-Path -LiteralPath $traceTool)) { throw 'Install dotnet-trace before requesting a trace.' }
