@@ -15,12 +15,16 @@ internal readonly record struct ListeningReportRequest(ListeningPeriod Period, D
     internal DateOnly LocalDate(DateTime utc) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZone));
 }
 
-internal readonly record struct ReportSong(string Title, string Artist, long PlayCount, string? CoverHash);
-internal readonly record struct ReportArtist(string Name, long PlayCount);
+internal readonly record struct ReportSong(string Title, long PlayCount, string? CoverHash);
+internal readonly record struct ReportRank(string Name, long PlayCount);
+internal readonly record struct ReportSongHistory(DateOnly FirstDay, int ActiveDays);
+internal readonly record struct ReportMonthlyArtist(int Month, string Name, double Milliseconds);
+internal sealed record ReportHabits(long DistinctSongs, int LongestStreak, long[] WeekdayCounts, long[] HourCounts);
 
 internal sealed record ListeningReport(
     ListeningReportRequest Request, long PlayCount, double Milliseconds, int ActiveDays, long[] Counts,
-    ReportSong[] Songs, ReportArtist[] Artists, DateOnly? FirstRecord, DateOnly? LatestRecord)
+    ReportHabits Habits, ReportSong[] Songs, ReportSongHistory? TopSongHistory, ReportRank[] Artists,
+    ReportRank[] Albums, ReportMonthlyArtist[] MonthlyArtists, DateOnly? FirstRecord, DateOnly? LatestRecord)
 {
     internal bool InProgress => Request.Today < Request.Period.End;
 }

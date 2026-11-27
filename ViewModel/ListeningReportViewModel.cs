@@ -116,8 +116,9 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     public bool IsPreview => _preview is not null;
     public bool CanPreview => _active && !_stopping && !IsLoading && !IsPreview && !IsSaving && _snapshot is { PlayCount: > 0 };
     public bool CanSelectShader => IsPreview && !_stopping && !IsSaving;
-    internal bool IsCapturing { get; private set; }
-    internal double ReportScrollOffset { get; set; }
+    public bool CanSavePreview => _active && !_stopping && IsPreview && !IsPreviewBusy && _capture is not null;
+    public bool IsPreviewBusy => IsPreparingPreview || IsSaving;
+    public Visibility SaveStatusVisibility => Visible(SaveStatus.Length > 0);
 
     public int SelectedShaderIndex
     {
@@ -140,15 +141,18 @@ public sealed partial class ListeningReportViewModel : ObservableObject
 
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPreviewBusy))]
     public partial bool IsSaving { get; private set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPreviewBusy))]
     public partial bool IsPreparingPreview { get; private set; }
 
     [ObservableProperty]
     public partial string StatusText { get; private set; } = "";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SaveStatusVisibility))]
     public partial string SaveStatus { get; private set; } = "";
 
     public ImageSource? PreviewCover
@@ -175,7 +179,6 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     {
         if (_active || _stopping) return;
         _active = true;
-        ReportScrollOffset = 0;
         UpdateClock();
         _annual = new(_today.Year);
         _monthly = new(_today.Year, _today.Month);
@@ -473,12 +476,10 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         }
     }
 
-    private bool CanSave() => _active && !_stopping && IsPreview && !IsPreparingPreview && !IsSaving && _capture is not null;
-
-    [RelayCommand(CanExecute = nameof(CanSave))]
+    [RelayCommand(CanExecute = nameof(CanSavePreview))]
     private async Task SaveAsync(CancellationToken token)
     {
-        if (!CanSave()) return;
+        if (!CanSavePreview) return;
         var capture = _capture!;
         ListeningPeriod period = _snapshot!.Request.Period;
         SaveStatus = "";
@@ -489,7 +490,7 @@ public sealed partial class ListeningReportViewModel : ObservableObject
             string periodName = period.Start.ToString(period.IsMonthly ? "yyyy-MM" : "yyyy", CultureInfo.InvariantCulture);
             string? path = await _pickPath("OriginalSound-Listening-" + periodName, token);
             if (path is null) return;
-            using var bitmap = await CapturePosterAsync(capture, token);
+            using var bitmap = await capture(token);
             await Task.Run(() => ListeningReportImages.SaveAsync(path, bitmap, token), token);
             if (!token.IsCancellationRequested && IsPreview)
                 SaveStatus = string.Format(CultureInfo.CurrentUICulture, GetString("ListeningReportSaved"), path);
@@ -508,18 +509,12 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         }
     }
 
-    private async Task<SoftwareBitmap> CapturePosterAsync(Func<CancellationToken, Task<SoftwareBitmap>> capture, CancellationToken token)
-    {
-        IsCapturing = true;
-        try { return await capture(token); }
-        finally { IsCapturing = false; }
-    }
-
     private void NotifyCommands()
     {
         RefreshCommand.NotifyCanExecuteChanged();
         OpenRecentCommand.NotifyCanExecuteChanged();
         SaveCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanSavePreview));
         OnPropertyChanged(nameof(CanSelectShader));
         OnPropertyChanged(nameof(CanPreview));
     }

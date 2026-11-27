@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.Helper
             dialog.Opened -= OnDialogOpened;
             dialog.Opened += OnDialogOpened;
             RefreshTemplateFont(dialog);
-            return dialog.ShowAsync();
+            return dialog.ShowWithLayoutAsync();
         }
 
         private static void OnDialogOpened(ContentDialog sender, ContentDialogOpenedEventArgs args) => RefreshTemplateFont(sender);

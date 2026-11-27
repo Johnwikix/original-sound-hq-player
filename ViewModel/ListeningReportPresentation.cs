@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.UI.Xaml;
 using WinUIMusicPlayer.Model.Stats;
@@ -11,10 +12,14 @@ public sealed record ListeningReportTile(string Label, string Description, doubl
     public Visibility LabelVisibility => IsPadding ? Visibility.Collapsed : Visibility.Visible;
 }
 
-public sealed record ListeningReportRank(string Position, string Name, string Detail, string Count, string CountDescription)
+public sealed record ListeningReportRank(string Position, string Name, string Count, string CountDescription);
+
+public sealed record ListeningReportMetric(string Label, string Value)
 {
-    public Visibility DetailVisibility => Detail.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility Visibility => Value.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
 }
+
+public sealed record ListeningReportMonthlyLeader(string Month, string Name, string Duration);
 
 public sealed class ListeningReportPresentation
 {
@@ -25,6 +30,9 @@ public sealed class ListeningReportPresentation
     public string Duration { get; }
     public string PlayCount { get; }
     public string ActiveDays { get; }
+    public ListeningReportMetric TrackVariety { get; }
+    public ListeningReportMetric PeakHour { get; }
+    public ListeningReportMetric[] Habits { get; }
     public string TrendHeading { get; }
     public string Highlight { get; }
     public Visibility HighlightVisibility => VisibilityFor(Highlight);
@@ -33,8 +41,14 @@ public sealed class ListeningReportPresentation
     public Visibility MonthlyVisibility => Weekdays.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility AnnualVisibility => Weekdays.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
     public ListeningReportRank[] Songs { get; }
+    public string TopSongNote { get; }
+    public Visibility TopSongNoteVisibility => VisibilityFor(TopSongNote);
     public ListeningReportRank[] Artists { get; }
     public Visibility ArtistsVisibility => Artists.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+    public ListeningReportRank[] Albums { get; }
+    public Visibility AlbumsVisibility => Albums.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+    public ListeningReportMonthlyLeader[] MonthlyArtists { get; }
+    public Visibility MonthlyArtistsVisibility => MonthlyArtists.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     public string PosterSongs { get; }
     public string PosterArtist { get; }
     public Visibility PosterArtistVisibility => VisibilityFor(PosterArtist);
@@ -57,14 +71,13 @@ public sealed class ListeningReportPresentation
             ? Format(culture, "ListeningReportFirstRecord", first.ToString("d", culture))
             : GetString("ListeningReportHistoryOnly");
 
-        long seconds = Math.Max(0, (long)(report.Milliseconds / 1000d));
-        Duration = seconds < 60
-            ? Format(culture, "ListeningReportSeconds", seconds)
-            : seconds < 3600
-                ? Format(culture, "ListeningReportMinutes", seconds / 60)
-                : Format(culture, "ListeningReportHoursMinutes", seconds / 3600, seconds / 60 % 60);
+        Duration = FormatDuration(report.Milliseconds, culture);
         PlayCount = report.PlayCount.ToString("N0", culture);
         ActiveDays = report.ActiveDays.ToString("N0", culture);
+        TrackVariety = new(GetString("ListeningReportDistinctSongs"), report.Habits.DistinctSongs.ToString("N0", culture));
+        int peakHour = UniquePeak(report.Habits.HourCounts);
+        PeakHour = new(GetString("ListeningReportPeakHour"), peakHour >= 0 ? FormatHour(peakHour, culture) : string.Empty);
+        Habits = BuildHabits(report, culture);
         TrendHeading = GetString(period.IsMonthly ? "ListeningReportDaily" : "ListeningReportMonthlyTrend");
 
         int padding = period.IsMonthly ? (7 + (int)start.DayOfWeek - (int)culture.DateTimeFormat.FirstDayOfWeek) % 7 : 0;
@@ -112,13 +125,19 @@ public sealed class ListeningReportPresentation
             ReportSong song = report.Songs[index];
             Songs[index] = new((index + 1).ToString(culture),
                 string.IsNullOrWhiteSpace(song.Title) ? GetString("ListeningReportUnknownSong") : SingleLine(song.Title),
-                SingleLine(song.Artist), song.PlayCount.ToString("N0", culture), Format(culture, "ListeningReportPlayOccurrences", song.PlayCount));
+                song.PlayCount.ToString("N0", culture), Format(culture, "ListeningReportPlayOccurrences", song.PlayCount));
         }
-        Artists = new ListeningReportRank[report.Artists.Length];
-        for (int index = 0; index < Artists.Length; index++)
+        TopSongNote = report.TopSongHistory is { } songHistory
+            ? Format(culture, "ListeningReportTopSongHistory", songHistory.FirstDay.ToString("M", culture), songHistory.ActiveDays)
+            : string.Empty;
+        Artists = BuildRanks(report.Artists, culture);
+        Albums = BuildRanks(report.Albums, culture);
+        MonthlyArtists = new ListeningReportMonthlyLeader[report.MonthlyArtists.Length];
+        for (int index = 0; index < MonthlyArtists.Length; index++)
         {
-            ReportArtist artist = report.Artists[index];
-            Artists[index] = new((index + 1).ToString(culture), SingleLine(artist.Name), "", artist.PlayCount.ToString("N0", culture), Format(culture, "ListeningReportPlayOccurrences", artist.PlayCount));
+            ReportMonthlyArtist leader = report.MonthlyArtists[index];
+            MonthlyArtists[index] = new(culture.DateTimeFormat.GetAbbreviatedMonthName(leader.Month),
+                SingleLine(leader.Name), FormatDuration(leader.Milliseconds, culture));
         }
         PosterSongs = Songs.Length switch
         {
@@ -128,6 +147,65 @@ public sealed class ListeningReportPresentation
             _ => string.Empty
         };
         PosterArtist = Artists.Length == 0 ? string.Empty : Artists[0].Name;
+    }
+
+    private ListeningReportMetric[] BuildHabits(ListeningReport report, CultureInfo culture)
+    {
+        if (report.PlayCount == 0) return [];
+        double replayShare = (double)(report.PlayCount - report.Habits.DistinctSongs) / report.PlayCount;
+        var metrics = new List<ListeningReportMetric>(5)
+        {
+            TrackVariety,
+            new(GetString("ListeningReportReplayShare"), replayShare.ToString("P0", culture)),
+            new(GetString("ListeningReportLongestStreak"), report.Habits.LongestStreak.ToString("N0", culture))
+        };
+        int weekday = UniquePeak(report.Habits.WeekdayCounts);
+        if (weekday >= 0)
+            metrics.Add(new(GetString("ListeningReportPeakWeekday"), culture.DateTimeFormat.GetDayName((DayOfWeek)weekday)));
+        if (PeakHour.Value.Length > 0) metrics.Add(PeakHour);
+        return metrics.ToArray();
+    }
+
+    private static int UniquePeak(long[] counts)
+    {
+        long max = 0;
+        int peak = -1;
+        for (int index = 0; index < counts.Length; index++)
+        {
+            if (counts[index] > max)
+            {
+                max = counts[index];
+                peak = index;
+            }
+            else if (counts[index] == max) peak = -1;
+        }
+        return peak;
+    }
+
+    private static string FormatHour(int hour, CultureInfo culture)
+        => string.Concat(new TimeOnly(hour, 0).ToString("t", culture), " – ",
+            new TimeOnly((hour + 1) % 24, 0).ToString("t", culture));
+
+    private static string FormatDuration(double milliseconds, CultureInfo culture)
+    {
+        long seconds = Math.Max(0, (long)(milliseconds / 1000d));
+        return seconds < 60
+            ? Format(culture, "ListeningReportSeconds", seconds)
+            : seconds < 3600
+                ? Format(culture, "ListeningReportMinutes", seconds / 60)
+                : Format(culture, "ListeningReportHoursMinutes", seconds / 3600, seconds / 60 % 60);
+    }
+
+    private static ListeningReportRank[] BuildRanks(ReportRank[] entries, CultureInfo culture)
+    {
+        var ranks = new ListeningReportRank[entries.Length];
+        for (int index = 0; index < ranks.Length; index++)
+        {
+            ReportRank entry = entries[index];
+            ranks[index] = new((index + 1).ToString(culture), SingleLine(entry.Name),
+                entry.PlayCount.ToString("N0", culture), Format(culture, "ListeningReportPlayOccurrences", entry.PlayCount));
+        }
+        return ranks;
     }
 
     private static string SingleLine(string text)

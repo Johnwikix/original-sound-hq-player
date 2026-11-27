@@ -8,11 +8,10 @@ using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Xaml.Media.Imaging;
 using SQLite;
 using Windows.Graphics.Imaging;
-using Windows.UI.ViewManagement;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Services;
@@ -43,7 +42,8 @@ internal static class ListeningReportChecks
     {
         directory = Path.Combine(directory, "listening-reports-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        await Task.Run(() => QueryChecks(Path.Combine(directory, "reports.db"), check, record));
+        if (Environment.GetEnvironmentVariable("REPORT_PREVIEW_FOCUS") != "1")
+            await Task.Run(() => QueryChecks(Path.Combine(directory, "reports.db"), check, record));
         await ShaderChecksAsync(check);
 
         const string hash = "ReportTest";
@@ -64,10 +64,12 @@ internal static class ListeningReportChecks
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.Copy(cover, path, overwrite: true);
 
-        App.MainWindow.AppWindow.Resize(new Windows.Graphics.SizeInt32(890, 720));
+        double scale = frame.XamlRoot.RasterizationScale;
+        App.MainWindow.AppWindow.ResizeClient(new((int)(890 * scale), (int)(560 * scale)));
         var statistics = (StatsPage)frame.Content;
+        var statisticsTitle = Find<TextBlock>(statistics, text => text.Text == "Statistics")!;
         var statisticsScroll = (ScrollViewer)statistics.FindName("StatsScroll");
-        await UntilAsync(() => statisticsScroll.ScrollableHeight > 0);
+        await UntilAsync(() => Math.Abs(frame.ActualHeight - 560) < 2 && statisticsScroll.ScrollableHeight >= 32);
         statisticsScroll.ChangeView(null, 32, null, disableAnimation: true);
         await UntilAsync(() => statisticsScroll.VerticalOffset > 0);
         double statisticsOffset = statisticsScroll.VerticalOffset;
@@ -90,7 +92,44 @@ internal static class ListeningReportChecks
                 summary.BorderThickness == trend.BorderThickness,
                 $"report summary and trend use the same translucent {theme} card theme");
         }
+        var reportTitle = (TextBlock)page.FindName("ReportTitle");
+        check(reportTitle.FontSize == statisticsTitle.FontSize &&
+            reportTitle.FontWeight.Equals(statisticsTitle.FontWeight) &&
+            reportTitle.TransformToVisual(page).TransformPoint(default) ==
+            statisticsTitle.TransformToVisual(statistics).TransformPoint(default),
+            "report and statistics headings use matching typography and page offsets");
         check(vm.ModeIndex == 0 && vm.Presentation!.Tiles.Length == 12, "statistics entry opens the compiled annual report");
+        App.MainWindow.AppWindow.ResizeClient(new((int)(1320 * scale), (int)(640 * scale)));
+        await UntilAsync(() => frame.ActualWidth > 1000 && summary.ActualWidth > 960);
+        var habits = (Border)page.FindName("HabitsCard");
+        var habitItems = Find<ItemsRepeater>(habits);
+        check(summary.ActualWidth >= page.ActualWidth - 56 && summary.CornerRadius.TopLeft == 4 &&
+            Math.Abs(trend.TransformToVisual(summary).TransformPoint(default).Y - summary.ActualHeight - 8) < 1 &&
+            ReferenceEquals(habitItems?.ItemsSource, vm.Presentation?.Habits),
+            "expanded report uses the available width and keeps compact cards and compiled habit metrics");
+        var songSection = (Border)page.FindName("SongSection");
+        var artistSection = (Border)page.FindName("ArtistSection");
+        var songs = Find<ItemsControl>(songSection)!;
+        var artists = Find<ItemsControl>(artistSection)!;
+        await UntilAsync(() => Grid.GetColumn(artistSection) == 1 &&
+            songs.ContainerFromIndex(0) is FrameworkElement { ActualHeight: > 0 } &&
+            artists.ContainerFromIndex(0) is FrameworkElement { ActualHeight: > 0 });
+        var songRow = Find<Grid>(songs.ContainerFromIndex(0))!;
+        var artistRow = Find<Grid>(artists.ContainerFromIndex(0))!;
+        var topSongNote = Find<TextBlock>(page, text => text.Text == vm.Presentation?.TopSongNote);
+        check(Math.Abs(songSection.ActualHeight - artistSection.ActualHeight) < 1 &&
+            Math.Abs(songRow.TransformToVisual(artistRow).TransformPoint(default).Y) < 1 &&
+            Math.Abs(songRow.ActualHeight - artistRow.ActualHeight) < 1 &&
+            songRow.Children.Count == 3 && songRow.Children.All(child => child is TextBlock) &&
+            Find<TextBlock>(songSection, text => text.Text == "Top tracks") is { TextWrapping: TextWrapping.NoWrap } &&
+            Find<TextBlock>(artistSection, text => text.Text == "Top artists") is { TextWrapping: TextWrapping.NoWrap } &&
+            topSongNote is not null && topSongNote.TransformToVisual(songSection).TransformPoint(default).Y > songSection.ActualHeight,
+            "wide rankings share height and row alignment, with single-line tracks and the highlight below");
+        App.MainWindow.AppWindow.ResizeClient(new((int)(720 * scale), (int)(560 * scale)));
+        await UntilAsync(() => frame.ActualWidth < 800 && Grid.GetRow(artistSection) == 1);
+        check(Math.Abs(artistSection.ActualWidth - songSection.ActualWidth) < 1 &&
+            Math.Abs(artistSection.TransformToVisual(songSection).TransformPoint(default).Y - songSection.ActualHeight - 8) < 1,
+            "narrow rankings stack at full width with the same compact spacing");
         var radio = Find<RadioButtons>(page) ?? throw new InvalidOperationException("Period control missing.");
         radio.SelectedIndex = 1;
         await UntilAsync(() => !vm.IsLoading && vm.Presentation?.Weekdays.Length == 7);
@@ -110,11 +149,24 @@ internal static class ListeningReportChecks
         string? pickedPath = null;
         string? suggested = null;
         bool controlsLockedDuringSave = false;
-        NavigationTransitionInfo? transition = null;
-        NavigationMode mode = default;
+        int reportBackStackDepth = frame.BackStackDepth;
 
-        frame.Navigated += (_, args) => { transition = args.NavigationTransitionInfo; mode = args.NavigationMode; };
-        bool animationsEnabled = new UISettings().AnimationsEnabled;
+        var standardDialog = new ContentDialog
+        {
+            XamlRoot = frame.XamlRoot,
+            Content = new Border { Height = 640 },
+            PrimaryButtonText = "Confirm",
+            CloseButtonText = "Dismiss",
+            DefaultButton = ContentDialogButton.Close
+        };
+        var standardOpened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        standardDialog.Opened += (_, _) => standardOpened.TrySetResult();
+        var standardResult = standardDialog.ShowWithLayoutAsync();
+        await standardOpened.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await UntilAsync(() => FindDialogButton("Dismiss") is not null);
+        await CheckDialogLayoutAsync("Dismiss");
+        Invoke(DialogButton("Dismiss"));
+        check(await standardResult.AsTask().WaitAsync(TimeSpan.FromSeconds(5)) == ContentDialogResult.None, "standard default close button still dismisses the modal");
 
         var reportScroll = (ScrollViewer)page.FindName("ReportScroll");
         await UntilAsync(() => reportScroll.ScrollableHeight > 0);
@@ -124,13 +176,37 @@ internal static class ListeningReportChecks
         string reportPeriod = $"{vm.SelectedYear:0000}-{vm.SelectedMonth:00}";
         var reportSnapshot = vm.Presentation;
 
-        Invoke(FindButton(page, "Export summary image")!);
-        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
-        var preview = (ListeningReportPreviewPage)frame.Content;
+        var preview = await OpenPreviewAsync();
         var shaderPicker = (ComboBox)preview.FindName("ShaderPicker");
-        check(mode == NavigationMode.New && IsExpectedTransition(transition, animationsEnabled) &&
-            frame.BackStack[^1].SourcePageType == typeof(ListeningReportPage) && shell.IsBackBtnEnable,
-            "summary preview is a real new Frame navigation with the system forward transition");
+        var viewport = (Grid)preview.FindName("PreviewViewport");
+        var canvas = Find<Grid>((FrameworkElement)preview.Content, grid => grid.Name == "PosterCanvas")!;
+        var posterCover = Find<Border>((FrameworkElement)preview.Content, border => border.Name == "PosterCover")!;
+        await UntilAsync(() => viewport.ActualHeight > 0 && canvas.ActualHeight > 0);
+        var posterBounds = canvas.TransformToVisual(viewport).TransformBounds(new(0, 0, canvas.ActualWidth, canvas.ActualHeight));
+        check(Math.Abs(canvas.ActualWidth - 540) < 1 && Math.Abs(canvas.ActualHeight - 675) < 1 &&
+            posterBounds.Width > 0 && posterBounds.Height > 0 &&
+            Math.Abs(posterBounds.X * 2 + posterBounds.Width - viewport.ActualWidth) < 2 &&
+            Math.Abs(posterBounds.Y * 2 + posterBounds.Height - viewport.ActualHeight) < 2 &&
+            posterBounds.Height <= viewport.ActualHeight + 1 && posterBounds.Width <= viewport.ActualWidth + 1 &&
+            Math.Abs(posterBounds.Width / posterBounds.Height - 0.8) < 0.01 &&
+            posterCover.CornerRadius.TopLeft == 12 && posterCover.Background is ImageBrush coverBrush &&
+            vm.PreviewCover is not null && ReferenceEquals(coverBrush.ImageSource, vm.PreviewCover),
+            "constrained preview fits the entire centered poster and binds the rounded cover brush");
+        check(ReferenceEquals(frame.Content, page) && frame.BackStackDepth == reportBackStackDepth &&
+            Equals(preview.Title, "Summary image preview") && preview.CloseButtonText == "Close",
+            "export opens a localized modal over the same report without adding navigation history");
+        await CheckDialogLayoutAsync("Close");
+        App.MainWindow.AppWindow.ResizeClient(new((int)(720 * scale), (int)(300 * scale)));
+        await UntilAsync(() => Math.Abs(frame.ActualHeight - 300) < 2 && viewport.ActualHeight < posterBounds.Height - 100);
+        await CheckDialogLayoutAsync("Close");
+        App.MainWindow.AppWindow.ResizeClient(new((int)(1120 * scale), (int)(820 * scale)));
+        await UntilAsync(() => viewport.ActualHeight > posterBounds.Height + 100);
+        var tallBounds = canvas.TransformToVisual(viewport).TransformBounds(new(0, 0, canvas.ActualWidth, canvas.ActualHeight));
+        check(tallBounds.Height > posterBounds.Height + 100 && tallBounds.Height <= viewport.ActualHeight + 1 &&
+            Math.Abs(tallBounds.Width / tallBounds.Height - 0.8) < 0.01,
+            "resizing the open dialog enlarges the portrait proportionally within the available space");
+        App.MainWindow.AppWindow.ResizeClient(new((int)(720 * scale), (int)(560 * scale)));
+        await UntilAsync(() => Math.Abs(viewport.ActualHeight - posterBounds.Height) < 2);
         string[] shaderNames = ["Fluid", "PS3 XMB", "Rotating Mesh", "Liquid Flow", "Gradient Flow", "Wavy Background", "Color Bands"];
         check(shaderPicker.Items.Count == Enum.GetValues<BackgroundShaderMode>().Length &&
             shaderPicker.Items.Cast<ComboBoxItem>().Select(item => item.Content).SequenceEqual(shaderNames) &&
@@ -156,12 +232,13 @@ internal static class ListeningReportChecks
             suggested = name;
             int selected = vm.SelectedShaderIndex;
             vm.SelectedShaderIndex = (int)BackgroundShaderMode.PS3XMB;
-            controlsLockedDuringSave = !shell.IsBackBtnEnable && !preview.CanNavigateBack &&
+            page.NavigateBack();
+            controlsLockedDuringSave = ReferenceEquals(page.PreviewDialog, preview) && !preview.IsPrimaryButtonEnabled &&
                 !shaderPicker.IsEnabled && selected == vm.SelectedShaderIndex;
             return Task.FromResult(pickedPath);
         };
 
-        var saveButton = FindButton(preview, "Save PNG") ?? throw new InvalidOperationException("Localised save button missing.");
+        var saveButton = DialogButton("Save PNG");
         Invoke(saveButton);
         await UntilAsync(() => pickerCalls == 1 && !vm.IsSaving);
         check(vm.IsPreview && !File.Exists(png) && vm.SaveStatus.Length == 0 && controlsLockedDuringSave &&
@@ -202,37 +279,53 @@ internal static class ListeningReportChecks
         }
 
         shaderPicker.SelectedIndex = (int)BackgroundShaderMode.RotatingMesh;
-        preview.NavigateBack();
-        await UntilAsync(() => frame.Content is ListeningReportPage && !vm.IsPreview);
-        page = (ListeningReportPage)frame.Content;
-        reportScroll = (ScrollViewer)page.FindName("ReportScroll");
-        await UntilAsync(() => Math.Abs(reportScroll.VerticalOffset - reportOffset) < 1);
-        // WinUI reports Back but omits the GoBack transition override in the event args.
-        check(mode == NavigationMode.Back &&
-            IsExpectedTransition(ListeningReportPreviewPage.CreateTransition(), animationsEnabled) &&
+        page.NavigateBack();
+        await UntilAsync(() => page.PreviewDialog is null && !vm.IsPreview);
+        check(ReferenceEquals(page, frame.Content) && frame.BackStackDepth == reportBackStackDepth &&
+            Math.Abs(reportScroll.VerticalOffset - reportOffset) < 1 &&
             shell.IsBackBtnEnable && ReferenceEquals(reportSnapshot, vm.Presentation) && vm.ModeIndex == 1 &&
             vm.PreviewCover is null && vm.PreviewBackground is null,
-            "shell back restores the report period and scroll while canceling in-flight preview rendering");
+            "back dismisses the dialog, cancels its render and retains the report period, snapshot and scroll");
 
         _configuredShader = BackgroundShaderMode.PS3XMB;
-        Invoke(FindButton(page, "Export summary image")!);
-        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
-        preview = (ListeningReportPreviewPage)frame.Content;
+        preview = await OpenPreviewAsync();
         shaderPicker = (ComboBox)preview.FindName("ShaderPicker");
         check(_settingsReads == 2 && shaderPicker.SelectedIndex == (int)BackgroundShaderMode.PS3XMB && vm.PreviewBackground is not null,
             "reopening discards the temporary shader and reads the latest settings");
-        preview.NavigateBack();
-        await UntilAsync(() => frame.Content is ListeningReportPage);
+        Invoke(DialogButton("Close"));
+        await UntilAsync(() => page.PreviewDialog is null);
+        // Leave time for composition teardown before recording retained references and process memory.
+        var closedPreviews = new List<WeakReference[]>();
+        await Task.Delay(400);
+        RecordClosedMemory("baseline", 0);
+        for (int cycle = 1; cycle <= 12; cycle++)
+        {
+            closedPreviews.Add(await CyclePreviewAsync(save: false));
+            await Task.Delay(400);
+            RecordClosedMemory("preview", cycle);
+        }
+        for (int cycle = 1; cycle <= 20; cycle++)
+        {
+            closedPreviews.Add(await CyclePreviewAsync(save: true));
+            await Task.Delay(400);
+            RecordClosedMemory("export", cycle);
+        }
+        await Task.Delay(8000);
+        RecordClosedMemory("idle", 0);
+        int retained = closedPreviews.SelectMany(static cycle => cycle).Count(static reference => reference.IsAlive);
+        check(retained == 0, $"repeated shader preview and PNG capture release all dialog, poster and image wrappers ({retained} retained)");
+
+        if (Environment.GetEnvironmentVariable("REPORT_RENDER_PROBE") == "1")
+            await CompareRenderTargetAsync();
+
         page = (ListeningReportPage)frame.Content;
         vm.SelectedYear = previousYear;
         vm.SelectedMonth = 1;
         await UntilAsync(() => !vm.IsLoading && vm.Presentation?.PosterSongs == "Older retained track");
-        Invoke(FindButton(page, "Export summary image")!);
-        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
-        preview = (ListeningReportPreviewPage)frame.Content;
+        preview = await OpenPreviewAsync();
         check(vm.PreviewCover is null && vm.PreviewBackground is null, "missing retained cover uses the poster fallback");
-        preview.NavigateBack();
-        await UntilAsync(() => frame.Content is ListeningReportPage);
+        Invoke(DialogButton("Close"));
+        await UntilAsync(() => page.PreviewDialog is null);
         ((ListeningReportPage)frame.Content).NavigateBack();
         await UntilAsync(() => frame.Content is StatsPage);
         var returned = (StatsPage)frame.Content;
@@ -243,6 +336,112 @@ internal static class ListeningReportChecks
         void CountBackground(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
         {
             if (args.PropertyName == nameof(ListeningReportViewModel.PreviewBackground)) backgroundChanges++;
+        }
+
+        async Task CompareRenderTargetAsync()
+        {
+            var root = (Grid)page.Content;
+            var host = new Canvas();
+            var surface = AddBorder();
+            root.Children.Add(host);
+            try
+            {
+                await UntilAsync(() => surface.IsLoaded && surface.ActualWidth > 0);
+                var bitmap = new RenderTargetBitmap();
+                int width = (int)surface.Width;
+                int height = (int)surface.Height;
+                for (int cycle = 1; cycle <= 8; cycle++)
+                {
+                    await bitmap.RenderAsync(surface, width, height);
+                    await Task.Delay(400);
+                    RecordClosedMemory("render", cycle);
+                }
+                for (int cycle = 1; cycle <= 8; cycle++)
+                {
+                    await bitmap.RenderAsync(surface, width, height);
+                    var pixels = await bitmap.GetPixelsAsync();
+                    check(pixels.Length == bitmap.PixelWidth * bitmap.PixelHeight * 4,
+                        "isolated solid border produces a valid render target readback");
+                    await Task.Delay(400);
+                    RecordClosedMemory("readback", cycle);
+                }
+                host.Children.Remove(surface);
+                for (int cycle = 1; cycle <= 8; cycle++)
+                {
+                    surface = AddBorder();
+                    await UntilAsync(() => surface.IsLoaded && surface.ActualWidth > 0);
+                    await bitmap.RenderAsync(surface, width, height);
+                    _ = await bitmap.GetPixelsAsync();
+                    host.Children.Remove(surface);
+                    await Task.Delay(400);
+                    RecordClosedMemory("remount", cycle);
+                }
+            }
+            finally
+            {
+                root.Children.Remove(host);
+            }
+
+            Border AddBorder()
+            {
+                var border = new Border
+                {
+                    Width = ListeningReportImages.Width / scale,
+                    Height = ListeningReportImages.Height / scale,
+                    Background = new SolidColorBrush(Microsoft.UI.Colors.DarkGoldenrod)
+                };
+                Canvas.SetLeft(border, -border.Width - frame.ActualWidth);
+                host.Children.Add(border);
+                return border;
+            }
+        }
+
+        async Task<WeakReference[]> CyclePreviewAsync(bool save)
+        {
+            var dialog = await OpenPreviewAsync();
+            var references = new WeakReference[]
+            {
+                new(dialog),
+                new(Find<Grid>((FrameworkElement)dialog.Content, grid => grid.Name == "PosterCanvas")),
+                new(vm.PreviewCover),
+                new(vm.PreviewBackground)
+            };
+            if (references.Any(static reference => !reference.IsAlive))
+                throw new InvalidOperationException("Expected a rendered poster and both image sources before closing.");
+            if (save)
+            {
+                pickedPath = png;
+                Invoke(DialogButton("Save PNG"));
+                await UntilAsync(() => !vm.IsSaving && vm.SaveStatus.Contains(png, StringComparison.Ordinal));
+            }
+            Invoke(DialogButton("Close"));
+            await UntilAsync(() => page.PreviewDialog is null);
+            return references;
+        }
+
+        void RecordClosedMemory(string phase, int cycle)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            process.Refresh();
+            record($"PREVIEW CLOSED phase={phase} cycle={cycle} pid={process.Id} utcMs={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()} managed={GC.GetTotalMemory(false)} private={process.PrivateMemorySize64}");
+        }
+
+        async Task CheckDialogLayoutAsync(string closeLabel)
+        {
+            var close = DialogButton(closeLabel);
+            var popup = VisualTreeHelper.GetOpenPopupsForXamlRoot(frame.XamlRoot)
+                .Single(item => FindButton(item.Child, closeLabel) == close);
+            var surface = Find<Border>(popup.Child, item => item.Name == "BackgroundElement")!;
+            var presenter = Find<ContentPresenter>(close)!;
+            await Task.Delay(250);
+            var root = (UIElement)frame.XamlRoot.Content;
+            var bounds = surface.TransformToVisual(root).TransformBounds(new(0, 0, surface.ActualWidth, surface.ActualHeight));
+            check(bounds.Top >= 11 && frame.XamlRoot.Size.Height - bounds.Bottom >= 11 &&
+                close.ActualHeight > 0 && close.CornerRadius.TopLeft == 4 && presenter.CornerRadius.TopLeft == 4,
+                $"dialog at {frame.XamlRoot.Size.Height:F0} DIP has vertical clearance ({bounds.Top:F1}, " +
+                $"{frame.XamlRoot.Size.Height - bounds.Bottom:F1} DIP), surface margin {surface.Margin.Top:F0} DIP and rounded close button {presenter.CornerRadius.TopLeft:F0} DIP");
         }
 
         string fractionalPng = Path.Combine(directory, "fractional-dpi.png");
@@ -265,17 +464,27 @@ internal static class ListeningReportChecks
             await Task.Delay(Timeout.InfiniteTimeSpan, token);
             return null;
         };
-        Invoke(FindButton(page, "Export summary image")!);
-        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
-        Invoke(FindButton((ListeningReportPreviewPage)frame.Content, "Save PNG")!);
+        preview = await OpenPreviewAsync();
+        Invoke(DialogButton("Save PNG"));
         await pickerStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await vm.StopAsync().WaitAsync(TimeSpan.FromSeconds(5));
         check(!vm.IsSaving && !vm.IsPreview && vm.PreviewCover is null && vm.PreviewBackground is null && vm.Presentation is null,
             "shutdown cancels and drains an in-flight save picker and releases the preview");
-    }
 
-    private static bool IsExpectedTransition(NavigationTransitionInfo? transition, bool animationsEnabled)
-        => animationsEnabled ? transition is DrillInNavigationTransitionInfo : transition is SuppressNavigationTransitionInfo;
+        async Task<ListeningReportPreviewDialog> OpenPreviewAsync()
+        {
+            Invoke(FindButton(page, "Export summary image")!);
+            await UntilAsync(() => page.PreviewDialog is { } dialog && dialog.IsPrimaryButtonEnabled &&
+                dialog.Content is FrameworkElement { IsLoaded: true } && FindDialogButton("Save PNG") is not null);
+            return page.PreviewDialog!;
+        }
+
+        Button? FindDialogButton(string label) => VisualTreeHelper.GetOpenPopupsForXamlRoot(frame.XamlRoot)
+            .Select(popup => FindButton(popup.Child, label)).FirstOrDefault(button => button is not null);
+
+        Button DialogButton(string label) => FindDialogButton(label)
+            ?? throw new InvalidOperationException($"Dialog button '{label}' is missing.");
+    }
 
     private static long SamplePoster(SoftwareBitmap bitmap)
     {
@@ -353,8 +562,8 @@ internal static class ListeningReportChecks
         db.RunInTransaction(() =>
         {
             db.Insert(new Music { Id = 12, SongId = 4 });
-            Add(1, 12, "Old title", "Band", start);
-            Add(4, 99, "Latest title", "Band", end.AddTicks(-1));
+            Add(1, 12, "Old title", "Band", start, "First album");
+            Add(4, 99, "Latest title", "Band", end.AddTicks(-1), "First album");
             Add(0, 0, "Old library track", "", end.AddDays(-1));
             Add(0, 0, "Old library track", " ", end.AddDays(-1));
             Add(1, 12, "Outside period", "Band", end);
@@ -364,13 +573,33 @@ internal static class ListeningReportChecks
         check(month is { PlayCount: 4, ActiveDays: 2, Milliseconds: 480000 } && month.Counts.Length == 29 &&
             month.Counts[0] == 1 && month.Counts[^1] == 3 && month.Songs[0] is { Title: "Latest title", PlayCount: 2 } &&
             month.Artists is [{ Name: "Band", PlayCount: 2 }], "leap month and exact endpoints preserve counts and existing song identity");
+        check(month.Habits is { DistinctSongs: 3, LongestStreak: 1 } && month.Habits.WeekdayCounts[(int)DayOfWeek.Thursday] == 4 &&
+            month.Habits.HourCounts[0] == 3 && month.Habits.HourCounts[23] == 1 &&
+            month.TopSongHistory == new ReportSongHistory(new(2024, 2, 1), 2) &&
+            month.Albums is [{ Name: "First album", PlayCount: 2 }] && month.MonthlyArtists.Length == 0,
+            "habit metrics, album rank and top track dates respect track versions and local period boundaries");
         var year = ListeningReportQuery.Read(path, new(new(2024), now, utc), default);
         check(year.PlayCount == 5 && year.Counts[1] + year.Counts[2] == 5 && year.InProgress &&
             year.FirstRecord == new DateOnly(2024, 2, 1) && year.LatestRecord == new DateOnly(2024, 3, 1),
             "natural year reconciles with months and excludes future records");
+        check(year.MonthlyArtists is [{ Month: 2, Name: "Band", Milliseconds: 240000 }, { Month: 3, Name: "Band", Milliseconds: 120000 }],
+            "annual artists are scoped to populated months");
         var empty = ListeningReportQuery.Read(path, new(new(2024, 1), now, utc), default);
         check(empty.PlayCount == 0 && empty.Songs.Length == 0 && empty.LatestRecord == new DateOnly(2024, 3, 1),
             "empty intervals keep the most recent retained date for navigation");
+
+        var eastern = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        Add(0, 0, "Legacy winner", "Early band", new(2024, 11, 3, 5, 15, 0, DateTimeKind.Utc), "Legacy album", 60000);
+        Add(0, 0, "Legacy winner", "Early band", new(2024, 11, 3, 6, 45, 0, DateTimeKind.Utc), "Legacy album", 60000);
+        Add(0, 0, "Legacy winner", "Late band", new(2024, 11, 4, 6, 10, 0, DateTimeKind.Utc), "Other album", 180000);
+        DateTime nextYear = new(2025, 1, 1, 7, 0, 0, DateTimeKind.Utc);
+        var repeatedHour = ListeningReportQuery.Read(path, new(new(2024, 11), nextYear, eastern), default);
+        check(repeatedHour.Habits is { DistinctSongs: 2, LongestStreak: 2 } && repeatedHour.Habits.HourCounts[1] == 3 &&
+            repeatedHour.TopSongHistory == new ReportSongHistory(new(2024, 11, 3), 1),
+            "fall-back hours share the same local bucket and legacy labels remain isolated in the top-track history");
+        var artistByDuration = ListeningReportQuery.Read(path, new(new(2024), nextYear, eastern), default);
+        check(artistByDuration.MonthlyArtists[^1] is { Month: 11, Name: "Late band", Milliseconds: 180000 },
+            "the monthly artist lead uses listening time before play count");
 
         const int size = 240000;
         db.Execute("""
@@ -381,7 +610,8 @@ internal static class ListeningReportChecks
             """, size, new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc).Ticks, new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc).Ticks);
         var request = new ListeningReportRequest(new(2025), new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), utc);
         var stress = ListeningReportQuery.Read(path, request, default);
-        check(stress.PlayCount == size && stress.Songs.Length == 5 && stress.Artists.Length == 5 && stress.Counts.Length == 12,
+        check(stress.PlayCount == size && stress.Habits.DistinctSongs == size &&
+            stress.Songs.Length == 5 && stress.Artists.Length == 5 && stress.Counts.Length == 12,
             "large library returns fixed-size aggregates and rankings");
         double[] elapsed = new double[8];
         long allocated = 0;
@@ -406,11 +636,11 @@ internal static class ListeningReportChecks
             check(true, "in-progress aggregate responds to cancellation");
         }
 
-        void Add(int song, int music, string title, string artist, DateTime at)
+        void Add(int song, int music, string title, string artist, DateTime at, string album = "", double playedMs = 120000)
             => db.Insert(new PlaybackHistory
             {
-                SongIdAtPlay = song, MusicId = music, Title = title, Author = artist, StartedAt = at,
-                EndedAt = at.AddMinutes(4), DurationPlayedMs = 120000, TotalDurationMs = 200000
+                SongIdAtPlay = song, MusicId = music, Title = title, Author = artist, Album = album, StartedAt = at,
+                EndedAt = at.AddMinutes(4), DurationPlayedMs = playedMs, TotalDurationMs = 200000
             });
     }
 

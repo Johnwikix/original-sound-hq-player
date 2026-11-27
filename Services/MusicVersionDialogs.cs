@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.Controls;
@@ -61,7 +62,7 @@ public sealed class MusicVersionDialogs(System.Func<XamlRoot?>? root = null)
             DefaultButton = ContentDialogButton.Close
         };
         _active = dialog;
-        try { return await dialog.ShowAsync() == ContentDialogResult.Primary; }
+        try { return await dialog.ShowWithLayoutAsync() == ContentDialogResult.Primary; }
         finally { if (ReferenceEquals(_active, dialog)) _active = null; }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel.Controls;
 
@@ -43,7 +44,7 @@ public sealed partial class DspSettingsControl : UserControl
         var dialog = new ConvolutionCurveDialog(ViewModel) { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
         try
         {
-            await dialog.ShowAsync();
+            await dialog.ShowWithLayoutAsync();
         }
         finally { ViewModel.EndCorrectionEditing(); ViewModel.RefreshValues(); }
     }
@@ -58,7 +59,7 @@ public sealed partial class DspSettingsControl : UserControl
             CloseButtonText = Utils.ToolUtils.GetString("CloseButton"),
             Content = new DspDeviceBindingsControl(ViewModel)
         };
-        await dialog.ShowAsync();
+        await dialog.ShowWithLayoutAsync();
     }
 
     private async void ImportImpulse_Click(object sender, RoutedEventArgs args)
@@ -81,6 +82,6 @@ public sealed partial class DspSettingsControl : UserControl
     {
         var dialog = new EqualizerDialog { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
         dialog.EqualizerCommitted += static (_, _) => App.Services.GetRequiredService<IpcService>().UpdateEq();
-        await dialog.ShowAsync();
+        await dialog.ShowWithLayoutAsync();
     }
 }

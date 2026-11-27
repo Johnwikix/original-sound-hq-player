@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using System;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View;
@@ -10,8 +12,7 @@ public sealed partial class ListeningReportPage : Page
 {
     private readonly AppViewModel _shell = App.Services.GetRequiredService<AppViewModel>();
     private bool _previousBackEnabled;
-    private bool _openingPreview;
-    private bool _restoreScroll;
+    internal ListeningReportPreviewDialog? PreviewDialog { get; private set; }
 
     public ListeningReportViewModel ViewModel { get; } = App.Services.GetRequiredService<ListeningReportViewModel>();
 
@@ -21,16 +22,21 @@ public sealed partial class ListeningReportPage : Page
     {
         base.OnNavigatedTo(e);
         _previousBackEnabled = _shell.IsBackBtnEnable;
-        _restoreScroll = e.NavigationMode == NavigationMode.Back;
         Frame.Navigated += FrameNavigated;
         ViewModel.Activate();
         UpdateShellBack();
     }
 
+    protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
+    {
+        base.OnNavigatingFrom(e);
+        if (PreviewDialog is not null) e.Cancel = true;
+    }
+
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         Frame.Navigated -= FrameNavigated;
-        if (!_openingPreview) ViewModel.Deactivate();
+        ViewModel.Deactivate();
         _shell.IsBackBtnEnable = _previousBackEnabled;
         base.OnNavigatedFrom(e);
     }
@@ -39,6 +45,11 @@ public sealed partial class ListeningReportPage : Page
 
     internal void NavigateBack()
     {
+        if (PreviewDialog is { } dialog)
+        {
+            if (!ViewModel.IsSaving) dialog.Hide();
+            return;
+        }
         if (CanNavigateBack) Frame.GoBack();
     }
 
@@ -46,26 +57,21 @@ public sealed partial class ListeningReportPage : Page
 
     private void UpdateShellBack() => _shell.IsBackBtnEnable = CanNavigateBack;
 
-    private void Export_Click(object sender, RoutedEventArgs e)
+    private async void Export_Click(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.CanPreview || _openingPreview) return;
-        ViewModel.ReportScrollOffset = ReportScroll.VerticalOffset;
-        _openingPreview = true;
-        try { Frame.Navigate(typeof(ListeningReportPreviewPage), null, ListeningReportPreviewPage.CreateTransition()); }
-        finally { _openingPreview = false; }
-    }
-
-    private void Report_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (!_restoreScroll) return;
-        _restoreScroll = false;
-        _ = DispatcherQueue.TryEnqueue(() =>
+        if (!ViewModel.CanPreview || PreviewDialog is not null) return;
+        var dialog = new ListeningReportPreviewDialog(ViewModel) { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
+        PreviewDialog = dialog;
+        try
         {
-            if (!IsLoaded) return;
-            ReportScroll.UpdateLayout();
-            ReportScroll.ChangeView(null, ViewModel.ReportScrollOffset, null, disableAnimation: true);
-            // Programmatic focus can scroll the button into view, overriding the restored position.
-            Focus(FocusState.Programmatic);
-        });
+            ViewModel.BeginPreview(dialog.CaptureAsync);
+            await dialog.ShowWithLayoutAsync();
+        }
+        finally
+        {
+            ViewModel.EndPreview();
+            dialog.ReleasePreview();
+            PreviewDialog = null;
+        }
     }
 }

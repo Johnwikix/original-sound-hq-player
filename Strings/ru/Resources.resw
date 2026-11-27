@@ -3015,10 +3015,43 @@ SHA-256: {5}
   <data name="ListeningReportTopArtist.Text" xml:space="preserve">
     <value>Главный исполнитель</value>
   </data>
+  <data name="ListeningReportHabits.Text" xml:space="preserve">
+    <value>Привычки прослушивания</value>
+  </data>
+  <data name="ListeningReportHabitBasis.Text" xml:space="preserve">
+    <value>Воспроизведения учитываются по местному времени. Повторы считаются со второго воспроизведения каждого трека за этот период.</value>
+  </data>
+  <data name="ListeningReportDistinctSongs" xml:space="preserve">
+    <value>Разные треки</value>
+  </data>
+  <data name="ListeningReportReplayShare" xml:space="preserve">
+    <value>Доля повторов</value>
+  </data>
+  <data name="ListeningReportLongestStreak" xml:space="preserve">
+    <value>Самая длинная серия (дни)</value>
+  </data>
+  <data name="ListeningReportPeakWeekday" xml:space="preserve">
+    <value>Самый активный день недели</value>
+  </data>
+  <data name="ListeningReportPeakHour" xml:space="preserve">
+    <value>Самый активный час</value>
+  </data>
+  <data name="ListeningReportTopSongHistory" xml:space="preserve">
+    <value>Впервые за этот период вы послушали свой топ-трек {0}. Всего дней с этим треком: {1:N0}.</value>
+  </data>
+  <data name="ListeningReportTopAlbums.Text" xml:space="preserve">
+    <value>Популярные альбомы</value>
+  </data>
+  <data name="ListeningReportMonthlyArtists.Text" xml:space="preserve">
+    <value>Исполнители месяца по времени прослушивания</value>
+  </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>Текущие правила: запись сохраняется после завершения, если воспроизведено не менее 50 % трека. Время определяется позицией и может включать перемотку вперёд. Учитывается день начала воспроизведения.</value>
   </data>
-  <data name="ListeningReportSave.Content" xml:space="preserve">
+  <data name="ListeningReportPreviewDialog.Title" xml:space="preserve">
+    <value>Предпросмотр изображения отчёта</value>
+  </data>
+  <data name="ListeningReportPreviewDialog.PrimaryButtonText" xml:space="preserve">
     <value>Сохранить PNG</value>
   </data>
   <data name="ListeningReportMonthTitle" xml:space="preserve">

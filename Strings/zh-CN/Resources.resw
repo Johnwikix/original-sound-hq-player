@@ -3017,10 +3017,43 @@ SHA-256：{5}
   <data name="ListeningReportTopArtist.Text" xml:space="preserve">
     <value>排名第一的歌手</value>
   </data>
+  <data name="ListeningReportHabits.Text" xml:space="preserve">
+    <value>听歌习惯</value>
+  </data>
+  <data name="ListeningReportHabitBasis.Text" xml:space="preserve">
+    <value>按本地时间统计有效播放。重复播放从每首歌在本期的第二次播放起算。</value>
+  </data>
+  <data name="ListeningReportDistinctSongs" xml:space="preserve">
+    <value>听过的不同歌曲</value>
+  </data>
+  <data name="ListeningReportReplayShare" xml:space="preserve">
+    <value>重复播放占比</value>
+  </data>
+  <data name="ListeningReportLongestStreak" xml:space="preserve">
+    <value>最长连续听歌天数</value>
+  </data>
+  <data name="ListeningReportPeakWeekday" xml:space="preserve">
+    <value>播放最多的星期几</value>
+  </data>
+  <data name="ListeningReportPeakHour" xml:space="preserve">
+    <value>播放最多的时段</value>
+  </data>
+  <data name="ListeningReportTopSongHistory" xml:space="preserve">
+    <value>榜首歌曲在本期首次收听于 {0}，共收听 {1:N0} 天。</value>
+  </data>
+  <data name="ListeningReportTopAlbums.Text" xml:space="preserve">
+    <value>常听专辑</value>
+  </data>
+  <data name="ListeningReportMonthlyArtists.Text" xml:space="preserve">
+    <value>每月收听最久的歌手</value>
+  </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>现行规则：曲目至少播放 50% 且完成结算后才记入。时长按播放进度累计，向前拖动可能计入。跨日播放归到开始当天。</value>
   </data>
-  <data name="ListeningReportSave.Content" xml:space="preserve">
+  <data name="ListeningReportPreviewDialog.Title" xml:space="preserve">
+    <value>总结图预览</value>
+  </data>
+  <data name="ListeningReportPreviewDialog.PrimaryButtonText" xml:space="preserve">
     <value>保存 PNG</value>
   </data>
   <data name="ListeningReportMonthTitle" xml:space="preserve">

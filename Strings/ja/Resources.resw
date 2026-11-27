@@ -3015,10 +3015,43 @@ SHA-256: {5}
   <data name="ListeningReportTopArtist.Text" xml:space="preserve">
     <value>最も聴いたアーティスト</value>
   </data>
+  <data name="ListeningReportHabits.Text" xml:space="preserve">
+    <value>リスニング習慣</value>
+  </data>
+  <data name="ListeningReportHabitBasis.Text" xml:space="preserve">
+    <value>再生回数は現地時間で集計します。リピート再生は期間内の各曲の2回目からカウントします。</value>
+  </data>
+  <data name="ListeningReportDistinctSongs" xml:space="preserve">
+    <value>聴いた曲数（重複なし）</value>
+  </data>
+  <data name="ListeningReportReplayShare" xml:space="preserve">
+    <value>リピート再生の割合</value>
+  </data>
+  <data name="ListeningReportLongestStreak" xml:space="preserve">
+    <value>最長連続リスニング日数</value>
+  </data>
+  <data name="ListeningReportPeakWeekday" xml:space="preserve">
+    <value>最も聴いた曜日</value>
+  </data>
+  <data name="ListeningReportPeakHour" xml:space="preserve">
+    <value>最も聴いた時間帯</value>
+  </data>
+  <data name="ListeningReportTopSongHistory" xml:space="preserve">
+    <value>期間内で最も聴いた曲を初めて再生したのは{0}で、計{1:N0}日間聴きました。</value>
+  </data>
+  <data name="ListeningReportTopAlbums.Text" xml:space="preserve">
+    <value>よく聴いたアルバム</value>
+  </data>
+  <data name="ListeningReportMonthlyArtists.Text" xml:space="preserve">
+    <value>月ごとに最も長く聴いたアーティスト</value>
+  </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>現在のルール：曲の 50% 以上を再生したセッションを終了後に記録します。時間は再生位置に基づき、早送りが含まれることがあります。再生は開始した日に集計します。</value>
   </data>
-  <data name="ListeningReportSave.Content" xml:space="preserve">
+  <data name="ListeningReportPreviewDialog.Title" xml:space="preserve">
+    <value>サマリー画像のプレビュー</value>
+  </data>
+  <data name="ListeningReportPreviewDialog.PrimaryButtonText" xml:space="preserve">
     <value>PNG を保存</value>
   </data>
   <data name="ListeningReportMonthTitle" xml:space="preserve">

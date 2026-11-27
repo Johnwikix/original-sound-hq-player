@@ -16,7 +16,7 @@
   <ItemGroup>
     <Compile Include="../../DesktopLyrics/DesktopLyricsViewModel.cs;../../DesktopLyrics/DesktopLyricsStyle.cs;../../State/DesktopLyricsState.cs;../../Model/DesktopLyricsMode.cs;../../Model/SaveDesktopLyricsState.cs;../../Services/AppLifecycle.cs" />
     <Page Include="../../Style/CustomFontStyle.xaml" Link="CustomFontStyle.xaml" />
-    <Compile Include="../../Helper/DialogHelper.cs;../../Services/ApplicationFontService.cs;../../Utils/ApplicationFont.cs;../../Model/FontInfo.cs;../../Model/EffectComboBoxItem.cs" />
+    <Compile Include="../../Helper/DialogHelper.cs;../../Helper/ContentDialogLayout.cs;../../Services/ApplicationFontService.cs;../../Utils/ApplicationFont.cs;../../Model/FontInfo.cs;../../Model/EffectComboBoxItem.cs" />
     <Compile Include="../../Helper/ThemeStyleHelper.cs;../../Helper/CustomAcrylicSystemBackdrop.cs;../../Helper/CustomMicaSystemBackdrop.cs" />
     <Compile Include="../../Helper/SolidColorSystemBackdrop.cs" />
     <Compile Include="../../State/*PreferencesState.cs;../../State/PreferencesState.cs" />

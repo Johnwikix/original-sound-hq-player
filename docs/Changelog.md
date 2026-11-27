@@ -1,3 +1,22 @@
+## 2026-11-27 统一对话框与听歌报告标题
+
+- `ContentDialogLayout` 为对话框上下预留 12 DIP，统一关闭按钮圆角。
+- `ListeningReportPage` 对齐统计页的标题字号和边距。关闭预览时清理海报和导出视图引用。
+
+## 2026-11-27 在听歌报告内预览总结图
+
+- `ListeningReportPage`、`ListeningReportPreviewDialog` 从当前报告打开导出对话框，集中展示等比海报、着色器和保存操作。关闭后保留浏览位置与所选周期，PNG 以 1080 × 1350 像素导出。
+
+## 2026-11-27 对齐听歌报告的歌曲和歌手榜
+
+- `ListeningReportPage`、`ListeningReportPreviewPage` 随窗口宽度展开。歌曲榜只显示名次、歌名和播放次数，并与歌手榜对齐。榜首歌曲回顾移至榜单下方。
+
+## 2026-11-27 丰富听歌报告并收紧布局
+
+- `ListeningReportQuery`、`ListeningReportPage` 增加不同歌曲数、重复播放占比、最长连续听歌天数、播放最多的星期几和时段、榜首歌曲回顾、专辑榜与年度每月代表歌手。
+- `ListeningReportPage` 限制内容宽度，缩小卡片间距并沿用统计页的卡片圆角。
+- `ListeningReportPreviewPage` 让总结图适应窗口宽高，封面使用圆角，按原画幅渲染 PNG 并加入曲目数和常听时段。
+
 ## 2026-11-27 总结图预览支持独立选择着色器
 
 - `ListeningReportPreviewPage`、`ListeningReportViewModel`：预览打开时读取设置中的着色器，可临时选择任一现有样式，串行生成最新静态背景并锁定保存中的选项。

@@ -46,19 +46,19 @@ internal sealed class ListeningReportQuery(MusicDatabaseService library)
     {
         ListeningPeriod period = request.Period;
         DateOnly start = period.Start;
-        DateOnly end = period.End;
+        int dayCount = period.End.DayNumber - start.DayNumber;
         long startTicks = StartOfDayUtc(start, request.TimeZone).Ticks;
         long nowTicks = request.UtcNow.Ticks;
-        long endTicks = Math.Min(StartOfDayUtc(end, request.TimeZone).Ticks, nowTicks);
-        long[] counts = new long[period.IsMonthly ? end.DayNumber - start.DayNumber : 12];
+        long endTicks = Math.Min(StartOfDayUtc(period.End, request.TimeZone).Ticks, nowTicks);
+        long[] counts = new long[period.IsMonthly ? dayCount : 12];
+        long[] weekdayCounts = new long[7];
+        long[] hourCounts = new long[24];
         long playCount = 0;
         double milliseconds = 0;
-        int activeDays = 0;
 
-        // 逐个自然日用同一条索引范围语句聚合。每条会话最多读入一次，日期转换不逐行执行。
         const string totalsSql = """
-            SELECT COUNT(*), SUM(MAX(0, MIN(DurationPlayedMs, TotalDurationMs)))
-            FROM PlaybackHistory WHERE StartedAt >= ?1 AND StartedAt < ?2
+            SELECT StartedAt, MAX(0, MIN(DurationPlayedMs, TotalDurationMs))
+            FROM PlaybackHistory WHERE StartedAt >= ?1 AND StartedAt < ?2 ORDER BY StartedAt
             """;
         const string firstSql = "SELECT StartedAt FROM PlaybackHistory WHERE StartedAt >= 1 AND StartedAt < ?1 ORDER BY StartedAt LIMIT 1";
         const string latestSql = "SELECT StartedAt FROM PlaybackHistory WHERE StartedAt >= 1 AND StartedAt < ?1 ORDER BY StartedAt DESC LIMIT 1";
@@ -66,91 +66,204 @@ internal sealed class ListeningReportQuery(MusicDatabaseService library)
         long latestTicks = connection.ExecuteScalar<long>(latestSql, nowTicks);
         token.ThrowIfCancellationRequested();
 
+        var handle = connection.Handle;
+        int activeDays = 0;
+        int streak = 0;
+        int longestStreak = 0;
+        Span<long> dayStarts = stackalloc long[dayCount];
         if (latestTicks >= startTicks && firstTicks < endTicks && endTicks > startTicks)
         {
-            var handle = connection.Handle;
+            for (int index = 0; index < dayStarts.Length; index++)
+                dayStarts[index] = StartOfDayUtc(start.AddDays(index), request.TimeZone).Ticks;
+
+            // 沿用自然日 UTC 边界。小时按真实本地时间分桶，夏令时重复的小时归入同一桶。
+            int dayIndex = 0;
+            int previousDay = -1;
             using var statement = Prepare(handle, totalsSql, token);
-            long dayStart = startTicks;
-            for (DateOnly day = start; day < end && dayStart < endTicks; day = day.AddDays(1))
+            BindRange(handle, statement, startTicks, endTicks, token);
+            while (Step(handle, statement, token))
             {
-                token.ThrowIfCancellationRequested();
-                long dayEnd = Math.Min(StartOfDayUtc(day.AddDays(1), request.TimeZone).Ticks, endTicks);
-                if (dayEnd > dayStart)
+                long ticks = raw.sqlite3_column_int64(statement, 0);
+                dayIndex = FindDay(dayStarts, dayIndex, ticks);
+                if (dayIndex != previousDay)
                 {
-                    BindRange(handle, statement, dayStart, dayEnd, token);
-                    if (Step(handle, statement, token))
-                    {
-                        long count = raw.sqlite3_column_int64(statement, 0);
-                        if (count > 0)
-                        {
-                            counts[period.IsMonthly ? day.Day - 1 : day.Month - 1] += count;
-                            playCount += count;
-                            milliseconds += raw.sqlite3_column_double(statement, 1);
-                            activeDays++;
-                        }
-                    }
-                    Check(handle, raw.sqlite3_reset(statement), token);
+                    activeDays++;
+                    streak = dayIndex == previousDay + 1 ? streak + 1 : 1;
+                    longestStreak = Math.Max(longestStreak, streak);
+                    previousDay = dayIndex;
                 }
-                dayStart = dayEnd;
+                DateOnly day = start.AddDays(dayIndex);
+                counts[period.IsMonthly ? dayIndex : day.Month - 1]++;
+                weekdayCounts[(int)day.DayOfWeek]++;
+                DateTime local = TimeZoneInfo.ConvertTimeFromUtc(new(ticks, DateTimeKind.Utc), request.TimeZone);
+                hourCounts[local.Hour]++;
+                playCount++;
+                milliseconds += raw.sqlite3_column_double(statement, 1);
             }
         }
 
         int limit = period.IsMonthly ? 3 : 5;
-        ReportSong[] songs = playCount > 0 ? ReadSongs(connection.Handle, startTicks, endTicks, limit, token) : [];
-        ReportArtist[] artists = playCount > 0 ? ReadArtists(connection.Handle, startTicks, endTicks, limit, token) : [];
-        return new(request, playCount, milliseconds, activeDays, counts, songs, artists,
+        (ReportSong[] songs, long distinctSongs, ReportSongHistory? topSongHistory) = playCount > 0
+            ? ReadSongs(handle, start, dayStarts, endTicks, limit, token)
+            : ([], 0L, null);
+        ReportRank[] artists = playCount > 0 ? ReadRanks(handle, ArtistsSql, startTicks, endTicks, limit, token) : [];
+        ReportRank[] albums = playCount > 0 ? ReadRanks(handle, AlbumsSql, startTicks, endTicks, limit, token) : [];
+        ReportMonthlyArtist[] monthlyArtists = !period.IsMonthly && artists.Length > 0
+            ? ReadMonthlyArtists(handle, request, counts, endTicks, token)
+            : [];
+        return new(request, playCount, milliseconds, activeDays, counts,
+            new(distinctSongs, longestStreak, weekdayCounts, hourCounts), songs, topSongHistory, artists, albums, monthlyArtists,
             firstTicks > 0 ? request.LocalDate(new(firstTicks, DateTimeKind.Utc)) : null,
             latestTicks > 0 ? request.LocalDate(new(latestTicks, DateTimeKind.Utc)) : null);
     }
 
-    // MAX 为分组选择有标题的最近一行，附带同一行的作者和可选封面。无 ID 旧数据按标签归组。
-    private const string SongsSql = """
-        SELECT substr(h.Title, 1, 256), substr(h.Author, 1, 256), COUNT(*) AS Plays,
-               substr(m.ImageHash, 1, 128), MAX(CASE WHEN trim(h.Title) <> '' THEN h.StartedAt ELSE 0 END)
+    private static int FindDay(ReadOnlySpan<long> dayStarts, int index, long ticks)
+    {
+        while (index + 1 < dayStarts.Length && dayStarts[index + 1] <= ticks) index++;
+        return index;
+    }
+
+    private const string SongIdentity = """
+        COALESCE(NULLIF(m.SongId,0),NULLIF(h.SongIdAtPlay,0),-h.MusicId)
+        """;
+
+    // MAX 为分组选择有标题的最近一行，附带同一行的可选封面。无 ID 旧数据按标签归组。
+    private const string SongsSql = $"""
+        SELECT substr(h.Title, 1, 256), COUNT(*) AS Plays,
+               substr(m.ImageHash, 1, 128), COUNT(*) OVER (), h.Id,
+               MAX(CASE WHEN trim(h.Title) <> '' THEN h.StartedAt ELSE 0 END)
         FROM PlaybackHistory AS h LEFT JOIN Music AS m ON m.Id=h.MusicId
         WHERE h.StartedAt >= ?1 AND h.StartedAt < ?2
-        GROUP BY COALESCE(NULLIF(m.SongId,0),NULLIF(h.SongIdAtPlay,0),-h.MusicId),
+        GROUP BY {SongIdentity},
                  CASE WHEN h.MusicId=0 THEN h.Title END,
                  CASE WHEN h.MusicId=0 THEN h.Author END,
                  CASE WHEN h.MusicId=0 THEN h.Album END
         ORDER BY Plays DESC, SUM(MAX(0,MIN(h.DurationPlayedMs,h.TotalDurationMs))) DESC,
-                 COALESCE(NULLIF(m.SongId,0),NULLIF(h.SongIdAtPlay,0),-h.MusicId),
+                 {SongIdentity},
                  CASE WHEN h.MusicId=0 THEN h.Title END,
                  CASE WHEN h.MusicId=0 THEN h.Author END,
                  CASE WHEN h.MusicId=0 THEN h.Album END
         LIMIT ?3
         """;
 
-    private static ReportSong[] ReadSongs(sqlite3 handle, long start, long end, int limit, CancellationToken token)
+    private static (ReportSong[] Songs, long DistinctSongs, ReportSongHistory? TopSongHistory) ReadSongs(
+        sqlite3 handle, DateOnly startDate, ReadOnlySpan<long> dayStarts, long end, int limit, CancellationToken token)
     {
-        using var statement = Prepare(handle, SongsSql, token);
-        BindRange(handle, statement, start, end, token);
-        Check(handle, raw.sqlite3_bind_int(statement, 3, limit), token);
         var songs = new List<ReportSong>(limit);
-        while (Step(handle, statement, token))
+        long distinctSongs = 0;
+        long topRow = 0;
+        using (var statement = Prepare(handle, SongsSql, token))
         {
-            songs.Add(new(ReadText(statement, 0), ReadText(statement, 1), raw.sqlite3_column_int64(statement, 2),
-                raw.sqlite3_column_text(statement, 3).utf8_to_string()));
+            BindRange(handle, statement, dayStarts[0], end, token);
+            Check(handle, raw.sqlite3_bind_int(statement, 3, limit), token);
+            while (Step(handle, statement, token))
+            {
+                if (songs.Count == 0)
+                {
+                    distinctSongs = raw.sqlite3_column_int64(statement, 3);
+                    topRow = raw.sqlite3_column_int64(statement, 4);
+                }
+                songs.Add(new(ReadText(statement, 0), raw.sqlite3_column_int64(statement, 1),
+                    raw.sqlite3_column_text(statement, 2).utf8_to_string()));
+            }
         }
-        return songs.ToArray();
+        var history = songs.Count > 0 ? ReadSongHistory(handle, startDate, dayStarts, end, topRow, token) : null;
+        return (songs.ToArray(), distinctSongs, history);
     }
 
-    private static ReportArtist[] ReadArtists(sqlite3 handle, long start, long end, int limit, CancellationToken token)
+    private static ReportSongHistory? ReadSongHistory(sqlite3 handle, DateOnly startDate, ReadOnlySpan<long> dayStarts,
+        long end, long topRow, CancellationToken token)
     {
-        const string sql = """
-            SELECT substr(Author, 1, 256), COUNT(*) AS Plays
-            FROM PlaybackHistory WHERE StartedAt >= ?1 AND StartedAt < ?2 AND trim(Author, char(9,10,13,32)) <> ''
-            GROUP BY Author
-            ORDER BY Plays DESC, SUM(MAX(0,MIN(DurationPlayedMs,TotalDurationMs))) DESC, Author
-            LIMIT ?3
+        // 用榜首行的完整分组键回查，避免展示用的截断标签合并不同歌曲。
+        const string sql = $"""
+            WITH winner AS (
+                SELECT {SongIdentity} AS SongKey,
+                       CASE WHEN h.MusicId=0 THEN h.Title END AS Title,
+                       CASE WHEN h.MusicId=0 THEN h.Author END AS Author,
+                       CASE WHEN h.MusicId=0 THEN h.Album END AS Album
+                FROM PlaybackHistory AS h LEFT JOIN Music AS m ON m.Id=h.MusicId
+                WHERE h.Id = ?3
+            )
+            SELECT h.StartedAt
+            FROM PlaybackHistory AS h LEFT JOIN Music AS m ON m.Id=h.MusicId CROSS JOIN winner AS w
+            WHERE h.StartedAt >= ?1 AND h.StartedAt < ?2
+              AND ({SongIdentity}) IS w.SongKey
+              AND (CASE WHEN h.MusicId=0 THEN h.Title END) IS w.Title
+              AND (CASE WHEN h.MusicId=0 THEN h.Author END) IS w.Author
+              AND (CASE WHEN h.MusicId=0 THEN h.Album END) IS w.Album
+            ORDER BY h.StartedAt
             """;
+        using var statement = Prepare(handle, sql, token);
+        BindRange(handle, statement, dayStarts[0], end, token);
+        Check(handle, raw.sqlite3_bind_int64(statement, 3, topRow), token);
+        int first = -1;
+        int previousDay = -1;
+        int dayIndex = 0;
+        int count = 0;
+        while (Step(handle, statement, token))
+        {
+            dayIndex = FindDay(dayStarts, dayIndex, raw.sqlite3_column_int64(statement, 0));
+            if (dayIndex == previousDay) continue;
+            if (first < 0) first = dayIndex;
+            previousDay = dayIndex;
+            count++;
+        }
+        return count > 0 ? new(startDate.AddDays(first), count) : null;
+    }
+
+    private const string ArtistsSql = """
+        SELECT substr(Author, 1, 256), COUNT(*) AS Plays
+        FROM PlaybackHistory WHERE StartedAt >= ?1 AND StartedAt < ?2 AND trim(Author, char(9,10,13,32)) <> ''
+        GROUP BY Author
+        ORDER BY Plays DESC, SUM(MAX(0,MIN(DurationPlayedMs,TotalDurationMs))) DESC, Author
+        LIMIT ?3
+        """;
+
+    private const string AlbumsSql = """
+        SELECT substr(Album, 1, 256), COUNT(*) AS Plays
+        FROM PlaybackHistory WHERE StartedAt >= ?1 AND StartedAt < ?2 AND trim(Album, char(9,10,13,32)) <> ''
+        GROUP BY Album
+        ORDER BY Plays DESC, SUM(MAX(0,MIN(DurationPlayedMs,TotalDurationMs))) DESC, Album
+        LIMIT ?3
+        """;
+
+    private static ReportRank[] ReadRanks(sqlite3 handle, string sql, long start, long end, int limit, CancellationToken token)
+    {
         using var statement = Prepare(handle, sql, token);
         BindRange(handle, statement, start, end, token);
         Check(handle, raw.sqlite3_bind_int(statement, 3, limit), token);
-        var artists = new List<ReportArtist>(limit);
+        var ranks = new List<ReportRank>(limit);
         while (Step(handle, statement, token))
-            artists.Add(new(ReadText(statement, 0), raw.sqlite3_column_int64(statement, 1)));
-        return artists.ToArray();
+            ranks.Add(new(ReadText(statement, 0), raw.sqlite3_column_int64(statement, 1)));
+        return ranks.ToArray();
+    }
+
+    private static ReportMonthlyArtist[] ReadMonthlyArtists(sqlite3 handle, ListeningReportRequest request,
+        long[] counts, long endTicks, CancellationToken token)
+    {
+        const string sql = """
+            SELECT substr(Author, 1, 256), SUM(MAX(0,MIN(DurationPlayedMs,TotalDurationMs))) AS Ms
+            FROM PlaybackHistory WHERE StartedAt >= ?1 AND StartedAt < ?2 AND trim(Author, char(9,10,13,32)) <> ''
+            GROUP BY Author
+            ORDER BY Ms DESC, COUNT(*) DESC, Author
+            LIMIT 1
+            """;
+        using var statement = Prepare(handle, sql, token);
+        var leaders = new List<ReportMonthlyArtist>(12);
+        DateOnly start = request.Period.Start;
+        for (int index = 0; index < counts.Length; index++)
+        {
+            token.ThrowIfCancellationRequested();
+            if (counts[index] == 0) continue;
+            DateOnly month = start.AddMonths(index);
+            long from = StartOfDayUtc(month, request.TimeZone).Ticks;
+            long to = Math.Min(StartOfDayUtc(month.AddMonths(1), request.TimeZone).Ticks, endTicks);
+            BindRange(handle, statement, from, to, token);
+            if (Step(handle, statement, token))
+                leaders.Add(new(month.Month, ReadText(statement, 0), raw.sqlite3_column_double(statement, 1)));
+            Check(handle, raw.sqlite3_reset(statement), token);
+        }
+        return leaders.ToArray();
     }
 
     private static string ReadText(sqlite3_stmt statement, int column)

@@ -29,9 +29,9 @@
     <Compile Include="../../Behaviors/AlbumCoverBehavior.cs;../../Utils/CoverLoadQueue.cs;../../View/StatsPage.xaml.cs;../../Controls/Charts/HourlyBarChartControl.xaml.cs" />
     <Page Include="../../View/StatsPage.xaml" Link="View/StatsPage.xaml" />
     <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
-    <Compile Include="../../Services/ListeningReport*.cs;../../ViewModel/ListeningReport*.cs;../../View/ListeningReportPage.xaml.cs;../../View/ListeningReportPreviewPage.xaml.cs" />
+    <Compile Include="../../Helper/ContentDialogLayout.cs;../../Services/ListeningReport*.cs;../../ViewModel/ListeningReport*.cs;../../View/ListeningReportPage.xaml.cs;../../View/ListeningReportPreviewDialog.xaml.cs" />
     <Page Include="../../View/ListeningReportPage.xaml" Link="View/ListeningReportPage.xaml" />
-    <Page Include="../../View/ListeningReportPreviewPage.xaml" Link="View/ListeningReportPreviewPage.xaml" />
+    <Page Include="../../View/ListeningReportPreviewDialog.xaml" Link="View/ListeningReportPreviewDialog.xaml" />
     <Page Include="../../Controls/Charts/HourlyBarChartControl.xaml" Link="Controls/Charts/HourlyBarChartControl.xaml" />
     <PRIResource Include="../../Strings/en/Resources.resw" Link="Strings/en/Resources.resw" />
   </ItemGroup>

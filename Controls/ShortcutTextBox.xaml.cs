@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.Controls
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = XamlRoot
                 };
-                _ = noKeyDialog.ShowAsync();
+                _ = noKeyDialog.ShowWithLayoutAsync();
                 return;
             }
 
@@ -108,7 +108,7 @@ namespace WinUIMusicPlayer.Controls
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = XamlRoot
                 };
-                _ = successDialog.ShowAsync();
+                _ = successDialog.ShowWithLayoutAsync();
             }
             else
             {
@@ -119,7 +119,7 @@ namespace WinUIMusicPlayer.Controls
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = XamlRoot
                 };
-                _ = failDialog.ShowAsync();
+                _ = failDialog.ShowWithLayoutAsync();
             }
         }
     }

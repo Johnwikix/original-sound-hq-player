@@ -3,31 +3,27 @@
     x:Class="WinUIMusicPlayer.View.ListeningReportPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:vm="using:WinUIMusicPlayer.ViewModel" Loaded="Report_Loaded">
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel">
 
     <Page.Resources>
         <Style x:Key="ReportSectionStyle" TargetType="Border">
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
             <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="16" />
         </Style>
         <DataTemplate x:Key="ReportRankTemplate" x:DataType="vm:ListeningReportRank">
             <Grid ColumnDefinitions="32,*,Auto" ColumnSpacing="8" Padding="0,6">
                 <TextBlock Text="{x:Bind Position}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <StackPanel Grid.Column="1" Spacing="2">
-                    <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{x:Bind Detail}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               TextTrimming="CharacterEllipsis" Visibility="{x:Bind DetailVisibility}" />
-                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}"
+                           FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="2" Text="{x:Bind Count}" AutomationProperties.Name="{x:Bind CountDescription}" />
             </Grid>
         </DataTemplate>
     </Page.Resources>
 
-    <Grid RowDefinitions="Auto,*" Padding="16,10,16,0">
+    <Grid RowDefinitions="Auto,*">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup>
                 <VisualState>
@@ -39,14 +35,16 @@
                         <Setter Target="ArtistSection.(Grid.Row)" Value="0" />
                         <Setter Target="ArtistSection.(Grid.Column)" Value="1" />
                         <Setter Target="ArtistSection.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="ArtistSection.Margin" Value="0" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
-        <TextBlock x:Uid="ListeningReportPageTitle" Margin="0,0,0,14" Style="{ThemeResource SubtitleTextBlockStyle}" />
+        <TextBlock x:Name="ReportTitle" x:Uid="ListeningReportPageTitle" Margin="16,10,16,10"
+                   VerticalAlignment="Center" FontSize="28" />
 
-        <ScrollViewer x:Name="ReportScroll" Grid.Row="1" HorizontalScrollMode="Disabled">
-            <StackPanel MaxWidth="1100" Padding="0,0,0,20" Spacing="16">
+        <ScrollViewer x:Name="ReportScroll" Grid.Row="1" Padding="16,0" HorizontalScrollMode="Disabled">
+            <StackPanel Padding="0,0,0,20" Spacing="8">
                 <RadioButtons MaxColumns="2" SelectedIndex="{x:Bind ViewModel.ModeIndex, Mode=TwoWay}">
                     <RadioButton x:Uid="ListeningReportAnnual" />
                     <RadioButton x:Uid="ListeningReportMonthly" />
@@ -74,14 +72,14 @@
                     <Button x:Uid="ListeningReportGoRecent" Visibility="{x:Bind ViewModel.RecentVisibility, Mode=OneWay}" Command="{x:Bind ViewModel.OpenRecentCommand}" />
                 </StackPanel>
 
-                <StackPanel Visibility="{x:Bind ViewModel.ReportVisibility, Mode=OneWay}" Spacing="16">
+                <StackPanel Visibility="{x:Bind ViewModel.ReportVisibility, Mode=OneWay}" Spacing="8">
                     <Border x:Name="SummaryCard" Style="{StaticResource ReportSectionStyle}">
                         <StackPanel Spacing="6">
                             <TextBlock Text="{x:Bind ViewModel.Presentation.Heading, Mode=OneWay}"
                                        FontSize="32" FontWeight="SemiBold" TextWrapping="Wrap" />
                             <TextBlock Text="{x:Bind ViewModel.Presentation.Coverage, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                             <TextBlock Text="{x:Bind ViewModel.Presentation.Zone, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
-                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12" Margin="0,18,0,0">
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="0,12,0,0">
                                 <StackPanel>
                                     <TextBlock Text="{x:Bind ViewModel.Presentation.Duration, Mode=OneWay}" FontSize="23" FontWeight="SemiBold" TextWrapping="Wrap" />
                                     <TextBlock x:Uid="ListeningReportDuration" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
@@ -145,20 +143,72 @@
                         </StackPanel>
                     </Border>
 
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                    <Border x:Name="HabitsCard" Style="{StaticResource ReportSectionStyle}">
+                        <StackPanel Spacing="8">
+                            <TextBlock x:Uid="ListeningReportHabits" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Presentation.Habits, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <UniformGridLayout ItemsStretch="Fill" MinItemWidth="164" MinItemHeight="58"
+                                                       MaximumRowsOrColumns="3" MinColumnSpacing="8" MinRowSpacing="4" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ListeningReportMetric">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{x:Bind Label}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                            <TextBlock Text="{x:Bind Value}" Style="{ThemeResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                            <TextBlock x:Uid="ListeningReportHabitBasis" Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8">
                         <Border x:Name="SongSection" Grid.ColumnSpan="2" Style="{StaticResource ReportSectionStyle}">
                             <StackPanel Spacing="8">
-                                <TextBlock x:Uid="ListeningReportTopSongs" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                                <TextBlock x:Uid="ListeningReportTopSongs" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="NoWrap" />
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.Presentation.Songs, Mode=OneWay}" ItemTemplate="{StaticResource ReportRankTemplate}" />
                             </StackPanel>
                         </Border>
-                        <Border x:Name="ArtistSection" Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource ReportSectionStyle}" Visibility="{x:Bind ViewModel.Presentation.ArtistsVisibility, Mode=OneWay}">
+                        <Border x:Name="ArtistSection" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0"
+                                Style="{StaticResource ReportSectionStyle}" Visibility="{x:Bind ViewModel.Presentation.ArtistsVisibility, Mode=OneWay}">
                             <StackPanel Spacing="8">
-                                <TextBlock x:Uid="ListeningReportTopArtists" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                                <TextBlock x:Uid="ListeningReportTopArtists" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="NoWrap" />
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.Presentation.Artists, Mode=OneWay}" ItemTemplate="{StaticResource ReportRankTemplate}" />
                             </StackPanel>
                         </Border>
                     </Grid>
+                    <TextBlock Text="{x:Bind ViewModel.Presentation.TopSongNote, Mode=OneWay}"
+                               Visibility="{x:Bind ViewModel.Presentation.TopSongNoteVisibility, Mode=OneWay}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+
+                    <Border Style="{StaticResource ReportSectionStyle}" Visibility="{x:Bind ViewModel.Presentation.AlbumsVisibility, Mode=OneWay}">
+                        <StackPanel Spacing="8">
+                            <TextBlock x:Uid="ListeningReportTopAlbums" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Presentation.Albums, Mode=OneWay}" ItemTemplate="{StaticResource ReportRankTemplate}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource ReportSectionStyle}" Visibility="{x:Bind ViewModel.Presentation.MonthlyArtistsVisibility, Mode=OneWay}">
+                        <StackPanel Spacing="8">
+                            <TextBlock x:Uid="ListeningReportMonthlyArtists" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Presentation.MonthlyArtists, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ListeningReportMonthlyLeader">
+                                        <Grid ColumnDefinitions="64,*,Auto" ColumnSpacing="8" Padding="0,6">
+                                            <TextBlock Text="{x:Bind Month}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}"
+                                                       FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Duration}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
                     <TextBlock Text="{x:Bind ViewModel.Presentation.Footnote, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <TextBlock x:Uid="ListeningReportRules" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
