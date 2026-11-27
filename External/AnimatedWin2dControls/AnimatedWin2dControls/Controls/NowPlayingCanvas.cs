@@ -419,16 +419,11 @@ namespace AnimatedWin2dControls.Controls
             }
         }
 
-        private BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch
-        {
-            1 => new PS3XMBBackgroundRenderer(),
-            2 => _rotatingMeshBackground ??= new RotatingMeshBackgroundRenderer(),
-            3 => new LiquidFlowBackgroundRenderer(),
-            4 => new GradientFlowBackgroundRenderer(),
-            5 => new WavyBackgroundRenderer(),
-            6 => new ChromaticResonanceBackgroundRenderer(),
-            _ => new FluidBackgroundRenderer(),
-        };
+        private BaseBackgroundRenderer CreateBackgroundRenderer(int index)
+            => index == (int)BackgroundShaderMode.RotatingMesh
+                ? _rotatingMeshBackground ??= (RotatingMeshBackgroundRenderer)BackgroundShaderRenderer.Create(BackgroundShaderMode.RotatingMesh)
+                : BackgroundShaderRenderer.Create(index is >= 0 and <= (int)BackgroundShaderMode.ChromaticResonance
+                    ? (BackgroundShaderMode)index : BackgroundShaderMode.FluidBackground);
 
         private BaseBackgroundRenderer CreateActiveBackgroundRenderer()
         {

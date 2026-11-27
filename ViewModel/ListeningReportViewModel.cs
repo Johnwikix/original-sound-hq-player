@@ -1,3 +1,6 @@
+using AnimatedWin2dControls;
+using AnimatedWin2dControls.Impressionist;
+using AnimatedWin2dControls.Renderer.Background;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -34,13 +37,40 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     private CancellationTokenSource? _loadCancellation;
     private ListeningReport? _snapshot;
     private Func<CancellationToken, Task<SoftwareBitmap>>? _capture;
-    private Func<string, CancellationToken, Task<string?>>? _pickPath;
+    private readonly Func<string, CancellationToken, Task<string?>> _pickPath;
     private ImageSource? _cover;
+    private ImageSource? _background;
+    private readonly Func<(BackgroundShaderMode Shader, PaletteAlgorithm Palette)> _getShaderSettings;
+    private PreviewSession? _preview;
+    private PreviewSession? _renderingSession;
+    private Task _previewTask = Task.CompletedTask;
+    private CancellationTokenSource? _shaderCancellation;
+    private int _shaderRevision;
+    private int _selectedShaderIndex;
 
-    internal ListeningReportViewModel(ListeningReportQuery query, ILogger<ListeningReportViewModel> logger, ShutdownCoordinator shutdown)
+    private sealed class PreviewSession(string? coverHash, PaletteAlgorithm palette) : IDisposable
+    {
+        internal readonly CancellationTokenSource Lifetime = new();
+        internal readonly string? CoverHash = coverHash;
+        internal readonly PaletteAlgorithm Palette = palette;
+        internal SoftwareBitmap? Cover;
+        internal bool CoverLoaded;
+
+        public void Dispose()
+        {
+            Cover?.Dispose();
+            Lifetime.Dispose();
+        }
+    }
+
+    internal ListeningReportViewModel(ListeningReportQuery query, ILogger<ListeningReportViewModel> logger,
+        ShutdownCoordinator shutdown, Func<(BackgroundShaderMode Shader, PaletteAlgorithm Palette)> getShaderSettings,
+        Func<string, CancellationToken, Task<string?>> pickPath)
     {
         _query = query;
         _logger = logger;
+        _getShaderSettings = getShaderSettings;
+        _pickPath = pickPath;
         shutdown.RegisterStop(StopAsync);
     }
 
@@ -83,10 +113,23 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     public Visibility StatusVisibility => Visible(StatusText.Length > 0);
     public Visibility RecentVisibility => Visible(CanOpenRecent());
     public Visibility LoadingVisibility => Visible(IsLoading);
-    public string BackLabel => GetString("ListeningReportBackLabel");
-    public Visibility BodyVisibility => Visible(!IsPreview);
-    public bool CanNavigateBack => !IsPreview || ClosePreviewCommand.CanExecute(null);
+    public bool IsPreview => _preview is not null;
+    public bool CanPreview => _active && !_stopping && !IsLoading && !IsPreview && !IsSaving && _snapshot is { PlayCount: > 0 };
+    public bool CanSelectShader => IsPreview && !_stopping && !IsSaving;
     internal bool IsCapturing { get; private set; }
+    internal double ReportScrollOffset { get; set; }
+
+    public int SelectedShaderIndex
+    {
+        get => _selectedShaderIndex;
+        set
+        {
+            if (!CanSelectShader || value is < 0 or > (int)BackgroundShaderMode.ChromaticResonance ||
+                !SetProperty(ref _selectedShaderIndex, value)) return;
+            SaveStatus = "";
+            RequestPreviewRender();
+        }
+    }
 
     [ObservableProperty]
     public partial ListeningReportPresentation? Presentation { get; private set; }
@@ -95,8 +138,6 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(LoadingVisibility))]
     public partial bool IsLoading { get; private set; }
 
-    [ObservableProperty]
-    public partial bool IsPreview { get; private set; }
 
     [ObservableProperty]
     public partial bool IsSaving { get; private set; }
@@ -120,13 +161,21 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         }
     }
 
-    internal void Activate(Func<CancellationToken, Task<SoftwareBitmap>> capture,
-        Func<string, CancellationToken, Task<string?>> pickPath)
+    public ImageSource? PreviewBackground
+    {
+        get => _background;
+        private set
+        {
+            var previous = _background;
+            if (SetProperty(ref _background, value)) (previous as IDisposable)?.Dispose();
+        }
+    }
+
+    internal void Activate()
     {
         if (_active || _stopping) return;
         _active = true;
-        _capture = capture;
-        _pickPath = pickPath;
+        ReportScrollOffset = 0;
         UpdateClock();
         _annual = new(_today.Year);
         _monthly = new(_today.Year, _today.Month);
@@ -141,12 +190,10 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         _requestVersion++;
         _loadCancellation?.Cancel();
         SaveCommand.Cancel();
-        ClearPreview();
+        EndPreview();
         _snapshot = null;
         Presentation = null;
         OnPropertyChanged(nameof(ReportVisibility));
-        _capture = null;
-        _pickPath = null;
         NotifyCommands();
     }
 
@@ -154,7 +201,7 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     {
         _stopping = true;
         _loadCancellation?.Cancel();
-        OpenPreviewCommand.Cancel();
+        CancelPreviewWork();
         SaveCommand.Cancel();
         try
         {
@@ -165,7 +212,7 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         {
             Deactivate();
             await _loadTask;
-            if (OpenPreviewCommand.ExecutionTask is { } preview) await preview;
+            await _previewTask;
         }
     }
 
@@ -294,63 +341,145 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         }
     }
 
-    private bool CanOpenPreview() => _active && !_stopping && !IsLoading && !IsPreview && !IsSaving && _snapshot is { PlayCount: > 0 };
-
-    [RelayCommand(CanExecute = nameof(CanOpenPreview))]
-    private async Task OpenPreviewAsync(CancellationToken token)
+    internal void BeginPreview(Func<CancellationToken, Task<SoftwareBitmap>> capture)
     {
-        if (!CanOpenPreview()) return;
-        string? hash = _snapshot!.Songs.Length > 0 ? _snapshot.Songs[0].CoverHash : null;
-        IsPreparingPreview = true;
+        if (!CanPreview || _snapshot is not { } report) return;
+        var (shader, palette) = _getShaderSettings();
+        _selectedShaderIndex = Math.Clamp((int)shader, 0, (int)BackgroundShaderMode.ChromaticResonance);
+        string? hash = report.Songs.Length > 0 ? report.Songs[0].CoverHash : null;
+        _capture = capture;
+        _preview = new(hash, palette);
+        OnPropertyChanged(nameof(SelectedShaderIndex));
+        RequestPreviewRender();
+    }
+
+    internal void EndPreview()
+    {
+        if (_preview is not { } session) return;
+        CancelPreviewWork();
+        _preview = null;
+        _capture = null;
+        if (!ReferenceEquals(session, _renderingSession)) session.Dispose();
+        PreviewCover = null;
+        PreviewBackground = null;
+        IsPreparingPreview = false;
         SaveStatus = "";
-        IsPreview = true;
-        NotifyPreview();
-        SoftwareBitmapSource? source = null;
+        NotifyCommands();
+    }
+
+    private void CancelPreviewWork()
+    {
+        _preview?.Lifetime.Cancel();
+        _shaderCancellation?.Cancel();
+    }
+
+    private void RequestPreviewRender()
+    {
+        _shaderRevision++;
+        _shaderCancellation?.Cancel();
+        IsPreparingPreview = true;
+        NotifyCommands();
+        if (_previewTask.IsCompleted) _previewTask = RenderPreviewAsync();
+    }
+
+    private async Task RenderPreviewAsync()
+    {
         try
         {
-            using var bitmap = await ListeningReportImages.DecodeCoverAsync(hash, token);
-            if (bitmap is null || token.IsCancellationRequested || !IsPreview) return;
-            source = new();
-            await source.SetBitmapAsync(bitmap).AsTask();
-            if (token.IsCancellationRequested || !IsPreview) return;
-            PreviewCover = source;
-            source = null;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
-        {
-            _logger.LogDebug(ex, "无法加载听歌报告封面，使用默认图形");
+            while (!_stopping && _preview is { } session)
+            {
+                _renderingSession = session;
+                try
+                {
+                    if (!session.CoverLoaded) await LoadPreviewCoverAsync(session);
+                    if (_stopping || !ReferenceEquals(_preview, session)) continue;
+
+                    int revision = _shaderRevision;
+                    using var cancellation = new CancellationTokenSource();
+                    _shaderCancellation = cancellation;
+                    await RenderBackgroundAsync(session, revision, (BackgroundShaderMode)_selectedShaderIndex, cancellation.Token);
+                    if (ReferenceEquals(_preview, session) && revision == _shaderRevision) break;
+                }
+                finally
+                {
+                    _shaderCancellation = null;
+                    _renderingSession = null;
+                    if (!ReferenceEquals(_preview, session)) session.Dispose();
+                }
+            }
         }
         finally
         {
-            (source as IDisposable)?.Dispose();
             IsPreparingPreview = false;
             NotifyCommands();
         }
     }
 
-    private bool CanClosePreview() => _active && IsPreview && !IsSaving;
-
-    [RelayCommand(CanExecute = nameof(CanClosePreview))]
-    private void ClosePreview() => ClearPreview();
-
-    private void ClearPreview()
+    private async Task LoadPreviewCoverAsync(PreviewSession session)
     {
-        OpenPreviewCommand.Cancel();
-        IsPreview = false;
-        PreviewCover = null;
-        SaveStatus = "";
-        NotifyPreview();
+        SoftwareBitmapSource? source = null;
+        try
+        {
+            session.Cover = await ListeningReportImages.DecodeCoverAsync(session.CoverHash, session.Lifetime.Token);
+            if (session.Cover is not { } cover || session.Lifetime.IsCancellationRequested) return;
+            source = new();
+            await source.SetBitmapAsync(cover).AsTask();
+            if (session.Lifetime.IsCancellationRequested) return;
+            PreviewCover = source;
+            source = null;
+        }
+        catch (OperationCanceledException) when (session.Lifetime.IsCancellationRequested) { }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _logger.LogDebug(ex, "听歌报告封面未就绪，使用默认图形");
+            session.Cover?.Dispose();
+            session.Cover = null;
+        }
+        finally
+        {
+            (source as IDisposable)?.Dispose();
+            session.CoverLoaded = true;
+        }
     }
 
-    private bool CanSave() => _active && !_stopping && IsPreview && !IsPreparingPreview && !IsSaving && _capture is not null && _pickPath is not null;
+    private async Task RenderBackgroundAsync(PreviewSession session, int revision, BackgroundShaderMode mode, CancellationToken token)
+    {
+        SoftwareBitmapSource? source = null;
+        try
+        {
+            if (session.Cover is { } cover)
+            {
+                using var bitmap = await Task.Run(() => BackgroundShaderRenderer.RenderCoverStillAsync(cover, mode, session.Palette, token), token);
+                token.ThrowIfCancellationRequested();
+                source = new();
+                await source.SetBitmapAsync(bitmap).AsTask();
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            (source as IDisposable)?.Dispose();
+            source = null;
+            _logger.LogDebug(ex, "听歌报告着色器未就绪，使用默认底色");
+        }
+        finally
+        {
+            if (!_stopping && ReferenceEquals(_preview, session) && revision == _shaderRevision && !token.IsCancellationRequested)
+            {
+                PreviewBackground = source;
+                source = null;
+            }
+            (source as IDisposable)?.Dispose();
+        }
+    }
+
+    private bool CanSave() => _active && !_stopping && IsPreview && !IsPreparingPreview && !IsSaving && _capture is not null;
 
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync(CancellationToken token)
     {
         if (!CanSave()) return;
         var capture = _capture!;
-        var pickPath = _pickPath!;
         ListeningPeriod period = _snapshot!.Request.Period;
         SaveStatus = "";
         IsSaving = true;
@@ -358,7 +487,7 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         try
         {
             string periodName = period.Start.ToString(period.IsMonthly ? "yyyy-MM" : "yyyy", CultureInfo.InvariantCulture);
-            string? path = await pickPath("OriginalSound-Listening-" + periodName, token);
+            string? path = await _pickPath("OriginalSound-Listening-" + periodName, token);
             if (path is null) return;
             using var bitmap = await CapturePosterAsync(capture, token);
             await Task.Run(() => ListeningReportImages.SaveAsync(path, bitmap, token), token);
@@ -386,20 +515,13 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         finally { IsCapturing = false; }
     }
 
-    private void NotifyPreview()
-    {
-        OnPropertyChanged(nameof(BodyVisibility));
-        NotifyCommands();
-    }
-
     private void NotifyCommands()
     {
         RefreshCommand.NotifyCanExecuteChanged();
         OpenRecentCommand.NotifyCanExecuteChanged();
-        OpenPreviewCommand.NotifyCanExecuteChanged();
-        ClosePreviewCommand.NotifyCanExecuteChanged();
         SaveCommand.NotifyCanExecuteChanged();
-        OnPropertyChanged(nameof(CanNavigateBack));
+        OnPropertyChanged(nameof(CanSelectShader));
+        OnPropertyChanged(nameof(CanPreview));
     }
 
     private static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;

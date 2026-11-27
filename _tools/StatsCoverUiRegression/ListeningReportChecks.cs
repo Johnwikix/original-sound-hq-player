@@ -1,11 +1,18 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices.WindowsRuntime;
+using AnimatedWin2dControls;
+using AnimatedWin2dControls.Impressionist;
+using AnimatedWin2dControls.Renderer.Background;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Navigation;
 using SQLite;
 using Windows.Graphics.Imaging;
+using Windows.UI.ViewManagement;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Services;
@@ -18,12 +25,26 @@ namespace WinUIMusicPlayer;
 
 internal static class ListeningReportChecks
 {
-    internal static async Task RunAsync(Frame frame, SQLiteAsyncConnection db, ListeningReportViewModel vm,
+    private static BackgroundShaderMode _configuredShader = BackgroundShaderMode.GradientFlow;
+    private static int _settingsReads;
+    private static Func<string, CancellationToken, Task<string?>>? _picker;
+
+    internal static (BackgroundShaderMode, PaletteAlgorithm) ReadSettings()
+    {
+        _settingsReads++;
+        return (_configuredShader, PaletteAlgorithm.KMeansPP);
+    }
+
+    internal static Task<string?> PickPathAsync(string name, CancellationToken token) =>
+        _picker?.Invoke(name, token) ?? Task.FromResult<string?>(null);
+
+    internal static async Task RunAsync(Frame frame, SQLiteAsyncConnection db, AppViewModel shell, ListeningReportViewModel vm,
         string directory, string cover, Action<bool, string> check, Action<string> record)
     {
         directory = Path.Combine(directory, "listening-reports-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         await Task.Run(() => QueryChecks(Path.Combine(directory, "reports.db"), check, record));
+        await ShaderChecksAsync(check);
 
         const string hash = "ReportTest";
         await db.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
@@ -37,17 +58,38 @@ internal static class ListeningReportChecks
         int previousYear = DateTime.Now.Year - 1;
         await db.ExecuteAsync("""
             INSERT INTO PlaybackHistory (MusicId, SongIdAtPlay, Title, Author, Album, TotalDurationMs, DurationPlayedMs, StartedAt, EndedAt)
-            VALUES (1234,11,'Older retained track','','',180000,180000,?,?)
+            VALUES (91234,12000,'Older retained track','','',180000,180000,?,?)
             """, new DateTime(previousYear, 1, 2, 12, 0, 0, DateTimeKind.Utc).Ticks, new DateTime(previousYear, 1, 2, 12, 3, 0, DateTimeKind.Utc).Ticks);
         string path = WebDavCachePaths.FindCover(AppSettings.MusicCoverCache, hash);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.Copy(cover, path, overwrite: true);
 
+        App.MainWindow.AppWindow.Resize(new Windows.Graphics.SizeInt32(890, 720));
         var statistics = (StatsPage)frame.Content;
+        var statisticsScroll = (ScrollViewer)statistics.FindName("StatsScroll");
+        await UntilAsync(() => statisticsScroll.ScrollableHeight > 0);
+        statisticsScroll.ChangeView(null, 32, null, disableAnimation: true);
+        await UntilAsync(() => statisticsScroll.VerticalOffset > 0);
+        double statisticsOffset = statisticsScroll.VerticalOffset;
+        int statisticsRange = statistics.ViewModel.SelectedTimeRangeIndex;
+        check(!shell.IsBackBtnEnable, "statistics root leaves the shell back button disabled");
         var entry = FindButton(statistics, "Listening reports") ?? throw new InvalidOperationException("Localised report entry missing.");
         Invoke(entry);
         await UntilAsync(() => frame.Content is ListeningReportPage && vm.Presentation is not null && !vm.IsLoading);
         var page = (ListeningReportPage)frame.Content;
+        check(shell.IsBackBtnEnable && page.CanNavigateBack, "report adds Frame history and enables shell back");
+        var summary = (Border)page.FindName("SummaryCard");
+        var trend = (Border)page.FindName("TrendCard");
+        foreach (var theme in new[] { ElementTheme.Light, ElementTheme.Dark })
+        {
+            page.RequestedTheme = theme;
+            await Task.Delay(30);
+            check(summary.Background is SolidColorBrush summaryBrush &&
+                trend.Background is SolidColorBrush trendBrush &&
+                summaryBrush.Color == trendBrush.Color && summaryBrush.Color.A < 255 &&
+                summary.BorderThickness == trend.BorderThickness,
+                $"report summary and trend use the same translucent {theme} card theme");
+        }
         check(vm.ModeIndex == 0 && vm.Presentation!.Tiles.Length == 12, "statistics entry opens the compiled annual report");
         var radio = Find<RadioButtons>(page) ?? throw new InvalidOperationException("Period control missing.");
         radio.SelectedIndex = 1;
@@ -57,41 +99,88 @@ internal static class ListeningReportChecks
         vm.SelectedMonth = 1;
         vm.SelectedMonth = 12;
         await UntilAsync(() => !vm.IsLoading && vm.SelectedMonth == 12 && vm.StatusText.Length > 0);
-        check(vm.Presentation is null && !vm.OpenPreviewCommand.CanExecute(null) && vm.OpenRecentCommand.CanExecute(null),
+        check(vm.Presentation is null && !vm.CanPreview && vm.OpenRecentCommand.CanExecute(null),
             "fast period switching shows the latest empty period and offers recovery");
         Invoke(FindButton(page, "View latest period with records")!);
         await UntilAsync(() => !vm.IsLoading && vm.Presentation?.PlayCount == "2");
 
-        // Substitute only the path picker. The page's real capture delegate and PNG writer are exercised.
+        // Substitute only the path picker. Frame history, compiled bindings, capture and encoding use production code.
         string png = Path.Combine(directory, "listening-report.png");
         int pickerCalls = 0;
         string? pickedPath = null;
         string? suggested = null;
-        vm.Deactivate();
-        vm.Activate(page.CaptureAsync, (name, token) => { pickerCalls++; suggested = name; return Task.FromResult(pickedPath); });
-        await UntilAsync(() => !vm.IsLoading && vm.Presentation is not null);
-        var previewButton = FindButton(page, "Export summary image") ?? throw new InvalidOperationException("Localised preview button missing.");
-        Invoke(previewButton);
-        await UntilAsync(() => vm.IsPreview && !vm.IsPreparingPreview);
-        check(vm.PreviewCover is not null && vm.Presentation!.PosterSongs.Contains("Poster fixture track", StringComparison.Ordinal),
-            "preview uses rendered report text and cached bounded cover");
+        bool controlsLockedDuringSave = false;
+        NavigationTransitionInfo? transition = null;
+        NavigationMode mode = default;
 
-        var saveButton = FindButton(page, "Save PNG") ?? throw new InvalidOperationException("Localised save button missing.");
+        frame.Navigated += (_, args) => { transition = args.NavigationTransitionInfo; mode = args.NavigationMode; };
+        bool animationsEnabled = new UISettings().AnimationsEnabled;
+
+        var reportScroll = (ScrollViewer)page.FindName("ReportScroll");
+        await UntilAsync(() => reportScroll.ScrollableHeight > 0);
+        reportScroll.ChangeView(null, 32, null, disableAnimation: true);
+        await UntilAsync(() => reportScroll.VerticalOffset > 0);
+        double reportOffset = reportScroll.VerticalOffset;
+        string reportPeriod = $"{vm.SelectedYear:0000}-{vm.SelectedMonth:00}";
+        var reportSnapshot = vm.Presentation;
+
+        Invoke(FindButton(page, "Export summary image")!);
+        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
+        var preview = (ListeningReportPreviewPage)frame.Content;
+        var shaderPicker = (ComboBox)preview.FindName("ShaderPicker");
+        check(mode == NavigationMode.New && IsExpectedTransition(transition, animationsEnabled) &&
+            frame.BackStack[^1].SourcePageType == typeof(ListeningReportPage) && shell.IsBackBtnEnable,
+            "summary preview is a real new Frame navigation with the system forward transition");
+        string[] shaderNames = ["Fluid", "PS3 XMB", "Rotating Mesh", "Liquid Flow", "Gradient Flow", "Wavy Background", "Color Bands"];
+        check(shaderPicker.Items.Count == Enum.GetValues<BackgroundShaderMode>().Length &&
+            shaderPicker.Items.Cast<ComboBoxItem>().Select(item => item.Content).SequenceEqual(shaderNames) &&
+            shaderPicker.SelectedIndex == (int)BackgroundShaderMode.GradientFlow && _settingsReads == 1,
+            "compiled picker lists the seven localized styles and defaults from settings on entry");
+        var initialBackground = vm.PreviewBackground;
+        var initialCover = vm.PreviewCover;
+        int backgroundChanges = 0;
+        vm.PropertyChanged += CountBackground;
+        shaderPicker.SelectedIndex = (int)BackgroundShaderMode.RotatingMesh;
+        shaderPicker.SelectedIndex = (int)BackgroundShaderMode.LiquidFlow;
+        shaderPicker.SelectedIndex = (int)BackgroundShaderMode.FluidBackground;
+        await UntilAsync(() => vm.SaveCommand.CanExecute(null) && vm.PreviewBackground is not null);
+        vm.PropertyChanged -= CountBackground;
+        check(backgroundChanges == 1 && !ReferenceEquals(initialBackground, vm.PreviewBackground) &&
+            initialCover is not null && ReferenceEquals(initialCover, vm.PreviewCover) &&
+            vm.SelectedShaderIndex == (int)BackgroundShaderMode.FluidBackground && _configuredShader == BackgroundShaderMode.GradientFlow && _settingsReads == 1,
+            "rapid picker changes publish only the latest frame, reuse the cover, and leave settings untouched");
+
+        _picker = (name, token) =>
+        {
+            pickerCalls++;
+            suggested = name;
+            int selected = vm.SelectedShaderIndex;
+            vm.SelectedShaderIndex = (int)BackgroundShaderMode.PS3XMB;
+            controlsLockedDuringSave = !shell.IsBackBtnEnable && !preview.CanNavigateBack &&
+                !shaderPicker.IsEnabled && selected == vm.SelectedShaderIndex;
+            return Task.FromResult(pickedPath);
+        };
+
+        var saveButton = FindButton(preview, "Save PNG") ?? throw new InvalidOperationException("Localised save button missing.");
         Invoke(saveButton);
         await UntilAsync(() => pickerCalls == 1 && !vm.IsSaving);
-        check(vm.IsPreview && !File.Exists(png) && vm.SaveStatus.Length == 0, "picker cancellation returns to the same preview");
+        check(vm.IsPreview && !File.Exists(png) && vm.SaveStatus.Length == 0 && controlsLockedDuringSave &&
+            shell.IsBackBtnEnable && shaderPicker.IsEnabled, "saving locks the shader and back action until the picker is cancelled");
 
         pickedPath = Path.Combine(directory, "absent", "report.png");
         Invoke(saveButton);
         await UntilAsync(() => pickerCalls == 2 && !vm.IsSaving);
         check(vm.SaveStatus.Contains("Couldn’t save", StringComparison.Ordinal), "PNG write failure reports an error and leaves retry available");
 
+        long previewSignature;
+        using (var bitmap = await preview.CaptureAsync(default))
+            previewSignature = SamplePoster(bitmap);
         using var process = Process.GetCurrentProcess();
         process.Refresh();
         long privateBefore = process.PrivateMemorySize64;
         long managedBefore = GC.GetTotalAllocatedBytes(precise: true);
         var watch = Stopwatch.StartNew();
-        double rasterization = page.XamlRoot.RasterizationScale;
+        double rasterization = preview.XamlRoot.RasterizationScale;
         pickedPath = png;
         File.WriteAllText(png, "previous file");
         Invoke(saveButton);
@@ -100,32 +189,61 @@ internal static class ListeningReportChecks
         process.Refresh();
         record($"PNG save at {rasterization:P0} scale: {watch.Elapsed.TotalMilliseconds:F0} ms, managed process allocation delta " +
             $"{GC.GetTotalAllocatedBytes(precise: true) - managedBefore:N0} B, private bytes change at completion {process.PrivateMemorySize64 - privateBefore:N0} B.");
-        if (!vm.SaveStatus.Contains(png, StringComparison.Ordinal))
-        {
-            using var diagnostic = await page.CaptureAsync(default);
-            await ListeningReportImages.SaveAsync(png, diagnostic, default);
-            throw new InvalidOperationException("Save command failed despite direct capture and encoding: " + vm.SaveStatus);
-        }
-        check(File.Exists(png) &&
-            suggested == "OriginalSound-Listening-" + DateTime.Now.Year && !Directory.GetFiles(directory, "*.part").Any(),
+        check(vm.SaveStatus.Contains(png, StringComparison.Ordinal) && File.Exists(png) &&
+            suggested == "OriginalSound-Listening-" + reportPeriod && !Directory.GetFiles(directory, "*.part").Any(),
             "summary PNG replaces the existing file and cleans temporary output");
         using (var file = File.OpenRead(png))
         using (var stream = file.AsRandomAccessStream())
         {
             var decoder = await BitmapDecoder.CreateAsync(stream);
             check(decoder.PixelWidth == 1080 && decoder.PixelHeight == 1350, "real PNG decodes to 1080 by 1350");
-            var pixelData = await decoder.GetPixelDataAsync();
-            byte[] pixels = pixelData.DetachPixelData();
-            int bottom = (1350 * 1080 - 1) * 4;
-            check(pixels[3] == 255 && pixels[bottom + 3] == 255 && pixels[0] < 80 &&
-                !pixels.AsSpan(0, 4).SequenceEqual(pixels.AsSpan(bottom, 4)), "PNG captures the full opaque gradient poster");
+            using var bitmap = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+            check(SamplePoster(bitmap) == previewSignature, "PNG and the selected preview have matching shader pixels");
         }
 
-        Invoke(FindButton(page, "Back to report")!);
-        await UntilAsync(() => !vm.IsPreview && vm.PreviewCover is null);
-        page.NavigateBack();
+        shaderPicker.SelectedIndex = (int)BackgroundShaderMode.RotatingMesh;
+        preview.NavigateBack();
+        await UntilAsync(() => frame.Content is ListeningReportPage && !vm.IsPreview);
+        page = (ListeningReportPage)frame.Content;
+        reportScroll = (ScrollViewer)page.FindName("ReportScroll");
+        await UntilAsync(() => Math.Abs(reportScroll.VerticalOffset - reportOffset) < 1);
+        // WinUI reports Back but omits the GoBack transition override in the event args.
+        check(mode == NavigationMode.Back &&
+            IsExpectedTransition(ListeningReportPreviewPage.CreateTransition(), animationsEnabled) &&
+            shell.IsBackBtnEnable && ReferenceEquals(reportSnapshot, vm.Presentation) && vm.ModeIndex == 1 &&
+            vm.PreviewCover is null && vm.PreviewBackground is null,
+            "shell back restores the report period and scroll while canceling in-flight preview rendering");
+
+        _configuredShader = BackgroundShaderMode.PS3XMB;
+        Invoke(FindButton(page, "Export summary image")!);
+        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
+        preview = (ListeningReportPreviewPage)frame.Content;
+        shaderPicker = (ComboBox)preview.FindName("ShaderPicker");
+        check(_settingsReads == 2 && shaderPicker.SelectedIndex == (int)BackgroundShaderMode.PS3XMB && vm.PreviewBackground is not null,
+            "reopening discards the temporary shader and reads the latest settings");
+        preview.NavigateBack();
+        await UntilAsync(() => frame.Content is ListeningReportPage);
+        page = (ListeningReportPage)frame.Content;
+        vm.SelectedYear = previousYear;
+        vm.SelectedMonth = 1;
+        await UntilAsync(() => !vm.IsLoading && vm.Presentation?.PosterSongs == "Older retained track");
+        Invoke(FindButton(page, "Export summary image")!);
+        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
+        preview = (ListeningReportPreviewPage)frame.Content;
+        check(vm.PreviewCover is null && vm.PreviewBackground is null, "missing retained cover uses the poster fallback");
+        preview.NavigateBack();
+        await UntilAsync(() => frame.Content is ListeningReportPage);
+        ((ListeningReportPage)frame.Content).NavigateBack();
         await UntilAsync(() => frame.Content is StatsPage);
-        check(vm.Presentation is null, "leaving the report releases its presentation and artwork");
+        var returned = (StatsPage)frame.Content;
+        await UntilAsync(() => Math.Abs(((ScrollViewer)returned.FindName("StatsScroll")).VerticalOffset - statisticsOffset) < 1);
+        check(vm.Presentation is null && !shell.IsBackBtnEnable && returned.ViewModel.SelectedTimeRangeIndex == statisticsRange,
+            "shell back restores statistics period and scroll and clears report ownership");
+
+        void CountBackground(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(ListeningReportViewModel.PreviewBackground)) backgroundChanges++;
+        }
 
         string fractionalPng = Path.Combine(directory, "fractional-dpi.png");
         using (var rounded = new SoftwareBitmap(BitmapPixelFormat.Bgra8, 1079, 1349, BitmapAlphaMode.Premultiplied))
@@ -140,22 +258,75 @@ internal static class ListeningReportChecks
         Invoke(FindButton((StatsPage)frame.Content, "Listening reports")!);
         await UntilAsync(() => frame.Content is ListeningReportPage && vm.Presentation is not null && !vm.IsLoading);
         page = (ListeningReportPage)frame.Content;
-        vm.Deactivate();
         var pickerStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        vm.Activate(page.CaptureAsync, async (_, token) =>
+        _picker = async (_, token) =>
         {
             pickerStarted.SetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, token);
             return null;
-        });
-        await UntilAsync(() => !vm.IsLoading && vm.Presentation is not null);
+        };
         Invoke(FindButton(page, "Export summary image")!);
-        await UntilAsync(() => vm.IsPreview && !vm.IsPreparingPreview);
-        Invoke(FindButton(page, "Save PNG")!);
+        await UntilAsync(() => frame.Content is ListeningReportPreviewPage && vm.SaveCommand.CanExecute(null));
+        Invoke(FindButton((ListeningReportPreviewPage)frame.Content, "Save PNG")!);
         await pickerStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await vm.StopAsync().WaitAsync(TimeSpan.FromSeconds(5));
-        check(!vm.IsSaving && !vm.IsPreview && vm.PreviewCover is null && vm.Presentation is null,
+        check(!vm.IsSaving && !vm.IsPreview && vm.PreviewCover is null && vm.PreviewBackground is null && vm.Presentation is null,
             "shutdown cancels and drains an in-flight save picker and releases the preview");
+    }
+
+    private static bool IsExpectedTransition(NavigationTransitionInfo? transition, bool animationsEnabled)
+        => animationsEnabled ? transition is DrillInNavigationTransitionInfo : transition is SuppressNavigationTransitionInfo;
+
+    private static long SamplePoster(SoftwareBitmap bitmap)
+    {
+        int bytes = checked(bitmap.PixelWidth * bitmap.PixelHeight * 4);
+        var buffer = new Windows.Storage.Streams.Buffer((uint)bytes);
+        bitmap.CopyToBuffer(buffer);
+        using var stream = buffer.AsStream();
+        Span<byte> pixel = stackalloc byte[4];
+        long signature = 0;
+        for (int line = 0; line < bitmap.PixelHeight; line += bitmap.PixelHeight / 7)
+        {
+            stream.Position = (long)line * bitmap.PixelWidth * 4;
+            stream.ReadExactly(pixel);
+            if (pixel[3] != 255) throw new InvalidOperationException("Poster background is transparent.");
+            signature = unchecked(signature * 397 ^ BitConverter.ToInt32(pixel));
+        }
+        return signature;
+    }
+
+    private static async Task ShaderChecksAsync(Action<bool, string> check)
+    {
+        using var red = SoftwareBitmap.CreateCopyFromBuffer(new byte[] { 10, 30, 230, 255 }.AsBuffer(),
+            BitmapPixelFormat.Bgra8, 1, 1, BitmapAlphaMode.Premultiplied);
+        using var blue = SoftwareBitmap.CreateCopyFromBuffer(new byte[] { 230, 30, 10, 255 }.AsBuffer(),
+            BitmapPixelFormat.Bgra8, 1, 1, BitmapAlphaMode.Premultiplied);
+        foreach (var mode in Enum.GetValues<BackgroundShaderMode>())
+        {
+            using var first = await Task.Run(() => BackgroundShaderRenderer.RenderCoverStillAsync(red, mode, PaletteAlgorithm.KMeansPP, default));
+            using var second = await Task.Run(() => BackgroundShaderRenderer.RenderCoverStillAsync(blue, mode, PaletteAlgorithm.KMeansPP, default));
+            check(first.PixelWidth == 432 && first.PixelHeight == 540 && Sample(first) != Sample(second),
+                $"{mode} paints a bounded static frame that changes with the cover");
+        }
+
+        static long Sample(SoftwareBitmap bitmap)
+        {
+            int bytes = checked(bitmap.PixelWidth * bitmap.PixelHeight * 4);
+            var buffer = new Windows.Storage.Streams.Buffer((uint)bytes);
+            bitmap.CopyToBuffer(buffer);
+            using var stream = buffer.AsStream();
+            Span<byte> pixel = stackalloc byte[4];
+            long signature = 0;
+            for (int index = 1; index < 10; index++)
+            {
+                stream.Position = bytes / 40 * (index * 4);
+                stream.ReadExactly(pixel);
+                if (pixel[3] != 255 || pixel[0] > 110 || pixel[1] > 110 || pixel[2] > 110)
+                    throw new InvalidOperationException("Poster frame is not opaque and dark enough for text contrast.");
+                signature = unchecked(signature * 397 ^ BitConverter.ToInt32(pixel));
+            }
+            return signature;
+        }
     }
 
     private static void QueryChecks(string path, Action<bool, string> check, Action<string> record)

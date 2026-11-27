@@ -2976,9 +2976,6 @@ SHA-256: {5}
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>Отчёты о прослушивании</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>Назад</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>Год</value>
   </data>
@@ -3020,9 +3017,6 @@ SHA-256: {5}
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>Текущие правила: запись сохраняется после завершения, если воспроизведено не менее 50 % трека. Время определяется позицией и может включать перемотку вперёд. Учитывается день начала воспроизведения.</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>Назад к отчёту</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>Сохранить PNG</value>
@@ -3089,5 +3083,8 @@ SHA-256: {5}
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>Не удалось сохранить изображение. Повторите попытку или выберите другую папку.</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>Шейдер фона</value>
   </data>
 </root>

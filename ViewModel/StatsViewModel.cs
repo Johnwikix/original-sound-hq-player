@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using System;
@@ -36,6 +36,7 @@ namespace WinUIMusicPlayer.ViewModel
         private long _requestedVersion;
         private Task _loadTask = Task.CompletedTask;
         private CancellationTokenSource? _loadCancellation;
+        internal double ReportReturnOffset { get; set; }
 
         public StatsViewModel(
             AppViewModel appViewModel,
@@ -106,6 +107,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (_active) return;
             _active = true;
+            _appViewModel.IsBackBtnEnable = false;
             _statsService.StatsUpdated += OnStatsUpdated;
             _appViewModel.SongsSourceChanged += RefreshCoverMusic;
             RefreshCoverMusic();

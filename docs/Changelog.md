@@ -1,3 +1,13 @@
+## 2026-11-27 总结图预览支持独立选择着色器
+
+- `ListeningReportPreviewPage`、`ListeningReportViewModel`：预览打开时读取设置中的着色器，可临时选择任一现有样式，串行生成最新静态背景并锁定保存中的选项。
+- `ListeningReportPage`、`MainPage`：通过主导航进入预览与返回，使用随系统动画偏好启用的页面过渡，恢复报告与统计页的选择和滚动位置。
+
+## 2026-11-27 统一听歌报告返回、卡片与总结图背景
+
+- `StatsPage`、`ListeningReportPage`、`MainPage` 通过左侧导航返回，恢复统计和报告滚动。报告概览沿用原生卡片主题，导出预览使用连接动画。
+- `ListeningReportViewModel`、`BackgroundShaderRenderer` 使用报告首位歌曲的封面渲染静态着色器背景，预览和 PNG 共用同一张背景。
+
 ## 2026-11-27 新增年度和月度听歌报告
 
 - `StatsPage`、`ListeningReportPage`：统计页支持查看本期与历史自然周期报告，预览并保存 1080 × 1350 PNG。

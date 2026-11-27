@@ -142,7 +142,7 @@ namespace AnimatedWin2dControls.Impressionist
         }
 
         /// <summary>BGRA8（预乘）→ 中心裁方 → 双线性缩放 → RGBA8（直通）。</summary>
-        private static ArtworkPixelData ConvertToSquareRgba8(byte[] bgra, int w, int h, int edge)
+        internal static ArtworkPixelData ConvertToSquareRgba8(ReadOnlySpan<byte> bgra, int w, int h, int edge)
         {
             int side = Math.Min(w, h);
             int srcX = (w - side) / 2;
@@ -196,7 +196,7 @@ namespace AnimatedWin2dControls.Impressionist
             return new ArtworkPixelData(result);
         }
 
-        private static void SampleBgra(byte[] bgra, int w, int x, int y, out float b, out float g, out float r, out float a)
+        private static void SampleBgra(ReadOnlySpan<byte> bgra, int w, int x, int y, out float b, out float g, out float r, out float a)
         {
             int o = (y * w + x) * 4;
             b = bgra[o];

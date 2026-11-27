@@ -2976,9 +2976,6 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>Dinleme raporları</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>Geri</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>Yıllık</value>
   </data>
@@ -3020,9 +3017,6 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>Güncel kurallar: Parçanın en az %50’si oynatıldığında oturum bittikten sonra kaydedilir. Süre oynatma konumuna göre hesaplanır ve ileri sarmayı içerebilir. Oynatmalar başladıkları güne yazılır.</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>Rapora dön</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>PNG’yi kaydet</value>
@@ -3089,5 +3083,8 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>Görsel kaydedilemedi. Tekrar deneyin veya başka bir konum seçin.</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>Arka plan gölgeleyicisi</value>
   </data>
 </root>

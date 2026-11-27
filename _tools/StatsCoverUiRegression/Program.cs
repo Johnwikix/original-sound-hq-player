@@ -84,8 +84,9 @@ public sealed partial class App : Application
             var matcher = new LrcService();
             var reportQuery = new ListeningReportQuery(new MusicDatabaseService(db));
             reports = new ListeningReportViewModel(reportQuery, NullLogger<ListeningReportViewModel>.Instance,
-                new ShutdownCoordinator(new AppLifecycle(), NullLogger<ShutdownCoordinator>.Instance));
-            Services = new ServiceCollection().AddSingleton(stats).AddSingleton(reports)
+                new ShutdownCoordinator(new AppLifecycle(), NullLogger<ShutdownCoordinator>.Instance),
+                ListeningReportChecks.ReadSettings, ListeningReportChecks.PickPathAsync);
+            Services = new ServiceCollection().AddSingleton(app).AddSingleton(stats).AddSingleton(reports)
                 .AddSingleton(remote).AddSingleton(matcher).BuildServiceProvider();
             var frame = new Frame();
             MainWindow = new Window { Content = frame };
@@ -158,7 +159,7 @@ public sealed partial class App : Application
             await stats.StopAsync();
             await stats.StopAsync();
             await CheckCoverPriorityAsync(cover);
-            await ListeningReportChecks.RunAsync(frame, db, reports, fixture, cover, Check, _checks.Add);
+            await ListeningReportChecks.RunAsync(frame, db, app, reports, fixture, cover, Check, _checks.Add);
             File.WriteAllLines(_result, _checks);
         }
         catch (Exception ex)

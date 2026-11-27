@@ -24,7 +24,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         private const float TransitionSpeed = 1f / 3f;
 
         private PaletteResult? _currentPalette;
-        protected static readonly Random Rng = new();
+        protected static readonly Random Rng = Random.Shared;
 
         public bool EnableLightWave { get; set; } = false;   // 仅 Fluid 关心，其它 renderer 可忽略
         public bool IsDark { get; set; } = true;

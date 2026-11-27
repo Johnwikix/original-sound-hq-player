@@ -2976,9 +2976,6 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>Informes de escucha</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>Volver</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>Anual</value>
   </data>
@@ -3020,9 +3017,6 @@ Consulta el registro para ver todos los detalles.</value></data>
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>Reglas actuales: Se registra una reproducción al terminar si ha alcanzado el 50 % de la pista. El tiempo sigue la posición y puede incluir saltos hacia delante. Cada reproducción se asigna al día en que empezó.</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>Volver al informe</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>Guardar PNG</value>
@@ -3089,5 +3083,8 @@ Consulta el registro para ver todos los detalles.</value></data>
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>No se pudo guardar la imagen. Inténtalo de nuevo o elige otra ubicación.</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>Sombreador de Fondo</value>
   </data>
 </root>

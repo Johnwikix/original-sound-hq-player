@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="WinUIMusicPlayer.View.ListeningReportPreviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid RowDefinitions="Auto,*" Padding="16,10,16,0">
+        <TextBlock x:Uid="ListeningReportPageTitle" Margin="0,0,0,14" Style="{ThemeResource SubtitleTextBlockStyle}" />
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox x:Name="ShaderPicker" x:Uid="ListeningReportShader" MinWidth="168"
+                          IsEnabled="{x:Bind ViewModel.CanSelectShader, Mode=OneWay}"
+                          SelectedIndex="{x:Bind ViewModel.SelectedShaderIndex, Mode=TwoWay}">
+                    <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
+                    <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                    <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
+                    <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
+                    <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                    <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
+                    <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
+                </ComboBox>
+                <Button x:Uid="ListeningReportSave" VerticalAlignment="Bottom" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
+                <ProgressRing IsActive="{x:Bind ViewModel.IsPreparingPreview, Mode=OneWay}" Width="22" Height="22" />
+                <ProgressRing IsActive="{x:Bind ViewModel.IsSaving, Mode=OneWay}" Width="22" Height="22" />
+            </StackPanel>
+            <TextBlock Grid.Row="1" Margin="0,6" Text="{x:Bind ViewModel.SaveStatus, Mode=OneWay}" TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Polite" />
+            <ScrollViewer Grid.Row="2" HorizontalScrollMode="Disabled">
+                <Viewbox MaxWidth="540" HorizontalAlignment="Center" StretchDirection="DownOnly">
+                    <Grid x:Name="PosterCanvas" Width="540" Height="675">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#182A29" Offset="0" />
+                                <GradientStop Color="#102021" Offset="1" />
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        <Image Source="{x:Bind ViewModel.PreviewBackground, Mode=OneWay}" Stretch="Fill" IsHitTestVisible="False" />
+                        <Grid Padding="34" RowDefinitions="Auto,Auto,*,Auto,Auto">
+                            <TextBlock Text="OriginalSound" Foreground="#FFE1C8" FontWeight="SemiBold" CharacterSpacing="128" />
+                            <StackPanel Grid.Row="1" Margin="0,19,0,20" Spacing="4">
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.Heading, Mode=OneWay}" Foreground="#FFF6E6"
+                                           FontSize="35" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.Coverage, Mode=OneWay}" Foreground="#F8E9D8"
+                                           FontSize="14" TextWrapping="Wrap" MaxLines="2" />
+                            </StackPanel>
+                            <Grid Grid.Row="2" ColumnDefinitions="*,130" ColumnSpacing="18" VerticalAlignment="Center">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{x:Bind ViewModel.Presentation.Duration, Mode=OneWay}" Foreground="#FFF6E6"
+                                               FontSize="38" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Uid="ListeningReportDuration" Foreground="#F8E9D8" FontSize="15" />
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,11,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="{x:Bind ViewModel.Presentation.PlayCount, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" />
+                                            <TextBlock x:Uid="ListeningReportPlays" Foreground="#F8E9D8" FontSize="14" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{x:Bind ViewModel.Presentation.ActiveDays, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" />
+                                            <TextBlock x:Uid="ListeningReportDays" Foreground="#F8E9D8" FontSize="14" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                                <Grid Grid.Column="1" Width="130" Height="130" VerticalAlignment="Center">
+                                    <Ellipse Fill="#293C3C" />
+                                    <Ellipse Width="104" Height="104" Stroke="#506566" StrokeThickness="1" />
+                                    <Ellipse Width="82" Height="82" Stroke="#506566" StrokeThickness="1" />
+                                    <Ellipse Width="49" Height="49" Fill="#FFE1C8" />
+                                    <Ellipse Width="7" Height="7" Fill="#293C3C" />
+                                    <Image Source="{x:Bind ViewModel.PreviewCover, Mode=OneWay}" Stretch="UniformToFill" />
+                                </Grid>
+                            </Grid>
+                            <Grid Grid.Row="3" ColumnDefinitions="3*,2*" ColumnSpacing="20" Margin="0,18,0,16">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Uid="ListeningReportTopSongs" Foreground="#FFE1C8" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind ViewModel.Presentation.PosterSongs, Mode=OneWay}" Foreground="#FFF6E6"
+                                               FontSize="17" TextTrimming="CharacterEllipsis" LineHeight="24" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="6" Visibility="{x:Bind ViewModel.Presentation.PosterArtistVisibility, Mode=OneWay}">
+                                    <TextBlock x:Uid="ListeningReportTopArtist" Foreground="#FFE1C8" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind ViewModel.Presentation.PosterArtist, Mode=OneWay}" Foreground="#FFF6E6"
+                                               FontSize="17" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel Grid.Row="4" Spacing="3">
+                                <Rectangle Height="1" Fill="#4F6666" Margin="0,2,0,8" />
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.Zone, Mode=OneWay}" Foreground="#F8E9D8" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.Footnote, Mode=OneWay}" Foreground="#F8E9D8" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Viewbox>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

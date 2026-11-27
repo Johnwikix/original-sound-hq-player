@@ -88,7 +88,7 @@
         </controls:SettingsExpander>
 
         <!--  结果展示  -->
-        <ScrollViewer Grid.Row="2" Padding="16,0,16,0">
+        <ScrollViewer x:Name="StatsScroll" Grid.Row="2" Padding="16,0,16,0">
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
 
                 <!--  顶部汇总卡片  -->

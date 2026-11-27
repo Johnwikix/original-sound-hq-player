@@ -173,8 +173,14 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayingDetailViewModel>();
                  services.AddSingleton<StatsViewModel>();
                  services.AddSingleton<ListeningReportQuery>();
-                 services.AddSingleton(sp => new ListeningReportViewModel(sp.GetRequiredService<ListeningReportQuery>(),
-                     sp.GetRequiredService<ILogger<ListeningReportViewModel>>(), sp.GetRequiredService<ShutdownCoordinator>()));
+                 services.AddSingleton(sp =>
+                 {
+                     var theme = sp.GetRequiredService<WinUIMusicPlayer.State.AppState>().Preferences.Appearance;
+                     return new ListeningReportViewModel(sp.GetRequiredService<ListeningReportQuery>(),
+                         sp.GetRequiredService<ILogger<ListeningReportViewModel>>(), sp.GetRequiredService<ShutdownCoordinator>(),
+                         () => (theme.BackgroundShader, theme.PaletteAlgorithm),
+                         static (name, token) => ListeningReportImages.PickPathAsync(MainWindow.AppWindow.Id, name, token));
+                 });
                  services.AddSingleton<PlaylistDetailViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
                  services.AddSingleton<AudioConverterService>();

@@ -2976,9 +2976,6 @@ SHA-256: {5}
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>リスニングレポート</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>戻る</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>年別</value>
   </data>
@@ -3020,9 +3017,6 @@ SHA-256: {5}
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>現在のルール：曲の 50% 以上を再生したセッションを終了後に記録します。時間は再生位置に基づき、早送りが含まれることがあります。再生は開始した日に集計します。</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>レポートに戻る</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>PNG を保存</value>
@@ -3089,5 +3083,8 @@ SHA-256: {5}
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>画像を保存できませんでした。もう一度お試しいただくか、別の保存先を選んでください。</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>背景シェーダー</value>
   </data>
 </root>

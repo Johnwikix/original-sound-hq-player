@@ -2976,9 +2976,6 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>Hörberichte</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>Zurück</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>Jährlich</value>
   </data>
@@ -3020,9 +3017,6 @@ Vollständige Details stehen im Protokoll.</value></data>
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>Aktuelle Regeln: Nach dem Ende zählen Wiedergaben ab 50 % der Titellänge. Die Zeit folgt der Abspielposition und kann Vorspringen einschließen. Eine Wiedergabe zählt zum Starttag.</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>Zurück zum Bericht</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>PNG speichern</value>
@@ -3089,5 +3083,8 @@ Vollständige Details stehen im Protokoll.</value></data>
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>Das Bild konnte nicht gespeichert werden. Bitte erneut versuchen oder einen anderen Speicherort wählen.</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>Hintergrund-Shader</value>
   </data>
 </root>

@@ -35,6 +35,7 @@ namespace WinUIMusicPlayer.ViewModel
         public event Action? SongsSourceChanged;
         public event Action<long>? CurrentPlayingTimeChanged;
         public bool CanPublishState => true;
+        public bool IsBackBtnEnable { get; set; }
         public bool IsPlaying => false;
         public bool TryFindById(int id, out Music? music)
         {

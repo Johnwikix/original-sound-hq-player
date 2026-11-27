@@ -2978,9 +2978,6 @@ SHA-256：{5}
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>听歌报告</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>返回</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>年度</value>
   </data>
@@ -3022,9 +3019,6 @@ SHA-256：{5}
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>现行规则：曲目至少播放 50% 且完成结算后才记入。时长按播放进度累计，向前拖动可能计入。跨日播放归到开始当天。</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>返回报告</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>保存 PNG</value>
@@ -3091,5 +3085,8 @@ SHA-256：{5}
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>无法保存图片。请重试或选择其他位置。</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>背景着色器</value>
   </data>
 </root>

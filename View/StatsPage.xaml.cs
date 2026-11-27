@@ -14,6 +14,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class StatsPage : Page
     {
         public StatsViewModel ViewModel { get; }
+        private bool _restoreReportScroll;
 
         public StatsPage()
         {
@@ -26,11 +27,15 @@ namespace WinUIMusicPlayer.View
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            _restoreReportScroll = e.NavigationMode == NavigationMode.Back;
             ViewModel.OnPageActive();
         }
 
         private void OpenListeningReport_Click(object sender, RoutedEventArgs e)
-            => Frame.Navigate(typeof(ListeningReportPage));
+        {
+            ViewModel.ReportReturnOffset = StatsScroll.VerticalOffset;
+            Frame.Navigate(typeof(ListeningReportPage));
+        }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -50,6 +55,14 @@ namespace WinUIMusicPlayer.View
             HeatmapLabel4.Text = dtfi.GetDayName((DayOfWeek)((first + 4) % 7));
             HeatmapLabel5.Text = dtfi.GetDayName((DayOfWeek)((first + 5) % 7));
             HeatmapLabel6.Text = dtfi.GetDayName((DayOfWeek)((first + 6) % 7));
+            if (!_restoreReportScroll) return;
+            _restoreReportScroll = false;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!IsLoaded) return;
+                StatsScroll.UpdateLayout();
+                StatsScroll.ChangeView(null, ViewModel.ReportReturnOffset, null, disableAnimation: true);
+            });
         }
     }
 }

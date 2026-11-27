@@ -2976,9 +2976,6 @@ See the log for full details.</value></data>
   <data name="ListeningReportPageTitle.Text" xml:space="preserve">
     <value>Listening reports</value>
   </data>
-  <data name="ListeningReportBackLabel" xml:space="preserve">
-    <value>Back</value>
-  </data>
   <data name="ListeningReportAnnual.Content" xml:space="preserve">
     <value>Yearly</value>
   </data>
@@ -3020,9 +3017,6 @@ See the log for full details.</value></data>
   </data>
   <data name="ListeningReportRules.Text" xml:space="preserve">
     <value>Current rules: A play is saved after it ends if at least 50% of the track was played. Time follows playback position and may include seeking forward. Plays count toward the day they began.</value>
-  </data>
-  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
-    <value>Back to report</value>
   </data>
   <data name="ListeningReportSave.Content" xml:space="preserve">
     <value>Save PNG</value>
@@ -3089,5 +3083,8 @@ See the log for full details.</value></data>
   </data>
   <data name="ListeningReportSaveFailed" xml:space="preserve">
     <value>Couldn’t save the image. Try again or choose another location.</value>
+  </data>
+  <data name="ListeningReportShader.Header" xml:space="preserve">
+    <value>Background Shader</value>
   </data>
 </root>
