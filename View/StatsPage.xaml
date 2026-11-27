@@ -25,598 +25,622 @@
     </Page.Resources>
 
     <Grid>
-        <ContentControl x:Name="MusicDetailsSource" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
-<Grid RowDefinitions="Auto,Auto,*">
-        <Grid.ChildrenTransitions>
-            <RepositionThemeTransition IsStaggeringEnabled="True" />
-        </Grid.ChildrenTransitions>
+        <ContentControl
+            x:Name="MusicDetailsSource"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False">
+            <Grid RowDefinitions="Auto,Auto,*">
+                <Grid.ChildrenTransitions>
+                    <RepositionThemeTransition IsStaggeringEnabled="True" />
+                </Grid.ChildrenTransitions>
 
-        <!--  页面标题  -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,10,16,10" ColumnSpacing="12">
-            <TextBlock x:Uid="Stats" VerticalAlignment="Center" FontSize="28" />
-            <Button Grid.Column="1" x:Uid="ListeningReportEntry" AutomationProperties.AutomationId="ListeningReportEntry"
-                    VerticalAlignment="Center" Click="OpenListeningReport_Click" />
-        </Grid>
+                <!--  页面标题  -->
+                <Grid
+                    Grid.Row="0"
+                    Margin="16,10,16,10"
+                    ColumnDefinitions="*,Auto"
+                    ColumnSpacing="12">
+                    <TextBlock
+                        x:Uid="Stats"
+                        VerticalAlignment="Center"
+                        FontSize="28" />
+                    <Button
+                        x:Uid="ListeningReportEntry"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        AutomationProperties.AutomationId="ListeningReportEntry"
+                        Click="OpenListeningReport_Click"
+                        Style="{StaticResource FluentAccentButtonStyle}" />
+                </Grid>
 
-        <!--  时间范围选择  -->
-        <controls:SettingsExpander
-            Grid.Row="1"
-            Margin="16,16,16,0"
-            IsExpanded="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}">
-            <controls:SettingsExpander.HeaderIcon>
-                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE9D9;" />
-            </controls:SettingsExpander.HeaderIcon>
-            <controls:SettingsExpander.Header>
-                <TextBlock
-                    x:Uid="StatsPageTimeRange"
-                    VerticalAlignment="Center"
-                    Style="{ThemeResource BodyStrongTextBlockStyle}" />
-            </controls:SettingsExpander.Header>
-            <StackPanel Orientation="Horizontal" Spacing="8">
+                <!--  时间范围选择  -->
+                <controls:SettingsExpander
+                    Grid.Row="1"
+                    Margin="16,16,16,0"
+                    IsExpanded="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE9D9;" />
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Header>
+                        <TextBlock
+                            x:Uid="StatsPageTimeRange"
+                            VerticalAlignment="Center"
+                            Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                    </controls:SettingsExpander.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
 
-                <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedTimeRangeIndex, Mode=TwoWay}">
-                    <ComboBoxItem x:Uid="StatsRangePastWeek" />
-                    <ComboBoxItem x:Uid="StatsRangePastMonth" />
-                    <ComboBoxItem x:Uid="StatsRangePastQuarter" />
-                    <ComboBoxItem x:Uid="StatsRangePastYear" />
-                    <ComboBoxItem x:Uid="StatsRangeAllTime" />
-                    <ComboBoxItem x:Uid="StatsRangeCustom" />
-                </ComboBox>
-            </StackPanel>
-
-            <controls:SettingsExpander.Items>
-                <controls:SettingsCard x:Uid="StatsCustomStart">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <CalendarDatePicker Date="{x:Bind ViewModel.CustomStartDate, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}" />
-                        <TimePicker
-                            VerticalAlignment="Bottom"
-                            IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}"
-                            Time="{x:Bind ViewModel.CustomStartTime, Mode=TwoWay}" />
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedTimeRangeIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="StatsRangePastWeek" />
+                            <ComboBoxItem x:Uid="StatsRangePastMonth" />
+                            <ComboBoxItem x:Uid="StatsRangePastQuarter" />
+                            <ComboBoxItem x:Uid="StatsRangePastYear" />
+                            <ComboBoxItem x:Uid="StatsRangeAllTime" />
+                            <ComboBoxItem x:Uid="StatsRangeCustom" />
+                        </ComboBox>
                     </StackPanel>
-                </controls:SettingsCard>
 
-                <controls:SettingsCard x:Uid="StatsCustomEnd">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <CalendarDatePicker Date="{x:Bind ViewModel.CustomEndDate, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}" />
-                        <TimePicker
-                            VerticalAlignment="Bottom"
-                            IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}"
-                            Time="{x:Bind ViewModel.CustomEndTime, Mode=TwoWay}" />
-                    </StackPanel>
-                </controls:SettingsCard>
-            </controls:SettingsExpander.Items>
-        </controls:SettingsExpander>
-
-        <!--  结果展示  -->
-        <ScrollViewer x:Name="StatsScroll" Grid.Row="2" Padding="16,0,16,0">
-            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
-
-                <!--  顶部汇总卡片  -->
-                <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
-
-                    <!--  总收听时长  -->
-                    <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
-                        <StackPanel>
-                            <StackPanel
-                                Opacity="0.8"
-                                Orientation="Horizontal"
-                                Spacing="8">
-                                <FontIcon FontSize="14" Glyph="&#xE916;" />
-                                <TextBlock x:Uid="StatsTotalDuration" Style="{ThemeResource CaptionTextBlockStyle}" />
-                            </StackPanel>
-                            <StackPanel
-                                Margin="0,8,0,0"
-                                Orientation="Horizontal"
-                                Spacing="4">
-                                <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.TotalDurationText, Mode=OneWay}" />
-                                <TextBlock
-                                    Margin="0,0,0,2"
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="StatsCustomStart">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <CalendarDatePicker Date="{x:Bind ViewModel.CustomStartDate, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}" />
+                                <TimePicker
                                     VerticalAlignment="Bottom"
-                                    Opacity="0.8"
-                                    Style="{ThemeResource CaptionTextBlockStyle}"
-                                    Text="Hrs" />
+                                    IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}"
+                                    Time="{x:Bind ViewModel.CustomStartTime, Mode=TwoWay}" />
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </controls:SettingsCard>
 
-                    <!--  已播放曲目数  -->
-                    <Border Grid.Column="1" Style="{StaticResource StatsCardStyle}">
-                        <StackPanel>
-                            <StackPanel
-                                Opacity="0.8"
-                                Orientation="Horizontal"
-                                Spacing="8">
-                                <FontIcon FontSize="14" Glyph="&#xE8D6;" />
-                                <TextBlock x:Uid="StatsTracksPlayed" Style="{ThemeResource CaptionTextBlockStyle}" />
+                        <controls:SettingsCard x:Uid="StatsCustomEnd">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <CalendarDatePicker Date="{x:Bind ViewModel.CustomEndDate, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}" />
+                                <TimePicker
+                                    VerticalAlignment="Bottom"
+                                    IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}"
+                                    Time="{x:Bind ViewModel.CustomEndTime, Mode=TwoWay}" />
                             </StackPanel>
-                            <TextBlock
-                                Margin="0,8,0,0"
-                                Style="{ThemeResource SubtitleTextBlockStyle}"
-                                Text="{x:Bind ViewModel.TracksPlayedCount, Mode=OneWay}" />
-                        </StackPanel>
-                    </Border>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
-                    <!--  活跃天数  -->
-                    <Border Grid.Column="2" Style="{StaticResource StatsCardStyle}">
-                        <StackPanel>
-                            <StackPanel
-                                Opacity="0.8"
-                                Orientation="Horizontal"
-                                Spacing="8">
-                                <FontIcon FontSize="14" Glyph="&#xE787;" />
-                                <TextBlock x:Uid="StatsActiveDays" Style="{ThemeResource CaptionTextBlockStyle}" />
-                            </StackPanel>
-                            <TextBlock
-                                Margin="0,8,0,0"
-                                Style="{ThemeResource SubtitleTextBlockStyle}"
-                                Text="{x:Bind ViewModel.ActiveDaysCount, Mode=OneWay}" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
+                <!--  结果展示  -->
+                <ScrollViewer
+                    x:Name="StatsScroll"
+                    Grid.Row="2"
+                    Padding="16,0,16,0">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
 
-                <!--  热度图  -->
-                <Border Grid.Row="1" Style="{StaticResource StatsCardStyle}">
-                    <Grid RowDefinitions="Auto,*">
+                        <!--  顶部汇总卡片  -->
+                        <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
 
-                        <TextBlock
-                            x:Uid="StatsHeatmap"
-                            Margin="0,0,0,12"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
-
-                        <Grid x:Name="HeatmapHost" Grid.Row="1">
-                            <Viewbox
-                                x:Name="HeatmapScaled"
-                                Margin="16,8,16,8"
-                                Stretch="Uniform"
-                                StretchDirection="Both">
-                                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="20,Auto">
-
-                                    <Grid
-                                        x:Name="HeatmapWeekdayColumn"
-                                        Grid.Row="1"
-                                        Grid.Column="0"
-                                        Margin="0,0,8,0"
-                                        RowDefinitions="18,18,18,18,18,18,18">
+                            <!--  总收听时长  -->
+                            <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
+                                <StackPanel>
+                                    <StackPanel
+                                        Opacity="0.8"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <FontIcon FontSize="14" Glyph="&#xE916;" />
+                                        <TextBlock x:Uid="StatsTotalDuration" Style="{ThemeResource CaptionTextBlockStyle}" />
+                                    </StackPanel>
+                                    <StackPanel
+                                        Margin="0,8,0,0"
+                                        Orientation="Horizontal"
+                                        Spacing="4">
+                                        <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.TotalDurationText, Mode=OneWay}" />
                                         <TextBlock
-                                            x:Name="HeatmapLabel0"
-                                            Grid.Row="0"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock
-                                            x:Name="HeatmapLabel1"
-                                            Grid.Row="1"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock
-                                            x:Name="HeatmapLabel2"
-                                            Grid.Row="2"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock
-                                            x:Name="HeatmapLabel3"
-                                            Grid.Row="3"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock
-                                            x:Name="HeatmapLabel4"
-                                            Grid.Row="4"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock
-                                            x:Name="HeatmapLabel5"
-                                            Grid.Row="5"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock
-                                            x:Name="HeatmapLabel6"
-                                            Grid.Row="6"
-                                            VerticalAlignment="Center"
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </Grid>
+                                            Margin="0,0,0,2"
+                                            VerticalAlignment="Bottom"
+                                            Opacity="0.8"
+                                            Style="{ThemeResource CaptionTextBlockStyle}"
+                                            Text="Hrs" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
 
-                                    <ItemsControl
-                                        Grid.Row="0"
-                                        Grid.Column="1"
-                                        ItemsSource="{x:Bind ViewModel.MonthLabels, Mode=OneWay}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <Canvas />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
+                            <!--  已播放曲目数  -->
+                            <Border Grid.Column="1" Style="{StaticResource StatsCardStyle}">
+                                <StackPanel>
+                                    <StackPanel
+                                        Opacity="0.8"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <FontIcon FontSize="14" Glyph="&#xE8D6;" />
+                                        <TextBlock x:Uid="StatsTracksPlayed" Style="{ThemeResource CaptionTextBlockStyle}" />
+                                    </StackPanel>
+                                    <TextBlock
+                                        Margin="0,8,0,0"
+                                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                                        Text="{x:Bind ViewModel.TracksPlayedCount, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
 
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="statsmodels:MonthLabel">
-                                                <Grid>
-                                                    <Grid.RenderTransform>
-                                                        <TranslateTransform X="{x:Bind Offset}" />
-                                                    </Grid.RenderTransform>
-                                                    <TextBlock
-                                                        FontSize="10"
-                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                        Text="{x:Bind Name}" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                            <!--  活跃天数  -->
+                            <Border Grid.Column="2" Style="{StaticResource StatsCardStyle}">
+                                <StackPanel>
+                                    <StackPanel
+                                        Opacity="0.8"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <FontIcon FontSize="14" Glyph="&#xE787;" />
+                                        <TextBlock x:Uid="StatsActiveDays" Style="{ThemeResource CaptionTextBlockStyle}" />
+                                    </StackPanel>
+                                    <TextBlock
+                                        Margin="0,8,0,0"
+                                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                                        Text="{x:Bind ViewModel.ActiveDaysCount, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
 
-                                    <ItemsControl
-                                        Grid.Row="1"
-                                        Grid.Column="1"
-                                        ItemsSource="{x:Bind ViewModel.HeatmapData, Mode=OneWay}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <VariableSizedWrapGrid
-                                                    ItemHeight="18"
-                                                    ItemWidth="18"
-                                                    MaximumRowsOrColumns="7"
-                                                    Orientation="Vertical" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="statsmodels:HeatmapNode">
-                                                <Border
-                                                    Width="14"
-                                                    Height="14"
-                                                    HorizontalAlignment="Center"
+                        <!--  热度图  -->
+                        <Border Grid.Row="1" Style="{StaticResource StatsCardStyle}">
+                            <Grid RowDefinitions="Auto,*">
+
+                                <TextBlock
+                                    x:Uid="StatsHeatmap"
+                                    Margin="0,0,0,12"
+                                    Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                                <Grid x:Name="HeatmapHost" Grid.Row="1">
+                                    <Viewbox
+                                        x:Name="HeatmapScaled"
+                                        Margin="16,8,16,8"
+                                        Stretch="Uniform"
+                                        StretchDirection="Both">
+                                        <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="20,Auto">
+
+                                            <Grid
+                                                x:Name="HeatmapWeekdayColumn"
+                                                Grid.Row="1"
+                                                Grid.Column="0"
+                                                Margin="0,0,8,0"
+                                                RowDefinitions="18,18,18,18,18,18,18">
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel0"
+                                                    Grid.Row="0"
                                                     VerticalAlignment="Center"
-                                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                                    CornerRadius="2"
-                                                    Opacity="{x:Bind Opacity}">
-                                                    <ToolTipService.ToolTip>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind TooltipDate}" />
-                                                            <Grid Width="4" />
-                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind PlayCount}" />
-                                                            <Grid Width="2" />
-                                                            <TextBlock x:Uid="StatsTimes" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                        </StackPanel>
-                                                    </ToolTipService.ToolTip>
-                                                </Border>
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel1"
+                                                    Grid.Row="1"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel2"
+                                                    Grid.Row="2"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel3"
+                                                    Grid.Row="3"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel4"
+                                                    Grid.Row="4"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel5"
+                                                    Grid.Row="5"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock
+                                                    x:Name="HeatmapLabel6"
+                                                    Grid.Row="6"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Grid>
+
+                                            <ItemsControl
+                                                Grid.Row="0"
+                                                Grid.Column="1"
+                                                ItemsSource="{x:Bind ViewModel.MonthLabels, Mode=OneWay}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <Canvas />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="statsmodels:MonthLabel">
+                                                        <Grid>
+                                                            <Grid.RenderTransform>
+                                                                <TranslateTransform X="{x:Bind Offset}" />
+                                                            </Grid.RenderTransform>
+                                                            <TextBlock
+                                                                FontSize="10"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Text="{x:Bind Name}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <ItemsControl
+                                                Grid.Row="1"
+                                                Grid.Column="1"
+                                                ItemsSource="{x:Bind ViewModel.HeatmapData, Mode=OneWay}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VariableSizedWrapGrid
+                                                            ItemHeight="18"
+                                                            ItemWidth="18"
+                                                            MaximumRowsOrColumns="7"
+                                                            Orientation="Vertical" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="statsmodels:HeatmapNode">
+                                                        <Border
+                                                            Width="14"
+                                                            Height="14"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                            CornerRadius="2"
+                                                            Opacity="{x:Bind Opacity}">
+                                                            <ToolTipService.ToolTip>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind TooltipDate}" />
+                                                                    <Grid Width="4" />
+                                                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind PlayCount}" />
+                                                                    <Grid Width="2" />
+                                                                    <TextBlock x:Uid="StatsTimes" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                                </StackPanel>
+                                                            </ToolTipService.ToolTip>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Grid>
+                                    </Viewbox>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!--  时段分布  -->
+                        <Border Grid.Row="2" Style="{StaticResource StatsCardStyle}">
+                            <Grid RowDefinitions="Auto,Auto,Auto">
+                                <TextBlock
+                                    x:Uid="StatsActivityByHour"
+                                    Margin="0,0,0,12"
+                                    Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                <Grid
+                                    Grid.Row="1"
+                                    Margin="0,0,0,16"
+                                    ColumnDefinitions="*,*">
+                                    <StackPanel>
+                                        <TextBlock
+                                            x:Uid="StatsMostActive"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.PeakHourText, Mode=OneWay}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock
+                                            x:Uid="StatsLeastActive"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.QuietHourText, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <charts:HourlyBarChartControl
+                                    Grid.Row="2"
+                                    Height="180"
+                                    Margin="0,8,0,0"
+                                    ItemsSource="{x:Bind ViewModel.HourlySeriesValues, Mode=OneWay}" />
+                            </Grid>
+                        </Border>
+
+                        <!--  Top 5 歌手 / Top 5 专辑 / Top 10 歌曲  -->
+                        <Grid Grid.Row="3" ColumnDefinitions="*,*">
+
+                            <!--  左列：Top 5 歌手 + Top 5 专辑（单卡片）  -->
+                            <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
+                                <StackPanel>
+                                    <TextBlock
+                                        x:Uid="StatsTopArtists"
+                                        Margin="0,0,0,12"
+                                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.TopArtists, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="statsmodels:ArtistPlayStat">
+                                                <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
+                                                    <Button
+                                                        Padding="0"
+                                                        Background="Transparent"
+                                                        BorderBrush="Transparent"
+                                                        BorderThickness="0"
+                                                        Command="{x:Bind PlayCommand}"
+                                                        CommandParameter="{x:Bind}"
+                                                        CornerRadius="20"
+                                                        Style="{StaticResource PlayHoverButtonStyle}">
+                                                        <Grid
+                                                            Width="40"
+                                                            Height="40"
+                                                            Background="{ThemeResource LayerFillColorAltBrush}"
+                                                            CornerRadius="20">
+                                                            <Image
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Canvas.ZIndex="1"
+                                                                Stretch="UniformToFill">
+                                                                <interactivity:Interaction.Behaviors>
+                                                                    <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                                                </interactivity:Interaction.Behaviors>
+                                                            </Image>
+                                                            <FontIcon
+                                                                Canvas.ZIndex="0"
+                                                                FontSize="15"
+                                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                                Glyph="&#xE77B;" />
+                                                        </Grid>
+                                                    </Button>
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Margin="12,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="14"
+                                                        FontWeight="SemiBold"
+                                                        Text="{x:Bind Artist}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        TextWrapping="NoWrap" />
+                                                    <TextBlock
+                                                        Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        FontWeight="SemiBold">
+                                                        <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
+                                                        <Run
+                                                            x:Uid="StatsTimes"
+                                                            FontSize="10"
+                                                            FontWeight="Normal"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                                    </TextBlock>
+                                                </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                </Grid>
-                            </Viewbox>
+                                    <Rectangle
+                                        Height="1"
+                                        Margin="0,12"
+                                        Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                                    <TextBlock
+                                        x:Uid="StatsTopAlbums"
+                                        Margin="0,0,0,12"
+                                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.TopAlbums, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="statsmodels:AlbumPlayStat">
+                                                <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
+                                                    <Button
+                                                        Padding="0"
+                                                        Background="Transparent"
+                                                        BorderBrush="Transparent"
+                                                        BorderThickness="0"
+                                                        Command="{x:Bind PlayCommand}"
+                                                        CommandParameter="{x:Bind}"
+                                                        CornerRadius="6"
+                                                        Style="{StaticResource PlayHoverButtonStyle}">
+                                                        <Grid
+                                                            Width="40"
+                                                            Height="40"
+                                                            Background="{ThemeResource LayerFillColorAltBrush}"
+                                                            CornerRadius="6">
+                                                            <Image
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Canvas.ZIndex="1"
+                                                                Stretch="UniformToFill">
+                                                                <interactivity:Interaction.Behaviors>
+                                                                    <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                                                </interactivity:Interaction.Behaviors>
+                                                            </Image>
+                                                            <FontIcon
+                                                                Canvas.ZIndex="0"
+                                                                FontSize="15"
+                                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                                Glyph="&#xEC4A;" />
+                                                        </Grid>
+                                                    </Button>
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Margin="12,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="14"
+                                                        FontWeight="SemiBold"
+                                                        Text="{x:Bind Album}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        TextWrapping="NoWrap" />
+                                                    <TextBlock
+                                                        Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        FontWeight="SemiBold">
+                                                        <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
+                                                        <Run
+                                                            x:Uid="StatsTimes"
+                                                            FontSize="10"
+                                                            FontWeight="Normal"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!--  Top 10 歌曲  -->
+                            <Border Grid.Column="1" Style="{StaticResource StatsCardStyle}">
+                                <StackPanel>
+                                    <TextBlock
+                                        x:Uid="StatsTopSongs"
+                                        Margin="0,0,0,12"
+                                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongsFirst, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="statsmodels:SongPlayStat">
+                                                <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
+                                                    <Button
+                                                        Padding="0"
+                                                        Background="Transparent"
+                                                        BorderBrush="Transparent"
+                                                        BorderThickness="0"
+                                                        Command="{x:Bind PlayCommand}"
+                                                        CommandParameter="{x:Bind}"
+                                                        CornerRadius="4"
+                                                        Style="{StaticResource PlayHoverButtonStyle}">
+                                                        <Grid
+                                                            Width="40"
+                                                            Height="40"
+                                                            Background="{ThemeResource LayerFillColorAltBrush}"
+                                                            CornerRadius="4">
+                                                            <Image
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Canvas.ZIndex="1"
+                                                                Stretch="UniformToFill">
+                                                                <interactivity:Interaction.Behaviors>
+                                                                    <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                                                </interactivity:Interaction.Behaviors>
+                                                            </Image>
+                                                            <FontIcon
+                                                                Canvas.ZIndex="0"
+                                                                FontSize="16"
+                                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                                Glyph="&#xE8D6;" />
+                                                        </Grid>
+                                                    </Button>
+                                                    <StackPanel
+                                                        Grid.Column="1"
+                                                        Margin="12,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                        <TextBlock
+                                                            FontSize="14"
+                                                            FontWeight="SemiBold"
+                                                            Text="{x:Bind Title}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            TextWrapping="NoWrap" />
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                            Text="{x:Bind Artist}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            TextWrapping="NoWrap" />
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        FontWeight="SemiBold">
+                                                        <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
+                                                        <Run
+                                                            x:Uid="StatsTimes"
+                                                            FontSize="10"
+                                                            FontWeight="Normal"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Rectangle
+                                        Height="1"
+                                        Margin="0,12"
+                                        Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                                    <TextBlock
+                                        x:Uid="StatsTopSongsNext"
+                                        Margin="0,0,0,12"
+                                        Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongsSecond, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="statsmodels:SongPlayStat">
+                                                <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
+                                                    <Button
+                                                        Padding="0"
+                                                        Background="Transparent"
+                                                        BorderBrush="Transparent"
+                                                        BorderThickness="0"
+                                                        Command="{x:Bind PlayCommand}"
+                                                        CommandParameter="{x:Bind}"
+                                                        CornerRadius="4"
+                                                        Style="{StaticResource PlayHoverButtonStyle}">
+                                                        <Grid
+                                                            Width="40"
+                                                            Height="40"
+                                                            Background="{ThemeResource LayerFillColorAltBrush}"
+                                                            CornerRadius="4">
+                                                            <Image
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Canvas.ZIndex="1"
+                                                                Stretch="UniformToFill">
+                                                                <interactivity:Interaction.Behaviors>
+                                                                    <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                                                </interactivity:Interaction.Behaviors>
+                                                            </Image>
+                                                            <FontIcon
+                                                                Canvas.ZIndex="0"
+                                                                FontSize="16"
+                                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                                Glyph="&#xE8D6;" />
+                                                        </Grid>
+                                                    </Button>
+                                                    <StackPanel
+                                                        Grid.Column="1"
+                                                        Margin="12,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                        <TextBlock
+                                                            FontSize="14"
+                                                            FontWeight="SemiBold"
+                                                            Text="{x:Bind Title}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            TextWrapping="NoWrap" />
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                            Text="{x:Bind Artist}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            TextWrapping="NoWrap" />
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        FontWeight="SemiBold">
+                                                        <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
+                                                        <Run
+                                                            x:Uid="StatsTimes"
+                                                            FontSize="10"
+                                                            FontWeight="Normal"
+                                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
                         </Grid>
+
+                        <Grid Grid.Row="4" Height="32" />
                     </Grid>
-                </Border>
-
-                <!--  时段分布  -->
-                <Border Grid.Row="2" Style="{StaticResource StatsCardStyle}">
-                    <Grid RowDefinitions="Auto,Auto,Auto">
-                        <TextBlock
-                            x:Uid="StatsActivityByHour"
-                            Margin="0,0,0,12"
-                            Style="{ThemeResource SubtitleTextBlockStyle}" />
-                        <Grid
-                            Grid.Row="1"
-                            Margin="0,0,0,16"
-                            ColumnDefinitions="*,*">
-                            <StackPanel>
-                                <TextBlock
-                                    x:Uid="StatsMostActive"
-                                    FontSize="12"
-                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.PeakHourText, Mode=OneWay}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1">
-                                <TextBlock
-                                    x:Uid="StatsLeastActive"
-                                    FontSize="12"
-                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.QuietHourText, Mode=OneWay}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <charts:HourlyBarChartControl
-                            Grid.Row="2"
-                            Height="180"
-                            Margin="0,8,0,0"
-                            ItemsSource="{x:Bind ViewModel.HourlySeriesValues, Mode=OneWay}" />
-                    </Grid>
-                </Border>
-
-                <!--  Top 5 歌手 / Top 5 专辑 / Top 10 歌曲  -->
-                <Grid Grid.Row="3" ColumnDefinitions="*,*">
-
-                    <!--  左列：Top 5 歌手 + Top 5 专辑（单卡片）  -->
-                    <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
-                        <StackPanel>
-                            <TextBlock
-                                x:Uid="StatsTopArtists"
-                                Margin="0,0,0,12"
-                                Style="{ThemeResource SubtitleTextBlockStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopArtists, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="statsmodels:ArtistPlayStat">
-                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
-                                            <Button
-                                                Padding="0"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                BorderThickness="0"
-                                                Command="{x:Bind PlayCommand}"
-                                                CommandParameter="{x:Bind}"
-                                                CornerRadius="20"
-                                                Style="{StaticResource PlayHoverButtonStyle}">
-                                                <Grid
-                                                    Width="40"
-                                                    Height="40"
-                                                    Background="{ThemeResource LayerFillColorAltBrush}"
-                                                    CornerRadius="20">
-                                                    <Image
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Canvas.ZIndex="1"
-                                                        Stretch="UniformToFill">
-                                                        <interactivity:Interaction.Behaviors>
-                                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
-                                                        </interactivity:Interaction.Behaviors>
-                                                    </Image>
-                                                    <FontIcon
-                                                        Canvas.ZIndex="0"
-                                                        FontSize="15"
-                                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                        Glyph="&#xE77B;" />
-                                                </Grid>
-                                            </Button>
-                                            <TextBlock
-                                                Grid.Column="1"
-                                                Margin="12,0,0,0"
-                                                VerticalAlignment="Center"
-                                                FontSize="14"
-                                                FontWeight="SemiBold"
-                                                Text="{x:Bind Artist}"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap" />
-                                            <TextBlock
-                                                Grid.Column="2"
-                                                VerticalAlignment="Center"
-                                                FontWeight="SemiBold">
-                                                <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
-                                                <Run
-                                                    x:Uid="StatsTimes"
-                                                    FontSize="10"
-                                                    FontWeight="Normal"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                                            </TextBlock>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <Rectangle
-                                Height="1"
-                                Margin="0,12"
-                                Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                            <TextBlock
-                                x:Uid="StatsTopAlbums"
-                                Margin="0,0,0,12"
-                                Style="{ThemeResource SubtitleTextBlockStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopAlbums, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="statsmodels:AlbumPlayStat">
-                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
-                                            <Button
-                                                Padding="0"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                BorderThickness="0"
-                                                Command="{x:Bind PlayCommand}"
-                                                CommandParameter="{x:Bind}"
-                                                CornerRadius="6"
-                                                Style="{StaticResource PlayHoverButtonStyle}">
-                                                <Grid
-                                                    Width="40"
-                                                    Height="40"
-                                                    Background="{ThemeResource LayerFillColorAltBrush}"
-                                                    CornerRadius="6">
-                                                    <Image
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Canvas.ZIndex="1"
-                                                        Stretch="UniformToFill">
-                                                        <interactivity:Interaction.Behaviors>
-                                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
-                                                        </interactivity:Interaction.Behaviors>
-                                                    </Image>
-                                                    <FontIcon
-                                                        Canvas.ZIndex="0"
-                                                        FontSize="15"
-                                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                        Glyph="&#xEC4A;" />
-                                                </Grid>
-                                            </Button>
-                                            <TextBlock
-                                                Grid.Column="1"
-                                                Margin="12,0,0,0"
-                                                VerticalAlignment="Center"
-                                                FontSize="14"
-                                                FontWeight="SemiBold"
-                                                Text="{x:Bind Album}"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap" />
-                                            <TextBlock
-                                                Grid.Column="2"
-                                                VerticalAlignment="Center"
-                                                FontWeight="SemiBold">
-                                                <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
-                                                <Run
-                                                    x:Uid="StatsTimes"
-                                                    FontSize="10"
-                                                    FontWeight="Normal"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                                            </TextBlock>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-
-                    <!--  Top 10 歌曲  -->
-                    <Border Grid.Column="1" Style="{StaticResource StatsCardStyle}">
-                        <StackPanel>
-                            <TextBlock
-                                x:Uid="StatsTopSongs"
-                                Margin="0,0,0,12"
-                                Style="{ThemeResource SubtitleTextBlockStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongsFirst, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="statsmodels:SongPlayStat">
-                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
-                                            <Button
-                                                Padding="0"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                BorderThickness="0"
-                                                Command="{x:Bind PlayCommand}"
-                                                CommandParameter="{x:Bind}"
-                                                CornerRadius="4"
-                                                Style="{StaticResource PlayHoverButtonStyle}">
-                                                <Grid
-                                                    Width="40"
-                                                    Height="40"
-                                                    Background="{ThemeResource LayerFillColorAltBrush}"
-                                                    CornerRadius="4">
-                                                    <Image
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Canvas.ZIndex="1"
-                                                        Stretch="UniformToFill">
-                                                        <interactivity:Interaction.Behaviors>
-                                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
-                                                        </interactivity:Interaction.Behaviors>
-                                                    </Image>
-                                                    <FontIcon
-                                                        Canvas.ZIndex="0"
-                                                        FontSize="16"
-                                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                        Glyph="&#xE8D6;" />
-                                                </Grid>
-                                            </Button>
-                                            <StackPanel
-                                                Grid.Column="1"
-                                                Margin="12,0,0,0"
-                                                VerticalAlignment="Center">
-                                                <TextBlock
-                                                    FontSize="14"
-                                                    FontWeight="SemiBold"
-                                                    Text="{x:Bind Title}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    TextWrapping="NoWrap" />
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                    Text="{x:Bind Artist}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    TextWrapping="NoWrap" />
-                                            </StackPanel>
-                                            <TextBlock
-                                                Grid.Column="2"
-                                                VerticalAlignment="Center"
-                                                FontWeight="SemiBold">
-                                                <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
-                                                <Run
-                                                    x:Uid="StatsTimes"
-                                                    FontSize="10"
-                                                    FontWeight="Normal"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                                            </TextBlock>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <Rectangle
-                                Height="1"
-                                Margin="0,12"
-                                Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
-                            <TextBlock
-                                x:Uid="StatsTopSongsNext"
-                                Margin="0,0,0,12"
-                                Style="{ThemeResource SubtitleTextBlockStyle}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongsSecond, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="statsmodels:SongPlayStat">
-                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
-                                            <Button
-                                                Padding="0"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                BorderThickness="0"
-                                                Command="{x:Bind PlayCommand}"
-                                                CommandParameter="{x:Bind}"
-                                                CornerRadius="4"
-                                                Style="{StaticResource PlayHoverButtonStyle}">
-                                                <Grid
-                                                    Width="40"
-                                                    Height="40"
-                                                    Background="{ThemeResource LayerFillColorAltBrush}"
-                                                    CornerRadius="4">
-                                                    <Image
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Canvas.ZIndex="1"
-                                                        Stretch="UniformToFill">
-                                                        <interactivity:Interaction.Behaviors>
-                                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
-                                                        </interactivity:Interaction.Behaviors>
-                                                    </Image>
-                                                    <FontIcon
-                                                        Canvas.ZIndex="0"
-                                                        FontSize="16"
-                                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                        Glyph="&#xE8D6;" />
-                                                </Grid>
-                                            </Button>
-                                            <StackPanel
-                                                Grid.Column="1"
-                                                Margin="12,0,0,0"
-                                                VerticalAlignment="Center">
-                                                <TextBlock
-                                                    FontSize="14"
-                                                    FontWeight="SemiBold"
-                                                    Text="{x:Bind Title}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    TextWrapping="NoWrap" />
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                    Text="{x:Bind Artist}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    TextWrapping="NoWrap" />
-                                            </StackPanel>
-                                            <TextBlock
-                                                Grid.Column="2"
-                                                VerticalAlignment="Center"
-                                                FontWeight="SemiBold">
-                                                <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
-                                                <Run
-                                                    x:Uid="StatsTimes"
-                                                    FontSize="10"
-                                                    FontWeight="Normal"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                                            </TextBlock>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <Grid Grid.Row="4" Height="32" />
+                </ScrollViewer>
             </Grid>
-        </ScrollViewer>
-    </Grid>
         </ContentControl>
-        <ContentControl x:Name="MusicDetailsOverlay" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-            Visibility="Collapsed" IsTabStop="False" TabFocusNavigation="Cycle" />
+        <ContentControl
+            x:Name="MusicDetailsOverlay"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            IsTabStop="False"
+            TabFocusNavigation="Cycle"
+            Visibility="Collapsed" />
     </Grid>
 </Page>

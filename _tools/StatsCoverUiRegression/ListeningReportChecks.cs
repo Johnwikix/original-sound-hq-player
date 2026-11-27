@@ -199,6 +199,9 @@ internal static class ListeningReportChecks
         App.MainWindow.AppWindow.ResizeClient(new((int)(720 * scale), (int)(300 * scale)));
         await UntilAsync(() => Math.Abs(frame.ActualHeight - 300) < 2 && viewport.ActualHeight < posterBounds.Height - 100);
         await CheckDialogLayoutAsync("Close");
+        using (var compactPoster = await preview.CaptureAsync(default))
+            check(compactPoster.PixelWidth == 1080 && compactPoster.PixelHeight == 1350,
+                "the 300-DIP preview still exports the full-size canvas");
         App.MainWindow.AppWindow.ResizeClient(new((int)(1120 * scale), (int)(820 * scale)));
         await UntilAsync(() => viewport.ActualHeight > posterBounds.Height + 100);
         var tallBounds = canvas.TransformToVisual(viewport).TransformBounds(new(0, 0, canvas.ActualWidth, canvas.ActualHeight));
@@ -276,6 +279,11 @@ internal static class ListeningReportChecks
             check(decoder.PixelWidth == 1080 && decoder.PixelHeight == 1350, "real PNG decodes to 1080 by 1350");
             using var bitmap = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
             check(SamplePoster(bitmap) == previewSignature, "PNG and the selected preview have matching shader pixels");
+            var daysLabel = Find<TextBlock>(canvas, item => item.Text == "Active days")!;
+            var labelPosition = daysLabel.TransformToVisual(canvas).TransformPoint(default);
+            check(CountLightPixels(bitmap, (int)(2 * (labelPosition.X + 3 * daysLabel.FontSize)),
+                (int)(2 * labelPosition.Y), (int)(4 * daysLabel.FontSize), (int)(2 * daysLabel.ActualHeight)) > 20,
+                "the exported single-line active-days label includes its final word");
         }
 
         shaderPicker.SelectedIndex = (int)BackgroundShaderMode.RotatingMesh;
@@ -294,6 +302,7 @@ internal static class ListeningReportChecks
             "reopening discards the temporary shader and reads the latest settings");
         Invoke(DialogButton("Close"));
         await UntilAsync(() => page.PreviewDialog is null);
+        bool collectDuringProbe = Environment.GetEnvironmentVariable("REPORT_NATURAL_GC") != "1";
         // Leave time for composition teardown before recording retained references and process memory.
         var closedPreviews = new List<WeakReference[]>();
         await Task.Delay(400);
@@ -312,11 +321,31 @@ internal static class ListeningReportChecks
         }
         await Task.Delay(8000);
         RecordClosedMemory("idle", 0);
+        if (!collectDuringProbe) RecordClosedMemory("postgc", 0, forceCollection: true);
         int retained = closedPreviews.SelectMany(static cycle => cycle).Count(static reference => reference.IsAlive);
         check(retained == 0, $"repeated shader preview and PNG capture release all dialog, poster and image wrappers ({retained} retained)");
 
         if (Environment.GetEnvironmentVariable("REPORT_RENDER_PROBE") == "1")
             await CompareRenderTargetAsync();
+
+        preview = await OpenPreviewAsync();
+        shaderPicker = (ComboBox)preview.FindName("ShaderPicker");
+        var shaderFrames = new HashSet<long>();
+        foreach (var mode in Enum.GetValues<BackgroundShaderMode>())
+        {
+            shaderPicker.SelectedIndex = (int)mode;
+            await UntilAsync(() => vm.CanSavePreview);
+            using var poster = await preview.CaptureAsync(default);
+            var images = vm.CopyPosterImages();
+            using var selectedCover = images.Cover;
+            using var background = images.Background;
+            check(vm.SelectedShaderIndex == (int)mode && background is not null && MatchesBackground(poster, background),
+                $"software export includes the selected {mode} background");
+            shaderFrames.Add(SamplePoster(poster));
+        }
+        check(shaderFrames.Count > 1, "switching shaders changes the exported image");
+        Invoke(DialogButton("Close"));
+        await UntilAsync(() => page.PreviewDialog is null);
 
         page = (ListeningReportPage)frame.Content;
         vm.SelectedYear = previousYear;
@@ -324,6 +353,17 @@ internal static class ListeningReportChecks
         await UntilAsync(() => !vm.IsLoading && vm.Presentation?.PosterSongs == "Older retained track");
         preview = await OpenPreviewAsync();
         check(vm.PreviewCover is null && vm.PreviewBackground is null, "missing retained cover uses the poster fallback");
+        using (var fallback = await preview.CaptureAsync(default))
+        {
+            var poster = Find<Grid>((FrameworkElement)preview.Content, grid => grid.Name == "PosterCanvas")!;
+            var disc = Find<Border>(poster, item => item.Name == "PosterCover")!;
+            var position = disc.TransformToVisual(poster).TransformPoint(default);
+            // The warm inner ring is visible only when the cover is missing.
+            int ringX = (int)(2 * (position.X + disc.ActualWidth / 2 + 10));
+            int ringY = (int)(2 * (position.Y + disc.ActualHeight / 2 + 10));
+            check(CountLightPixels(fallback, ringX, ringY, 8, 8) > 40,
+                "the missing-cover export draws the record fallback");
+        }
         Invoke(DialogButton("Close"));
         await UntilAsync(() => page.PreviewDialog is null);
         ((ListeningReportPage)frame.Content).NavigateBack();
@@ -419,11 +459,14 @@ internal static class ListeningReportChecks
             return references;
         }
 
-        void RecordClosedMemory(string phase, int cycle)
+        void RecordClosedMemory(string phase, int cycle, bool forceCollection = false)
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            if (collectDuringProbe || forceCollection)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
             process.Refresh();
             record($"PREVIEW CLOSED phase={phase} cycle={cycle} pid={process.Id} utcMs={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()} managed={GC.GetTotalMemory(false)} private={process.PrivateMemorySize64}");
         }
@@ -486,6 +529,45 @@ internal static class ListeningReportChecks
             ?? throw new InvalidOperationException($"Dialog button '{label}' is missing.");
     }
 
+    private static bool MatchesBackground(SoftwareBitmap poster, SoftwareBitmap background)
+    {
+        var rendered = new Windows.Storage.Streams.Buffer((uint)(poster.PixelWidth * poster.PixelHeight * 4));
+        var source = new Windows.Storage.Streams.Buffer((uint)(background.PixelWidth * background.PixelHeight * 4));
+        poster.CopyToBuffer(rendered);
+        background.CopyToBuffer(source);
+        using var renderedStream = rendered.AsStream();
+        using var sourceStream = source.AsStream();
+        Span<byte> renderedPixel = stackalloc byte[4];
+        Span<byte> sourcePixel = stackalloc byte[4];
+        for (int index = 1; index <= 4; index++)
+        {
+            renderedStream.Position = (long)(poster.PixelHeight * index / 5) * poster.PixelWidth * 4;
+            sourceStream.Position = (long)(background.PixelHeight * index / 5) * background.PixelWidth * 4;
+            renderedStream.ReadExactly(renderedPixel);
+            sourceStream.ReadExactly(sourcePixel);
+            for (int channel = 0; channel < 4; channel++)
+                if (Math.Abs(renderedPixel[channel] - sourcePixel[channel]) > 12) return false;
+        }
+        return true;
+    }
+
+    private static int CountLightPixels(SoftwareBitmap bitmap, int x, int y, int width, int height)
+    {
+        var buffer = new Windows.Storage.Streams.Buffer((uint)(bitmap.PixelWidth * bitmap.PixelHeight * 4));
+        bitmap.CopyToBuffer(buffer);
+        using var stream = buffer.AsStream();
+        var row = new byte[width * 4];
+        int count = 0;
+        for (int line = y; line < y + height; line++)
+        {
+            stream.Position = (line * bitmap.PixelWidth + x) * 4L;
+            stream.ReadExactly(row);
+            for (int pixel = 0; pixel < row.Length; pixel += 4)
+                if (row[pixel] > 140 && row[pixel + 1] > 165 && row[pixel + 2] > 195) count++;
+        }
+        return count;
+    }
+
     private static long SamplePoster(SoftwareBitmap bitmap)
     {
         int bytes = checked(bitmap.PixelWidth * bitmap.PixelHeight * 4);
@@ -496,10 +578,13 @@ internal static class ListeningReportChecks
         long signature = 0;
         for (int line = 0; line < bitmap.PixelHeight; line += bitmap.PixelHeight / 7)
         {
-            stream.Position = (long)line * bitmap.PixelWidth * 4;
-            stream.ReadExactly(pixel);
-            if (pixel[3] != 255) throw new InvalidOperationException("Poster background is transparent.");
-            signature = unchecked(signature * 397 ^ BitConverter.ToInt32(pixel));
+            for (int column = 0; column < bitmap.PixelWidth; column += bitmap.PixelWidth / 6)
+            {
+                stream.Position = ((long)line * bitmap.PixelWidth + column) * 4;
+                stream.ReadExactly(pixel);
+                if (pixel[3] != 255) throw new InvalidOperationException("Poster background is transparent.");
+                signature = unchecked(signature * 397 ^ BitConverter.ToInt32(pixel));
+            }
         }
         return signature;
     }

@@ -54,11 +54,15 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         internal readonly string? CoverHash = coverHash;
         internal readonly PaletteAlgorithm Palette = palette;
         internal SoftwareBitmap? Cover;
+        internal SoftwareBitmap? Background;
         internal bool CoverLoaded;
 
         public void Dispose()
         {
             Cover?.Dispose();
+            Cover = null;
+            Background?.Dispose();
+            Background = null;
             Lifetime.Dispose();
         }
     }
@@ -208,7 +212,7 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         SaveCommand.Cancel();
         try
         {
-            // 原生捕获不可强制取消。在渲染返回前让海报留在可视树内。
+            // 软件绘制的回读与 WIC 编码有不可中断的原生步骤，先等待在途保存退出。
             if (SaveCommand.ExecutionTask is { } save) await save;
         }
         finally
@@ -370,6 +374,23 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         NotifyCommands();
     }
 
+    internal (SoftwareBitmap? Cover, SoftwareBitmap? Background) CopyPosterImages()
+    {
+        if (_preview is not { } session)
+            throw new InvalidOperationException("There is no active listening report preview.");
+
+        var cover = session.Cover is { } source ? SoftwareBitmap.Copy(source) : null;
+        try
+        {
+            return (cover, session.Background is { } background ? SoftwareBitmap.Copy(background) : null);
+        }
+        catch
+        {
+            cover?.Dispose();
+            throw;
+        }
+    }
+
     private void CancelPreviewWork()
     {
         _preview?.Lifetime.Cancel();
@@ -448,11 +469,12 @@ public sealed partial class ListeningReportViewModel : ObservableObject
     private async Task RenderBackgroundAsync(PreviewSession session, int revision, BackgroundShaderMode mode, CancellationToken token)
     {
         SoftwareBitmapSource? source = null;
+        SoftwareBitmap? bitmap = null;
         try
         {
             if (session.Cover is { } cover)
             {
-                using var bitmap = await Task.Run(() => BackgroundShaderRenderer.RenderCoverStillAsync(cover, mode, session.Palette, token), token);
+                bitmap = await Task.Run(() => BackgroundShaderRenderer.RenderCoverStillAsync(cover, mode, session.Palette, token), token);
                 token.ThrowIfCancellationRequested();
                 source = new();
                 await source.SetBitmapAsync(bitmap).AsTask();
@@ -463,16 +485,22 @@ public sealed partial class ListeningReportViewModel : ObservableObject
         {
             (source as IDisposable)?.Dispose();
             source = null;
+            bitmap?.Dispose();
+            bitmap = null;
             _logger.LogDebug(ex, "听歌报告着色器未就绪，使用默认底色");
         }
         finally
         {
             if (!_stopping && ReferenceEquals(_preview, session) && revision == _shaderRevision && !token.IsCancellationRequested)
             {
+                session.Background?.Dispose();
+                session.Background = bitmap;
+                bitmap = null;
                 PreviewBackground = source;
                 source = null;
             }
             (source as IDisposable)?.Dispose();
+            bitmap?.Dispose();
         }
     }
 

@@ -3,8 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Windows.Storage.Pickers;
 using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Utils;
@@ -60,31 +58,6 @@ internal static class ListeningReportImages
         };
         picker.FileTypeChoices.Add("PNG", [".png"]);
         return (await picker.PickSaveFileAsync().AsTask(token))?.Path;
-    }
-
-    internal static async Task<SoftwareBitmap> CaptureAsync(FrameworkElement poster, CancellationToken token)
-    {
-        token.ThrowIfCancellationRequested();
-        if (poster is not { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 })
-            throw new InvalidOperationException("Report poster must be visible and measured.");
-        // RenderTargetBitmap 的缩放参数以 DIP 为单位。限制物理像素，避免高 DPI 放大 GPU 纹理及回读缓冲。
-        double scale = poster.XamlRoot.RasterizationScale;
-        int widthDip = (int)Math.Floor(Width / scale);
-        int heightDip = (int)Math.Floor(Height / scale);
-        var target = new RenderTargetBitmap();
-        await target.RenderAsync(poster, widthDip, heightDip).AsTask();
-        token.ThrowIfCancellationRequested();
-        int width = target.PixelWidth;
-        int height = target.PixelHeight;
-        if (width is <= 0 or > Width || height is <= 0 or > Height)
-            throw new IOException($"Report poster capture returned {width} × {height} pixels.");
-        var pixels = await target.GetPixelsAsync().AsTask();
-        token.ThrowIfCancellationRequested();
-        if (pixels.Length != width * height * 4)
-            throw new IOException($"Report poster capture returned an invalid pixel buffer for {width} × {height} pixels.");
-
-        // 位图在原生侧复制一次供 WIC 编码，不物化 BGRA8 大数组。
-        return SoftwareBitmap.CreateCopyFromBuffer(pixels, BitmapPixelFormat.Bgra8, width, height, BitmapAlphaMode.Premultiplied);
     }
 
     internal static async Task SaveAsync(string path, SoftwareBitmap bitmap, CancellationToken token)

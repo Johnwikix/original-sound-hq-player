@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -42,33 +44,14 @@ public sealed partial class ListeningReportPreviewDialog : ContentDialog
     internal async Task<SoftwareBitmap> CaptureAsync(CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        double dpi = XamlRoot.RasterizationScale;
-        var surface = new Viewbox
-        {
-            Width = ListeningReportImages.Width / dpi,
-            Height = ListeningReportImages.Height / dpi,
-            Child = new ContentPresenter
-            {
-                Content = ViewModel,
-                ContentTemplate = PosterPreview.ContentTemplate
-            }
-        };
-        // 同一模板按导出分辨率单独布局，避免窄窗口先缩小文字和封面再把位图放大。
-        Canvas.SetLeft(surface, -surface.Width - XamlRoot.Size.Width);
-        var loaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        RoutedEventHandler onLoaded = (_, _) => loaded.TrySetResult();
-        surface.Loaded += onLoaded;
-        try
-        {
-            ExportHost.Children.Add(surface);
-            await loaded.Task.WaitAsync(token);
-            return await ListeningReportImages.CaptureAsync(surface, token);
-        }
-        finally
-        {
-            surface.Loaded -= onLoaded;
-            ExportHost.Children.Remove(surface);
-            surface.Child = null;
-        }
+        if (VisualTreeHelper.GetChildrenCount(PosterPreview) == 0 ||
+            VisualTreeHelper.GetChild(PosterPreview, 0) is not Grid { ActualWidth: > 0, ActualHeight: > 0 } poster)
+            throw new InvalidOperationException("Report poster must be measured before export.");
+
+        var scene = ListeningReportPoster.Read(poster);
+        var images = ViewModel.CopyPosterImages();
+        using var cover = images.Cover;
+        using var background = images.Background;
+        return await Task.Run(() => scene.RenderAsync(cover, background, token), token);
     }
 }

@@ -118,6 +118,5 @@
         <TextBlock Grid.Row="2" Margin="0,8,0,0" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
                    Text="{x:Bind ViewModel.SaveStatus, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.SaveStatus, Mode=OneWay}"
                    Visibility="{x:Bind ViewModel.SaveStatusVisibility, Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
-        <Canvas x:Name="ExportHost" Grid.RowSpan="3" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" />
     </Grid>
 </ContentDialog>
