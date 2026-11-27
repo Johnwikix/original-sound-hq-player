@@ -23,6 +23,7 @@ public sealed class WebDavPlaybackBridge : IAsyncDisposable
     private Task _accept = Task.CompletedTask;
     private bool _disposed;
     public string Location { get; private set; } = "";
+    public bool CanSeek => _session.CanSeek;
     public string? Error { get; private set; }
     public WebDavReadFailure? SourceFailure => _session.Failure;
     public WebDavPlaybackBridge(RemoteReadSession session) => _session = session;
@@ -83,25 +84,40 @@ public sealed class WebDavPlaybackBridge : IAsyncDisposable
                 if (first.Length != 3 || first[1] != _path || first[0] is not ("GET" or "HEAD"))
                 { await HeaderAsync(stream, 404, 0, null); return; }
                 long total = _session.Entry.Length, start = 0, end = total - 1;
+                bool seekable = _session.CanSeek;
+                bool rangeSeen = false;
                 bool partial = false;
                 foreach (string line in lines)
                 {
                     if (!line.StartsWith("Range:", StringComparison.OrdinalIgnoreCase)) continue;
-                    if (partial || !RangeHeaderValue.TryParse(line[6..].Trim(), out var range) || range.Unit != "bytes" || range.Ranges.Count != 1 || total <= 0)
-                    { await HeaderAsync(stream, 416, 0, $"bytes */{total}"); return; }
+                    if (rangeSeen || !RangeHeaderValue.TryParse(line[6..].Trim(), out var range) || range.Unit != "bytes" || range.Ranges.Count != 1)
+                    { await UnsatisfiedRangeAsync(stream, total); return; }
+                    rangeSeen = true;
                     foreach (var item in range.Ranges)
                     {
+                        if (!seekable)
+                        {
+                            // FFmpeg 可用 Range: bytes=0- 做初次打开；顺序流从头返回 200。
+                            if (item.From == 0) break;
+                            await UnsatisfiedRangeAsync(stream, total);
+                            return;
+                        }
                         start = item.From ?? Math.Max(0, total - (item.To ?? 0));
                         end = item.From is null ? total - 1 : Math.Min(total - 1, item.To ?? total - 1);
+                        partial = true;
                     }
-                    partial = true;
-                    if (start > end || start < 0 || start >= total)
-                    { await HeaderAsync(stream, 416, 0, $"bytes */{total}"); return; }
+                    if (partial && (start > end || start < 0 || start >= total))
+                    { await UnsatisfiedRangeAsync(stream, total); return; }
                 }
-                if (first[0] == "HEAD") { await HeaderAsync(stream, partial ? 206 : 200, total < 0 ? null : end - start + 1, partial ? $"bytes {start}-{end}/{total}" : null); return; }
-                if (total < 0)
+                if (first[0] == "HEAD")
                 {
-                    await HeaderAsync(stream, 200, null, null);
+                    await HeaderAsync(stream, partial ? 206 : 200, total < 0 ? null : end - start + 1,
+                        partial ? $"bytes {start}-{end}/{total}" : null, seekable);
+                    return;
+                }
+                if (!seekable)
+                {
+                    await HeaderAsync(stream, 200, total < 0 ? null : total, null);
                     await _session.CopySequentialAsync(stream, _stop.Token).ConfigureAwait(false);
                     return;
                 }
@@ -113,7 +129,7 @@ public sealed class WebDavPlaybackBridge : IAsyncDisposable
                     await _session.CopySequentialAsync(stream, _stop.Token).ConfigureAwait(false);
                     return;
                 }
-                await HeaderAsync(stream, partial ? 206 : 200, end - start + 1, partial ? $"bytes {start}-{end}/{total}" : null);
+                await HeaderAsync(stream, partial ? 206 : 200, end - start + 1, partial ? $"bytes {start}-{end}/{total}" : null, true);
                 long position = start;
                 while (read > 0)
                 {
@@ -130,7 +146,10 @@ public sealed class WebDavPlaybackBridge : IAsyncDisposable
             finally { ArrayPool<byte>.Shared.Return(buffer); }
         }
     }
-    private async Task HeaderAsync(Stream stream, int status, long? length, string? range, bool seekable = true)
+    private Task UnsatisfiedRangeAsync(Stream stream, long total)
+        => HeaderAsync(stream, 416, 0, total >= 0 ? $"bytes */{total}" : null);
+
+    private async Task HeaderAsync(Stream stream, int status, long? length, string? range, bool seekable = false)
     {
         string header = $"HTTP/1.1 {status} {(status == 200 ? "OK" : status == 206 ? "Partial Content" : status == 416 ? "Range Not Satisfiable" : "Not Found")}\r\nConnection: close\r\nContent-Type: application/octet-stream\r\n";
         if (length is not null) header += $"Content-Length: {length}\r\n";

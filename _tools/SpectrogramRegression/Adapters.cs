@@ -9,6 +9,7 @@ namespace WinUIMusicPlayer.Services
     }
     public static class WebDavLibraryService
     {
+        public static string GetResourceIdentity(RemoteTrack track) => $"webdav://{track.SourceId}{track.Href}";
         public static WebDav.WebDavEntry ToEntry(RemoteTrack track) => new(track.Href, "", false, track.Length, track.ETag, null);
     }
 }

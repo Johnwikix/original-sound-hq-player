@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Services;
 
 public sealed partial class WebDavLibraryService
 {
-    private readonly Dictionary<int, (long Version, Task Work)> _probes = [];
+    private readonly Dictionary<int, (long Version, CancellationTokenSource Cancel, Task Work)> _probes = [];
     private readonly HashSet<Task> _probeWork = [];
     private readonly WebDavAvailability _availability = new();
     public bool IsSourceOffline(int sourceId) => _availability.IsOffline(sourceId);
@@ -27,7 +27,8 @@ public sealed partial class WebDavLibraryService
     {
         var (source, track) = await ResolveAsync(music).ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
-        bool cached = await Task.Run(() => cache.HasCompleteFile(music.Path, ToEntry(track)), token).ConfigureAwait(false);
+        bool cached = source.Kind == RemoteSourceKind.WebDav &&
+            await Task.Run(() => cache.HasCompleteFile(GetResourceIdentity(track), ToEntry(track)), token).ConfigureAwait(false);
         await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
         {
             if (!token.IsCancellationRequested && !_stop.IsCancellationRequested)
@@ -47,25 +48,35 @@ public sealed partial class WebDavLibraryService
         Task work;
         lock (_gate)
         {
+            if (_stop.IsCancellationRequested || !source.Enabled || _changingSources.Contains(source.Id)) return Task.CompletedTask;
             if (!retryImmediately && _availability.ShouldDefer(source.Id)) return Task.CompletedTask;
             long version = _availability.Version(source.Id);
             if (_probes.TryGetValue(source.Id, out var previous) && previous.Version == version && !previous.Work.IsCompleted) work = previous.Work;
             else
             {
+                if (previous.Work is { IsCompleted: false }) previous.Cancel.Cancel();
                 // 共享探活属于服务生命周期；取消上一次选曲只取消该调用方的等待。
-                work = Task.Run(() => ProbeCoreAsync(source, version));
-                _probes[source.Id] = (version, work);
+                var cancel = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
+                work = Task.Run(() => ProbeCoreAsync(source, version, cancel.Token));
+                _probes[source.Id] = (version, cancel, work);
                 _probeWork.Add(work);
-                _ = ObserveProbeAsync(work);
+                _ = ObserveProbeAsync(work, cancel);
             }
         }
         return work.WaitAsync(cancellationToken);
     }
 
-    private async Task ObserveProbeAsync(Task work)
+    private async Task ObserveProbeAsync(Task work, CancellationTokenSource cancel)
     {
         try { await work.ConfigureAwait(false); }
-        finally { lock (_gate) _probeWork.Remove(work); }
+        finally
+        {
+            lock (_gate)
+            {
+                _probeWork.Remove(work);
+                cancel.Dispose();
+            }
+        }
     }
 
     public async Task<bool> EnsureAvailableAsync(WebDavSource source, CancellationToken cancellationToken = default, bool retryImmediately = false)
@@ -76,18 +87,22 @@ public sealed partial class WebDavLibraryService
         return !IsSourceOffline(source.Id);
     }
 
-    private async Task ProbeCoreAsync(WebDavSource source, long version)
+    private async Task ProbeCoreAsync(WebDavSource source, long version, CancellationToken token)
     {
         try
         {
-            await transport.ProbeAsync(Connect(source), _stop.Token).ConfigureAwait(false);
+            if (!await IsCurrentSourceAsync(source).ConfigureAwait(false)) return;
+            token.ThrowIfCancellationRequested();
+            if (source.Kind == RemoteSourceKind.WebDav)
+                await transport.ProbeAsync(Connect(source), token).ConfigureAwait(false);
+            else await ProbeCatalogAsync(source, token).ConfigureAwait(false);
             if (_availability.CompleteProbe(source.Id, version, false)) PublishAvailability(source.Id);
         }
-        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception ex)
         {
             string error = ex is WebDavException dav ? dav.Code : "ConnectionFailed";
-            logger.LogWarning("WebDAV availability probe failed for source {SourceId}: {Error}", source.Id, error);
+            logger.LogWarning("Music source {SourceId} availability check failed: {Error}", source.Id, error);
             if (_availability.CompleteProbe(source.Id, version, true)) PublishAvailability(source.Id);
         }
     }
@@ -100,7 +115,7 @@ public sealed partial class WebDavLibraryService
             {
                 try
                 {
-                    var sources = await database.GetWebDavSourcesAsync().ConfigureAwait(false);
+                    var sources = await database.GetRemoteSourcesAsync().ConfigureAwait(false);
                     var probes = new List<Task>(sources.Count);
                     foreach (var source in sources)
                         if (source.Enabled) probes.Add(ProbeAsync(source, token, retryImmediately: false));

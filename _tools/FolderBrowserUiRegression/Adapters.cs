@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.Utils
 }
 namespace WinUIMusicPlayer.Model
 {
-    public sealed class Music { public bool IsMissing { get; set; } public int SourceId { get; set; } public string FolderPath { get; set; } = ""; public string LastLevelFolderPath { get; set; } = ""; public string Title { get; set; } = ""; }
+    public sealed class Music { public bool IsMissing { get; set; } public int SourceId { get; set; } public string FolderPath { get; set; } = ""; public string LastLevelFolderPath { get; set; } = ""; public string Title { get; set; } = ""; public string Album { get; set; } = ""; }
     public sealed class Folder
     {
         public int Id { get; set; }

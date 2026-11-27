@@ -26,6 +26,13 @@ public sealed class LibraryNavigationService(Func<MainPage> getShell, ILogger<Li
 
     public void ShowFolders() => getShell().NavigateToFoldersPage();
 
+    public void ShowSongs()
+    {
+        var shell = getShell();
+        shell.NavigateToMusicBrowsePage();
+        shell.CurrentLibraryPage?.SelectBarItem("song");
+    }
+
     public void Back() => getShell().CurrentLibraryPage?.BackButton();
 
     public void SelectAlbum(string album)

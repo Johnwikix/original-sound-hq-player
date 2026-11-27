@@ -66,7 +66,8 @@ internal sealed partial class TestApp : Application
             source.Roots = "/dav/sub/";
             await service.SaveSourceAsync(source, "isolated-test-password");
             Check(service.RefreshCount == 1 && notifications == 2, "edited source refreshes visibility and publishes on UI");
-            var stoppingDatabase = new MusicDatabaseService { CommitGate = new(TaskCreationOptions.RunContinuationsAsynchronously) };
+            var stoppingDatabase = new MusicDatabaseService
+            { CommitGate = new(TaskCreationOptions.RunContinuationsAsynchronously), Stored = MusicDatabaseService.Snapshot(source) };
             var stoppingService = new WebDavLibraryService(stoppingDatabase);
             int lateEvents = 0;
             stoppingService.SourcesChanged += () => lateEvents++;
@@ -80,13 +81,16 @@ internal sealed partial class TestApp : Application
             Check(stoppingDatabase.WriteCount == 1 && lateEvents == 0, "shutdown completes persistence without late UI events");
             try { await stoppingService.SaveSourceAsync(source, "unused"); throw new Exception("save accepted after stop"); }
             catch (OperationCanceledException) { }
-            var failingService = new WebDavLibraryService(new MusicDatabaseService { FailSave = true });
+            var failingService = new WebDavLibraryService(new MusicDatabaseService { FailSave = true, Stored = MusicDatabaseService.Snapshot(source) });
             int failureEvents = 0;
             failingService.SourcesChanged += () => failureEvents++;
-            try { await failingService.SaveSourceAsync(source, "isolated-test-password"); throw new Exception("save failure swallowed"); }
+            try { await failingService.SaveSourceAsync(source, "replacement-test-password"); throw new Exception("save failure swallowed"); }
             catch (IOException) { }
             await failingService.StopSavesForTestAsync();
             Check(failureEvents == 0, "failed save must not publish a successful source change");
+            var savedCredential = new PasswordVault().Retrieve("OriginalSoundPlayer.WebDav", source.CredentialKey);
+            savedCredential.RetrievePassword();
+            Check(savedCredential.Password == "isolated-test-password", "failed source edit lost the previous credential");
             File.AppendAllText(ResultPath, "PASS: responsive save, real isolated PasswordVault write, UI notification, no new-source library reload, edited-source visibility refresh, shutdown drains persistence and suppresses late events, save failure reaches caller and does not prevent draining.\n");
         }
         catch (Exception ex)

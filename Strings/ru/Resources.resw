@@ -2196,7 +2196,7 @@
     <value>Неверные учётные данные или права. Измените источник.</value>
   </data>
   <data name="WebDavAddressError" xml:space="preserve">
-    <value>Введите действительный HTTP(S)-адрес WebDAV. Перенаправления должны быть разрешены.</value>
+    <value>Введите действительный HTTP(S)-адрес сервера. Перенаправления должны оставаться в допустимых пределах.</value>
   </data>
   <data name="WebDavNameError" xml:space="preserve">
     <value>Введите уникальное имя источника.</value>
@@ -2216,13 +2216,13 @@
   <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
     <value>Отмена</value>
   </data>
-  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+  <data name="WebDavConnectionHelp" xml:space="preserve">
     <value>Поддерживаются NAS и OpenList/AList. Только чтение; HTTP не зашифрован. Для анонимного доступа оставьте учётную запись пустой.</value>
   </data>
   <data name="WebDavName.Header" xml:space="preserve">
     <value>Имя источника</value>
   </data>
-  <data name="WebDavAddress.Header" xml:space="preserve">
+  <data name="WebDavAddress" xml:space="preserve">
     <value>Адрес WebDAV</value>
   </data>
   <data name="WebDavUserName.Header" xml:space="preserve">
@@ -2231,13 +2231,13 @@
   <data name="WebDavPassword.Header" xml:space="preserve">
     <value>Пароль (оставьте пустым при редактировании, чтобы сохранить)</value>
   </data>
-  <data name="WebDavConnectButton.Content" xml:space="preserve">
+  <data name="WebDavConnectButton" xml:space="preserve">
     <value>Подключиться и выбрать папки</value>
   </data>
   <data name="WebDavReadMetadata.Content" xml:space="preserve">
     <value>Читать сведения о треках в фоне</value>
   </data>
-  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+  <data name="WebDavScanOnStartup" xml:space="preserve">
     <value>Обновлять каталоги при запуске</value>
   </data>
   <data name="WebDavSourceEnabled.Content" xml:space="preserve">
@@ -2275,7 +2275,7 @@
   <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Изменить</value></data>
   <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Удалить</value></data>
   <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
-    <value>Управляйте локальными папками и сетевой музыкой в одной медиатеке.</value>
+    <value>Добавьте локальные папки или подключите WebDAV, Jellyfin либо Navidrome.</value>
   </data>
   <data name="MusicSourcesAdd" xml:space="preserve">
     <value>Добавить источник</value>
@@ -2287,7 +2287,7 @@
     <value>Добавьте локальную папку или перетащите её сюда.</value>
   </data>
   <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
-    <value>Подключите папки с музыкой на NAS, OpenList или другом сервере WebDAV.</value>
+    <value>Добавьте источник WebDAV, Jellyfin или Navidrome.</value>
   </data>
   <data name="WebDavCacheExpander.Header" xml:space="preserve">
     <value>Кэш воспроизведения WebDAV</value>
@@ -2364,7 +2364,7 @@ SHA-256: {5}
     <value>Забыть подтверждённый сертификат</value>
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
-    <value>WebDAV · Аудио кэшировано</value>
+    <value>Аудио в кэше</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Скорость воспроизведения</value>
@@ -2933,5 +2933,32 @@ SHA-256: {5}
   </data>
   <data name="DspQuickPresetCustom" xml:space="preserve">
     <value>Пользовательский</value>
+  </data>
+  <data name="MusicSourcesRemote" xml:space="preserve">
+    <value>Удалённые источники</value>
+  </data>
+  <data name="MusicSourcesServerHelp" xml:space="preserve">
+    <value>Введите адрес сервера и данные учётной записи. Приложение импортирует музыку, доступную этой учётной записи.</value>
+  </data>
+  <data name="MusicSourcesServerAddress" xml:space="preserve">
+    <value>Адрес сервера</value>
+  </data>
+  <data name="MusicSourcesTestConnection" xml:space="preserve">
+    <value>Проверить подключение</value>
+  </data>
+  <data name="MusicSourcesSyncOnStartup" xml:space="preserve">
+    <value>Синхронизировать медиатеку после запуска</value>
+  </data>
+  <data name="MusicSourcesTestSucceeded" xml:space="preserve">
+    <value>Подключение проверено. Можно сохранить источник и просканировать медиатеку.</value>
+  </data>
+  <data name="MusicSourcesShowSongs" xml:space="preserve">
+    <value>Показать композиции</value>
+  </data>
+  <data name="MusicSourcesScanning" xml:space="preserve">
+    <value>Синхронизация медиатеки</value>
+  </data>
+  <data name="MusicSourcesRemoteAudio" xml:space="preserve">
+    <value>Удалённое аудио</value>
   </data>
 </root>

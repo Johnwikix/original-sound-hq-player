@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation.Peers;
+using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -68,8 +70,10 @@ public sealed partial class TestApp : Application
             var browser = new WebDavBrowserDialog { XamlRoot = host.XamlRoot };
             await CheckDialogAsync(browser, browser.TestTree, "browser");
             await CheckConnectionAsync(host.XamlRoot);
+            await CheckCatalogConnectionAsync(host.XamlRoot, RemoteSourceKind.Jellyfin);
+            await CheckCatalogConnectionAsync(host.XamlRoot, RemoteSourceKind.Navidrome);
             await CheckLibraryAndSourcesAsync(host);
-            File.WriteAllText(ResultPath, "PASS: real checkbox cascade and partial selection, saved roots, HTTP lazy loading; production SQLite scope filtering and identity retention; real ComboBox removal fallback and filters.");
+            File.WriteAllText(ResultPath, "PASS: real WebDAV tree and catalog connection dialogs; production SQLite scope filtering and identity retention; real ComboBox removal fallback and filters.");
         }
         catch (Exception ex)
         {
@@ -81,6 +85,68 @@ public sealed partial class TestApp : Application
             _window?.Close();
             Exit();
         }
+    }
+
+    private static async Task CheckCatalogConnectionAsync(XamlRoot root, RemoteSourceKind kind)
+    {
+        const string previousAddress = "http://127.0.0.1:1234/";
+        const string address = "http://127.0.0.1:1235/";
+        using var transport = new WebDavTransport();
+        var library = new WebDavLibraryService();
+        using var source = new WebDavConnectionViewModel(transport, library, kind: kind)
+        {
+            Name = "Catalog fixture", Address = previousAddress, UserName = "fixture-user"
+        };
+        var dialog = new WebDavConnectionDialog(source) { XamlRoot = root };
+        var shown = dialog.ShowAsync();
+        try
+        {
+            await UntilAsync(() => Equals(dialog.Title, kind.ToString()), "catalog title binds to the selected source kind");
+            Check(dialog.TestTree.Parent is FrameworkElement { Visibility: Visibility.Collapsed }, "catalog form hides the folder tree");
+            var content = (DependencyObject)dialog.Content;
+            var addressBox = FindControl<TextBox>(content, box => box.Text == previousAddress)!;
+            var accountBox = FindControl<TextBox>(content, box => box.Text == source.UserName)!;
+            Check(!addressBox.IsReadOnly && !accountBox.IsReadOnly, "new catalog identity is editable");
+            addressBox.Text = address;
+            var passwordBox = FindControl<PasswordBox>(content, _ => true)!;
+            passwordBox.Password = "fixture-password";
+            Check(source.Address == address && source.Password == passwordBox.Password && !await source.SaveAsync(),
+                "catalog address and password are two-way bound and saving requires a connection test");
+            var testButton = FindControl<Button>(content, button => ReferenceEquals(button.Command, source.ConnectCommand))!;
+            var invoke = (IInvokeProvider)new ButtonAutomationPeer(testButton).GetPattern(PatternInterface.Invoke);
+            invoke.Invoke();
+            await UntilAsync(() => source.Status == "MusicSourcesTestSucceeded", "catalog test command completes");
+            Check(library.Tested is { } tested && tested.Kind == kind && tested.BaseUri == address &&
+                await source.SaveAsync() && library.Saved is { } saved && saved.Kind == kind && saved.Roots.Length == 0,
+                "catalog test and save carry the provider and no DAV scan roots");
+        }
+        finally { dialog.Hide(); await shown; }
+
+        var existing = library.Saved!;
+        existing.Id = 1;
+        using var edit = new WebDavConnectionViewModel(transport, library, existing);
+        var editDialog = new WebDavConnectionDialog(edit) { XamlRoot = root };
+        shown = editDialog.ShowAsync();
+        try
+        {
+            await UntilAsync(() => Equals(editDialog.Title, kind.ToString()), "edit retains the stored source kind");
+            var content = (DependencyObject)editDialog.Content;
+            Check(FindControl<TextBox>(content, box => box.Text == address)?.IsReadOnly == true &&
+                FindControl<TextBox>(content, box => box.Text == existing.UserName)?.IsReadOnly == true,
+                "saved catalog address and account are read-only");
+            edit.Enabled = false;
+            Check(await edit.SaveAsync() && edit.SavedSource is { Id: 1, Enabled: false }, "disabling an existing catalog commits without changing or retesting its credentials");
+        }
+        finally { editDialog.Hide(); await shown; }
+    }
+
+    private static T? FindControl<T>(DependencyObject node, Func<T, bool> matches) where T : DependencyObject
+    {
+        if (node is T control && matches(control)) return control;
+        int count = VisualTreeHelper.GetChildrenCount(node);
+        for (int i = 0; i < count; i++)
+            if (FindControl(VisualTreeHelper.GetChild(node, i), matches) is { } found) return found;
+        return null;
     }
 
     private static TreeViewNode Node(string name, bool folder)

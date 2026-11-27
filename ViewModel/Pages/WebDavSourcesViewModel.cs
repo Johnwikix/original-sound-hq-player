@@ -51,7 +51,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
         _database = database; _library = library; _playback = playback; _cache = cache; _app = app; _queries = queries;
         Choices.Add(new(-1, ToolUtils.GetString("WebDavAllSources")));
         Choices.Add(new(0, ToolUtils.GetString("WebDavLocalSources")));
-        Choices.Add(new(-2, "WebDAV"));
+        Choices.Add(new(-2, ToolUtils.GetString("MusicSourcesRemote")));
         SelectedSource = Choices[0];
         library.StatusChanged += OnStatus;
         library.SourceAvailabilityChanged += OnSourceAvailabilityChanged;
@@ -64,7 +64,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
         try
         {
             if (_stopped) return;
-            var sources = await _database.GetWebDavSourcesAsync();
+            var sources = await _database.GetRemoteSourcesAsync();
             if (_stopped) return;
             var trackCounts = await _database.GetWebDavSourceTrackCountsAsync();
             if (_stopped) return;
@@ -166,13 +166,24 @@ public partial class WebDavSourcesViewModel : ObservableObject
     }
     internal Task ScanAsync(WebDavSource source) => _library.ScanAsync(source);
     internal Task PauseAsync(WebDavSource source) => _library.CancelScanAsync(source.Id);
+    private Task StopCurrentSourceAsync(int sourceId) => _app.CurrentPlayingMusic?.SourceId == sourceId
+        ? _playback.StopSourceAsync(sourceId) : Task.CompletedTask;
+
+    internal async Task StopDisabledSourceAsync(int sourceId)
+    {
+        if (sourceId <= 0 || _stopped) return;
+        try { await StopCurrentSourceAsync(sourceId); }
+        catch { Status = ToolUtils.GetString("WebDavErrorConnectionFailed"); }
+    }
+
     internal async Task RemoveAsync(WebDavSource source)
     {
         try
         {
             if (!await DialogHelper.ShowConfirmAsync(App.MainWindow.Content.XamlRoot, "WebDavRemoveConfirm")) return;
-            if (_app.CurrentPlayingMusic?.SourceId == source.Id) await _playback.StopAsync();
+            await StopCurrentSourceAsync(source.Id);
             await _library.RemoveSourceAsync(source);
+            await StopCurrentSourceAsync(source.Id);
         }
         catch { Status = ToolUtils.GetString("WebDavErrorConnectionFailed"); }
     }
@@ -217,7 +228,8 @@ public partial class WebDavSourceItem : ObservableObject
 {
     public WebDavSource Source { get; }
     public string Name => Source.Name;
-    public string Address => Source.BaseUri;
+    public string Address { get; }
+    public string BrowseLabel { get; }
     public string Status { get; private set => SetProperty(ref field, value); } = "";
     public bool IsOffline { get; private set => SetProperty(ref field, value); }
     public int SongCount { get; internal set => SetProperty(ref field, value); }
@@ -229,6 +241,8 @@ public partial class WebDavSourceItem : ObservableObject
     public WebDavSourceItem(WebDavSource source, WebDavSourcesViewModel owner)
     {
         Source = source;
+        Address = $"{WebDavText.SourceName(source.Kind)} · {source.BaseUri}";
+        BrowseLabel = ToolUtils.GetString(source.Kind == RemoteSourceKind.WebDav ? "WebDavBrowseAction" : "MusicSourcesShowSongs");
         ScanCommand = new AsyncRelayCommand(() => owner.ScanAsync(source), () => !_busy && source.Enabled);
         PauseCommand = new AsyncRelayCommand(() => owner.PauseAsync(source), () => _busy);
         RemoveCommand = new AsyncRelayCommand(() => owner.RemoveAsync(source));
@@ -257,8 +271,14 @@ public partial class WebDavSourceItem : ObservableObject
         }
 
         var status = _scanStatus;
-        Status = status is null ? ToolUtils.GetString("WebDavReady") : string.Format(ToolUtils.GetString("WebDavScanSummary"),
-            ToolUtils.GetString("WebDav" + status.Phase), status.Found, status.Tagged);
+        if (status is null)
+            Status = ToolUtils.GetString("WebDavReady");
+        else
+        {
+            string phase = Source.Kind != RemoteSourceKind.WebDav && status.Phase == "Scanning"
+                ? ToolUtils.GetString("MusicSourcesScanning") : ToolUtils.GetString("WebDav" + status.Phase);
+            Status = string.Format(ToolUtils.GetString("WebDavScanSummary"), phase, status.Found, status.Tagged);
+        }
         if (status?.Error is not null) Status += " · " + WebDavText.Error(status.Error);
     }
 }

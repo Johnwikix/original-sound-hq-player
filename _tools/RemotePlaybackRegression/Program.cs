@@ -35,7 +35,7 @@ static async Task RunAsync()
         "reachable server cannot make an uncached missing track playable or trigger a source probe");
     library.MissingAtOrigin = 0;
     var statistics = new PlaybackStatsService();
-    var remote = new RemotePlaybackService(library, transport, cache, state, statistics, NullLogger<RemotePlaybackService>.Instance);
+    var remote = new RemotePlaybackService(library, cache, state, statistics, NullLogger<RemotePlaybackService>.Instance);
     var player = new BassPlayerCommandService();
     var lifecycle = new AppLifecycle();
     using var coordinator = new PlaybackCoordinator(state, player, statistics, new(lifecycle),
@@ -161,6 +161,39 @@ static async Task RunAsync()
     Check(peer.LastPreparePositionMs == 12000, "failed decoder reply cannot erase the last rendered position");
     await remote.StopAsync();
     Check(remote.GetProgress() is null, "explicit stop releases the held remote progress snapshot");
+    library.SourceKind = RemoteSourceKind.Jellyfin;
+    library.Extension = "flac";
+    library.Entry = library.Entry with { Href = "/dav/opaque-track-id", Length = -1, ETag = "" };
+    await coordinator.PlayAsync(network);
+    await WaitAsync(() => state.IsPlaying && state.State.Playback.CanSeekRemote);
+    Check(peer.LastSource is { CanSeek: true, FileExtension: ".flac" } && peer.LastSource.ContentLength == recoveredOrigin.Bytes.Length,
+        "catalog stream uses probed size and metadata extension across IPC");
+    var segment = await peer.RequestAsync(1024, 2047);
+    Check(segment.Status == 206 && segment.Bytes.AsSpan().SequenceEqual(recoveredOrigin.Bytes.AsSpan(1024, 1024)),
+        "catalog stream serves the requested range through the real loopback bridge");
+
+    library.SourceKind = RemoteSourceKind.Navidrome;
+    library.Entry = library.Entry with { Href = "/dav/no-range" };
+    await coordinator.PlayAsync(network2);
+    await WaitAsync(() => state.IsPlaying);
+    Check(peer.LastSource is { CanSeek: false } && !state.State.Playback.CanSeekRemote,
+        "sequential catalog input disables seeking even when length is known");
+    var sequential = await peer.RequestAsync(0, 0);
+    Check(sequential.Status == 200 && sequential.Bytes.AsSpan().SequenceEqual(recoveredOrigin.Bytes),
+        "initial FFmpeg range on a sequential source returns a full response");
+    Check((await peer.RequestAsync(1, 2)).Status == 416, "sequential bridge rejects a nonzero range");
+
+    int preparesBeforeStop = peer.Prepares;
+    var blockedProbe = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    library.BlockAudioOpening = blockedProbe;
+    Task opening = coordinator.PlayAsync(network2);
+    await blockedProbe.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    await remote.StopSourceAsync(11);
+    Check(!opening.IsCompleted && remote.IsActive, "disabling another source preserves the in-flight selection");
+    await remote.StopSourceAsync(network2.SourceId).WaitAsync(TimeSpan.FromSeconds(5));
+    await opening;
+    Check(peer.Prepares == preparesBeforeStop && remote.GetProgress() is null,
+        "stopping during origin range probing cancels preparation before opening a decoder");
     cache.Clear();
     Console.WriteLine("PASS: remote recovery integration completed");
 }

@@ -8,7 +8,7 @@ void Check(bool condition, string name)
     if (!condition) throw new Exception(name);
     checks++;
 }
-Music Song(string path, int source = 0, string display = "") => new() { FolderPath = path, SourceId = source, LastLevelFolderPath = display };
+Music Song(string path, int source = 0, string display = "", string album = "") => new() { FolderPath = path, SourceId = source, LastLevelFolderPath = display, Album = album };
 var songs = new List<Music>
 {
     Song(@"D:\Music"), Song(@"D:\Music\Artist\Album"), Song(@"d:/music/artist/album/"),
@@ -53,6 +53,13 @@ index.Rebuild(songs, folders, 2);
 Check(index.Roots.Count == 1 && index.Roots[0].SongCount == 1, "Specific source scopes both tree and counts");
 index.Rebuild(songs, folders, 0);
 Check(index.Roots.All(n => n.Location.SourceId == 0), "Local filter excludes remote roots");
+index.Rebuild([Song("remote://3/opaque%2Fid", 3, "Jellyfin / Family / Library / Album", "Library / Album"),
+    Song("remote://3/", 3, "Jellyfin / Family"), Song("webdav://4/Disc%20%2F%20One/", 4, "WebDAV / Family / /Disc / One/")], [], -2);
+var catalog = Find(3, "remote://3");
+Check(catalog.Name == "Jellyfin / Family" && catalog.DirectSongCount == 1 && catalog.SongCount == 2,
+    "Catalog source root collects album and album-less songs");
+Check(Find(3, "remote://3/opaque%2Fid").Name == "Library / Album", "Catalog folder uses the exact album title alongside its stable ID");
+Check(Find(4, "webdav://4").Name == "WebDAV / Family", "WebDAV root keeps the separator within the source title");
 index.Rebuild([], [], -1);
 Check(index.Roots.Count == 0 && index.Find(album.Location) is null, "Library removal drops old directory references");
 Check(StartupEntry.Normalize("Folders") == "Folders" && StartupEntry.Normalize("unknown") == "Home", "Startup supports independent folder navigation");

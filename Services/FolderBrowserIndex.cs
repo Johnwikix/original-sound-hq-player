@@ -48,7 +48,7 @@ public sealed class FolderBrowserIndex
             if (!LibraryQueries.IsBrowsable(music) || !LibraryQueries.MatchesSource(music, sourceFilter)) continue;
             var path = FolderLocation.Normalize(music.FolderPath, music.SourceId);
             if (path.Length == 0) continue;
-            var node = EnsureDirectory(music.SourceId, path, music.LastLevelFolderPath);
+            var node = EnsureDirectory(music.SourceId, path, music.LastLevelFolderPath, music.Album);
             node.PendingDirectSongCount++;
             for (var ancestor = node; ancestor is not null; ancestor = ancestor.Parent) ancestor.PendingSongCount++;
         }
@@ -77,8 +77,9 @@ public sealed class FolderBrowserIndex
         else Add(new(0, path, string.IsNullOrEmpty(folder.Name) ? path : folder.Name), null);
     }
 
-    private FolderBrowserNode EnsureDirectory(int sourceId, string path, string displayPath)
+    private FolderBrowserNode EnsureDirectory(int sourceId, string path, string displayPath, string album = "")
     {
+        string trackFolder = path;
         FolderBrowserNode? parent = null;
         _pending.Clear();
         while (!_nodes.TryGetValue(new(sourceId, path), out parent))
@@ -93,10 +94,18 @@ public sealed class FolderBrowserIndex
             }
             else
             {
-                int authorityEnd = path.IndexOf('/', "webdav://".Length);
+                int schemeEnd = path.IndexOf("://", StringComparison.Ordinal);
+                int authorityEnd = schemeEnd < 0 ? -1 : path.IndexOf('/', schemeEnd + 3);
                 int slash = path.LastIndexOf('/');
+                bool catalog = path.StartsWith("remote://", StringComparison.Ordinal);
                 parentPath = authorityEnd >= 0 && slash >= authorityEnd ? path[..slash] : null;
-                name = parentPath is null ? RemoteName(displayPath, sourceId) : Uri.UnescapeDataString(path[(slash + 1)..]);
+                if (parentPath is null)
+                    name = catalog ? CatalogSourceName(displayPath, album, trackFolder.Length != path.Length)
+                        : WebDavSourceName(displayPath, trackFolder, sourceId);
+                else if (catalog)
+                    name = album;
+                else
+                    name = Uri.UnescapeDataString(path[(slash + 1)..]);
             }
             _pending.Add(new(sourceId, path, name));
             if (parentPath is null) break;
@@ -106,6 +115,33 @@ public sealed class FolderBrowserIndex
         for (int i = _pending.Count - 1; i >= 0; i--) parent = Add(_pending[i], parent);
         _pending.Clear();
         return parent!;
+    }
+
+    private static string CatalogSourceName(string displayPath, string album, bool isAlbumFolder)
+    {
+        if (!isAlbumFolder) return displayPath;
+        int separator = FindSourceNameEnd(displayPath, album);
+        // 加载曲库时可能把未知专辑名称换成本地化文本，旧值本身不含分隔符。
+        if (separator < 0) separator = displayPath.LastIndexOf(" / ", StringComparison.Ordinal);
+        return separator >= 0 ? displayPath[..separator] : displayPath;
+    }
+
+    private static string WebDavSourceName(string displayPath, string path, int sourceId)
+    {
+        int hrefStart = path.IndexOf('/', "webdav://".Length);
+        string href = hrefStart < 0 ? "/" : Uri.UnescapeDataString(path[hrefStart..]);
+        int separator = FindSourceNameEnd(displayPath.AsSpan().TrimEnd('/'), href.AsSpan().TrimEnd('/'));
+        if (separator < 0) separator = displayPath.IndexOf(" / ", StringComparison.Ordinal);
+        return separator > 0 ? displayPath[..separator] : "WebDAV " + sourceId;
+    }
+
+    // 先匹配已知目录或专辑字段，名称本身可以包含显示分隔符。
+    private static int FindSourceNameEnd(ReadOnlySpan<char> displayPath, ReadOnlySpan<char> suffix)
+    {
+        const string separator = " / ";
+        int nameEnd = displayPath.Length - suffix.Length - separator.Length;
+        return nameEnd > 0 && displayPath.EndsWith(suffix, StringComparison.Ordinal) &&
+            displayPath.Slice(nameEnd, separator.Length).SequenceEqual(separator) ? nameEnd : -1;
     }
 
     private FolderBrowserNode Add(FolderLocation location, FolderBrowserNode? parent)
@@ -128,11 +164,6 @@ public sealed class FolderBrowserIndex
         return node;
     }
 
-    private static string RemoteName(string displayPath, int sourceId)
-    {
-        int separator = displayPath.IndexOf(" / ", StringComparison.Ordinal);
-        return separator > 0 ? displayPath[..separator] : "WebDAV " + sourceId;
-    }
     private static int CompareNodes(FolderBrowserNode a, FolderBrowserNode b)
         => StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name);
 }

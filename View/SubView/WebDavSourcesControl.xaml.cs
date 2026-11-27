@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using WinUIMusicPlayer.Helper;
@@ -19,19 +20,27 @@ public sealed partial class WebDavSourcesControl : UserControl
         InitializeComponent();
         Loaded += async (_, _) => await ViewModel.LoadAsync();
     }
-    public System.Threading.Tasks.Task ShowAddAsync() => EditAsync(null);
+    public Task ShowAddAsync(RemoteSourceKind kind) => EditAsync(null, kind);
     private async void Edit_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.Tag is WebDavSourceItem item) await EditAsync(item.Source);
+        if ((sender as FrameworkElement)?.Tag is WebDavSourceItem item) await EditAsync(item.Source, item.Source.Kind);
     }
-    private async System.Threading.Tasks.Task EditAsync(WebDavSource? source)
+    private async Task EditAsync(WebDavSource? source, RemoteSourceKind kind)
     {
-        var form = new WebDavConnectionViewModel(App.Services.GetRequiredService<WebDavTransport>(), App.Services.GetRequiredService<WebDavLibraryService>(), source);
-        await new WebDavConnectionDialog(form).ShowThemedAsync(XamlRoot);
+        var form = new WebDavConnectionViewModel(App.Services.GetRequiredService<WebDavTransport>(), App.Services.GetRequiredService<WebDavLibraryService>(), source, kind);
+        var result = await new WebDavConnectionDialog(form).ShowThemedAsync(XamlRoot);
+        if (result == ContentDialogResult.Primary && form.SavedSource is { Enabled: false } saved)
+            await ViewModel.StopDisabledSourceAsync(saved.Id);
     }
     private async void Browse_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as Button)?.Tag is WebDavSourceItem item)
+        if ((sender as Button)?.Tag is not WebDavSourceItem item) return;
+        if (item.Source.Kind == RemoteSourceKind.WebDav)
             await new WebDavBrowserDialog(item.Source).ShowThemedAsync(XamlRoot);
+        else
+        {
+            ViewModel.ShowSongs(item.Source);
+            App.Services.GetRequiredService<LibraryNavigationService>().ShowSongs();
+        }
     }
 }

@@ -13,7 +13,7 @@ using WinUIMusicPlayer.ViewModel;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>远程播放控制与供数生命周期。会话身份隔离迟到状态，显式意图独立于实际缓冲状态。</summary>
-public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTransport transport, RemoteAudioCache cache,
+public sealed class RemotePlaybackService(WebDavLibraryService library, RemoteAudioCache cache,
     AppViewModel state, PlaybackStatsService statistics, ILogger<RemotePlaybackService> logger)
 {
     private readonly StreamingClient _client = new();
@@ -50,6 +50,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             _startPositionMs = resumeInterrupted && _needsRestart && ReferenceEquals(_music, music)
                 ? _failedPositionMs : 0;
             long totalMs = _snapshot?.Progress.TotalMs ?? (long)music.Duration.TotalMilliseconds;
+            _music = music;
             _failedPositionMs = 0;
             _active = true;
             _needsRestart = false;
@@ -66,6 +67,8 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     public async Task PlayAsync(Music music, long generation, CancellationToken token)
     {
         await _switch.WaitAsync(token);
+        WebDavReadFailure? openFailure = null;
+        CancellationToken sessionToken = default;
         try
         {
             await StopSessionCoreAsync();
@@ -74,7 +77,6 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             lock (_gate)
             {
                 if (generation != _generation) return;
-                _music = music;
                 startPositionMs = _startPositionMs;
             }
             var (source, track) = await library.ResolveAsync(music);
@@ -82,36 +84,64 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             lock (_gate) { if (generation != _generation) return; }
             // 选曲等待和正在播放的会话有不同寿命：下次探活取消，不能停掉旧歌的监控。
             // 准备阶段由 token 中断并收尾；成功后只由会话 Stop/应用退出取消。
-            lock (_gate) _sessionCancel = new CancellationTokenSource();
+            lock (_gate)
+            {
+                if (generation != _generation) return;
+                _sessionCancel = new CancellationTokenSource();
+                sessionToken = _sessionCancel.Token;
+            }
+            using var preparation = CancellationTokenSource.CreateLinkedTokenSource(token, sessionToken);
+            var prepareToken = preparation.Token;
+            string resource = WebDavLibraryService.GetResourceIdentity(track);
             // 完整缓存从租约读取，不要求网络或 PasswordVault；连接仅在缺失字节时建立。
-            var session = new RemoteReadSession(transport, () => library.Connect(source), WebDavLibraryService.ToEntry(track), cache, music.Path);
+            RemoteReadSession session;
+            try
+            {
+                session = await RemoteReadSession.CreateAsync(library.CreateAudioOpener(source, track), WebDavLibraryService.ToEntry(track),
+                    cache, resource, source.Kind != RemoteSourceKind.WebDav, prepareToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!prepareToken.IsCancellationRequested)
+            {
+                openFailure = WebDavReadFailure.From(ex);
+                throw;
+            }
             _bridge = new WebDavPlaybackBridge(session);
             if (!session.HasCompleteCache && library.IsSourceOffline(source.Id) &&
-                !await library.EnsureAvailableAsync(source, token)) throw new WebDavException("SourceUnavailable");
-            _bridge.SetPlaying(false);
+                !await library.EnsureAvailableAsync(source, prepareToken)) throw new WebDavException("SourceUnavailable");
+            prepareToken.ThrowIfCancellationRequested();
+            bool current;
+            lock (_gate)
+            {
+                current = generation == _generation;
+                if (current && !session.CanSeek && startPositionMs > 0)
+                {
+                    _startPositionMs = startPositionMs = 0;
+                    _snapshot = null;
+                }
+            }
+            if (!current) { await StopSessionCoreAsync(); return; }
             _bridge.Start();
             _sessionGeneration = generation;
             _sessionId = Guid.NewGuid();
             var reply = await _client.PrepareAsync(new PlaybackSource
             {
-                Kind = PlaybackSourceKind.Http, ResourceId = music.Path, Location = _bridge.Location,
-                FileExtension = System.IO.Path.GetExtension(track.Href),
-                ContentLength = track.Length, ETag = track.ETag,
-                CanSeek = track.Length > 0
-            }, _sessionId, startPositionMs, token);
+                Kind = PlaybackSourceKind.Http, ResourceId = resource, Location = _bridge.Location,
+                FileExtension = track.Extension.Length == 0 ? System.IO.Path.GetExtension(track.Href) : "." + track.Extension,
+                ContentLength = session.Entry.Length, ETag = session.Entry.ETag,
+                CanSeek = session.CanSeek
+            }, _sessionId, startPositionMs, prepareToken);
             if (!reply.Accepted) throw new WebDavException("PlaybackFailed");
-            token.ThrowIfCancellationRequested();
-            bool current;
+            prepareToken.ThrowIfCancellationRequested();
             lock (_gate) current = generation == _generation;
             if (!current) { await StopSessionCoreAsync(); return; }
-            await SetIntentAsync(null).WaitAsync(token);
-            token.ThrowIfCancellationRequested();
-            _monitor = MonitorAsync(music, _sessionId, generation, _sessionCancel.Token);
+            await SetIntentAsync(null).WaitAsync(prepareToken);
+            prepareToken.ThrowIfCancellationRequested();
+            _monitor = MonitorAsync(music, _sessionId, generation, sessionToken);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { await StopSessionCoreAsync(); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested || sessionToken.IsCancellationRequested) { await StopSessionCoreAsync(); }
         catch (Exception ex)
         {
-            var failure = _bridge?.SourceFailure;
+            var failure = _bridge?.SourceFailure ?? openFailure;
             await StopSessionCoreAsync();
             ReportFailure(failure?.Code ?? (ex is WebDavException dav ? dav.Code : "PlaybackFailed"), generation, music, failure?.SourceUnavailable == true);
         }
@@ -169,6 +199,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     private async Task MonitorAsync(Music music, Guid id, long generation, CancellationToken token)
     {
         bool started = false;
+        bool previousCanSeek = false;
         StreamPhase? previous = null;
         try
         {
@@ -200,12 +231,19 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                         Stopwatch.GetTimestamp(), reply.Phase == StreamPhase.Playing, reply.SeekId,
                         double.IsFinite(reply.PlaybackRate) ? Math.Clamp(reply.PlaybackRate, 0.25, 5) : 1));
                 }
+                // Opening and initial buffering can report the descriptor's hint before the decoder is ready.
+                bool canSeek = reply.CanSeek && _bridge?.CanSeek == true &&
+                    (reply.Phase is StreamPhase.Ready or StreamPhase.Playing or StreamPhase.Paused ||
+                    reply.Phase == StreamPhase.Buffering && previousCanSeek);
+                bool seekChanged = canSeek != previousCanSeek;
+                previousCanSeek = canSeek;
                 // Duration may arrive while the stream stays in Buffering; its timer is stopped then.
-                if (reply.DurationMs is > 0)
+                if (seekChanged || reply.DurationMs is > 0)
                     App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                     {
                         if (token.IsCancellationRequested || generation != _generation || !state.CanPublishState) return;
-                        if (state.ProgressSliderMax != reply.DurationMs.Value / 1000.0)
+                        if (seekChanged) state.State.Playback.CanSeekRemote = canSeek;
+                        if (reply.DurationMs is > 0 && state.ProgressSliderMax != reply.DurationMs.Value / 1000.0)
                             state.UpdateProgressTimerUI();
                     });
                 _bridge?.SetPlaying(reply.Phase == StreamPhase.Playing);
@@ -272,6 +310,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
         {
             if (generation != _generation || !state.CanPublishState) return;
             state.IsPlaying = false;
+            state.State.Playback.CanSeekRemote = false;
             state.StopProgressTimer();
             state.RemotePlaybackStatus = ToolUtils.GetString("WebDavFailed");
             state.State.Shell.InfoBarTitle = ToolUtils.GetString("Error");
@@ -285,11 +324,17 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     }
     public Task StopAsync() => StopAsync(preserveFailedProgress: false);
 
-    public Task StopAsync(bool preserveFailedProgress)
+    public Task StopAsync(bool preserveFailedProgress) => StopAsync(preserveFailedProgress, sourceId: null);
+
+    /// <summary>停止刚禁用或移除的来源，已经接手的新选曲受会话代次保护。</summary>
+    public Task StopSourceAsync(int sourceId) => StopAsync(preserveFailedProgress: false, sourceId);
+
+    private Task StopAsync(bool preserveFailedProgress, int? sourceId)
     {
         long generation;
         lock (_gate)
         {
+            if (sourceId is int disabled && (!_active || _music?.SourceId != disabled)) return Task.CompletedTask;
             if (preserveFailedProgress && _music is not null)
             {
                 _failedPositionMs = Math.Max(_failedPositionMs, _snapshot?.Progress.CurrentMs ?? 0);
@@ -310,9 +355,9 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             _sessionCancel?.Cancel();
         }
         // 先同步记录停止意图，磁盘 Flush 和会话清理留在后台；迟到的停止不能覆盖新选曲。
-        return Task.Run(() => StopCoreAsync(generation));
+        return Task.Run(() => StopCoreAsync(generation, sourceId));
     }
-    private async Task StopCoreAsync(long generation)
+    private async Task StopCoreAsync(long generation, int? sourceId)
     {
         await _switch.WaitAsync();
         try
@@ -327,6 +372,16 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                     if (!_holdFailedProgress) _snapshot = null;
                 }
             }
+            App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (generation != _generation || !state.CanPublishState) return;
+                state.State.Playback.CanSeekRemote = false;
+                if (sourceId is not int disabled || state.CurrentPlayingMusic?.SourceId != disabled) return;
+                state.IsPlaying = false;
+                state.StopProgressTimer();
+                state.RemotePlaybackStatus = "";
+                statistics.FlushSession();
+            });
         }
         finally { _switch.Release(); }
     }

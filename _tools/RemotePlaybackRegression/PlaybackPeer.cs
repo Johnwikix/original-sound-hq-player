@@ -10,12 +10,16 @@ internal sealed class PlaybackPeer : IAsyncDisposable
     private StreamPhase _phase = StreamPhase.Playing;
     public int Prepares;
     public long LastPreparePositionMs;
+    public PlaybackSource? LastSource { get; private set; }
     public Guid Current;
     public PlaybackPeer() => _server = Task.Run(ServeAsync);
     public void FailDecoder() => _phase = StreamPhase.Failed;
     public void SetPosition(long positionMs) => Interlocked.Exchange(ref _positionMs, positionMs);
     private long _positionMs;
     public async Task<byte[]> ReadAsync(long start, long end)
+        => (await RequestAsync(start, end)).Bytes;
+
+    public async Task<(int Status, byte[] Bytes)> RequestAsync(long start, long end)
     {
         string location;
         lock (_locations) location = _locations[Current];
@@ -23,7 +27,7 @@ internal sealed class PlaybackPeer : IAsyncDisposable
         using var request = new HttpRequestMessage(HttpMethod.Get, location);
         request.Headers.Range = new(start, end);
         using var response = await http.SendAsync(request);
-        return await response.Content.ReadAsByteArrayAsync();
+        return ((int)response.StatusCode, await response.Content.ReadAsByteArrayAsync());
     }
     private Task ServeAsync()
         => new PipeCommandServer(StreamingWire.PipeName, Guid.NewGuid(), Handle, instances: 4).RunAsync(_stop.Token);
@@ -36,6 +40,7 @@ internal sealed class PlaybackPeer : IAsyncDisposable
             if (command.Method == "prepare")
             {
                 _locations[command.SessionId] = command.Source!.Location;
+                LastSource = command.Source;
                 Current = command.SessionId;
                 _phase = StreamPhase.Playing;
                 Prepares++;
@@ -47,6 +52,7 @@ internal sealed class PlaybackPeer : IAsyncDisposable
             {
                 RequestId = command.RequestId, SessionId = command.SessionId, Accepted = true,
                 Phase = _phase, WantsPlay = _phase == StreamPhase.Playing, DurationMs = 60000,
+                CanSeek = LastSource?.CanSeek == true,
                 PositionMs = command.Method == "prepare" ? command.PositionMs : Interlocked.Read(ref _positionMs)
             };
             return new(MessageTypeId.Success, System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(reply, StreamingJson.Default.StreamReply));

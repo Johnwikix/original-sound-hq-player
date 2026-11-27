@@ -21,6 +21,7 @@ namespace WinUIMusicPlayer.Services
     {
         public CancellationToken StoppingToken => CancellationToken.None;
         public WebDavSource? Saved { get; private set; }
+        public WebDavSource? Tested { get; private set; }
         public event Action? SourcesChanged;
         public event Action<int, bool>? SourceAvailabilityChanged { add { } remove { } }
         public bool IsSourceOffline(int sourceId) => false;
@@ -28,8 +29,14 @@ namespace WinUIMusicPlayer.Services
         public WebDavScanStatus? GetStatus(int sourceId) => null;
         public WebDavConnection Connect(WebDavSource source) => new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, "",
             string.IsNullOrEmpty(source.TrustedCertificateSha256) ? null : new(source.TrustedCertificateOrigin, source.TrustedCertificateSha256));
+        public async Task TestSourceAsync(WebDavSource source, string? password, CancellationToken token)
+        {
+            await Task.Yield();
+            token.ThrowIfCancellationRequested();
+            Tested = source;
+        }
         public Task CancelScanAsync(int id) => Task.CompletedTask;
-        public async Task SaveSourceAsync(WebDavSource source, string password)
+        public async Task SaveSourceAsync(WebDavSource source, string? password)
         {
             await Task.Yield();
             if (database is not null) await database.SaveWebDavSourceAsync(source);
@@ -44,7 +51,7 @@ namespace WinUIMusicPlayer.Services
         public Task ScanAsync(WebDavSource source) => Task.CompletedTask;
         public Task ApplyCacheSettingsAsync(WebDavCacheSettings settings) => Task.CompletedTask;
     }
-    public sealed class RemotePlaybackService { public Task StopAsync() => Task.CompletedTask; }
+    public sealed class RemotePlaybackService { public Task StopSourceAsync(int sourceId) => Task.CompletedTask; }
     public sealed class LibraryQueries
     {
         public int Filter { get; private set; } = -1;

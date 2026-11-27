@@ -46,6 +46,16 @@
                                         <FontIcon Glyph="&#xE753;" />
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
+                                <MenuFlyoutItem Click="AddJellyfin_Click" Text="Jellyfin">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE753;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Click="AddNavidrome_Click" Text="Navidrome">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE753;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                             </MenuFlyout>
                         </DropDownButton.Flyout>
                     </DropDownButton>

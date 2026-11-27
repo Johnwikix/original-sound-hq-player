@@ -2196,7 +2196,7 @@
     <value>Kimlik bilgileri veya izinler geçersiz. Yeniden bağlanmak için kaynağı düzenleyin.</value>
   </data>
   <data name="WebDavAddressError" xml:space="preserve">
-    <value>Geçerli bir HTTP(S) WebDAV adresi girin. Yönlendirmeler izin verilen sınırlar içinde kalmalıdır.</value>
+    <value>Geçerli bir HTTP(S) sunucu adresi girin. Yönlendirmeler izin verilen sınırlar içinde kalmalıdır.</value>
   </data>
   <data name="WebDavNameError" xml:space="preserve">
     <value>Benzersiz bir kaynak adı girin.</value>
@@ -2216,13 +2216,13 @@
   <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
     <value>İptal</value>
   </data>
-  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+  <data name="WebDavConnectionHelp" xml:space="preserve">
     <value>NAS ve OpenList/AList desteklenir. Salt okunur erişim; HTTP şifrelenmez. Anonim erişim için hesabı boş bırakın.</value>
   </data>
   <data name="WebDavName.Header" xml:space="preserve">
     <value>Kaynak adı</value>
   </data>
-  <data name="WebDavAddress.Header" xml:space="preserve">
+  <data name="WebDavAddress" xml:space="preserve">
     <value>WebDAV adresi</value>
   </data>
   <data name="WebDavUserName.Header" xml:space="preserve">
@@ -2231,13 +2231,13 @@
   <data name="WebDavPassword.Header" xml:space="preserve">
     <value>Parola (düzenlerken korumak için boş bırakın)</value>
   </data>
-  <data name="WebDavConnectButton.Content" xml:space="preserve">
+  <data name="WebDavConnectButton" xml:space="preserve">
     <value>Bağlan ve klasör seç</value>
   </data>
   <data name="WebDavReadMetadata.Content" xml:space="preserve">
     <value>Parça bilgilerini arka planda oku</value>
   </data>
-  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+  <data name="WebDavScanOnStartup" xml:space="preserve">
     <value>Başlangıçtan sonra klasörleri güncelleştir</value>
   </data>
   <data name="WebDavSourceEnabled.Content" xml:space="preserve">
@@ -2275,7 +2275,7 @@
   <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Düzenle</value></data>
   <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Kaldır</value></data>
   <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
-    <value>Yerel klasörleri ve ağ müziğini tek kitaplıkta yönetin.</value>
+    <value>Yerel klasörler ekleyin veya WebDAV, Jellyfin ya da Navidrome’a bağlanın.</value>
   </data>
   <data name="MusicSourcesAdd" xml:space="preserve">
     <value>Kaynak ekle</value>
@@ -2287,7 +2287,7 @@
     <value>Yerel bir klasör ekleyin veya buraya sürükleyin.</value>
   </data>
   <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
-    <value>NAS, OpenList veya başka bir WebDAV hizmetindeki müzik klasörlerine bağlanın.</value>
+    <value>Bir WebDAV, Jellyfin veya Navidrome kaynağı ekleyin.</value>
   </data>
   <data name="WebDavCacheExpander.Header" xml:space="preserve">
     <value>WebDAV çalma önbelleği</value>
@@ -2364,7 +2364,7 @@ SHA-256: {5}
     <value>Onaylanmış sertifikayı unut</value>
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
-    <value>WebDAV · Ses önbelleğe alındı</value>
+    <value>Ses önbellekte</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Çalma hızı</value>
@@ -2933,5 +2933,32 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   </data>
   <data name="DspQuickPresetCustom" xml:space="preserve">
     <value>Özel</value>
+  </data>
+  <data name="MusicSourcesRemote" xml:space="preserve">
+    <value>Uzak kaynaklar</value>
+  </data>
+  <data name="MusicSourcesServerHelp" xml:space="preserve">
+    <value>Sunucu adresini ve hesap bilgilerini girin. Uygulama, bu hesabın erişebildiği müzikleri içe aktarır.</value>
+  </data>
+  <data name="MusicSourcesServerAddress" xml:space="preserve">
+    <value>Sunucu adresi</value>
+  </data>
+  <data name="MusicSourcesTestConnection" xml:space="preserve">
+    <value>Bağlantıyı sına</value>
+  </data>
+  <data name="MusicSourcesSyncOnStartup" xml:space="preserve">
+    <value>Başlangıçtan sonra kitaplığı eşitle</value>
+  </data>
+  <data name="MusicSourcesTestSucceeded" xml:space="preserve">
+    <value>Bağlantı doğrulandı. Kaynağı kaydedip kitaplığı tarayabilirsiniz.</value>
+  </data>
+  <data name="MusicSourcesShowSongs" xml:space="preserve">
+    <value>Şarkıları göster</value>
+  </data>
+  <data name="MusicSourcesScanning" xml:space="preserve">
+    <value>Kitaplık eşitleniyor</value>
+  </data>
+  <data name="MusicSourcesRemoteAudio" xml:space="preserve">
+    <value>Uzak ses</value>
   </data>
 </root>

@@ -6,16 +6,18 @@
     xmlns:vm="using:WinUIMusicPlayer.ViewModel"
     xmlns:utils="using:WinUIMusicPlayer.Utils"
     x:Uid="WebDavConnectionDialog"
-    Title="WebDAV"
+    Title="{x:Bind ViewModel.SourceName}"
     PrimaryButtonClick="Save_Click">
     <ScrollViewer MaxHeight="640">
         <StackPanel Width="440" Spacing="10">
-            <TextBlock x:Uid="WebDavConnectionHelp" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Bind ViewModel.HelpText}" TextWrapping="Wrap" />
             <TextBox x:Uid="WebDavName" Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBox x:Uid="WebDavAddress" Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBox x:Uid="WebDavUserName" Text="{x:Bind ViewModel.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Header="{x:Bind ViewModel.AddressHeader}" IsReadOnly="{x:Bind ViewModel.IsIdentityReadOnly}"
+                     Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox x:Uid="WebDavUserName" IsReadOnly="{x:Bind ViewModel.IsIdentityReadOnly}"
+                     Text="{x:Bind ViewModel.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <PasswordBox x:Uid="WebDavPassword" Password="{x:Bind ViewModel.Password, Mode=TwoWay}" />
-            <Button x:Uid="WebDavConnectButton" Command="{x:Bind ViewModel.ConnectCommand}" />
+            <Button Content="{x:Bind ViewModel.ConnectLabel}" Command="{x:Bind ViewModel.ConnectCommand}" />
             <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" />
             <InfoBar IsOpen="{x:Bind ViewModel.HasCertificate, Mode=OneWay}" IsClosable="False" Severity="Warning"
                      Title="{x:Bind utils:ToolUtils.GetString('WebDavCertificateTitle')}"
@@ -55,8 +57,9 @@
                     </TreeView.ItemTemplate>
                 </TreeView>
             </StackPanel>
-            <CheckBox x:Uid="WebDavReadMetadata" IsChecked="{x:Bind ViewModel.ReadMetadata, Mode=TwoWay}" />
-            <CheckBox x:Uid="WebDavScanOnStartup" IsChecked="{x:Bind ViewModel.ScanOnStartup, Mode=TwoWay}" />
+            <CheckBox x:Uid="WebDavReadMetadata" IsChecked="{x:Bind ViewModel.ReadMetadata, Mode=TwoWay}"
+                      Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.IsWebDav)}" />
+            <CheckBox Content="{x:Bind ViewModel.ScanOnStartupLabel}" IsChecked="{x:Bind ViewModel.ScanOnStartup, Mode=TwoWay}" />
             <CheckBox x:Uid="WebDavSourceEnabled" IsChecked="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
         </StackPanel>
     </ScrollViewer>

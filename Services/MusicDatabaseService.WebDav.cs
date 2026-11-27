@@ -14,19 +14,32 @@ public partial class MusicDatabaseService
     public async Task<List<WebDavSource>> GetWebDavSourcesAsync()
     {
         await WhenInitialized;
+        return await _dbConnection.QueryAsync<WebDavSource>("SELECT * FROM WebDavSource WHERE COALESCE(Kind,0)=0");
+    }
+
+    public async Task<List<WebDavSource>> GetRemoteSourcesAsync()
+    {
+        await WhenInitialized;
         return await _dbConnection.Table<WebDavSource>().ToListAsync();
     }
+
+    public async Task<WebDavSource?> GetRemoteSourceAsync(int sourceId)
+    {
+        await WhenInitialized;
+        return await _dbConnection.FindAsync<WebDavSource>(sourceId);
+    }
+
     public Task SaveWebDavSourceAsync(WebDavSource source) => _dbConnection.RunInTransactionAsync(db =>
     {
         if (source.Id == 0) db.Insert(source);
-        else db.Update(source);
-        ApplyWebDavScope(db, source);
+        else if (db.Update(source) != 1) throw new WebDavException("SourceUnavailable");
+        if (source.Kind == RemoteSourceKind.WebDav) ApplyWebDavScope(db, source);
     });
 
     private static void MigrateWebDavScopes(SQLite.SQLiteConnection db)
     {
         foreach (var source in db.Table<WebDavSource>())
-            ApplyWebDavScope(db, source);
+            if (source.Kind == RemoteSourceKind.WebDav) ApplyWebDavScope(db, source);
     }
 
     private static void ApplyWebDavScope(SQLite.SQLiteConnection db, WebDavSource source)

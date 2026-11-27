@@ -25,6 +25,11 @@ public sealed class WebDavAvailability(TimeProvider? clock = null)
         lock (_gate)
             _sources[sourceId] = new(Version(sourceId) + 1, true, _clock.GetTimestamp());
     }
+    public void Invalidate(int sourceId, bool offline)
+    {
+        lock (_gate)
+            _sources[sourceId] = new(Version(sourceId) + 1, offline, 0);
+    }
     public bool CompleteProbe(int sourceId, long version, bool offline)
     {
         lock (_gate)

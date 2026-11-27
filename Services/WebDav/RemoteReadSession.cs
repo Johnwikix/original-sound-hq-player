@@ -12,8 +12,7 @@ namespace WinUIMusicPlayer.Services.WebDav;
 public sealed class RemoteReadSession : IAsyncDisposable
 {
     private const int WindowSize = 1024 * 1024;
-    private readonly WebDavTransport _transport;
-    private readonly Lazy<WebDavConnection> _source;
+    private readonly Func<long?, long?, bool, CancellationToken, Task<WebDavResponse>> _open;
     private readonly RemoteAudioCache _cache;
     private RemoteAudioCache.CacheFile? _file;
     private readonly string _resource;
@@ -23,8 +22,10 @@ public sealed class RemoteReadSession : IAsyncDisposable
     private readonly object _gate = new();
     private TaskCompletionSource _changed = Signal();
     private Task _fill = Task.CompletedTask;
-    private bool _playing, _disposed, _rangeSupported = true, _cacheAllowed = true;
+    private volatile bool _rangeSupported;
+    private bool _playing, _disposed, _cacheAllowed;
     public WebDavEntry Entry { get; }
+    public bool CanSeek => _rangeSupported;
     public long NetworkBytes;
     public bool HasCompleteCache => _file?.IsComplete == true;
     private WebDavReadFailure? _failure;
@@ -35,18 +36,77 @@ public sealed class RemoteReadSession : IAsyncDisposable
         : this(transport, () => source, entry, cache, resource) { }
 
     public RemoteReadSession(WebDavTransport transport, Func<WebDavConnection> source, WebDavEntry entry, RemoteAudioCache cache, string resource)
+        : this(CreateWebDavOpener(transport, source, entry.Href), entry, cache, resource, entry.Length > 0) { }
+
+    private static Func<long?, long?, bool, CancellationToken, Task<WebDavResponse>> CreateWebDavOpener(
+        WebDavTransport transport, Func<WebDavConnection> connect, string href)
     {
-        _transport = transport;
-        _source = new(source);
+        var source = new Lazy<WebDavConnection>(connect);
+        return (start, end, foreground, token) => transport.OpenAsync(source.Value, href, start, end, foreground, token);
+    }
+
+    internal static async Task<RemoteReadSession> CreateAsync(Func<long?, long?, bool, CancellationToken, Task<WebDavResponse>> open,
+        WebDavEntry entry, RemoteAudioCache cache, string resource, bool probeRange, CancellationToken token)
+    {
+        if (!probeRange) return new(open, entry, cache, resource, entry.Length > 0);
+        if (entry.ETag.Length != 0 && !entry.ETag.StartsWith("W/", StringComparison.Ordinal) &&
+            cache.AcquireCompleteRead(resource, entry) is { } complete)
+            return new(open, entry, cache, resource, true, complete);
+
+        WebDavResponse probe;
+        try { probe = await open(0, 0, true, token).ConfigureAwait(false); }
+        catch (WebDavException ex) when (ex.Status == HttpStatusCode.RequestedRangeNotSatisfiable)
+        {
+            probe = await open(null, null, true, token).ConfigureAwait(false);
+        }
+        bool canSeek;
+        await using (probe.ConfigureAwait(false))
+        {
+            token.ThrowIfCancellationRequested();
+            var content = probe.Message.Content.Headers;
+            if (probe.Message.StatusCode == HttpStatusCode.PartialContent &&
+                content.ContentRange is { Unit: "bytes", From: 0, To: 0, Length: long length } && length > 0)
+            {
+                canSeek = true;
+                // 只按扫描时已知且经读取验证的版本持久化，保证重启后能用同一身份找到缓存。
+                entry = entry with { Length = length, ETag = entry.Length == length ? entry.ETag : "" };
+            }
+            else
+            {
+                canSeek = false;
+                long sequentialLength = probe.Message.StatusCode == HttpStatusCode.OK ? content.ContentLength ?? -1 : -1;
+                entry = entry with { Length = sequentialLength, ETag = "" };
+            }
+        }
+        return new(open, entry, cache, resource, canSeek);
+    }
+
+    private RemoteReadSession(Func<long?, long?, bool, CancellationToken, Task<WebDavResponse>> open,
+        WebDavEntry entry, RemoteAudioCache cache, string resource, bool canSeek, RemoteAudioCache.CacheFile? complete = null)
+    {
+        _open = open;
         Entry = entry;
         _version = new(entry);
         _cache = cache;
         _resource = resource;
-        _file = cache.Acquire(resource, entry);
-        cache.Changed += Wake;
-        _fill = Task.Run(FillAsync);
+        _rangeSupported = canSeek;
+        _file = complete ?? (canSeek ? cache.Acquire(resource, entry) : null);
+        _cacheAllowed = canSeek && entry.ETag.Length != 0 && !entry.ETag.StartsWith("W/", StringComparison.Ordinal);
+        if (_cacheAllowed && !HasCompleteCache)
+        {
+            cache.Changed += Wake;
+            _fill = Task.Run(FillAsync);
+        }
     }
-    public void SetPlaying(bool playing) { lock (_gate) { _playing = playing; Pulse(); } }
+    public void SetPlaying(bool playing)
+    {
+        lock (_gate)
+        {
+            if (_playing == playing) return;
+            _playing = playing;
+            Pulse();
+        }
+    }
     private void Wake() { lock (_gate) Pulse(); }
     private void Pulse() { var old = _changed; _changed = Signal(); old.TrySetResult(); }
 
@@ -117,7 +177,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
     {
         try
         {
-            await using var response = await _transport.OpenAsync(_source.Value, Entry.Href, window.Start, window.Start + window.Count - 1, foreground, _stop.Token).ConfigureAwait(false);
+            await using var response = await _open(window.Start, window.Start + window.Count - 1, foreground, _stop.Token).ConfigureAwait(false);
             var range = response.Message.Content.Headers.ContentRange;
             if (response.Message.StatusCode != HttpStatusCode.PartialContent || range?.From != window.Start || range.To != window.Start + window.Count - 1 || range.Length is null)
             {
@@ -265,7 +325,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
     }
     private async Task<WebDavResponse> OpenSequentialAsync(CancellationToken token)
     {
-        try { return await _transport.OpenAsync(_source.Value, Entry.Href, null, null, true, token).ConfigureAwait(false); }
+        try { return await _open(null, null, true, token).ConfigureAwait(false); }
         catch (Exception ex) when (!token.IsCancellationRequested)
         {
             Volatile.Write(ref _failure, WebDavReadFailure.From(ex));

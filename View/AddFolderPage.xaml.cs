@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using Windows.ApplicationModel.DataTransfer;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
@@ -29,7 +30,9 @@ namespace WinUIMusicPlayer.View
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
 
-        private async void AddWebDav_Click(object sender, RoutedEventArgs e) => await RemoteSources.ShowAddAsync();
+        private async void AddWebDav_Click(object sender, RoutedEventArgs e) => await RemoteSources.ShowAddAsync(RemoteSourceKind.WebDav);
+        private async void AddJellyfin_Click(object sender, RoutedEventArgs e) => await RemoteSources.ShowAddAsync(RemoteSourceKind.Jellyfin);
+        private async void AddNavidrome_Click(object sender, RoutedEventArgs e) => await RemoteSources.ShowAddAsync(RemoteSourceKind.Navidrome);
 
         // 拖放属视图层交互：DragOver/DragLeave 只驱动 DropOverlay 瞬时反馈，
         // Drop 提取文件夹后转发 ViewModel.DropFoldersAsync（含 Loading 状态与入库逻辑）。

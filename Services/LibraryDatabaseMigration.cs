@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>曲库的唯一迁移入口。新增大规模结构或数据改写时递增 CurrentVersion。</summary>
 internal static class LibraryDatabaseMigration
 {
-    internal const int CurrentVersion = 5;
+    internal const int CurrentVersion = 6;
     internal const string ActiveFile = "MusicDatabase.song-v1.db";
     internal const string LegacyFile = "MusicDatabase.db";
     private const string CheckpointTable = "LibraryMigrationCheckpoint";

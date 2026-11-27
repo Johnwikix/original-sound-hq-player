@@ -2196,7 +2196,7 @@
     <value>Zugangsdaten oder Berechtigungen ungültig. Quelle bearbeiten.</value>
   </data>
   <data name="WebDavAddressError" xml:space="preserve">
-    <value>Gültige HTTP(S)-WebDAV-Adresse eingeben. Umleitungen müssen zulässig sein.</value>
+    <value>Geben Sie eine gültige HTTP(S)-Serveradresse ein. Weiterleitungen müssen innerhalb der zulässigen Grenzen bleiben.</value>
   </data>
   <data name="WebDavNameError" xml:space="preserve">
     <value>Einen eindeutigen Quellennamen eingeben.</value>
@@ -2216,13 +2216,13 @@
   <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
-  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+  <data name="WebDavConnectionHelp" xml:space="preserve">
     <value>Unterstützt NAS und OpenList/AList. Nur lesend; HTTP ist unverschlüsselt. Konto für anonymen Zugriff leer lassen.</value>
   </data>
   <data name="WebDavName.Header" xml:space="preserve">
     <value>Quellenname</value>
   </data>
-  <data name="WebDavAddress.Header" xml:space="preserve">
+  <data name="WebDavAddress" xml:space="preserve">
     <value>WebDAV-Adresse</value>
   </data>
   <data name="WebDavUserName.Header" xml:space="preserve">
@@ -2231,13 +2231,13 @@
   <data name="WebDavPassword.Header" xml:space="preserve">
     <value>Passwort (beim Bearbeiten leer lassen zum Beibehalten)</value>
   </data>
-  <data name="WebDavConnectButton.Content" xml:space="preserve">
+  <data name="WebDavConnectButton" xml:space="preserve">
     <value>Verbinden und Ordner wählen</value>
   </data>
   <data name="WebDavReadMetadata.Content" xml:space="preserve">
     <value>Titelinformationen im Hintergrund lesen</value>
   </data>
-  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+  <data name="WebDavScanOnStartup" xml:space="preserve">
     <value>Ordner nach dem Start aktualisieren</value>
   </data>
   <data name="WebDavSourceEnabled.Content" xml:space="preserve">
@@ -2275,7 +2275,7 @@
   <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Bearbeiten</value></data>
   <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Entfernen</value></data>
   <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
-    <value>Lokale Ordner und Netzwerkmusik in einer Mediathek verwalten.</value>
+    <value>Fügen Sie lokale Ordner hinzu oder verbinden Sie WebDAV, Jellyfin oder Navidrome.</value>
   </data>
   <data name="MusicSourcesAdd" xml:space="preserve">
     <value>Quelle hinzufügen</value>
@@ -2287,7 +2287,7 @@
     <value>Einen lokalen Ordner hinzufügen oder hierher ziehen.</value>
   </data>
   <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
-    <value>Musikordner auf NAS, OpenList oder anderen WebDAV-Diensten verbinden.</value>
+    <value>Fügen Sie eine Quelle vom Typ WebDAV, Jellyfin oder Navidrome hinzu.</value>
   </data>
   <data name="WebDavCacheExpander.Header" xml:space="preserve">
     <value>WebDAV-Wiedergabecache</value>
@@ -2364,7 +2364,7 @@ SHA-256: {5}
     <value>Zertifikatsbestätigung vergessen</value>
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
-    <value>WebDAV · Audio zwischengespeichert</value>
+    <value>Audio im Cache</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Wiedergabegeschwindigkeit</value>
@@ -2933,5 +2933,32 @@ Vollständige Details stehen im Protokoll.</value></data>
   </data>
   <data name="DspQuickPresetCustom" xml:space="preserve">
     <value>Benutzerdefiniert</value>
+  </data>
+  <data name="MusicSourcesRemote" xml:space="preserve">
+    <value>Entfernte Quellen</value>
+  </data>
+  <data name="MusicSourcesServerHelp" xml:space="preserve">
+    <value>Geben Sie die Serveradresse und die Anmeldedaten ein. Die App importiert die Musik, auf die dieses Konto zugreifen kann.</value>
+  </data>
+  <data name="MusicSourcesServerAddress" xml:space="preserve">
+    <value>Serveradresse</value>
+  </data>
+  <data name="MusicSourcesTestConnection" xml:space="preserve">
+    <value>Verbindung testen</value>
+  </data>
+  <data name="MusicSourcesSyncOnStartup" xml:space="preserve">
+    <value>Bibliothek nach dem Start synchronisieren</value>
+  </data>
+  <data name="MusicSourcesTestSucceeded" xml:space="preserve">
+    <value>Verbindung bestätigt. Sie können die Quelle speichern und die Bibliothek einlesen.</value>
+  </data>
+  <data name="MusicSourcesShowSongs" xml:space="preserve">
+    <value>Titel anzeigen</value>
+  </data>
+  <data name="MusicSourcesScanning" xml:space="preserve">
+    <value>Bibliothek wird synchronisiert</value>
+  </data>
+  <data name="MusicSourcesRemoteAudio" xml:space="preserve">
+    <value>Entferntes Audio</value>
   </data>
 </root>

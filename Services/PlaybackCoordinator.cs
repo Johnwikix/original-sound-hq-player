@@ -481,6 +481,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             _activeSelectionVersion = _selectionVersion;
             bool lyricsAlreadyPresented = IsPresenting(music, entryId);
             bool keepTargetClock = lyricsAlreadyPresented || music.IsCueTrack || state.CurrentPlayingMusic?.IsCueTrack == true;
+            state.State.Playback.CanSeekRemote = false;
             state.CurrentPlayingMusic = music;
             FinishTrackPresentation(music, entryId, previousEpoch, keepTargetClock);
             state.RemotePlaybackStatus = music.IsRemote ? Utils.ToolUtils.GetString("WebDavOpening") : "";

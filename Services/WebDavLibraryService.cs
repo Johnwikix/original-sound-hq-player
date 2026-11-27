@@ -9,7 +9,6 @@ using WinUIMusicPlayer.Services.Lyrics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Security.Credentials;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
@@ -99,7 +98,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
                         foreach (var track in tracks)
                         {
                             _stop.Token.ThrowIfCancellationRequested();
-                            string key = RemoteAudioCache.GetKey($"webdav://{track.SourceId}{track.Href}", ToEntry(track));
+                            string key = RemoteAudioCache.GetKey(GetResourceIdentity(track), ToEntry(track));
                             if (track.Length > 0 && complete.TryGetValue(key, out long length) && length == track.Length)
                                 cachedIds.Add(track.MusicId);
                         }
@@ -123,7 +122,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
     }
     public async Task StartConfiguredScansAsync()
     {
-        var sources = await database.GetWebDavSourcesAsync();
+        var sources = await database.GetRemoteSourcesAsync();
         lock (_gate)
         {
             _availabilityLoop ??= Task.Run(() => MonitorAvailabilityAsync(_stop.Token));
@@ -151,17 +150,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
 
     public WebDavConnection Connect(WebDavSource source)
     {
-        string password = "";
-        if (source.UserName.Length != 0)
-        {
-            try
-            {
-                var credential = new PasswordVault().Retrieve("OriginalSoundPlayer.WebDav", source.CredentialKey);
-                credential.RetrievePassword();
-                password = credential.Password;
-            }
-            catch { throw new WebDavException("AuthenticationRequired"); }
-        }
+        string password = ReadSourceSecret(source);
         var trust = string.IsNullOrEmpty(source.TrustedCertificateSha256) ? null
             : new WebDavCertificateTrust(source.TrustedCertificateOrigin, source.TrustedCertificateSha256);
         return new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, password, trust);
@@ -170,11 +159,12 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
     {
         lock (_gate)
         {
-            if (_stop.IsCancellationRequested || !source.Enabled) return Task.CompletedTask;
+            if (_stop.IsCancellationRequested || !source.Enabled || _changingSources.Contains(source.Id)) return Task.CompletedTask;
             if (_scans.TryGetValue(source.Id, out var previous) && !previous.Work.IsCompleted) return previous.Work;
             previous.Cancel?.Dispose();
             var cancel = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
-            var work = Task.Run(() => ScanCoreAsync(source, cancel.Token));
+            var work = Task.Run(() => source.Kind == RemoteSourceKind.WebDav
+                ? ScanCoreAsync(source, cancel.Token) : ScanCatalogAsync(source, cancel.Token));
             _scans[source.Id] = (cancel, work);
             return work;
         }
@@ -186,20 +176,44 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             if (_scans.TryGetValue(sourceId, out var scan)) { scan.Cancel.Cancel(); work = scan.Work; }
         if (work is not null) await work;
     }
-    public async Task RemoveSourceAsync(WebDavSource source)
+    public Task RemoveSourceAsync(WebDavSource source) => RunSourceOperationAsync(() => RemoveSourceCoreAsync(source));
+
+    private async Task RemoveSourceCoreAsync(WebDavSource source)
     {
-        await CancelScanAsync(source.Id);
-        await database.RemoveWebDavSourceAsync(source.Id);
-        try { var vault = new PasswordVault(); vault.Remove(vault.Retrieve("OriginalSoundPlayer.WebDav", source.CredentialKey)); }
-        catch { /* 匿名来源或已被用户删除的凭据不阻止移除索引。 */ }
-        if (_library is not null) await _library.RefreshSongsSourceAsync();
-        SourcesChanged?.Invoke();
+        await _sourceWrites.WaitAsync(_stop.Token).ConfigureAwait(false);
+        try
+        {
+            lock (_gate) _changingSources.Add(source.Id);
+            var current = await database.GetRemoteSourceAsync(source.Id).ConfigureAwait(false);
+            if (current is null) return;
+            await CancelScanAsync(source.Id).ConfigureAwait(false);
+            await database.RemoveWebDavSourceAsync(source.Id).ConfigureAwait(false);
+            RemoveSourceSecret(current);
+            OnSourceConfigurationChanged(current, false);
+            lock (_gate)
+            {
+                _statuses.Remove(source.Id);
+                _publishedAt.Remove(source.Id);
+            }
+        }
+        finally
+        {
+            lock (_gate) _changingSources.Remove(source.Id);
+            _sourceWrites.Release();
+        }
+        if (_library is not null && !_stop.IsCancellationRequested) await _library.RefreshSongsSourceAsync().ConfigureAwait(false);
+        if (!_stop.IsCancellationRequested)
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                if (!_stop.IsCancellationRequested) SourcesChanged?.Invoke();
+            }).ConfigureAwait(false);
     }
     private async Task ScanCoreAsync(WebDavSource source, CancellationToken token)
     {
         int found = 0, tagged = 0, visibleChanges = 0;
         try
         {
+            if (!await IsCurrentSourceAsync(source).ConfigureAwait(false)) return;
             var connection = Connect(source);
             await database.RetryDeferredRemoteMetadataAsync(source.Id).ConfigureAwait(false);
             string run = Guid.NewGuid().ToString("N");
@@ -290,7 +304,8 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             Publish(new(source.Id, "Failed", found, tagged, error));
         }
     }
-    public static WebDavEntry ToEntry(RemoteTrack track) => new(track.Href, Uri.UnescapeDataString(Path.GetFileName(track.Href)), false,
+    public static WebDavEntry ToEntry(RemoteTrack track) => new(track.Href,
+        string.IsNullOrEmpty(track.ResourcePath) ? Uri.UnescapeDataString(Path.GetFileName(track.Href)) : track.Href, false,
         track.Length, track.ETag, DateTimeOffset.TryParse(track.Modified, out var date) ? date : null);
 
     private Task PublishBatchAsync(IReadOnlyList<Music> batch) => App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
@@ -311,11 +326,14 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             current.BitDepth = item.BitDepth; current.BitRate = item.BitRate; current.SampleRate = item.SampleRate;
             current.Channel = item.Channel; current.Duration = item.Duration; current.ImageHash = item.ImageHash;
             current.Extension = item.Extension;
+            current.FolderPath = item.FolderPath;
+            current.LastLevelFolderPath = item.LastLevelFolderPath;
             current.EncodingKind = item.EncodingKind;
             current.CodecId = item.CodecId;
             current.MetadataRevision = item.MetadataRevision;
             current.TitleFromFileName = item.TitleFromFileName;
             current.IsMissing = item.IsMissing;
+            current.IsDetached = item.IsDetached;
             if (item.AdditionalMetadataRead) AdditionalMusicMetadata.From(item).ApplyTo(current);
         }
         // 与本地扫描批次同口径：新增增量进当前列表，就地更新元数据即可；
@@ -327,9 +345,31 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
     public async Task<(WebDavSource Source, RemoteTrack Track)> ResolveAsync(Music music)
     {
         var track = await database.GetRemoteTrackAsync(music.Id) ?? throw new WebDavException("ResourceMissing");
-        foreach (var source in await database.GetWebDavSourcesAsync())
-            if (source.Id == track.SourceId && source.Enabled) return (source, track);
+        var source = await database.GetRemoteSourceAsync(track.SourceId).ConfigureAwait(false);
+        if (source is { Enabled: true } && source.Id == music.SourceId) return (source, track);
         throw new WebDavException("SourceUnavailable");
+    }
+
+    private async Task<byte[]> ReadDavCoverAsync(WebDavSource source, RemoteTrack track, string extension, CancellationTokenSource deadline)
+    {
+        var connection = Connect(source);
+        byte[] bytes = await Task.Run(() =>
+        {
+            using var input = new HttpRangeReadStream(transport, connection, ToEntry(track), deadline.Token, 8 * 1024 * 1024, 64, 20);
+            return AudioCoverReader.ReadCover(input, extension);
+        }, deadline.Token).ConfigureAwait(false);
+        if (bytes.Length != 0) return bytes;
+        await foreach (var entry in transport.ListAsync(connection, track.ParentHref, deadline.Token).ConfigureAwait(false))
+        {
+            if (!entry.Name.Equals("cover.jpg", StringComparison.OrdinalIgnoreCase) && !entry.Name.Equals("folder.jpg", StringComparison.OrdinalIgnoreCase)) continue;
+            if (entry.Length <= 0 || entry.Length > 8 * 1024 * 1024) continue;
+            await using var response = await transport.OpenAsync(connection, entry.Href, null, null, false, deadline.Token).ConfigureAwait(false);
+            bytes = new byte[(int)entry.Length];
+            deadline.CancelAfter(TimeSpan.FromSeconds(15));
+            await response.Stream.ReadExactlyAsync(bytes, deadline.Token).ConfigureAwait(false);
+            break;
+        }
+        return bytes;
     }
 
     public async Task<byte[]> ReadCoverAsync(Music music, CancellationToken token = default)
@@ -339,33 +379,19 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
         try
         {
             var (source, track) = await ResolveAsync(music).ConfigureAwait(false);
+            bool dav = source.Kind == RemoteSourceKind.WebDav;
+            if (!dav && string.IsNullOrEmpty(track.CoverId)) return [];
             string cacheRoot = AppSettings.MusicCoverCache;
             string folder = WebDavCachePaths.Covers(cacheRoot);
             string file = WebDavCachePaths.Cover(cacheRoot, music.ImageHash);
-            bool dsf = music.Extension.Equals(".dsf", StringComparison.OrdinalIgnoreCase);
+            bool dsf = dav && music.Extension.Equals(".dsf", StringComparison.OrdinalIgnoreCase);
             long cachedLength = File.Exists(file) ? new FileInfo(file).Length : -1;
             if (cachedLength is >= 0 and <= 8 * 1024 * 1024 &&
                 (cachedLength > 0 || !dsf || _checkedDsfCoverMisses.Contains(music.ImageHash)))
                 return await File.ReadAllBytesAsync(file, linked.Token).ConfigureAwait(false);
-            var connection = Connect(source);
-            byte[] bytes = await Task.Run(() =>
-            {
-                using var input = new HttpRangeReadStream(transport, connection, ToEntry(track), linked.Token, 8 * 1024 * 1024, 64, 20);
-                return AudioCoverReader.ReadCover(input, music.Extension);
-            }, linked.Token).ConfigureAwait(false);
-            if (bytes.Length == 0)
-            {
-                await foreach (var entry in transport.ListAsync(connection, track.ParentHref, linked.Token).ConfigureAwait(false))
-                {
-                    if (!entry.Name.Equals("cover.jpg", StringComparison.OrdinalIgnoreCase) && !entry.Name.Equals("folder.jpg", StringComparison.OrdinalIgnoreCase)) continue;
-                    if (entry.Length <= 0 || entry.Length > 8 * 1024 * 1024) continue;
-                    await using var response = await transport.OpenAsync(connection, entry.Href, null, null, false, linked.Token).ConfigureAwait(false);
-                    bytes = new byte[(int)entry.Length];
-                    linked.CancelAfter(TimeSpan.FromSeconds(15));
-                    await response.Stream.ReadExactlyAsync(bytes, linked.Token).ConfigureAwait(false);
-                    break;
-                }
-            }
+            byte[] bytes = dav
+                ? await ReadDavCoverAsync(source, track, music.Extension, linked).ConfigureAwait(false)
+                : await ReadCatalogCoverAsync(source, track, linked.Token).ConfigureAwait(false);
             try
             {
                 // 与详情页按同一个 ImageHash 读写同一文件，发布完整文件后才返回字节。
@@ -457,6 +483,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             if (previous is not null && previous.Order == order && Environment.TickCount64 - previous.CheckedAt < 300000)
                 return previous.Document;
             var (source, track) = await ResolveAsync(music).ConfigureAwait(false);
+            if (source.Kind != RemoteSourceKind.WebDav) return null;
             var connection = Connect(source);
             string stem = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(track.Href));
             linked.CancelAfter(TimeSpan.FromSeconds(15));
@@ -573,6 +600,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
         _coverSlot.Release();
         await _lyricsSlot.WaitAsync();
         _lyricsSlot.Release();
+        _catalog.Dispose();
         lock (_gate)
         {
             foreach (var scan in _scans.Values) scan.Cancel.Dispose();

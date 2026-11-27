@@ -29,9 +29,13 @@ namespace WinUIMusicPlayer.Utils
             => isRemote && isCached ? "\uEBD3" : MusicSourceGlyph(isRemote, isOffline);
         /// <summary>离线行仅作视觉弱化，保留点击播放以重新检查连接。</summary>
         public static double MusicRowOpacity(bool isPlayable) => isPlayable ? 1.0 : 0.45;
-        public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? "WebDAV" : status;
+        public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? GetString("MusicSourcesRemoteAudio") : status;
         public static string RemotePlaybackDescription(string status, bool isCached)
-            => isCached ? GetString("WebDavCachedAudio") + " · " + RemotePlaybackDescription(status) : RemotePlaybackDescription(status);
+        {
+            if (!isCached) return RemotePlaybackDescription(status);
+            string cached = GetString("WebDavCachedAudio");
+            return string.IsNullOrEmpty(status) ? cached : cached + " · " + status;
+        }
         public static Visibility NonEmptyTextVisibility(string text) => string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
         public static Visibility EmptyCollectionVisibility(int count) => count == 0 ? Visibility.Visible : Visibility.Collapsed;
 

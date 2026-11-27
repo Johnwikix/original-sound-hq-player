@@ -101,6 +101,41 @@ internal static class ConnectionViewModelRegression
         closing.Dispose();
         await closingRequest;
         Check(!closing.HasCertificate && !await closing.SaveAsync(), "closed connection form cancels in-flight TLS and cannot save");
+
+        await CheckCredentialScopeAsync(transport);
+    }
+
+    private static async Task CheckCredentialScopeAsync(WebDavTransport transport)
+    {
+        await using var first = new Fixture();
+        await using var second = new Fixture();
+        var library = new WebDavLibraryService();
+        var source = new WinUIMusicPlayer.Model.WebDavSource { Id = 1, Name = "Existing DAV", BaseUri = first.Root, UserName = "old-user" };
+        using var form = new WebDavConnectionViewModel(transport, library, source);
+        form.Address = first.Root.TrimEnd('/');
+        await form.ConnectCommand.ExecuteAsync(null);
+        Check(library.CredentialReads == 1 && form.HasFolders, "equivalent normalized DAV address permits stored password reuse");
+
+        form.Address = second.Root;
+        await form.ConnectCommand.ExecuteAsync(null);
+        Check(library.CredentialReads == 1 && !form.HasFolders && form.Status == "WebDavAuthenticationError",
+            "changing DAV server requires credentials before any vault read or test request");
+
+        form.Address = first.Root;
+        form.UserName = "new-user";
+        await form.ConnectCommand.ExecuteAsync(null);
+        Check(library.CredentialReads == 1 && !form.HasFolders && form.Status == "WebDavAuthenticationError",
+            "changing DAV account requires credentials before any vault read or test request");
+
+        form.Address = second.Root;
+        form.Password = "new-fixture-password";
+        await form.ConnectCommand.ExecuteAsync(null);
+        Check(library.CredentialReads == 1 && form.HasFolders, "explicit credentials permit testing a new DAV identity");
+
+        form.UserName = "";
+        form.Password = "";
+        await form.ConnectCommand.ExecuteAsync(null);
+        Check(library.CredentialReads == 1 && form.HasFolders, "anonymous DAV access still works after address and account changes");
     }
     private static void Check(bool condition, string name)
     {

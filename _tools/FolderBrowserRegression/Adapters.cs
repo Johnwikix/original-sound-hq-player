@@ -6,6 +6,7 @@ namespace WinUIMusicPlayer.Model
         public int SourceId { get; set; }
         public string FolderPath { get; set; } = "";
         public string LastLevelFolderPath { get; set; } = "";
+        public string Album { get; set; } = "";
     }
     public sealed class Folder
     {

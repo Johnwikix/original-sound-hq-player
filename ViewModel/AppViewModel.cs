@@ -77,7 +77,8 @@ namespace WinUIMusicPlayer.ViewModel
         public Music? SelectedPlaybackMusic => State.Playback.PendingSelection?.Music ?? DisplayedPlaybackMusic;
         public long SelectedPlaybackEntryId => State.Playback.PendingSelection?.EntryId
             ?? State.Playback.TransitionPresentation?.EntryId ?? State.Queue.CurrentEntryId;
-        public bool CanSeekDisplayedPlayback => State.Playback.TransitionPresentation is null;
+        public bool CanSeekDisplayedPlayback => State.Playback.TransitionPresentation is null &&
+            (CurrentPlayingMusic?.IsRemote != true || State.Playback.CanSeekRemote);
         private Music? _displayedTransitionLyrics;
         private Music? _lastSelectedMusic;
         private long _lastSelectedEntryId;
@@ -243,6 +244,10 @@ namespace WinUIMusicPlayer.ViewModel
                     _displayedTransitionLyrics = null;
                 IsUserDraggingProgressSlider = false;
                 _playbackProgress.SetTransitionPresentation(State.Playback.TransitionPresentation);
+            }
+            if (e.PropertyName is nameof(State.Playback.TransitionPresentation) or nameof(State.Playback.CanSeekRemote) or nameof(CurrentPlayingMusic))
+            {
+                if (!CanSeekDisplayedPlayback) IsUserDraggingProgressSlider = false;
                 OnPropertyChanged(nameof(CanSeekDisplayedPlayback));
             }
             OnPropertyChanged(e);

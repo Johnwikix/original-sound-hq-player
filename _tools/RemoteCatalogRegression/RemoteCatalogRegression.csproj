@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="PublishedJellyfinProbe.cs" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../../Model/WebDavSource.cs;../../Model/Music.cs;../../Model/AdditionalMusicMetadata.cs;../../Model/SongRecord.cs;../../Model/LyricsDocument.cs" />
+    <Compile Include="../../Services/MusicDatabaseService.RemoteCatalog.cs;../../Services/MusicMetadataStorage.cs;../../Services/LibraryDatabaseMigration.cs" />
+    <Compile Include="../../Services/RemoteSources/*.cs" />
+    <Compile Include="../../Services/WebDav/WebDavTransport.cs;../../Services/WebDav/WebDavCertificates.cs" />
+    <Compile Include="../../Services/WebDav/RemoteReadSession.cs;../../Services/WebDav/RemoteResourceVersion.cs;../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs;../../Services/WebDav/WebDavPlaybackBridge.cs;../../Services/WebDav/WebDavReadFailure.cs" />
+    <Compile Include="../SongVersionRegression/Stubs.cs" Link="CommandStubs.cs" />
+  </ItemGroup>
+</Project>

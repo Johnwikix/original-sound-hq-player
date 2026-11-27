@@ -3,6 +3,8 @@ using System;
 
 namespace WinUIMusicPlayer.Model;
 
+public enum RemoteSourceKind { WebDav, Jellyfin, Navidrome }
+
 /// <summary>远程来源的持久配置。密码单独保存在 Windows 凭据库。</summary>
 public sealed class WebDavSource
 {
@@ -18,9 +20,11 @@ public sealed class WebDavSource
     public bool ScanOnStartup { get; set; }
     public bool ReadMetadata { get; set; } = true;
     public DateTime LastScanUtc { get; set; }
+    public RemoteSourceKind Kind { get; set; }
+    public int ConfigurationRevision { get; set; }
 }
 
-/// <summary>稳定 DAV 文件身份；从不持久化签名 URL 或请求头。</summary>
+/// <summary>稳定的远程文件映射。Href 保存 DAV 路径或协议的曲目 ID。</summary>
 public sealed class RemoteTrack
 {
     [PrimaryKey] public int MusicId { get; set; }
@@ -33,6 +37,9 @@ public sealed class RemoteTrack
     public string MetadataState { get; set; } = "Pending";
     public string SeenRun { get; set; } = "";
     public bool Missing { get; set; }
+    public string ResourcePath { get; set; } = "";
+    public string Extension { get; set; } = "";
+    public string CoverId { get; set; } = "";
 }
 
 /// <summary>音频缓存缺省关闭，容量独立管理；位置统一使用 MusicCoverCache。</summary>

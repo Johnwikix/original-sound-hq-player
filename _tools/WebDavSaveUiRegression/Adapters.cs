@@ -9,13 +9,14 @@ namespace WinUIMusicPlayer.Services
         public int ReadThread;
         public int WriteCount;
         public bool FailSave;
+        public WebDavSource? Stored;
         public TaskCompletionSource? CommitGate;
         public TaskCompletionSource CommitStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public Task<List<WebDavSource>> GetWebDavSourcesAsync()
+        public Task<List<WebDavSource>> GetRemoteSourcesAsync()
         {
             ReadThread = Environment.CurrentManagedThreadId;
             Thread.Sleep(300); // Reproduce a slow synchronous prefix, independent of vault warm-up.
-            return Task.FromResult(new List<WebDavSource>());
+            return Task.FromResult(Stored is null ? new List<WebDavSource>() : new List<WebDavSource> { Stored });
         }
         public async Task SaveWebDavSourceAsync(WebDavSource source)
         {
@@ -25,7 +26,13 @@ namespace WinUIMusicPlayer.Services
             if (FailSave) throw new IOException("Injected persistence failure.");
             WriteCount++;
             if (source.Id == 0) source.Id = 1;
+            Stored = Snapshot(source);
         }
+        public static WebDavSource Snapshot(WebDavSource source) => new()
+        {
+            Id = source.Id, Name = source.Name, BaseUri = source.BaseUri, Kind = source.Kind, UserName = source.UserName,
+            CredentialKey = source.CredentialKey, ConfigurationRevision = source.ConfigurationRevision
+        };
     }
     public sealed class LibraryAdapter
     {
@@ -41,6 +48,7 @@ namespace WinUIMusicPlayer.Services
         public int RefreshCount => _library.RefreshCount;
         public event Action? SourcesChanged;
         public Task ProbeAsync(WebDavSource source) => Task.CompletedTask;
+        private static void OnSourceConfigurationChanged(WebDavSource previous, bool enabled) { }
         public async Task StopSavesForTestAsync() { _stop.Cancel(); await DrainSourceSavesAsync(); }
     }
 }

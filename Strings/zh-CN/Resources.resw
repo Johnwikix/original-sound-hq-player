@@ -2198,7 +2198,7 @@
     <value>账号、密码或访问权限无效，请编辑来源重新连接。</value>
   </data>
   <data name="WebDavAddressError" xml:space="preserve">
-    <value>请输入有效的 HTTP(S) WebDAV 地址。重定向必须保持安全且在允许范围内。</value>
+    <value>请输入有效的 HTTP(S) 服务器地址。重定向必须在允许的范围内。</value>
   </data>
   <data name="WebDavNameError" xml:space="preserve">
     <value>请输入与现有来源不同的名称。</value>
@@ -2218,13 +2218,13 @@
   <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+  <data name="WebDavConnectionHelp" xml:space="preserve">
     <value>支持 NAS 与 OpenList/AList。远端只读；HTTP 连接不加密。匿名访问可留空账号。</value>
   </data>
   <data name="WebDavName.Header" xml:space="preserve">
     <value>来源名称</value>
   </data>
-  <data name="WebDavAddress.Header" xml:space="preserve">
+  <data name="WebDavAddress" xml:space="preserve">
     <value>WebDAV 地址</value>
   </data>
   <data name="WebDavUserName.Header" xml:space="preserve">
@@ -2233,13 +2233,13 @@
   <data name="WebDavPassword.Header" xml:space="preserve">
     <value>密码（编辑时留空则沿用）</value>
   </data>
-  <data name="WebDavConnectButton.Content" xml:space="preserve">
+  <data name="WebDavConnectButton" xml:space="preserve">
     <value>连接并选择目录</value>
   </data>
   <data name="WebDavReadMetadata.Content" xml:space="preserve">
     <value>后台补全歌曲信息</value>
   </data>
-  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+  <data name="WebDavScanOnStartup" xml:space="preserve">
     <value>启动后更新目录</value>
   </data>
   <data name="WebDavSourceEnabled.Content" xml:space="preserve">
@@ -2277,7 +2277,7 @@
   <data name="WebDavEditMenu.Text" xml:space="preserve"><value>编辑</value></data>
   <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>移除</value></data>
   <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
-    <value>管理本地文件夹与网络音乐，在同一个音乐库中聆听。</value>
+    <value>添加本地文件夹，或连接 WebDAV、Jellyfin、Navidrome。</value>
   </data>
   <data name="MusicSourcesAdd" xml:space="preserve">
     <value>添加来源</value>
@@ -2289,7 +2289,7 @@
     <value>添加本地文件夹，或将文件夹拖到此处。</value>
   </data>
   <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
-    <value>连接 NAS、OpenList 或其他 WebDAV 音乐目录。</value>
+    <value>添加 WebDAV、Jellyfin 或 Navidrome 来源。</value>
   </data>
   <data name="WebDavCacheExpander.Header" xml:space="preserve">
     <value>WebDAV 播放缓存</value>
@@ -2366,7 +2366,7 @@ SHA-256：{5}
     <value>忘记已确认的证书</value>
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
-    <value>WebDAV · 音频已缓存</value>
+    <value>音频已缓存</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>播放倍速</value>
@@ -2935,5 +2935,32 @@ SHA-256：{5}
   </data>
   <data name="DspQuickPresetCustom" xml:space="preserve">
     <value>自定义</value>
+  </data>
+  <data name="MusicSourcesRemote" xml:space="preserve">
+    <value>远程来源</value>
+  </data>
+  <data name="MusicSourcesServerHelp" xml:space="preserve">
+    <value>输入服务器地址和账号凭据。应用将导入该账号可访问的音乐。</value>
+  </data>
+  <data name="MusicSourcesServerAddress" xml:space="preserve">
+    <value>服务器地址</value>
+  </data>
+  <data name="MusicSourcesTestConnection" xml:space="preserve">
+    <value>测试连接</value>
+  </data>
+  <data name="MusicSourcesSyncOnStartup" xml:space="preserve">
+    <value>启动后同步曲库</value>
+  </data>
+  <data name="MusicSourcesTestSucceeded" xml:space="preserve">
+    <value>连接验证成功，可以保存并扫描曲库。</value>
+  </data>
+  <data name="MusicSourcesShowSongs" xml:space="preserve">
+    <value>查看歌曲</value>
+  </data>
+  <data name="MusicSourcesScanning" xml:space="preserve">
+    <value>正在同步曲库</value>
+  </data>
+  <data name="MusicSourcesRemoteAudio" xml:space="preserve">
+    <value>远程音频</value>
   </data>
 </root>

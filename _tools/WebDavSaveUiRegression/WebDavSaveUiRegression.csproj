@@ -20,4 +20,21 @@
     <Compile Include="../../Services/WebDav/WebDavTransport.cs;../../Services/WebDav/WebDavCertificates.cs" />
     <Compile Include="../../Model/WebDavSource.cs" />
   </ItemGroup>
+  <ItemGroup Condition="'$(LiveCatalogService)' != 'true'">
+    <Compile Remove="CatalogService*.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(LiveCatalogService)' == 'true'">
+    <Compile Remove="Adapters.cs;Program.cs" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
+    <Compile Include="../WebDavRegression/Fixture.cs;../SongVersionRegression/Stubs.cs" />
+    <Compile Include="../../Model/Music.cs;../../Model/AdditionalMusicMetadata.cs;../../Model/SongRecord.cs;../../Model/PlayListMusic.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs" />
+    <Compile Include="../../Services/WebDavLibraryService.cs;../../Services/WebDavLibraryService.Availability.cs;../../Services/WebDavLibraryService.Providers.cs" />
+    <Compile Include="../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs;../../Services/WebDav/WebDavAvailability.cs;../../Services/WebDav/HttpRangeReadStream.cs;../../Services/WebDav/RemoteResourceVersion.cs" />
+    <Compile Include="../../Services/RemoteSources/*.cs" />
+    <Compile Include="../../Services/MusicDatabaseService.WebDav.cs;../../Services/MusicDatabaseService.RemoteCatalog.cs;../../Services/MusicMetadataStorage.cs;../../Services/MusicDatabaseService.Automatic.cs;../../Services/LibraryDatabaseMigration.cs" />
+    <Compile Include="../../Services/SongVersionStore*.cs;../../Services/SongVersionPolicy.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsFilePolicy.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavConnectionViewModel.cs;../../ViewModel/Pages/WebDavTreeItem.cs;../../Utils/WebDavText.cs;../../Helper/PlaybackCoverCache.cs" />
+  </ItemGroup>
 </Project>

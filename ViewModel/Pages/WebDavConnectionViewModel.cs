@@ -13,11 +13,13 @@ using WinUIMusicPlayer.Utils;
 namespace WinUIMusicPlayer.ViewModel;
 
 /// <summary>连接对话框的短生命周期表单；关闭时清除密码并取消连接请求。</summary>
-public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDavLibraryService library, WebDavSource? original = null) : ObservableObject, IDisposable
+public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDavLibraryService library, WebDavSource? original = null,
+    RemoteSourceKind kind = RemoteSourceKind.WebDav) : ObservableObject, IDisposable
 {
     private readonly CancellationTokenSource _stop = CancellationTokenSource.CreateLinkedTokenSource(library.StoppingToken);
     private bool _disposed;
     private WebDavConnection? _tested;
+    private bool _catalogTested;
     private CancellationTokenSource? _requestCancel;
     private CancellationTokenSource _treeCancel = CancellationTokenSource.CreateLinkedTokenSource(library.StoppingToken);
     private readonly HashSet<string> _savedRoots = new(original?.Roots.Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? [], StringComparer.Ordinal);
@@ -26,6 +28,14 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
     private WebDavCertificate? _certificate;
     private WebDavCertificateTrust? _trust = string.IsNullOrEmpty(original?.TrustedCertificateSha256) ? null
         : new(original.TrustedCertificateOrigin, original.TrustedCertificateSha256);
+    public RemoteSourceKind Kind { get; } = original?.Kind ?? kind;
+    public bool IsWebDav => Kind == RemoteSourceKind.WebDav;
+    public bool IsIdentityReadOnly => !IsWebDav && original is not null;
+    public string SourceName => WebDavText.SourceName(Kind);
+    public string HelpText => ToolUtils.GetString(IsWebDav ? "WebDavConnectionHelp" : "MusicSourcesServerHelp");
+    public string AddressHeader => ToolUtils.GetString(IsWebDav ? "WebDavAddress" : "MusicSourcesServerAddress");
+    public string ConnectLabel => ToolUtils.GetString(IsWebDav ? "WebDavConnectButton" : "MusicSourcesTestConnection");
+    public string ScanOnStartupLabel => ToolUtils.GetString(IsWebDav ? "WebDavScanOnStartup" : "MusicSourcesSyncOnStartup");
     public string Name { get; set => SetProperty(ref field, value); } = original?.Name ?? "";
     public string Address
     {
@@ -42,6 +52,7 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
     public bool ScanOnStartup { get; set => SetProperty(ref field, value); } = original?.ScanOnStartup ?? false;
     public bool ReadMetadata { get; set => SetProperty(ref field, value); } = original?.ReadMetadata ?? true;
     public bool Enabled { get; set => SetProperty(ref field, value); } = original?.Enabled ?? true;
+    internal WebDavSource? SavedSource { get; private set; }
     public string Status { get; private set => SetProperty(ref field, value); } = "";
     public bool HasCertificate => _certificate is not null;
     public bool HasTrustedCertificate => _trust is not null;
@@ -68,6 +79,7 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         else _ = DisposeTreeCancelAfterLoadsAsync(previousTreeCancel, [.. _treeLoads]);
         _treeCancel = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
         _tested = null;
+        _catalogTested = false;
         SetCertificate(null);
         Folders.Clear();
         OnPropertyChanged(nameof(HasFolders));
@@ -99,13 +111,20 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
     }
     private WebDavConnection Connection()
     {
+        var root = WebDavTransport.NormalizeRoot(Address);
         string password = Password;
-        if (original is not null && password.Length == 0 && original.UserName == UserName) password = library.Connect(original).Password;
-        return new(WebDavTransport.NormalizeRoot(Address), UserName, password, _trust);
+        if (original is not null && password.Length == 0 && UserName.Length != 0)
+        {
+            if (original.UserName != UserName || root.AbsoluteUri != WebDavTransport.NormalizeRoot(original.BaseUri).AbsoluteUri)
+                throw new WebDavException("AuthenticationRequired");
+            password = library.Connect(original).Password;
+        }
+        return new(root, UserName, password, _trust);
     }
     [RelayCommand]
     private async Task ConnectAsync()
     {
+        if (_disposed || IsConnecting) return;
         int revision = _revision;
         using var requestCancel = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
         _requestCancel = requestCancel;
@@ -113,10 +132,19 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         try
         {
             _tested = null;
+            _catalogTested = false;
             SetCertificate(null);
             Folders.Clear();
             OnPropertyChanged(nameof(HasFolders));
             Status = ToolUtils.GetString("WebDavConnecting");
+            if (!IsWebDav)
+            {
+                await library.TestSourceAsync(CreateCatalogSource(), CatalogPassword, requestCancel.Token);
+                if (_disposed || revision != _revision) return;
+                _catalogTested = true;
+                Status = ToolUtils.GetString("MusicSourcesTestSucceeded");
+                return;
+            }
             var connection = Connection();
             var root = new WebDavTreeItem(connection.Root.AbsolutePath, ToolUtils.GetString("WebDavEntireRoot"), true)
             { IsScanRoot = original is null || _savedRoots.Count == 0 || HasSavedRoot(connection.Root.AbsolutePath), IsExpanded = true };
@@ -264,11 +292,36 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         _trust = null;
         InvalidateConnection();
     }
+
+    private string? CatalogPassword => original is not null && Password.Length == 0 ? null : Password;
+
+    private WebDavSource CreateCatalogSource() => new()
+    {
+        Id = original?.Id ?? 0,
+        Kind = Kind,
+        Name = Name.Trim(),
+        BaseUri = Address,
+        UserName = UserName,
+        Enabled = Enabled,
+        ScanOnStartup = ScanOnStartup
+    };
+
     public async Task<bool> SaveAsync()
     {
         try
         {
             if (_disposed) return false;
+            if (!IsWebDav)
+            {
+                var password = CatalogPassword;
+                if (IsConnecting || (!_catalogTested && (original is null || password is not null)))
+                {
+                    Status = ToolUtils.GetString("WebDavTestFirst");
+                    return false;
+                }
+                await CommitSourceAsync(CreateCatalogSource(), password);
+                return true;
+            }
             var connection = Connection();
             if (_tested != connection) { Status = ToolUtils.GetString("WebDavTestFirst"); return false; }
             var roots = new List<string>();
@@ -281,13 +334,19 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
                 Roots = string.Join('\n', roots), ScanOnStartup = ScanOnStartup, ReadMetadata = ReadMetadata, Enabled = Enabled,
                 TrustedCertificateOrigin = _trust?.Origin ?? "", TrustedCertificateSha256 = _trust?.Sha256 ?? ""
             };
-            if (original is not null) { source.CredentialKey = original.CredentialKey; await library.CancelScanAsync(original.Id); }
-            await library.SaveSourceAsync(source, connection.Password);
-            _ = library.ScanAsync(source);
+            if (original is not null) source.CredentialKey = original.CredentialKey;
+            await CommitSourceAsync(source, connection.Password);
             return true;
         }
         catch (Exception ex) { Status = WebDavText.Error(ex is WebDavException dav ? dav.Code : "ConnectionFailed"); return false; }
     }
+    private async Task CommitSourceAsync(WebDavSource source, string? password)
+    {
+        await library.SaveSourceAsync(source, password);
+        SavedSource = source;
+        if (source.Enabled) _ = library.ScanAsync(source);
+    }
+
     private static void CollectSelectedRoots(WebDavTreeItem folder, bool selectedAncestor, List<string> roots)
     {
         if (folder.IsScanRoot && !selectedAncestor) roots.Add(folder.Href);

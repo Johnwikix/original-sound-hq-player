@@ -27,6 +27,7 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed partial class WebDavLibraryService
     {
+        public static string GetResourceIdentity(SpectrumProbeRemoteTrack track) => $"webdav://{track.SourceId}{track.Href}";
         public static WebDavEntry ToEntry(SpectrumProbeRemoteTrack track) => new(track.Href, "", false, track.Length, track.ETag, null);
     }
 }

@@ -36,7 +36,7 @@ public sealed class SpectrogramService(MusicDatabaseService database, RemoteAudi
                         var track = await database.GetRemoteTrackAsync(input.MusicId).ConfigureAwait(false);
                         token.ThrowIfCancellationRequested();
                         if (track is null || track.SourceId != input.SourceId) return null;
-                        lease = remoteCache.AcquireCompleteRead($"webdav://{track.SourceId}{track.Href}", WebDavLibraryService.ToEntry(track));
+                        lease = remoteCache.AcquireCompleteRead(WebDavLibraryService.GetResourceIdentity(track), WebDavLibraryService.ToEntry(track));
                         if (lease?.CompletePath is not { } cached) return null;
                         path = cached;
                     }

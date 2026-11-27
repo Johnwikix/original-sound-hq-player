@@ -148,7 +148,7 @@ public sealed class AudioAnalysisService(MusicDatabaseService database, RemoteAu
         {
             await foreach (var source in queue.Reader.ReadAllAsync(batch.Token).ConfigureAwait(false))
             {
-                await using var lease = source.SourceId == 0 ? null : cache.AcquireCompleteRead($"webdav://{source.SourceId}{source.Href}",
+                await using var lease = source.SourceId == 0 ? null : cache.AcquireCompleteRead(source.Path,
                     new WebDavEntry(source.Href, "", false, source.Length, source.ETag, DateTimeOffset.TryParse(source.Modified, out var date) ? date : null));
                 string path = source.SourceId == 0 ? source.Path : lease?.CompletePath ?? "";
                 if (!Path.IsPathFullyQualified(path) || path.StartsWith(@"\") || path.EndsWith(".part", StringComparison.OrdinalIgnoreCase)) continue;

@@ -9,20 +9,24 @@ namespace WinUIMusicPlayer.Services
     // loopback, IPC monitoring, recovery and UI dispatch all run production implementations.
     public sealed class MusicDatabaseService
     {
-        public Task<List<WebDavSource>> GetWebDavSourcesAsync() => Task.FromResult<List<WebDavSource>>([new(10)]);
+        public Task<List<WebDavSource>> GetRemoteSourcesAsync() => Task.FromResult<List<WebDavSource>>([new(10)]);
     }
     public sealed partial class WebDavLibraryService(MusicDatabaseService database, WebDavTransport transport,
         RemoteAudioCache cache, ILogger<WebDavLibraryService> logger) : IAsyncDisposable
     {
         private readonly CancellationTokenSource _stop = new();
         private readonly object _gate = new();
+        private readonly HashSet<int> _changingSources = [];
         private AppViewModel? _library;
         public WebDavEntry Entry = new("/dav/tone.flac", "tone.flac", false, 3 * 1024 * 1024 + 137, "\"v1\"", null);
         public string Root = "";
         public bool RejectCredentials;
         public int MissingTrack;
         public int MissingAtOrigin;
-        public sealed record TrackRow(WebDavEntry Entry, bool Missing)
+        public RemoteSourceKind SourceKind;
+        public string Extension = "";
+        public TaskCompletionSource? BlockAudioOpening;
+        public sealed record TrackRow(WebDavEntry Entry, bool Missing, string Extension, string ResourcePath)
         {
             public string Href => Entry.Href;
             public string ETag => Entry.ETag;
@@ -39,7 +43,23 @@ namespace WinUIMusicPlayer.Services
         }
         public Task<(WebDavSource Source, TrackRow Track)> ResolveAsync(Music music) => music.Id == MissingTrack
             ? Task.FromException<(WebDavSource, TrackRow)>(new WebDavException("ResourceMissing"))
-            : Task.FromResult((new WebDavSource(music.SourceId), new TrackRow(Entry, music.Id == MissingAtOrigin)));
+            : Task.FromResult((new WebDavSource(music.SourceId) { Kind = SourceKind }, new TrackRow(Entry, music.Id == MissingAtOrigin, Extension, music.Path)));
+        public static string GetResourceIdentity(TrackRow track) => track.ResourcePath;
+        private Task<bool> IsCurrentSourceAsync(WebDavSource source) => Task.FromResult(true);
+        private Task ProbeCatalogAsync(WebDavSource source, CancellationToken token) => transport.ProbeAsync(Connect(source), token);
+        public Func<long?, long?, bool, CancellationToken, Task<WebDavResponse>> CreateAudioOpener(WebDavSource source, TrackRow track)
+        {
+            var connection = new Lazy<WebDavConnection>(() => Connect(source));
+            return async (start, end, foreground, token) =>
+            {
+                if (BlockAudioOpening is { } gate)
+                {
+                    gate.TrySetResult();
+                    await Task.Delay(Timeout.Infinite, token).ConfigureAwait(false);
+                }
+                return await transport.OpenAsync(connection.Value, track.Href, start, end, foreground, token).ConfigureAwait(false);
+            };
+        }
         public static WebDavEntry ToEntry(TrackRow track) => track.Entry;
         public async ValueTask DisposeAsync()
         {

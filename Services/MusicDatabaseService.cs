@@ -111,12 +111,9 @@ namespace WinUIMusicPlayer.Services
             await CueLibrarySchema.InitializeAsync(db);
             await CueMetadataOverrides.EnsureSchemaAsync(db);
             await db.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
-            await db.CreateTableAsync<WebDavSource>();
-            await db.CreateTableAsync<RemoteTrack>();
-            await db.CreateTableAsync<WebDavCacheSettings>();
+            await EnsureRemoteCatalogSchemaAsync(db, upgrading);
             Analysis = new WinUIMusicPlayer.Services.AudioAnalysis.AnalysisRepository(db, () => AppSettings.MusicCoverCache);
             await Analysis.InitializeAsync();
-            await db.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
             await db.CreateTableAsync<PendingMetadataWrite>();
             await EnsurePendingMetadataLyricsColumnsAsync(db);
             await MusicMetadataStorage.EnsureSchemaAsync(db);

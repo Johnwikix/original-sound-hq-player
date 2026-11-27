@@ -2196,7 +2196,7 @@
     <value>Invalid credentials or permissions. Edit the source to reconnect.</value>
   </data>
   <data name="WebDavAddressError" xml:space="preserve">
-    <value>Enter a valid HTTP(S) WebDAV address. Redirects must stay within permitted boundaries.</value>
+    <value>Enter a valid HTTP(S) server address. Redirects must stay within permitted boundaries.</value>
   </data>
   <data name="WebDavNameError" xml:space="preserve">
     <value>Enter a unique source name.</value>
@@ -2216,13 +2216,13 @@
   <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+  <data name="WebDavConnectionHelp" xml:space="preserve">
     <value>Supports NAS and OpenList/AList. Read-only access; HTTP is unencrypted. Leave the account blank for anonymous access.</value>
   </data>
   <data name="WebDavName.Header" xml:space="preserve">
     <value>Source name</value>
   </data>
-  <data name="WebDavAddress.Header" xml:space="preserve">
+  <data name="WebDavAddress" xml:space="preserve">
     <value>WebDAV address</value>
   </data>
   <data name="WebDavUserName.Header" xml:space="preserve">
@@ -2231,13 +2231,13 @@
   <data name="WebDavPassword.Header" xml:space="preserve">
     <value>Password (leave blank to keep when editing)</value>
   </data>
-  <data name="WebDavConnectButton.Content" xml:space="preserve">
+  <data name="WebDavConnectButton" xml:space="preserve">
     <value>Connect and choose folders</value>
   </data>
   <data name="WebDavReadMetadata.Content" xml:space="preserve">
     <value>Read track information in background</value>
   </data>
-  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+  <data name="WebDavScanOnStartup" xml:space="preserve">
     <value>Update folders after startup</value>
   </data>
   <data name="WebDavSourceEnabled.Content" xml:space="preserve">
@@ -2275,7 +2275,7 @@
   <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Edit</value></data>
   <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Remove</value></data>
   <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
-    <value>Manage local folders and network music in one library.</value>
+    <value>Add local folders or connect to WebDAV, Jellyfin, or Navidrome.</value>
   </data>
   <data name="MusicSourcesAdd" xml:space="preserve">
     <value>Add source</value>
@@ -2287,7 +2287,7 @@
     <value>Add a local folder or drag one here.</value>
   </data>
   <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
-    <value>Connect music folders on a NAS, OpenList, or another WebDAV service.</value>
+    <value>Add a WebDAV, Jellyfin, or Navidrome source.</value>
   </data>
   <data name="WebDavCacheExpander.Header" xml:space="preserve">
     <value>WebDAV playback cache</value>
@@ -2364,7 +2364,7 @@ SHA-256: {5}
     <value>Forget confirmed certificate</value>
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
-    <value>WebDAV · Audio cached</value>
+    <value>Audio cached</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>Playback speed</value>
@@ -2933,5 +2933,32 @@ See the log for full details.</value></data>
   </data>
   <data name="DspQuickPresetCustom" xml:space="preserve">
     <value>Custom</value>
+  </data>
+  <data name="MusicSourcesRemote" xml:space="preserve">
+    <value>Remote sources</value>
+  </data>
+  <data name="MusicSourcesServerHelp" xml:space="preserve">
+    <value>Enter the server URL and account credentials. The app imports the music this account can access.</value>
+  </data>
+  <data name="MusicSourcesServerAddress" xml:space="preserve">
+    <value>Server address</value>
+  </data>
+  <data name="MusicSourcesTestConnection" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+  <data name="MusicSourcesSyncOnStartup" xml:space="preserve">
+    <value>Sync library after startup</value>
+  </data>
+  <data name="MusicSourcesTestSucceeded" xml:space="preserve">
+    <value>Connection verified. You can save and scan the library.</value>
+  </data>
+  <data name="MusicSourcesShowSongs" xml:space="preserve">
+    <value>Show songs</value>
+  </data>
+  <data name="MusicSourcesScanning" xml:space="preserve">
+    <value>Syncing library</value>
+  </data>
+  <data name="MusicSourcesRemoteAudio" xml:space="preserve">
+    <value>Remote audio</value>
   </data>
 </root>

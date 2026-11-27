@@ -1,3 +1,14 @@
+## 2026-11-27 修复发布版 Jellyfin 连接测试
+
+- `JellyfinProvider` 显式发送 UTF-8 JSON 登录请求，修复本机增量注册 AppX 布局运行时无法加载 `System.Net.Http.Json` 导致的连接失败。
+- `WebDavLibraryService` 在远程连接测试失败时记录协议、失败阶段、异常类型和状态码，便于区分客户端构建失败与服务端认证错误。
+
+## 2026-11-27 支持 Jellyfin 和 Navidrome 音乐来源
+
+- `AddFolderPage`、`WebDavConnectionDialog`、`WebDavSourcesViewModel` 支持添加和测试两个服务器来源、同步账号可访问的音乐并在曲库按来源浏览。已保存的服务器来源可更新名称、密码和扫描设置，服务器地址与账号固定。
+- `WebDavLibraryService`、`MusicDatabaseService` 通过曲库统一迁移入口扩展远程索引，按来源和服务端曲目 ID 保持曲目标识，使用系统凭据库保存账号凭据。
+- `RemotePlaybackService`、`RemoteReadSession` 播放服务器原始音频并根据源站 Range 支持启用定位，禁用正在播放的来源时结束该来源的播放。
+
 ## 2026-11-26 返回设置时恢复上次的子页
 
 - `SettingsPage`、`SettingsViewModel` 在本次运行中记住离开时的子页，返回时同步恢复内容和标签高亮。首次进入显示「常规」。

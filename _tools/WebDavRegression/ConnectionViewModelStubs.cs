@@ -8,10 +8,16 @@ namespace WinUIMusicPlayer.Services
     {
         public CancellationToken StoppingToken => CancellationToken.None;
         public WebDavSource? Saved { get; private set; }
-        public WebDavConnection Connect(WebDavSource source) => new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, "",
-            string.IsNullOrEmpty(source.TrustedCertificateSha256) ? null : new(source.TrustedCertificateOrigin, source.TrustedCertificateSha256));
+        public int CredentialReads { get; private set; }
+        public WebDavConnection Connect(WebDavSource source)
+        {
+            CredentialReads++;
+            return new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, "fixture-password",
+                string.IsNullOrEmpty(source.TrustedCertificateSha256) ? null : new(source.TrustedCertificateOrigin, source.TrustedCertificateSha256));
+        }
+        public Task TestSourceAsync(WebDavSource source, string? password, CancellationToken token) => Task.CompletedTask;
         public Task CancelScanAsync(int id) => Task.CompletedTask;
-        public async Task SaveSourceAsync(WebDavSource source, string password) { await Task.Yield(); Saved = source; }
+        public async Task SaveSourceAsync(WebDavSource source, string? password) { await Task.Yield(); Saved = source; }
         public Task ScanAsync(WebDavSource source) => Task.CompletedTask;
     }
 }

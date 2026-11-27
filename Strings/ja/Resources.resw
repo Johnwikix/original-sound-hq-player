@@ -2196,7 +2196,7 @@
     <value>認証情報または権限が無効です。ソースを編集してください。</value>
   </data>
   <data name="WebDavAddressError" xml:space="preserve">
-    <value>有効な HTTP(S) WebDAV アドレスを入力してください。許可されたリダイレクトのみ利用できます。</value>
+    <value>有効な HTTP(S) サーバーアドレスを入力してください。リダイレクト先は許可された範囲内である必要があります。</value>
   </data>
   <data name="WebDavNameError" xml:space="preserve">
     <value>重複しないソース名を入力してください。</value>
@@ -2216,13 +2216,13 @@
   <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
     <value>キャンセル</value>
   </data>
-  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+  <data name="WebDavConnectionHelp" xml:space="preserve">
     <value>NAS と OpenList/AList に対応。読み取り専用。HTTP は暗号化されません。匿名接続はアカウントを空欄にします。</value>
   </data>
   <data name="WebDavName.Header" xml:space="preserve">
     <value>ソース名</value>
   </data>
-  <data name="WebDavAddress.Header" xml:space="preserve">
+  <data name="WebDavAddress" xml:space="preserve">
     <value>WebDAV アドレス</value>
   </data>
   <data name="WebDavUserName.Header" xml:space="preserve">
@@ -2231,13 +2231,13 @@
   <data name="WebDavPassword.Header" xml:space="preserve">
     <value>パスワード（編集時に空欄で維持）</value>
   </data>
-  <data name="WebDavConnectButton.Content" xml:space="preserve">
+  <data name="WebDavConnectButton" xml:space="preserve">
     <value>接続してフォルダーを選択</value>
   </data>
   <data name="WebDavReadMetadata.Content" xml:space="preserve">
     <value>バックグラウンドで曲情報を取得</value>
   </data>
-  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+  <data name="WebDavScanOnStartup" xml:space="preserve">
     <value>起動後にフォルダーを更新</value>
   </data>
   <data name="WebDavSourceEnabled.Content" xml:space="preserve">
@@ -2275,7 +2275,7 @@
   <data name="WebDavEditMenu.Text" xml:space="preserve"><value>編集</value></data>
   <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>削除</value></data>
   <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
-    <value>ローカルフォルダーとネットワークの音楽を一つのライブラリで管理します。</value>
+    <value>ローカルフォルダーを追加するか、WebDAV、Jellyfin、Navidrome に接続します。</value>
   </data>
   <data name="MusicSourcesAdd" xml:space="preserve">
     <value>音楽ソースを追加</value>
@@ -2287,7 +2287,7 @@
     <value>ローカルフォルダーを追加するか、ここにドラッグしてください。</value>
   </data>
   <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
-    <value>NAS、OpenList などの WebDAV 音楽フォルダーに接続します。</value>
+    <value>WebDAV、Jellyfin、Navidrome のいずれかのソースを追加します。</value>
   </data>
   <data name="WebDavCacheExpander.Header" xml:space="preserve">
     <value>WebDAV 再生キャッシュ</value>
@@ -2364,7 +2364,7 @@ SHA-256: {5}
     <value>確認済みの証明書を忘れる</value>
   </data>
   <data name="WebDavCachedAudio" xml:space="preserve">
-    <value>WebDAV · 音声をキャッシュ済み</value>
+    <value>音声をキャッシュ済み</value>
   </data>
   <data name="DspPlaybackRate" xml:space="preserve">
     <value>再生速度</value>
@@ -2933,5 +2933,32 @@ SHA-256: {5}
   </data>
   <data name="DspQuickPresetCustom" xml:space="preserve">
     <value>カスタム</value>
+  </data>
+  <data name="MusicSourcesRemote" xml:space="preserve">
+    <value>リモートソース</value>
+  </data>
+  <data name="MusicSourcesServerHelp" xml:space="preserve">
+    <value>サーバーのアドレスとアカウント情報を入力します。このアカウントでアクセスできる音楽を取り込みます。</value>
+  </data>
+  <data name="MusicSourcesServerAddress" xml:space="preserve">
+    <value>サーバーアドレス</value>
+  </data>
+  <data name="MusicSourcesTestConnection" xml:space="preserve">
+    <value>接続をテスト</value>
+  </data>
+  <data name="MusicSourcesSyncOnStartup" xml:space="preserve">
+    <value>起動後にライブラリを同期</value>
+  </data>
+  <data name="MusicSourcesTestSucceeded" xml:space="preserve">
+    <value>接続を確認しました。保存してライブラリをスキャンできます。</value>
+  </data>
+  <data name="MusicSourcesShowSongs" xml:space="preserve">
+    <value>曲を表示</value>
+  </data>
+  <data name="MusicSourcesScanning" xml:space="preserve">
+    <value>ライブラリを同期中</value>
+  </data>
+  <data name="MusicSourcesRemoteAudio" xml:space="preserve">
+    <value>リモート音声</value>
   </data>
 </root>

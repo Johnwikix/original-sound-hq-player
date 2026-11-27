@@ -35,6 +35,7 @@ public sealed class PlaybackState : ObservableObject
     }
     public double Volume { get; set => SetProperty(ref field, value); } = 50;
     public bool IsPlaying { get; internal set => SetProperty(ref field, value); }
+    public bool CanSeekRemote { get; internal set => SetProperty(ref field, value); }
     public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
     public string ElapsedTimeText { get; set => SetProperty(ref field, value); } = "00:00";
     public string RemainingTimeText { get; set => SetProperty(ref field, value); } = "00:00";

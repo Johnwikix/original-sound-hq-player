@@ -99,11 +99,13 @@ namespace WinUIMusicPlayer.Model
         }
         public bool IsPlayable => !IsDetached && (IsRemoteCached || !IsMissing && !IsRemoteOffline);
     }
+    public enum RemoteSourceKind { WebDav, Jellyfin, Navidrome }
     public sealed record WebDavSource(int Id)
     {
         public bool Enabled => true;
         public string Name => "Test source";
         public string BaseUri => "http://127.0.0.1/dav/";
+        public RemoteSourceKind Kind { get; init; }
     }
     public sealed class WebDavCacheSettings { public bool Enabled { get; set; } public int LimitGiB { get; set; } = 10; }
     #if !REAL_WINUI
@@ -238,6 +240,7 @@ namespace WinUIMusicPlayer.Services
     public sealed class MusicDatabaseService
     {
         public Task<List<WebDavSource>> GetWebDavSourcesAsync() => Task.FromResult(new List<WebDavSource> { new(10) });
+        public Task<List<WebDavSource>> GetRemoteSourcesAsync() => GetWebDavSourcesAsync();
         public Task<Dictionary<int, int>> GetWebDavSourceTrackCountsAsync() => Task.FromResult(new Dictionary<int, int>());
         public Task<int> GetWebDavSourceTrackCountAsync(int sourceId) => Task.FromResult(0);
         public Task<WebDavCacheSettings> GetWebDavCacheSettingsAsync() => Task.FromResult(new WebDavCacheSettings());
@@ -355,6 +358,7 @@ namespace WinUIMusicPlayer.Services
             return Task.CompletedTask;
         }
         public List<Music> Played { get; } = [];
+        public Task StopSourceAsync(int sourceId) => Task.CompletedTask;
         public event Action<Music, long, bool>? Failed;
         public event Action<Music, BassPlayerIpc.Shared.ProgressSnapshot, bool>? PlaybackStarted;
         public void Confirm(Music music) => PlaybackStarted?.Invoke(music, new(1, _generation, 0, 10000, 0, true), false);
@@ -418,6 +422,10 @@ namespace WinUIMusicPlayer.Services
             return available;
         }
     }
-    public static class WebDavText { public static string Error(string code) => code; }
+    public static class WebDavText
+    {
+        public static string Error(string code) => code;
+        public static string SourceName(RemoteSourceKind kind) => kind.ToString();
+    }
     #endif
 }

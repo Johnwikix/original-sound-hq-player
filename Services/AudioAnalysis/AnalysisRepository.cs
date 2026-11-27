@@ -120,7 +120,7 @@ public sealed class AnalysisRepository(SQLiteAsyncConnection connection, Func<st
     public async Task<bool> ReadEnabledAsync() => (await connection.FindAsync<AnalysisSettings>(1).ConfigureAwait(false))?.Enabled ?? true;
     /// <summary>保存开关。</summary>
     public Task SaveEnabledAsync(bool enabled) => connection.InsertOrReplaceAsync(new AnalysisSettings { Enabled = enabled }, typeof(AnalysisSettings));
-    /// <summary>只列出本地及未删除、已启用的WebDAV元数据，不访问网络。</summary>
+    /// <summary>列出本地和可检查完整缓存的网络曲目，不访问网络。</summary>
     public Task<List<AnalysisSource>> ReadSourcesAsync(int after) => WithCache(db => db.Query<AnalysisSource>(
         SourceSelectSql + " AND m.Id>? ORDER BY m.Id LIMIT 64", after));
 
@@ -134,7 +134,7 @@ public sealed class AnalysisRepository(SQLiteAsyncConnection connection, Func<st
     private const string VisibleLocal = "m.SourceId=0 AND COALESCE(m.IsCueContainer,0)=0 AND COALESCE(m.IsMissing,0)=0 AND COALESCE(m.IsDetached,0)=0 " +
         "AND (COALESCE(m.CueTrackNo,0)=0 OR (m.CueMappingActive=1 AND cs.Path IS NOT NULL AND m.SampleRate=cs.SampleRate " +
         "AND m.StartSample>=0 AND m.EndSample>m.StartSample AND m.EndSample<=cs.TotalSamples))";
-    private const string VisibleRemote = "m.SourceId<>0 AND r.Missing=0 " +
+    private const string VisibleRemote = "m.SourceId<>0 AND r.Missing=0 AND r.Length>0 AND r.ETag<>'' AND substr(r.ETag,1,2)<>'W/' " +
         "AND EXISTS(SELECT 1 FROM WebDavSource s WHERE s.Id=m.SourceId AND s.Enabled=1)";
     private const string SourceKeySql =
         "CASE WHEN m.SourceId<>0 THEN m.SourceId||char(31)||r.Href||char(31)||r.ETag||char(31)||r.Modified||char(31)||r.Length " +
