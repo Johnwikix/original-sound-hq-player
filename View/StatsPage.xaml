@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.StatsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -32,11 +32,10 @@
         </Grid.ChildrenTransitions>
 
         <!--  页面标题  -->
-        <Grid Grid.Row="0" Margin="0">
-            <TextBlock
-                x:Uid="Stats"
-                Margin="16,10,0,10"
-                FontSize="28" />
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,10,16,10" ColumnSpacing="12">
+            <TextBlock x:Uid="Stats" VerticalAlignment="Center" FontSize="28" />
+            <Button Grid.Column="1" x:Uid="ListeningReportEntry" AutomationProperties.AutomationId="ListeningReportEntry"
+                    VerticalAlignment="Center" Click="OpenListeningReport_Click" />
         </Grid>
 
         <!--  时间范围选择  -->

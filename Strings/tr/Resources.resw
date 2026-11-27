@@ -2970,4 +2970,124 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="MusicSourcesNameRequired" xml:space="preserve">
     <value>Bir kaynak adı girin.</value>
   </data>
+  <data name="ListeningReportEntry.Content" xml:space="preserve">
+    <value>Dinleme raporları</value>
+  </data>
+  <data name="ListeningReportPageTitle.Text" xml:space="preserve">
+    <value>Dinleme raporları</value>
+  </data>
+  <data name="ListeningReportBackLabel" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="ListeningReportAnnual.Content" xml:space="preserve">
+    <value>Yıllık</value>
+  </data>
+  <data name="ListeningReportMonthly.Content" xml:space="preserve">
+    <value>Aylık</value>
+  </data>
+  <data name="ListeningReportYear.Header" xml:space="preserve">
+    <value>Yıl</value>
+  </data>
+  <data name="ListeningReportMonth.Header" xml:space="preserve">
+    <value>Ay</value>
+  </data>
+  <data name="ListeningReportRefresh.Content" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="ListeningReportExport.Content" xml:space="preserve">
+    <value>Özet görselini dışa aktar</value>
+  </data>
+  <data name="ListeningReportGoRecent.Content" xml:space="preserve">
+    <value>Kayıt bulunan son dönemi göster</value>
+  </data>
+  <data name="ListeningReportDuration.Text" xml:space="preserve">
+    <value>Geçerli dinleme süresi</value>
+  </data>
+  <data name="ListeningReportPlays.Text" xml:space="preserve">
+    <value>Geçerli oynatmalar</value>
+  </data>
+  <data name="ListeningReportDays.Text" xml:space="preserve">
+    <value>Etkin günler</value>
+  </data>
+  <data name="ListeningReportTopSongs.Text" xml:space="preserve">
+    <value>En çok dinlenen şarkılar</value>
+  </data>
+  <data name="ListeningReportTopArtists.Text" xml:space="preserve">
+    <value>En çok dinlenen sanatçılar</value>
+  </data>
+  <data name="ListeningReportTopArtist.Text" xml:space="preserve">
+    <value>En çok dinlenen sanatçı</value>
+  </data>
+  <data name="ListeningReportRules.Text" xml:space="preserve">
+    <value>Güncel kurallar: Parçanın en az %50’si oynatıldığında oturum bittikten sonra kaydedilir. Süre oynatma konumuna göre hesaplanır ve ileri sarmayı içerebilir. Oynatmalar başladıkları güne yazılır.</value>
+  </data>
+  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
+    <value>Rapora dön</value>
+  </data>
+  <data name="ListeningReportSave.Content" xml:space="preserve">
+    <value>PNG’yi kaydet</value>
+  </data>
+  <data name="ListeningReportMonthTitle" xml:space="preserve">
+    <value>Dinleme raporu · {0}</value>
+  </data>
+  <data name="ListeningReportYearTitle" xml:space="preserve">
+    <value>{0} yıllık dinleme raporu</value>
+  </data>
+  <data name="ListeningReportInProgress" xml:space="preserve">
+    <value>Devam ediyor · {0} – {1}</value>
+  </data>
+  <data name="ListeningReportFirstRecord" xml:space="preserve">
+    <value>Yalnızca bu cihazda kayıtlı geçerli oynatmalar. En eski kayıt: {0}.</value>
+  </data>
+  <data name="ListeningReportHistoryOnly" xml:space="preserve">
+    <value>Yalnızca bu cihazda kayıtlı geçerli oynatmalar</value>
+  </data>
+  <data name="ListeningReportSeconds" xml:space="preserve">
+    <value>{0:N0} sn</value>
+  </data>
+  <data name="ListeningReportMinutes" xml:space="preserve">
+    <value>{0:N0} dk</value>
+  </data>
+  <data name="ListeningReportHoursMinutes" xml:space="preserve">
+    <value>{0:N0} sa. {1} dk</value>
+  </data>
+  <data name="ListeningReportDaily" xml:space="preserve">
+    <value>Günlük oynatmalar</value>
+  </data>
+  <data name="ListeningReportMonthlyTrend" xml:space="preserve">
+    <value>Aylık oynatmalar</value>
+  </data>
+  <data name="ListeningReportPeakDay" xml:space="preserve">
+    <value>En yoğun gün: {0} · {1:N0} geçerli oynatma</value>
+  </data>
+  <data name="ListeningReportPeakMonth" xml:space="preserve">
+    <value>En yoğun ay: {0} · {1:N0} geçerli oynatma</value>
+  </data>
+  <data name="ListeningReportFuture" xml:space="preserve">
+    <value>{0} · Henüz gelmedi</value>
+  </data>
+  <data name="ListeningReportNoRecords" xml:space="preserve">
+    <value>{0} · Saklanan kayıt yok</value>
+  </data>
+  <data name="ListeningReportTileCount" xml:space="preserve">
+    <value>{0} · {1:N0} geçerli oynatma</value>
+  </data>
+  <data name="ListeningReportPlayOccurrences" xml:space="preserve">
+    <value>{0:N0} geçerli oynatma</value>
+  </data>
+  <data name="ListeningReportUnknownSong" xml:space="preserve">
+    <value>Bilinmeyen parça</value>
+  </data>
+  <data name="ListeningReportEmpty" xml:space="preserve">
+    <value>Bu dönem için kayıtlı geçerli oynatma yok. Oynatmalar, dinleme eşiğini karşılayıp sona erdiğinde raporda görünür.</value>
+  </data>
+  <data name="ListeningReportLoadFailed" xml:space="preserve">
+    <value>Dinleme raporu yüklenemedi. Yenileyip tekrar deneyin.</value>
+  </data>
+  <data name="ListeningReportSaved" xml:space="preserve">
+    <value>Görsel şuraya kaydedildi: {0}</value>
+  </data>
+  <data name="ListeningReportSaveFailed" xml:space="preserve">
+    <value>Görsel kaydedilemedi. Tekrar deneyin veya başka bir konum seçin.</value>
+  </data>
 </root>

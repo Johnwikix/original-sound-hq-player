@@ -19,7 +19,7 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = App.Services.GetRequiredService<StatsViewModel>();
             this.InitializeComponent();
-            DataContext = this;
+
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
         }
 
@@ -28,6 +28,9 @@ namespace WinUIMusicPlayer.View
             base.OnNavigatedTo(e);
             ViewModel.OnPageActive();
         }
+
+        private void OpenListeningReport_Click(object sender, RoutedEventArgs e)
+            => Frame.Navigate(typeof(ListeningReportPage));
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {

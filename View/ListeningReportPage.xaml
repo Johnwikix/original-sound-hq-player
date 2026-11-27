@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="WinUIMusicPlayer.View.ListeningReportPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel">
+
+    <Page.Resources>
+        <Style x:Key="ReportSectionStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+        <DataTemplate x:Key="ReportRankTemplate" x:DataType="vm:ListeningReportRank">
+            <Grid ColumnDefinitions="32,*,Auto" ColumnSpacing="8" Padding="0,6">
+                <TextBlock Text="{x:Bind Position}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{x:Bind Detail}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis" Visibility="{x:Bind DetailVisibility}" />
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="{x:Bind Count}" AutomationProperties.Name="{x:Bind CountDescription}" />
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid RowDefinitions="Auto,*" Padding="16,10,16,0">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="840" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SongSection.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="ArtistSection.(Grid.Row)" Value="0" />
+                        <Setter Target="ArtistSection.(Grid.Column)" Value="1" />
+                        <Setter Target="ArtistSection.(Grid.ColumnSpan)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,14">
+            <Button AutomationProperties.Name="{x:Bind ViewModel.BackLabel}" Click="Back_Click" IsEnabled="{x:Bind ViewModel.CanNavigateBack, Mode=OneWay}">
+                <FontIcon Glyph="&#xE72B;" />
+            </Button>
+            <TextBlock x:Uid="ListeningReportPageTitle" VerticalAlignment="Center" Style="{ThemeResource SubtitleTextBlockStyle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Visibility="{x:Bind ViewModel.BodyVisibility, Mode=OneWay}" HorizontalScrollMode="Disabled">
+            <StackPanel MaxWidth="1100" Padding="0,0,0,20" Spacing="16">
+                <RadioButtons MaxColumns="2" SelectedIndex="{x:Bind ViewModel.ModeIndex, Mode=TwoWay}">
+                    <RadioButton x:Uid="ListeningReportAnnual" />
+                    <RadioButton x:Uid="ListeningReportMonthly" />
+                </RadioButtons>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <NumberBox x:Uid="ListeningReportYear" SpinButtonPlacementMode="Compact" MinWidth="92"
+                               Minimum="{x:Bind ViewModel.MinimumYear, Mode=OneWay}"
+                               Maximum="{x:Bind ViewModel.MaximumYear, Mode=OneWay}"
+                               Value="{x:Bind ViewModel.SelectedYear, Mode=TwoWay}" />
+                    <NumberBox x:Uid="ListeningReportMonth" SpinButtonPlacementMode="Compact" MinWidth="72"
+                               Visibility="{x:Bind ViewModel.MonthVisibility, Mode=OneWay}"
+                               Minimum="{x:Bind ViewModel.MinimumMonth, Mode=OneWay}"
+                               Maximum="{x:Bind ViewModel.MaximumMonth, Mode=OneWay}"
+                               Value="{x:Bind ViewModel.SelectedMonth, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Uid="ListeningReportRefresh" Command="{x:Bind ViewModel.RefreshCommand}" />
+                    <Button x:Uid="ListeningReportExport" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.OpenPreviewCommand}" />
+                </StackPanel>
+
+                <ProgressBar IsIndeterminate="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}" />
+                <StackPanel Visibility="{x:Bind ViewModel.StatusVisibility, Mode=OneWay}" Spacing="8">
+                    <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                    <Button x:Uid="ListeningReportGoRecent" Visibility="{x:Bind ViewModel.RecentVisibility, Mode=OneWay}" Command="{x:Bind ViewModel.OpenRecentCommand}" />
+                </StackPanel>
+
+                <StackPanel Visibility="{x:Bind ViewModel.ReportVisibility, Mode=OneWay}" Spacing="16">
+                    <Grid Padding="20" CornerRadius="8">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#152525" Offset="0" />
+                                <GradientStop Color="#223636" Offset="1" />
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Heading, Mode=OneWay}"
+                                       Foreground="#FFF6E6" FontSize="32" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Coverage, Mode=OneWay}" Foreground="#E4D4BC" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Zone, Mode=OneWay}" Foreground="#E4D4BC" TextWrapping="Wrap" />
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12" Margin="0,18,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind ViewModel.Presentation.Duration, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Uid="ListeningReportDuration" Foreground="#E4D4BC" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{x:Bind ViewModel.Presentation.PlayCount, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" />
+                                    <TextBlock x:Uid="ListeningReportPlays" Foreground="#E4D4BC" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{x:Bind ViewModel.Presentation.ActiveDays, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" />
+                                    <TextBlock x:Uid="ListeningReportDays" Foreground="#E4D4BC" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Style="{StaticResource ReportSectionStyle}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.TrendHeading, Mode=OneWay}" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Highlight, Mode=OneWay}" Visibility="{x:Bind ViewModel.Presentation.HighlightVisibility, Mode=OneWay}" TextWrapping="Wrap" />
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Presentation.Tiles, Mode=OneWay}"
+                                           Visibility="{x:Bind ViewModel.Presentation.AnnualVisibility, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <UniformGridLayout ItemsStretch="Fill" MinItemWidth="26" MinItemHeight="108" MaximumRowsOrColumns="12" MinColumnSpacing="4" MinRowSpacing="10" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ListeningReportTile">
+                                        <Grid RowDefinitions="82,Auto" RowSpacing="5" ToolTipService.ToolTip="{x:Bind Description}" AutomationProperties.Name="{x:Bind Description}">
+                                            <Border Height="{x:Bind BarHeight}" CornerRadius="3,3,0,0" Margin="2,0"
+                                                    Background="{ThemeResource AccentFillColorDefaultBrush}" VerticalAlignment="Bottom" />
+                                            <TextBlock Grid.Row="1" Text="{x:Bind Label}" TextTrimming="CharacterEllipsis" FontSize="11" HorizontalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                            <StackPanel Visibility="{x:Bind ViewModel.Presentation.MonthlyVisibility, Mode=OneWay}" Spacing="6">
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Presentation.Weekdays, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout ItemsStretch="Fill" MinItemWidth="30" MinItemHeight="18" MaximumRowsOrColumns="7" MinColumnSpacing="5" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ListeningReportTile">
+                                            <TextBlock Text="{x:Bind Label}" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Presentation.Tiles, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout ItemsStretch="Fill" MinItemWidth="30" MinItemHeight="34" MaximumRowsOrColumns="7" MinColumnSpacing="5" MinRowSpacing="5" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ListeningReportTile">
+                                            <Grid ToolTipService.ToolTip="{x:Bind Description}" AutomationProperties.Name="{x:Bind Description}">
+                                                <Border CornerRadius="4" Opacity="{x:Bind Opacity}" Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                                <TextBlock Text="{x:Bind Label}" Visibility="{x:Bind LabelVisibility}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                        <Border x:Name="SongSection" Grid.ColumnSpan="2" Style="{StaticResource ReportSectionStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock x:Uid="ListeningReportTopSongs" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.Presentation.Songs, Mode=OneWay}" ItemTemplate="{StaticResource ReportRankTemplate}" />
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="ArtistSection" Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource ReportSectionStyle}" Visibility="{x:Bind ViewModel.Presentation.ArtistsVisibility, Mode=OneWay}">
+                            <StackPanel Spacing="8">
+                                <TextBlock x:Uid="ListeningReportTopArtists" Style="{ThemeResource SubtitleTextBlockStyle}" TextWrapping="Wrap" />
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.Presentation.Artists, Mode=OneWay}" ItemTemplate="{StaticResource ReportRankTemplate}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <TextBlock Text="{x:Bind ViewModel.Presentation.Footnote, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock x:Uid="ListeningReportRules" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid x:Name="PreviewPanel" Grid.Row="1" RowDefinitions="Auto,Auto,*"
+              x:Load="{x:Bind ViewModel.IsPreview, Mode=OneWay}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button x:Uid="ListeningReportClosePreview" Command="{x:Bind ViewModel.ClosePreviewCommand}" />
+                <Button x:Uid="ListeningReportSave" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
+                <ProgressRing IsActive="{x:Bind ViewModel.IsPreparingPreview, Mode=OneWay}" Width="22" Height="22" />
+                <ProgressRing IsActive="{x:Bind ViewModel.IsSaving, Mode=OneWay}" Width="22" Height="22" />
+            </StackPanel>
+            <TextBlock Grid.Row="1" Margin="0,6" Text="{x:Bind ViewModel.SaveStatus, Mode=OneWay}" TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Polite" />
+            <ScrollViewer Grid.Row="2" HorizontalScrollMode="Disabled">
+                <Viewbox MaxWidth="540" HorizontalAlignment="Center" StretchDirection="DownOnly">
+                    <Grid x:Name="PosterCanvas" Width="540" Height="675" Padding="34"
+                          RowDefinitions="Auto,Auto,*,Auto,Auto">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#182A29" Offset="0" />
+                                <GradientStop Color="#102021" Offset="1" />
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        <TextBlock Text="OriginalSound" Foreground="#FFBF95" FontWeight="SemiBold" CharacterSpacing="128" />
+                        <StackPanel Grid.Row="1" Margin="0,19,0,20" Spacing="4">
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Heading, Mode=OneWay}" Foreground="#FFF6E6"
+                                       FontSize="35" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Coverage, Mode=OneWay}" Foreground="#E4D4BC"
+                                       FontSize="14" TextWrapping="Wrap" MaxLines="2" />
+                        </StackPanel>
+                        <Grid Grid.Row="2" ColumnDefinitions="*,130" ColumnSpacing="18" VerticalAlignment="Center">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.Duration, Mode=OneWay}" Foreground="#FFF6E6"
+                                           FontSize="38" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Uid="ListeningReportDuration" Foreground="#E4D4BC" FontSize="15" />
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,11,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="{x:Bind ViewModel.Presentation.PlayCount, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" />
+                                        <TextBlock x:Uid="ListeningReportPlays" Foreground="#E4D4BC" FontSize="14" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{x:Bind ViewModel.Presentation.ActiveDays, Mode=OneWay}" Foreground="#FFF6E6" FontSize="23" FontWeight="SemiBold" />
+                                        <TextBlock x:Uid="ListeningReportDays" Foreground="#E4D4BC" FontSize="14" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                            <Grid Grid.Column="1" Width="130" Height="130" VerticalAlignment="Center">
+                                <Ellipse Fill="#293C3C" />
+                                <Ellipse Width="104" Height="104" Stroke="#506566" StrokeThickness="1" />
+                                <Ellipse Width="82" Height="82" Stroke="#506566" StrokeThickness="1" />
+                                <Ellipse Width="49" Height="49" Fill="#FFBF95" />
+                                <Ellipse Width="7" Height="7" Fill="#293C3C" />
+                                <Image Source="{x:Bind ViewModel.PreviewCover, Mode=OneWay}" Stretch="UniformToFill" />
+                            </Grid>
+                        </Grid>
+                        <Grid Grid.Row="3" ColumnDefinitions="3*,2*" ColumnSpacing="20" Margin="0,18,0,16">
+                            <StackPanel Spacing="6">
+                                <TextBlock x:Uid="ListeningReportTopSongs" Foreground="#FFBF95" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.PosterSongs, Mode=OneWay}" Foreground="#FFF6E6"
+                                           FontSize="17" TextTrimming="CharacterEllipsis" LineHeight="24" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="6" Visibility="{x:Bind ViewModel.Presentation.PosterArtistVisibility, Mode=OneWay}">
+                                <TextBlock x:Uid="ListeningReportTopArtist" Foreground="#FFBF95" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.Presentation.PosterArtist, Mode=OneWay}" Foreground="#FFF6E6"
+                                           FontSize="17" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Grid.Row="4" Spacing="3">
+                            <Rectangle Height="1" Fill="#4F6666" Margin="0,2,0,8" />
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Zone, Mode=OneWay}" Foreground="#E4D4BC" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
+                            <TextBlock Text="{x:Bind ViewModel.Presentation.Footnote, Mode=OneWay}" Foreground="#E4D4BC" FontSize="12" TextWrapping="Wrap" MaxLines="2" />
+                        </StackPanel>
+                    </Grid>
+                </Viewbox>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

@@ -376,6 +376,11 @@ namespace WinUIMusicPlayer.View
                 CloseMusicDetails();
                 return;
             }
+            if (MainFrame.Content is ListeningReportPage reportPage)
+            {
+                reportPage.NavigateBack();
+                return;
+            }
             if (MainFrame.Content is HomePage homePage && homePage.ViewModel.IsInDetailMode)
             {
                 homePage.CollapseDetail();

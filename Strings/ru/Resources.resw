@@ -2970,4 +2970,124 @@ SHA-256: {5}
   <data name="MusicSourcesNameRequired" xml:space="preserve">
     <value>Введите название источника.</value>
   </data>
+  <data name="ListeningReportEntry.Content" xml:space="preserve">
+    <value>Отчёты о прослушивании</value>
+  </data>
+  <data name="ListeningReportPageTitle.Text" xml:space="preserve">
+    <value>Отчёты о прослушивании</value>
+  </data>
+  <data name="ListeningReportBackLabel" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="ListeningReportAnnual.Content" xml:space="preserve">
+    <value>Год</value>
+  </data>
+  <data name="ListeningReportMonthly.Content" xml:space="preserve">
+    <value>Месяц</value>
+  </data>
+  <data name="ListeningReportYear.Header" xml:space="preserve">
+    <value>Год</value>
+  </data>
+  <data name="ListeningReportMonth.Header" xml:space="preserve">
+    <value>Месяц</value>
+  </data>
+  <data name="ListeningReportRefresh.Content" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="ListeningReportExport.Content" xml:space="preserve">
+    <value>Экспорт изображения</value>
+  </data>
+  <data name="ListeningReportGoRecent.Content" xml:space="preserve">
+    <value>Открыть последний период с записями</value>
+  </data>
+  <data name="ListeningReportDuration.Text" xml:space="preserve">
+    <value>Учтённое время прослушивания</value>
+  </data>
+  <data name="ListeningReportPlays.Text" xml:space="preserve">
+    <value>Учтённые воспроизведения</value>
+  </data>
+  <data name="ListeningReportDays.Text" xml:space="preserve">
+    <value>Дни прослушивания</value>
+  </data>
+  <data name="ListeningReportTopSongs.Text" xml:space="preserve">
+    <value>Популярные треки</value>
+  </data>
+  <data name="ListeningReportTopArtists.Text" xml:space="preserve">
+    <value>Популярные исполнители</value>
+  </data>
+  <data name="ListeningReportTopArtist.Text" xml:space="preserve">
+    <value>Главный исполнитель</value>
+  </data>
+  <data name="ListeningReportRules.Text" xml:space="preserve">
+    <value>Текущие правила: запись сохраняется после завершения, если воспроизведено не менее 50 % трека. Время определяется позицией и может включать перемотку вперёд. Учитывается день начала воспроизведения.</value>
+  </data>
+  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
+    <value>Назад к отчёту</value>
+  </data>
+  <data name="ListeningReportSave.Content" xml:space="preserve">
+    <value>Сохранить PNG</value>
+  </data>
+  <data name="ListeningReportMonthTitle" xml:space="preserve">
+    <value>Отчёт о прослушивании · {0}</value>
+  </data>
+  <data name="ListeningReportYearTitle" xml:space="preserve">
+    <value>Годовой отчёт · {0}</value>
+  </data>
+  <data name="ListeningReportInProgress" xml:space="preserve">
+    <value>Продолжается · с {0} по {1}</value>
+  </data>
+  <data name="ListeningReportFirstRecord" xml:space="preserve">
+    <value>Только сохранённые на этом устройстве прослушивания. Самая ранняя запись — {0}.</value>
+  </data>
+  <data name="ListeningReportHistoryOnly" xml:space="preserve">
+    <value>Только учтённые прослушивания на этом устройстве</value>
+  </data>
+  <data name="ListeningReportSeconds" xml:space="preserve">
+    <value>{0:N0} сек.</value>
+  </data>
+  <data name="ListeningReportMinutes" xml:space="preserve">
+    <value>{0:N0} мин.</value>
+  </data>
+  <data name="ListeningReportHoursMinutes" xml:space="preserve">
+    <value>{0:N0} ч {1} мин.</value>
+  </data>
+  <data name="ListeningReportDaily" xml:space="preserve">
+    <value>Воспроизведения по дням</value>
+  </data>
+  <data name="ListeningReportMonthlyTrend" xml:space="preserve">
+    <value>Воспроизведения по месяцам</value>
+  </data>
+  <data name="ListeningReportPeakDay" xml:space="preserve">
+    <value>Самый активный день: {0} · {1:N0} учтённых воспроизведений</value>
+  </data>
+  <data name="ListeningReportPeakMonth" xml:space="preserve">
+    <value>Самый активный месяц: {0} · {1:N0} учтённых воспроизведений</value>
+  </data>
+  <data name="ListeningReportFuture" xml:space="preserve">
+    <value>{0} · Ещё не наступило</value>
+  </data>
+  <data name="ListeningReportNoRecords" xml:space="preserve">
+    <value>{0} · Нет сохранённых записей</value>
+  </data>
+  <data name="ListeningReportTileCount" xml:space="preserve">
+    <value>{0} · {1:N0} учтённых воспроизведений</value>
+  </data>
+  <data name="ListeningReportPlayOccurrences" xml:space="preserve">
+    <value>{0:N0} учтённых воспроизведений</value>
+  </data>
+  <data name="ListeningReportUnknownSong" xml:space="preserve">
+    <value>Неизвестный трек</value>
+  </data>
+  <data name="ListeningReportEmpty" xml:space="preserve">
+    <value>За этот период нет сохранённых записей. Воспроизведение появится в отчёте после завершения, если оно достигло порога прослушивания.</value>
+  </data>
+  <data name="ListeningReportLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить отчёт. Обновите страницу, чтобы повторить попытку.</value>
+  </data>
+  <data name="ListeningReportSaved" xml:space="preserve">
+    <value>Изображение сохранено в {0}</value>
+  </data>
+  <data name="ListeningReportSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить изображение. Повторите попытку или выберите другую папку.</value>
+  </data>
 </root>

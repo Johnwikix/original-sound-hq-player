@@ -1,3 +1,9 @@
+## 2026-11-27 新增年度和月度听歌报告
+
+- `StatsPage`、`ListeningReportPage`：统计页支持查看本期与历史自然周期报告，预览并保存 1080 × 1350 PNG。
+- `ListeningReportQuery`、`ListeningReportImages`：以只读 SQLite 快照聚合现有播放历史，限制封面解码及导出缓存，保留旧库统计口径。
+- `Strings/*/Resources.resw`：补齐七语言报告、统计口径与导出反馈。
+
 ## 2026-11-27 修复同步后正在播放的远程封面刷新
 
 - `CoverPresentationService` 在曲库同步更新正在播放的远程曲目封面时，立即刷新播放界面和系统媒体缩略图。

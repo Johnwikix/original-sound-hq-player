@@ -2970,4 +2970,124 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="MusicSourcesNameRequired" xml:space="preserve">
     <value>Geben Sie einen Namen für die Quelle ein.</value>
   </data>
+  <data name="ListeningReportEntry.Content" xml:space="preserve">
+    <value>Hörberichte</value>
+  </data>
+  <data name="ListeningReportPageTitle.Text" xml:space="preserve">
+    <value>Hörberichte</value>
+  </data>
+  <data name="ListeningReportBackLabel" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="ListeningReportAnnual.Content" xml:space="preserve">
+    <value>Jährlich</value>
+  </data>
+  <data name="ListeningReportMonthly.Content" xml:space="preserve">
+    <value>Monatlich</value>
+  </data>
+  <data name="ListeningReportYear.Header" xml:space="preserve">
+    <value>Jahr</value>
+  </data>
+  <data name="ListeningReportMonth.Header" xml:space="preserve">
+    <value>Monat</value>
+  </data>
+  <data name="ListeningReportRefresh.Content" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="ListeningReportExport.Content" xml:space="preserve">
+    <value>Übersichtsbild exportieren</value>
+  </data>
+  <data name="ListeningReportGoRecent.Content" xml:space="preserve">
+    <value>Letzten Zeitraum mit Einträgen ansehen</value>
+  </data>
+  <data name="ListeningReportDuration.Text" xml:space="preserve">
+    <value>Erfasste Hörzeit</value>
+  </data>
+  <data name="ListeningReportPlays.Text" xml:space="preserve">
+    <value>Erfasste Wiedergaben</value>
+  </data>
+  <data name="ListeningReportDays.Text" xml:space="preserve">
+    <value>Aktive Tage</value>
+  </data>
+  <data name="ListeningReportTopSongs.Text" xml:space="preserve">
+    <value>Meistgehörte Titel</value>
+  </data>
+  <data name="ListeningReportTopArtists.Text" xml:space="preserve">
+    <value>Meistgehörte Künstler</value>
+  </data>
+  <data name="ListeningReportTopArtist.Text" xml:space="preserve">
+    <value>Meistgehörter Künstler</value>
+  </data>
+  <data name="ListeningReportRules.Text" xml:space="preserve">
+    <value>Aktuelle Regeln: Nach dem Ende zählen Wiedergaben ab 50 % der Titellänge. Die Zeit folgt der Abspielposition und kann Vorspringen einschließen. Eine Wiedergabe zählt zum Starttag.</value>
+  </data>
+  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
+    <value>Zurück zum Bericht</value>
+  </data>
+  <data name="ListeningReportSave.Content" xml:space="preserve">
+    <value>PNG speichern</value>
+  </data>
+  <data name="ListeningReportMonthTitle" xml:space="preserve">
+    <value>Hörbericht für {0}</value>
+  </data>
+  <data name="ListeningReportYearTitle" xml:space="preserve">
+    <value>Hörbericht für {0}</value>
+  </data>
+  <data name="ListeningReportInProgress" xml:space="preserve">
+    <value>Laufend · {0} bis {1}</value>
+  </data>
+  <data name="ListeningReportFirstRecord" xml:space="preserve">
+    <value>Nur erfasste Wiedergaben auf diesem Gerät. Der älteste gespeicherte Eintrag ist vom {0}.</value>
+  </data>
+  <data name="ListeningReportHistoryOnly" xml:space="preserve">
+    <value>Nur erfasste Wiedergaben auf diesem Gerät</value>
+  </data>
+  <data name="ListeningReportSeconds" xml:space="preserve">
+    <value>{0:N0} Sek.</value>
+  </data>
+  <data name="ListeningReportMinutes" xml:space="preserve">
+    <value>{0:N0} Min.</value>
+  </data>
+  <data name="ListeningReportHoursMinutes" xml:space="preserve">
+    <value>{0:N0} Std. {1} Min.</value>
+  </data>
+  <data name="ListeningReportDaily" xml:space="preserve">
+    <value>Wiedergaben pro Tag</value>
+  </data>
+  <data name="ListeningReportMonthlyTrend" xml:space="preserve">
+    <value>Wiedergaben pro Monat</value>
+  </data>
+  <data name="ListeningReportPeakDay" xml:space="preserve">
+    <value>Aktivster Tag: {0} · {1:N0} erfasste Wiedergaben</value>
+  </data>
+  <data name="ListeningReportPeakMonth" xml:space="preserve">
+    <value>Aktivster Monat: {0} · {1:N0} erfasste Wiedergaben</value>
+  </data>
+  <data name="ListeningReportFuture" xml:space="preserve">
+    <value>{0} · Bevorstehend</value>
+  </data>
+  <data name="ListeningReportNoRecords" xml:space="preserve">
+    <value>{0} · Keine gespeicherten Einträge</value>
+  </data>
+  <data name="ListeningReportTileCount" xml:space="preserve">
+    <value>{0} · {1:N0} erfasste Wiedergaben</value>
+  </data>
+  <data name="ListeningReportPlayOccurrences" xml:space="preserve">
+    <value>{0:N0} erfasste Wiedergaben</value>
+  </data>
+  <data name="ListeningReportUnknownSong" xml:space="preserve">
+    <value>Unbekannter Titel</value>
+  </data>
+  <data name="ListeningReportEmpty" xml:space="preserve">
+    <value>In diesem Zeitraum sind keine erfassten Wiedergaben gespeichert. Sie erscheinen hier nach Ende der Wiedergabe, wenn die Mindesthördauer erreicht wurde.</value>
+  </data>
+  <data name="ListeningReportLoadFailed" xml:space="preserve">
+    <value>Der Hörbericht konnte nicht geladen werden. Bitte erneut aktualisieren.</value>
+  </data>
+  <data name="ListeningReportSaved" xml:space="preserve">
+    <value>Bild gespeichert unter {0}</value>
+  </data>
+  <data name="ListeningReportSaveFailed" xml:space="preserve">
+    <value>Das Bild konnte nicht gespeichert werden. Bitte erneut versuchen oder einen anderen Speicherort wählen.</value>
+  </data>
 </root>

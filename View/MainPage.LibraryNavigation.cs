@@ -36,7 +36,7 @@ public sealed partial class MainPage
             ViewModel.AppViewModel.IsBackBtnEnable = false;
         }
         WinUIMusicPlayer.Services.UiLayoutDiagnostics.SetContext(pageType.FullName ?? pageType.Name);
-        MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
+        if (!MainFrame.Navigate(pageType, parameter, navigationTransitionInfo)) return;
         if (MainFrame.Content is PlayListPage playlist)
             ViewModel.AppViewModel.IsBackBtnEnable = playlist.ViewModel.IsInDetailMode;
         MainFrame.BackStack.Clear();

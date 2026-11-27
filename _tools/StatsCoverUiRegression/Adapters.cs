@@ -60,6 +60,7 @@ namespace WinUIMusicPlayer.Services
 {
     public sealed class MusicDatabaseService(SQLiteAsyncConnection connection)
     {
+        public Task WhenInitialized => Task.CompletedTask;
         public SQLiteAsyncConnection GetDbConnection() => connection;
     }
 
@@ -115,6 +116,8 @@ namespace WinUIMusicPlayer.Utils
     }
     public partial class ToolUtils
     {
+        public static string GetString(string key) => new Microsoft.Windows.ApplicationModel.Resources.ResourceLoader().GetString(key);
+        internal static string FindRawCachePath(string hash) => WebDavCachePaths.FindCover(AppSettings.MusicCoverCache, hash);
         public static int Reads;
         public static TaskCompletionSource? ReadGate;
         public static Action<Music>? ReadStarted;

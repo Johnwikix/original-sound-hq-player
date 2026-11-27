@@ -51,6 +51,7 @@ public sealed partial class App : Application
     {
         SQLiteAsyncConnection? db = null;
         StatsViewModel? stats = null;
+        ListeningReportViewModel? reports = null;
         try
         {
             string fixture = Path.Combine(AppContext.BaseDirectory, "artifacts");
@@ -81,7 +82,11 @@ public sealed partial class App : Application
                 new ShutdownCoordinator(new AppLifecycle(), NullLogger<ShutdownCoordinator>.Instance));
             var remote = new WebDavLibraryService();
             var matcher = new LrcService();
-            Services = new ServiceCollection().AddSingleton(stats).AddSingleton(remote).AddSingleton(matcher).BuildServiceProvider();
+            var reportQuery = new ListeningReportQuery(new MusicDatabaseService(db));
+            reports = new ListeningReportViewModel(reportQuery, NullLogger<ListeningReportViewModel>.Instance,
+                new ShutdownCoordinator(new AppLifecycle(), NullLogger<ShutdownCoordinator>.Instance));
+            Services = new ServiceCollection().AddSingleton(stats).AddSingleton(reports)
+                .AddSingleton(remote).AddSingleton(matcher).BuildServiceProvider();
             var frame = new Frame();
             MainWindow = new Window { Content = frame };
             MainWindow.AppWindow.Move(new Windows.Graphics.PointInt32(-10000, -10000));
@@ -153,6 +158,7 @@ public sealed partial class App : Application
             await stats.StopAsync();
             await stats.StopAsync();
             await CheckCoverPriorityAsync(cover);
+            await ListeningReportChecks.RunAsync(frame, db, reports, fixture, cover, Check, _checks.Add);
             File.WriteAllLines(_result, _checks);
         }
         catch (Exception ex)
@@ -162,6 +168,7 @@ public sealed partial class App : Application
         }
         finally
         {
+            if (reports is not null) await reports.StopAsync();
             if (stats is not null) await stats.StopAsync();
             if (db is not null) await db.CloseAsync();
             CoverLoadQueue.Shutdown();

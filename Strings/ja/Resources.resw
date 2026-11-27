@@ -2970,4 +2970,124 @@ SHA-256: {5}
   <data name="MusicSourcesNameRequired" xml:space="preserve">
     <value>ソース名を入力してください。</value>
   </data>
+  <data name="ListeningReportEntry.Content" xml:space="preserve">
+    <value>リスニングレポート</value>
+  </data>
+  <data name="ListeningReportPageTitle.Text" xml:space="preserve">
+    <value>リスニングレポート</value>
+  </data>
+  <data name="ListeningReportBackLabel" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="ListeningReportAnnual.Content" xml:space="preserve">
+    <value>年別</value>
+  </data>
+  <data name="ListeningReportMonthly.Content" xml:space="preserve">
+    <value>月別</value>
+  </data>
+  <data name="ListeningReportYear.Header" xml:space="preserve">
+    <value>年</value>
+  </data>
+  <data name="ListeningReportMonth.Header" xml:space="preserve">
+    <value>月</value>
+  </data>
+  <data name="ListeningReportRefresh.Content" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="ListeningReportExport.Content" xml:space="preserve">
+    <value>まとめ画像を出力</value>
+  </data>
+  <data name="ListeningReportGoRecent.Content" xml:space="preserve">
+    <value>記録のある最新の期間を表示</value>
+  </data>
+  <data name="ListeningReportDuration.Text" xml:space="preserve">
+    <value>有効な再生時間</value>
+  </data>
+  <data name="ListeningReportPlays.Text" xml:space="preserve">
+    <value>有効な再生回数</value>
+  </data>
+  <data name="ListeningReportDays.Text" xml:space="preserve">
+    <value>再生した日数</value>
+  </data>
+  <data name="ListeningReportTopSongs.Text" xml:space="preserve">
+    <value>よく聴いた曲</value>
+  </data>
+  <data name="ListeningReportTopArtists.Text" xml:space="preserve">
+    <value>よく聴いたアーティスト</value>
+  </data>
+  <data name="ListeningReportTopArtist.Text" xml:space="preserve">
+    <value>最も聴いたアーティスト</value>
+  </data>
+  <data name="ListeningReportRules.Text" xml:space="preserve">
+    <value>現在のルール：曲の 50% 以上を再生したセッションを終了後に記録します。時間は再生位置に基づき、早送りが含まれることがあります。再生は開始した日に集計します。</value>
+  </data>
+  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
+    <value>レポートに戻る</value>
+  </data>
+  <data name="ListeningReportSave.Content" xml:space="preserve">
+    <value>PNG を保存</value>
+  </data>
+  <data name="ListeningReportMonthTitle" xml:space="preserve">
+    <value>{0}のリスニングレポート</value>
+  </data>
+  <data name="ListeningReportYearTitle" xml:space="preserve">
+    <value>{0} 年のリスニングレポート</value>
+  </data>
+  <data name="ListeningReportInProgress" xml:space="preserve">
+    <value>集計中 · {0} から {1} まで</value>
+  </data>
+  <data name="ListeningReportFirstRecord" xml:space="preserve">
+    <value>この端末に保存された有効な再生のみを集計。最も古い記録は {0} です。</value>
+  </data>
+  <data name="ListeningReportHistoryOnly" xml:space="preserve">
+    <value>この端末に保存された有効な再生のみ</value>
+  </data>
+  <data name="ListeningReportSeconds" xml:space="preserve">
+    <value>{0:N0} 秒</value>
+  </data>
+  <data name="ListeningReportMinutes" xml:space="preserve">
+    <value>{0:N0} 分</value>
+  </data>
+  <data name="ListeningReportHoursMinutes" xml:space="preserve">
+    <value>{0:N0} 時間 {1} 分</value>
+  </data>
+  <data name="ListeningReportDaily" xml:space="preserve">
+    <value>日ごとの再生回数</value>
+  </data>
+  <data name="ListeningReportMonthlyTrend" xml:space="preserve">
+    <value>月ごとの再生回数</value>
+  </data>
+  <data name="ListeningReportPeakDay" xml:space="preserve">
+    <value>最も多く聴いた日：{0}・有効な再生 {1:N0} 回</value>
+  </data>
+  <data name="ListeningReportPeakMonth" xml:space="preserve">
+    <value>最も多く聴いた月：{0}・有効な再生 {1:N0} 回</value>
+  </data>
+  <data name="ListeningReportFuture" xml:space="preserve">
+    <value>{0}・未到来</value>
+  </data>
+  <data name="ListeningReportNoRecords" xml:space="preserve">
+    <value>{0}・保存された記録なし</value>
+  </data>
+  <data name="ListeningReportTileCount" xml:space="preserve">
+    <value>{0}・有効な再生 {1:N0} 回</value>
+  </data>
+  <data name="ListeningReportPlayOccurrences" xml:space="preserve">
+    <value>有効な再生 {0:N0} 回</value>
+  </data>
+  <data name="ListeningReportUnknownSong" xml:space="preserve">
+    <value>不明な曲</value>
+  </data>
+  <data name="ListeningReportEmpty" xml:space="preserve">
+    <value>この期間に保存された有効な再生はありません。基準を満たして終了した再生がレポートに表示されます。</value>
+  </data>
+  <data name="ListeningReportLoadFailed" xml:space="preserve">
+    <value>リスニングレポートを読み込めませんでした。更新してやり直してください。</value>
+  </data>
+  <data name="ListeningReportSaved" xml:space="preserve">
+    <value>画像を {0} に保存しました</value>
+  </data>
+  <data name="ListeningReportSaveFailed" xml:space="preserve">
+    <value>画像を保存できませんでした。もう一度お試しいただくか、別の保存先を選んでください。</value>
+  </data>
 </root>

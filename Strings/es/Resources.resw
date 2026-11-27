@@ -2970,4 +2970,124 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="MusicSourcesNameRequired" xml:space="preserve">
     <value>Introduce un nombre para la fuente.</value>
   </data>
+  <data name="ListeningReportEntry.Content" xml:space="preserve">
+    <value>Informes de escucha</value>
+  </data>
+  <data name="ListeningReportPageTitle.Text" xml:space="preserve">
+    <value>Informes de escucha</value>
+  </data>
+  <data name="ListeningReportBackLabel" xml:space="preserve">
+    <value>Volver</value>
+  </data>
+  <data name="ListeningReportAnnual.Content" xml:space="preserve">
+    <value>Anual</value>
+  </data>
+  <data name="ListeningReportMonthly.Content" xml:space="preserve">
+    <value>Mensual</value>
+  </data>
+  <data name="ListeningReportYear.Header" xml:space="preserve">
+    <value>Año</value>
+  </data>
+  <data name="ListeningReportMonth.Header" xml:space="preserve">
+    <value>Mes</value>
+  </data>
+  <data name="ListeningReportRefresh.Content" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="ListeningReportExport.Content" xml:space="preserve">
+    <value>Exportar imagen resumen</value>
+  </data>
+  <data name="ListeningReportGoRecent.Content" xml:space="preserve">
+    <value>Ver el último periodo con registros</value>
+  </data>
+  <data name="ListeningReportDuration.Text" xml:space="preserve">
+    <value>Tiempo de escucha registrado</value>
+  </data>
+  <data name="ListeningReportPlays.Text" xml:space="preserve">
+    <value>Reproducciones válidas</value>
+  </data>
+  <data name="ListeningReportDays.Text" xml:space="preserve">
+    <value>Días activos</value>
+  </data>
+  <data name="ListeningReportTopSongs.Text" xml:space="preserve">
+    <value>Canciones más escuchadas</value>
+  </data>
+  <data name="ListeningReportTopArtists.Text" xml:space="preserve">
+    <value>Artistas más escuchados</value>
+  </data>
+  <data name="ListeningReportTopArtist.Text" xml:space="preserve">
+    <value>Artista más escuchado</value>
+  </data>
+  <data name="ListeningReportRules.Text" xml:space="preserve">
+    <value>Reglas actuales: Se registra una reproducción al terminar si ha alcanzado el 50 % de la pista. El tiempo sigue la posición y puede incluir saltos hacia delante. Cada reproducción se asigna al día en que empezó.</value>
+  </data>
+  <data name="ListeningReportClosePreview.Content" xml:space="preserve">
+    <value>Volver al informe</value>
+  </data>
+  <data name="ListeningReportSave.Content" xml:space="preserve">
+    <value>Guardar PNG</value>
+  </data>
+  <data name="ListeningReportMonthTitle" xml:space="preserve">
+    <value>Informe de escucha · {0}</value>
+  </data>
+  <data name="ListeningReportYearTitle" xml:space="preserve">
+    <value>Informe anual de escucha · {0}</value>
+  </data>
+  <data name="ListeningReportInProgress" xml:space="preserve">
+    <value>En curso · del {0} al {1}</value>
+  </data>
+  <data name="ListeningReportFirstRecord" xml:space="preserve">
+    <value>Solo reproducciones válidas guardadas en este dispositivo. El primer registro conservado es del {0}.</value>
+  </data>
+  <data name="ListeningReportHistoryOnly" xml:space="preserve">
+    <value>Solo reproducciones válidas guardadas en este dispositivo</value>
+  </data>
+  <data name="ListeningReportSeconds" xml:space="preserve">
+    <value>{0:N0} s</value>
+  </data>
+  <data name="ListeningReportMinutes" xml:space="preserve">
+    <value>{0:N0} min</value>
+  </data>
+  <data name="ListeningReportHoursMinutes" xml:space="preserve">
+    <value>{0:N0} h {1} min</value>
+  </data>
+  <data name="ListeningReportDaily" xml:space="preserve">
+    <value>Reproducciones por día</value>
+  </data>
+  <data name="ListeningReportMonthlyTrend" xml:space="preserve">
+    <value>Reproducciones por mes</value>
+  </data>
+  <data name="ListeningReportPeakDay" xml:space="preserve">
+    <value>Día con más escuchas: {0} · {1:N0} reproducciones válidas</value>
+  </data>
+  <data name="ListeningReportPeakMonth" xml:space="preserve">
+    <value>Mes con más escuchas: {0} · {1:N0} reproducciones válidas</value>
+  </data>
+  <data name="ListeningReportFuture" xml:space="preserve">
+    <value>{0} · Próximo</value>
+  </data>
+  <data name="ListeningReportNoRecords" xml:space="preserve">
+    <value>{0} · Sin registros conservados</value>
+  </data>
+  <data name="ListeningReportTileCount" xml:space="preserve">
+    <value>{0} · {1:N0} reproducciones válidas</value>
+  </data>
+  <data name="ListeningReportPlayOccurrences" xml:space="preserve">
+    <value>{0:N0} reproducciones válidas</value>
+  </data>
+  <data name="ListeningReportUnknownSong" xml:space="preserve">
+    <value>Canción desconocida</value>
+  </data>
+  <data name="ListeningReportEmpty" xml:space="preserve">
+    <value>No hay reproducciones válidas guardadas para este periodo. Aparecerán aquí cuando alcancen el umbral de escucha y terminen.</value>
+  </data>
+  <data name="ListeningReportLoadFailed" xml:space="preserve">
+    <value>No se pudo cargar el informe. Actualiza para volver a intentarlo.</value>
+  </data>
+  <data name="ListeningReportSaved" xml:space="preserve">
+    <value>Imagen guardada en {0}</value>
+  </data>
+  <data name="ListeningReportSaveFailed" xml:space="preserve">
+    <value>No se pudo guardar la imagen. Inténtalo de nuevo o elige otra ubicación.</value>
+  </data>
 </root>
