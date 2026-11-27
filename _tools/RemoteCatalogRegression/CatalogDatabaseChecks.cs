@@ -62,6 +62,89 @@ internal static class CatalogDatabaseChecks
             await reopened.CloseAsync();
         }
         finally { directory.Delete(recursive: true); }
+        await CheckV6CoverMigrationAsync(token);
+    }
+
+    private static async Task CheckV6CoverMigrationAsync(CancellationToken token)
+    {
+        var directory = Directory.CreateTempSubdirectory("jellyfin-v6-covers-");
+        try
+        {
+            string path = Path.Combine(directory.FullName, LibraryDatabaseMigration.ActiveFile);
+            var seed = new SQLiteAsyncConnection(path);
+            string originalHash = new('A', 64);
+            int first, second, blank, manual, navidrome, webDav, local;
+            try
+            {
+                await seed.CreateTableAsync<Music>();
+                await MusicDatabaseService.EnsureRemoteCatalogSchemaAsync(seed, upgrading: false);
+                var source = await AddSourceAsync(seed, RemoteSourceKind.Jellyfin);
+                first = await AddCoverAsync(source.Id, "track-1", originalHash, "album-1");
+                second = await AddCoverAsync(source.Id, "track-2", originalHash, "album-1");
+                blank = await AddCoverAsync(source.Id, "track-3", "", "");
+                manual = await AddCoverAsync(source.Id, "track-4", "manual-hash", "album-1", "manual-image");
+                navidrome = await AddCoverAsync((await AddSourceAsync(seed, RemoteSourceKind.Navidrome)).Id, "nav", originalHash, "cover-nav");
+                webDav = await AddCoverAsync((await AddSourceAsync(seed, RemoteSourceKind.WebDav)).Id, "dav", originalHash, "");
+                local = await AddCoverAsync(0, "local", originalHash, "");
+                await seed.ExecuteAsync("PRAGMA user_version=6");
+            }
+            finally { await seed.CloseAsync(); }
+
+            async Task<int> AddCoverAsync(int sourceId, string itemId, string hash, string coverId, string overridePath = "")
+            {
+                var music = new Music { SourceId = sourceId, Title = itemId, ImageHash = hash, CoverOverridePath = overridePath };
+                await seed.InsertAsync(music);
+                if (sourceId > 0)
+                    await seed.InsertAsync(new RemoteTrack { MusicId = music.Id, SourceId = sourceId, Href = itemId, CoverId = coverId });
+                return music.Id;
+            }
+
+            string backup = "";
+            try
+            {
+                await LibraryDatabaseMigration.OpenAsync(null, directory.FullName, async (db, upgrading) =>
+                {
+                    await MusicDatabaseService.EnsureRemoteCatalogSchemaAsync(db, upgrading);
+                    throw new InvalidOperationException("injected v7 failure");
+                }, file => backup = file);
+                throw new CheckException("Expected interrupted v7 cover migration.");
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "injected v7 failure") { }
+            string restored = Path.Combine(directory.FullName, "restored-v6.db");
+            File.Copy(backup, restored);
+            using (var old = new SQLiteConnection(restored, SQLiteOpenFlags.ReadOnly))
+            {
+                Program.Check(old.ExecuteScalar<int>("PRAGMA user_version") == 6 && old.ExecuteScalar<string>("PRAGMA quick_check") == "ok"
+                    && old.Find<Music>(first).ImageHash == originalHash && old.Find<Music>(blank).ImageHash.Length == 0,
+                    "standalone v6 backup did not restore original cover keys");
+            }
+
+            token.ThrowIfCancellationRequested();
+            var db = await LibraryDatabaseMigration.OpenAsync(null, directory.FullName, MusicDatabaseService.EnsureRemoteCatalogSchemaAsync,
+                file => Program.Check(file == backup, "interrupted v7 cover migration replaced its original backup"));
+            try
+            {
+                string trackCover = (await db.FindAsync<Music>(first)).ImageHash;
+                string otherCover = (await db.FindAsync<Music>(second)).ImageHash;
+                Program.Check(trackCover != otherCover && trackCover.Length <= 100 && otherCover.Length <= 100
+                    && WebDavCachePaths.Cover(directory.FullName, trackCover) == WebDavCachePaths.Cover(directory.FullName, originalHash)
+                    && WebDavCachePaths.Cover(directory.FullName, otherCover) == WebDavCachePaths.Cover(directory.FullName, originalHash)
+                    && WebDavCachePaths.MatchedCover(directory.FullName, trackCover) != WebDavCachePaths.MatchedCover(directory.FullName, otherCover),
+                    "same-album tracks did not isolate matching while retaining their original server image");
+                Program.Check((await db.FindAsync<Music>(blank)).ImageHash.Length != 0
+                    && (await db.FindAsync<Music>(manual)).ImageHash == "manual-hash"
+                    && (await db.FindAsync<Music>(navidrome)).ImageHash == originalHash
+                    && (await db.FindAsync<Music>(webDav)).ImageHash == originalHash
+                    && (await db.FindAsync<Music>(local)).ImageHash == originalHash,
+                    "cover migration did not repair the empty key or changed unrelated cover keys");
+            }
+            finally { await db.CloseAsync(); }
+            var current = await LibraryDatabaseMigration.OpenAsync(null, directory.FullName, MusicDatabaseService.EnsureRemoteCatalogSchemaAsync,
+                _ => throw new CheckException("Same-generation v7 startup generated an additional backup."));
+            await current.CloseAsync();
+            Console.WriteLine("PASS v6 Jellyfin shared/empty cover migration, isolated match keys, manual override, standalone backup and retry");
+        }
+        finally { directory.Delete(recursive: true); }
     }
 
     internal static async Task VerifyLiveSyncAsync(IRemoteMediaProvider provider, CatalogSession session, List<CatalogTrack> tracks,
@@ -115,6 +198,15 @@ internal static class CatalogDatabaseChecks
             updated.IsFavorite && updated.PlayCount == 42 && updated.LyricsOffsetMs == 71 &&
             resource.ResourcePath == first.Path && resource.ResourcePath.Contains("a%2Fb%3F", StringComparison.Ordinal) && resource.ETag.Length == 0,
             "repeat sync overwrote stable row, statistics, or remote byte identity");
+        await db.ExecuteAsync("UPDATE Music SET CoverOverridePath=?, ImageHash=? WHERE Id=?", "manual-image", "manual-hash", first.Id);
+        var withoutArt = item with { Id = "no-art", CoverId = "", CoverVersion = "" };
+        await SyncAsync(store, jellyfin, "covers", [item with { Title = "New title", CoverVersion = "new-cover-2" }, withoutArt], token);
+        updated = await db.FindAsync<Music>(first.Id);
+        Program.Check(updated.Title == "New title" && updated.ImageHash == "manual-hash" && updated.CoverOverridePath == "manual-image",
+            "Jellyfin sync changed the preferred manual cover");
+        var coverless = await db.FindWithQueryAsync<Music>("SELECT m.* FROM Music m JOIN RemoteTrack r ON m.Id=r.MusicId WHERE r.SourceId=? AND r.Href=?", jellyfin.Id, withoutArt.Id);
+        Program.Check(coverless.ImageHash == WebDavCachePaths.GetJellyfinImageHash(jellyfin.Id, withoutArt.Id, "", withoutArt.Title,
+            withoutArt.Artist, withoutArt.Album), "Jellyfin item without art did not keep the legacy fallback cache key");
 
         await store.CommitCatalogTracksAsync(navidrome, "partial", [item], token);
         using (var stopped = new CancellationTokenSource())

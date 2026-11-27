@@ -2961,4 +2961,13 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="MusicSourcesRemoteAudio" xml:space="preserve">
     <value>Entferntes Audio</value>
   </data>
+  <data name="MusicSourcesSaving" xml:space="preserve">
+    <value>Entfernte Quelle wird gespeichert…</value>
+  </data>
+  <data name="MusicSourcesSaveFailed" xml:space="preserve">
+    <value>„{0}“ konnte nicht gespeichert werden. Fügen Sie die Quelle erneut hinzu oder bearbeiten Sie sie.</value>
+  </data>
+  <data name="MusicSourcesNameRequired" xml:space="preserve">
+    <value>Geben Sie einen Namen für die Quelle ein.</value>
+  </data>
 </root>

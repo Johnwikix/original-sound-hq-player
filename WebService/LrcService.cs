@@ -40,12 +40,13 @@ namespace WinUIMusicPlayer.WebService
                 AutomaticDecompression = DecompressionMethods.None,
                 UseCookies = true,
             };
-            _httpClient = new HttpClient(_clientHandler);
+            _httpClient = new HttpClient(_clientHandler) { MaxResponseContentBufferSize = 8 * 1024 * 1024 };
         }
         public async Task<byte[]?> GetMixedCoverImageAsync(Music music, CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (AppData.UnknownAlbums.Contains(music.Album))
                 {
                     return null;
@@ -53,6 +54,7 @@ namespace WinUIMusicPlayer.WebService
                 var imageBytes = await GetCoverImageAsync(music, Searchers.Netease, cancellationToken);
                 if (imageBytes is null || imageBytes.Length == 0)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     return await GetCoverImageAsync(music, Searchers.QQMusic, cancellationToken);
                 }
                 return imageBytes;

@@ -1,3 +1,18 @@
+## 2026-11-27 修复同步后正在播放的远程封面刷新
+
+- `CoverPresentationService` 在曲库同步更新正在播放的远程曲目封面时，立即刷新播放界面和系统媒体缩略图。
+
+## 2026-11-27 修复远程来源保存后关窗延迟
+
+- `WebDavConnectionDialog` 在表单验证通过后立即关闭，未通过时在按钮上方显示原因。`WebDavSourcesViewModel` 后台保存，并在来源页显示保存进度或失败原因。
+- `WebDavLibraryService` 在来源提交成功后登记后台扫描，保留 WebDAV 目录范围和禁用来源时停止其播放的行为。
+
+## 2026-11-27 修复 Jellyfin 封面回填
+
+- `WebDavLibraryService` 区分 Jellyfin 确认缺图和连接失败，优先使用服务器封面，并单独缓存在线匹配的结果。
+- `ToolUtils`、`CoverPresentationService`、`MusicDetailsEditorFactory` 在 Jellyfin 确认缺图时按「自动封面匹配」设置复用现有匹配器，供曲库、详情和播放控件共用。
+- `LibraryDatabaseMigration` v7 在备份后一次性更新已有 Jellyfin 的封面标识，复用服务器原图缓存，并按曲目区分匹配图和缩略图。`MusicDatabaseService` 在同步时保留手动设置的封面。
+
 ## 2026-11-27 修复发布版 Jellyfin 连接测试
 
 - `JellyfinProvider` 显式发送 UTF-8 JSON 登录请求，修复本机增量注册 AppX 布局运行时无法加载 `System.Net.Http.Json` 导致的连接失败。

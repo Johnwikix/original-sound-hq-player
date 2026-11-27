@@ -22,6 +22,13 @@ namespace WinUIMusicPlayer.Services
         public CancellationToken StoppingToken => CancellationToken.None;
         public WebDavSource? Saved { get; private set; }
         public WebDavSource? Tested { get; private set; }
+        public TaskCompletionSource? SaveGate { get; set; }
+        public TaskCompletionSource? SaveStarted { get; set; }
+        public TaskCompletionSource? TestGate { get; set; }
+        public Exception? SaveFailure { get; set; }
+        public int SaveCalls { get; private set; }
+        public int ScanStarts { get; private set; }
+        public string? SavedPassword { get; private set; }
         public event Action? SourcesChanged;
         public event Action<int, bool>? SourceAvailabilityChanged { add { } remove { } }
         public bool IsSourceOffline(int sourceId) => false;
@@ -32,16 +39,27 @@ namespace WinUIMusicPlayer.Services
         public async Task TestSourceAsync(WebDavSource source, string? password, CancellationToken token)
         {
             await Task.Yield();
+            if (TestGate is { } gate) await gate.Task.WaitAsync(token);
             token.ThrowIfCancellationRequested();
             Tested = source;
         }
         public Task CancelScanAsync(int id) => Task.CompletedTask;
         public async Task SaveSourceAsync(WebDavSource source, string? password)
         {
+            SaveCalls++;
             await Task.Yield();
+            SaveStarted?.TrySetResult();
+            if (SaveGate is { } gate) await gate.Task;
+            if (SaveFailure is { } failure) throw failure;
             if (database is not null) await database.SaveWebDavSourceAsync(source);
             Saved = source;
+            SavedPassword = password;
             SourcesChanged?.Invoke();
+        }
+        internal async Task SaveAndScanSourceAsync(WebDavSource source, string? password)
+        {
+            await SaveSourceAsync(source, password);
+            if (source.Enabled) ScanStarts++;
         }
         public async Task RemoveSourceAsync(WebDavSource source)
         {
@@ -102,7 +120,12 @@ namespace WinUIMusicPlayer.Utils
 {
     public static class ToolUtils
     {
-        public static string GetString(string key) => key == "WebDavCertificateDetails" ? "{0}\n{1}\n{2}\n{3:g} — {4:g}\n{5}\n{6}" : key;
+        public static string GetString(string key) => key switch
+        {
+            "WebDavCertificateDetails" => "{0}\n{1}\n{2}\n{3:g} — {4:g}\n{5}\n{6}",
+            "MusicSourcesSaveFailed" => "Could not save {0}. Add or edit the source to try again.",
+            _ => key
+        };
     }
 }
 namespace AnimatedWin2dControls.Messages { public sealed class Unused { } }

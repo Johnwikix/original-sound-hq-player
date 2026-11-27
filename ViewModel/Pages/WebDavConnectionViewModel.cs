@@ -52,7 +52,6 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
     public bool ScanOnStartup { get; set => SetProperty(ref field, value); } = original?.ScanOnStartup ?? false;
     public bool ReadMetadata { get; set => SetProperty(ref field, value); } = original?.ReadMetadata ?? true;
     public bool Enabled { get; set => SetProperty(ref field, value); } = original?.Enabled ?? true;
-    internal WebDavSource? SavedSource { get; private set; }
     public string Status { get; private set => SetProperty(ref field, value); } = "";
     public bool HasCertificate => _certificate is not null;
     public bool HasTrustedCertificate => _trust is not null;
@@ -63,10 +62,12 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         private set
         {
             if (!SetProperty(ref field, value)) return;
+            OnPropertyChanged(nameof(CanSubmit));
             TrustCertificateCommand.NotifyCanExecuteChanged();
             ForgetCertificateCommand.NotifyCanExecuteChanged();
         }
     }
+    public bool CanSubmit => !_disposed && !IsConnecting;
     public ObservableCollection<WebDavTreeItem> Folders { get; } = [];
     public bool HasFolders => Folders.Count != 0;
     private void InvalidateConnection()
@@ -306,46 +307,50 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         ScanOnStartup = ScanOnStartup
     };
 
-    public async Task<bool> SaveAsync()
+    internal bool TryPrepareSave(out WebDavSource source, out string? password)
     {
+        source = null!;
+        password = null;
         try
         {
-            if (_disposed) return false;
+            if (!CanSubmit) return false;
+            if (string.IsNullOrWhiteSpace(Name)) { Status = WebDavText.Error("NameRequired"); return false; }
+            var address = WebDavTransport.NormalizeRoot(Address).AbsoluteUri;
             if (!IsWebDav)
             {
-                var password = CatalogPassword;
-                if (IsConnecting || (!_catalogTested && (original is null || password is not null)))
+                if (string.IsNullOrWhiteSpace(UserName)) { Status = WebDavText.Error("AuthenticationRequired"); return false; }
+                if (original is not null && (original.BaseUri != address || original.UserName != UserName))
+                { Status = WebDavText.Error("InvalidAddress"); return false; }
+                password = CatalogPassword;
+                if (!_catalogTested && (original is null || password is not null))
                 {
                     Status = ToolUtils.GetString("WebDavTestFirst");
                     return false;
                 }
-                await CommitSourceAsync(CreateCatalogSource(), password);
+                source = CreateCatalogSource();
+                source.BaseUri = address;
                 return true;
             }
-            var connection = Connection();
-            if (_tested != connection) { Status = ToolUtils.GetString("WebDavTestFirst"); return false; }
+            // 每次修改地址、账号、密码或证书信任都会清除测试结果。保存时无需再次读取凭据库。
+            if (_tested is not { } connection || connection.Root.AbsoluteUri != address)
+            { Status = ToolUtils.GetString("WebDavTestFirst"); return false; }
             var roots = new List<string>();
             foreach (var folder in Folders) CollectSelectedRoots(folder, false, roots);
             if (roots.Count == 0) { Status = ToolUtils.GetString("WebDavChooseFolder"); return false; }
             if (roots.Contains(connection.Root.AbsolutePath)) { roots.Clear(); roots.Add(connection.Root.AbsolutePath); }
-            var source = new WebDavSource
+            source = new WebDavSource
             {
-                Id = original?.Id ?? 0, Name = Name.Trim(), BaseUri = connection.Root.AbsoluteUri, UserName = UserName,
+                Id = original?.Id ?? 0, Name = Name.Trim(), BaseUri = connection.Root.AbsoluteUri, UserName = connection.UserName,
                 Roots = string.Join('\n', roots), ScanOnStartup = ScanOnStartup, ReadMetadata = ReadMetadata, Enabled = Enabled,
                 TrustedCertificateOrigin = _trust?.Origin ?? "", TrustedCertificateSha256 = _trust?.Sha256 ?? ""
             };
             if (original is not null) source.CredentialKey = original.CredentialKey;
-            await CommitSourceAsync(source, connection.Password);
+            password = original is not null && Password.Length == 0 && connection.UserName.Length != 0 ? null : connection.Password;
             return true;
         }
-        catch (Exception ex) { Status = WebDavText.Error(ex is WebDavException dav ? dav.Code : "ConnectionFailed"); return false; }
+        catch (WebDavException ex) { Status = WebDavText.Error(ex.Code); return false; }
     }
-    private async Task CommitSourceAsync(WebDavSource source, string? password)
-    {
-        await library.SaveSourceAsync(source, password);
-        SavedSource = source;
-        if (source.Enabled) _ = library.ScanAsync(source);
-    }
+    internal void ShowSaveUnavailable(string name) => Status = string.Format(ToolUtils.GetString("MusicSourcesSaveFailed"), name);
 
     private static void CollectSelectedRoots(WebDavTreeItem folder, bool selectedAncestor, List<string> roots)
     {

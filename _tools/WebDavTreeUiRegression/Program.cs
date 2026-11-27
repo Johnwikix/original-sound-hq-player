@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using SQLite;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using WinUIMusicPlayer.View.SubView;
@@ -67,13 +68,21 @@ public sealed partial class TestApp : Application
             _window.Activate();
             await UntilAsync(() => host.XamlRoot is not null, "window root");
 
+            if (Environment.GetCommandLineArgs().Contains("--slow-save"))
+            {
+                await CheckSlowSaveAsync(host.XamlRoot);
+                File.WriteAllText(ResultPath, "PASS: native Primary closes before durable save, progress is visible, failure strips secrets, retry works and shutdown drains the accepted save.");
+                return;
+            }
+
             var browser = new WebDavBrowserDialog { XamlRoot = host.XamlRoot };
             await CheckDialogAsync(browser, browser.TestTree, "browser");
             await CheckConnectionAsync(host.XamlRoot);
             await CheckCatalogConnectionAsync(host.XamlRoot, RemoteSourceKind.Jellyfin);
             await CheckCatalogConnectionAsync(host.XamlRoot, RemoteSourceKind.Navidrome);
             await CheckLibraryAndSourcesAsync(host);
-            File.WriteAllText(ResultPath, "PASS: real WebDAV tree and catalog connection dialogs; production SQLite scope filtering and identity retention; real ComboBox removal fallback and filters.");
+            await CheckSlowSaveAsync(host.XamlRoot);
+            File.WriteAllText(ResultPath, "PASS: real WebDAV tree and catalog connection dialogs; native Primary closes before a slow save; safe failure, retry and shutdown; production SQLite scope and source selection.");
         }
         catch (Exception ex)
         {
@@ -87,6 +96,93 @@ public sealed partial class TestApp : Application
         }
     }
 
+    private static async Task CheckSlowSaveAsync(XamlRoot root)
+    {
+        using var transport = new WebDavTransport();
+        string path = Path.Combine(AppContext.BaseDirectory, "save-" + Guid.NewGuid().ToString("N") + ".db");
+        var sqlite = new SQLiteAsyncConnection(path);
+        await sqlite.CreateTableAsync<WebDavSource>();
+        await sqlite.CreateTableAsync<WebDavCacheSettings>();
+        await sqlite.CreateTableAsync<RemoteTrack>();
+        await sqlite.CreateTableAsync<Music>();
+        var database = new MusicDatabaseService(sqlite);
+        var library = new WebDavLibraryService(database);
+        var sources = new WebDavSourcesViewModel(database, library, new RemotePlaybackService(), new RemoteAudioCache(), new AppViewModel(), new LibraryQueries());
+        const string password = "synthetic-secret";
+        try
+        {
+            library.SaveGate = Gate();
+            library.SaveStarted = Gate();
+            await ClickSaveAsync("Slow source");
+            await library.SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            Check(sources.IsSavingSource && (await database.GetRemoteSourcesAsync()).Count == 0 && library.ScanStarts == 0,
+                "closed dialog leaves a visible pending save before SQLite and scan");
+            library.SaveGate.TrySetResult();
+            await UntilAsync(() => !sources.IsSavingSource && sources.Sources.Count == 1, "successful background commit appears in sources");
+            Check(library.SaveCalls == 1 && library.ScanStarts == 1 && library.SavedPassword == password,
+                "one native click preserves the immutable password snapshot and starts one scan");
+
+            library.SaveFailure = new IOException("Sensitive fixture payload " + password);
+            await ClickSaveAsync("Retry source");
+            await UntilAsync(() => !sources.IsSavingSource && sources.SourceSaveError.Length != 0, "source page reports commit failure");
+            Check(sources.SourceSaveError.Contains("Retry source", StringComparison.Ordinal) &&
+                !sources.SourceSaveError.Contains(password, StringComparison.Ordinal) && sources.Sources.Count == 1,
+                "source page failure is useful and excludes raw exception text and credentials");
+
+            library.SaveFailure = null;
+            library.SaveGate = Gate();
+            library.SaveStarted = Gate();
+            await ClickSaveAsync("Retry source");
+            await library.SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            var stopping = sources.StopAsync();
+            Check(!stopping.IsCompleted, "shutdown waits on the accepted commit after the dialog closes");
+            library.SaveGate.TrySetResult();
+            await stopping.WaitAsync(TimeSpan.FromSeconds(3));
+            Check(sources.SourceSaveError.Length == 0 && (await database.GetRemoteSourcesAsync()).Count == 2 && library.ScanStarts == 2,
+                "retry clears the failure and the accepted commit drains");
+        }
+        finally
+        {
+            library.SaveGate?.TrySetResult();
+            await sources.StopAsync();
+            await sqlite.CloseAsync();
+            File.Delete(path);
+        }
+
+        async Task ClickSaveAsync(string name)
+        {
+            using var form = new WebDavConnectionViewModel(transport, library, kind: RemoteSourceKind.Jellyfin)
+            {
+                Name = name, Address = "http://127.0.0.1:1235/", UserName = "fixture-user", Password = password
+            };
+            await form.ConnectCommand.ExecuteAsync(null);
+            const string label = "Save and scan fixture";
+            var dialog = new WebDavConnectionDialog(form, sources.TryQueueSourceSave) { XamlRoot = root, PrimaryButtonText = label };
+            var shown = dialog.ShowAsync().AsTask();
+            try
+            {
+                var button = await FindDialogButtonAsync(dialog, label);
+                Invoke(button);
+                Check(await shown.WaitAsync(TimeSpan.FromSeconds(3)) == ContentDialogResult.Primary,
+                    "native Primary closes while the save is gated");
+                Check(form.Password.Length == 0, "closed form discards its password");
+            }
+            finally { if (!shown.IsCompleted) { dialog.Hide(); await shown; } }
+        }
+    }
+
+    private static TaskCompletionSource Gate() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private static async Task<Button> FindDialogButtonAsync(ContentDialog dialog, string label)
+    {
+        Button? button = null;
+        await UntilAsync(() => (button = FindControl<Button>(dialog, item => Equals(item.Content, label))) is not null, "native dialog primary button");
+        return button!;
+    }
+
+    private static void Invoke(Button button)
+        => ((IInvokeProvider)new ButtonAutomationPeer(button).GetPattern(PatternInterface.Invoke)).Invoke();
+
     private static async Task CheckCatalogConnectionAsync(XamlRoot root, RemoteSourceKind kind)
     {
         const string previousAddress = "http://127.0.0.1:1234/";
@@ -97,8 +193,17 @@ public sealed partial class TestApp : Application
         {
             Name = "Catalog fixture", Address = previousAddress, UserName = "fixture-user"
         };
-        var dialog = new WebDavConnectionDialog(source) { XamlRoot = root };
-        var shown = dialog.ShowAsync();
+        WebDavSource? prepared = null;
+        string? preparedPassword = null;
+        bool Prepare(WebDavSource snapshot, string? password)
+        {
+            prepared = snapshot;
+            preparedPassword = password;
+            return true;
+        }
+        const string label = "Save and scan fixture";
+        var dialog = new WebDavConnectionDialog(source, Prepare) { XamlRoot = root, PrimaryButtonText = label };
+        var shown = dialog.ShowAsync().AsTask();
         try
         {
             await UntilAsync(() => Equals(dialog.Title, kind.ToString()), "catalog title binds to the selected source kind");
@@ -110,23 +215,41 @@ public sealed partial class TestApp : Application
             addressBox.Text = address;
             var passwordBox = FindControl<PasswordBox>(content, _ => true)!;
             passwordBox.Password = "fixture-password";
-            Check(source.Address == address && source.Password == passwordBox.Password && !await source.SaveAsync(),
-                "catalog address and password are two-way bound and saving requires a connection test");
+            var saveButton = await FindDialogButtonAsync(dialog, label);
+            Check(source.Address == address && source.Password == passwordBox.Password, "catalog address and password bind as the user edits");
+            var nameBox = FindControl<TextBox>(content, box => box.Text == source.Name)!;
+            nameBox.Text = "";
+            Invoke(saveButton);
+            await UntilAsync(() => HasText(content, "MusicSourcesNameRequired"), "blank name reason near the Save button");
+            nameBox.Text = "Catalog fixture";
+            Invoke(saveButton);
+            await UntilAsync(() => HasText(content, "WebDavTestFirst"), "untested form gives a visible retry reason");
+            Check(!shown.IsCompleted && prepared is null, "invalid save shows guidance and keeps the native dialog open");
             var testButton = FindControl<Button>(content, button => ReferenceEquals(button.Command, source.ConnectCommand))!;
-            var invoke = (IInvokeProvider)new ButtonAutomationPeer(testButton).GetPattern(PatternInterface.Invoke);
-            invoke.Invoke();
+            library.TestGate = Gate();
+            Invoke(testButton);
+            await UntilAsync(() => source.IsConnecting && !saveButton.IsEnabled, "test temporarily disables native Primary");
+            passwordBox.Password = "changed-password";
+            await UntilAsync(() => !source.IsConnecting && saveButton.IsEnabled && testButton.IsEnabled, "editing password cancels the in-flight test");
+            library.TestGate.TrySetResult();
+            library.TestGate = null;
+            Invoke(saveButton);
+            await UntilAsync(() => HasText(content, "WebDavTestFirst"), "stale test does not permit a save");
+            Invoke(testButton);
             await UntilAsync(() => source.Status == "MusicSourcesTestSucceeded", "catalog test command completes");
-            Check(library.Tested is { } tested && tested.Kind == kind && tested.BaseUri == address &&
-                await source.SaveAsync() && library.Saved is { } saved && saved.Kind == kind && saved.Roots.Length == 0,
-                "catalog test and save carry the provider and no DAV scan roots");
+            Invoke(saveButton);
+            Check(await shown.WaitAsync(TimeSpan.FromSeconds(3)) == ContentDialogResult.Primary &&
+                library.Tested is { } tested && tested.Kind == kind && tested.BaseUri == address &&
+                prepared is { } saved && saved.Kind == kind && saved.Roots.Length == 0 && preparedPassword == "changed-password",
+                "native catalog test and save carry the provider, latest password and no DAV scan roots");
         }
-        finally { dialog.Hide(); await shown; }
+        finally { if (!shown.IsCompleted) { dialog.Hide(); await shown; } }
 
-        var existing = library.Saved!;
+        var existing = prepared!;
         existing.Id = 1;
         using var edit = new WebDavConnectionViewModel(transport, library, existing);
-        var editDialog = new WebDavConnectionDialog(edit) { XamlRoot = root };
-        shown = editDialog.ShowAsync();
+        var editDialog = new WebDavConnectionDialog(edit, Prepare) { XamlRoot = root, PrimaryButtonText = label };
+        shown = editDialog.ShowAsync().AsTask();
         try
         {
             await UntilAsync(() => Equals(editDialog.Title, kind.ToString()), "edit retains the stored source kind");
@@ -135,9 +258,38 @@ public sealed partial class TestApp : Application
                 FindControl<TextBox>(content, box => box.Text == existing.UserName)?.IsReadOnly == true,
                 "saved catalog address and account are read-only");
             edit.Enabled = false;
-            Check(await edit.SaveAsync() && edit.SavedSource is { Id: 1, Enabled: false }, "disabling an existing catalog commits without changing or retesting its credentials");
+            Invoke(await FindDialogButtonAsync(editDialog, label));
+            Check(await shown.WaitAsync(TimeSpan.FromSeconds(3)) == ContentDialogResult.Primary && prepared is { Id: 1, Enabled: false } && preparedPassword is null,
+                "disabling an existing catalog submits without changing or retesting its credentials");
         }
-        finally { editDialog.Hide(); await shown; }
+        finally { if (!shown.IsCompleted) { editDialog.Hide(); await shown; } }
+
+        using var closing = new WebDavConnectionViewModel(transport, library, existing) { Password = "closing-password" };
+        bool submittedOnClose = false;
+        const string closeLabel = "Cancel fixture";
+        var closeDialog = new WebDavConnectionDialog(closing, (_, _) => submittedOnClose = true)
+        { XamlRoot = root, PrimaryButtonText = label, CloseButtonText = closeLabel };
+        var closeResult = closeDialog.ShowAsync().AsTask();
+        library.TestGate = Gate();
+        try
+        {
+            Button? testButton = null;
+            await UntilAsync(() => (testButton = FindControl<Button>((DependencyObject)closeDialog.Content,
+                button => ReferenceEquals(button.Command, closing.ConnectCommand))) is not null,
+                "close fixture compiled test command binds");
+            Invoke(testButton!);
+            await UntilAsync(() => closing.IsConnecting, "closing fixture has a verification in flight");
+            Invoke(await FindDialogButtonAsync(closeDialog, closeLabel));
+            Check(await closeResult.WaitAsync(TimeSpan.FromSeconds(3)) == ContentDialogResult.None, "native Cancel closes during connection testing");
+            await UntilAsync(() => !closing.IsConnecting, "close cancels the connection request");
+            Check(!submittedOnClose && closing.Password.Length == 0 && !closing.CanSubmit, "closed form cannot submit late results or retain the password");
+        }
+        finally
+        {
+            library.TestGate.TrySetResult();
+            library.TestGate = null;
+            if (!closeResult.IsCompleted) { closeDialog.Hide(); await closeResult; }
+        }
     }
 
     private static T? FindControl<T>(DependencyObject node, Func<T, bool> matches) where T : DependencyObject
@@ -202,7 +354,7 @@ public sealed partial class TestApp : Application
         {
             Id = 1, Name = "Fixture", BaseUri = server.Root, Roots = musicRoot
         });
-        var dialog = new WebDavConnectionDialog(vm) { XamlRoot = xamlRoot };
+        var dialog = new WebDavConnectionDialog(vm, (_, _) => true) { XamlRoot = xamlRoot };
         var tree = dialog.TestTree;
         var shown = dialog.ShowAsync();
         try
@@ -213,7 +365,7 @@ public sealed partial class TestApp : Application
             var music = root.Children[0];
             await UntilAsync(() => FindCheckBox(tree.ContainerFromNode(music)) is not null, "music checkbox");
             var musicCheck = FindCheckBox(tree.ContainerFromNode(music))!;
-            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot,
+            Check(PreparedRoots() == musicRoot,
                 "restoring the only child must not save its automatically selected parent");
             Check(musicCheck.IsChecked == true, "saved checkbox restored");
             music.IsExpanded = true;
@@ -225,36 +377,38 @@ public sealed partial class TestApp : Application
             Toggle(live);
             Check(live.IsChecked == false && studio.IsChecked == true && musicCheck.IsChecked is null,
                 "excluding child retains checked sibling and partial parent");
-            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot + "studio/", "exclude child from parent scope");
+            Check(PreparedRoots() == musicRoot + "studio/", "exclude child from parent scope");
             Toggle(live);
             string siblings = musicRoot + "live/\n" + musicRoot + "studio/";
-            Check(await vm.SaveAsync() && library.Saved?.Roots == siblings && musicCheck.IsChecked is null,
+            Check(PreparedRoots() == siblings && musicCheck.IsChecked is null,
                 "checking every child does not expand explicit scope");
             Toggle(musicCheck);
-            Check(live.IsChecked == true && studio.IsChecked == true && await vm.SaveAsync() && library.Saved?.Roots == musicRoot,
+            Check(live.IsChecked == true && studio.IsChecked == true && PreparedRoots() == musicRoot,
                 "clicking partial parent explicitly selects subtree");
             Toggle(musicCheck);
-            Check(live.IsChecked == false && studio.IsChecked == false && !await vm.SaveAsync(),
+            Check(live.IsChecked == false && studio.IsChecked == false && PreparedRoots() is null,
                 "unchecking parent clears all descendants");
             Toggle(live);
-            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot + "live/", "select only one directory after entire root");
+            Check(PreparedRoots() == musicRoot + "live/", "select only one directory after entire root");
             music.IsExpanded = false;
             music.IsExpanded = true;
             await UntilAsync(() => FindCheckBox(tree.ContainerFromNode(music.Children[0]))?.IsChecked == true,
                 "selection survives re-expansion");
             var rootCheck = FindCheckBox(tree.ContainerFromNode(root))!;
             Toggle(rootCheck);
-            Check(musicCheck.IsChecked == true && await vm.SaveAsync() && library.Saved?.Roots == "/dav/",
+            Check(musicCheck.IsChecked == true && PreparedRoots() == "/dav/",
                 "entire root cascades to loaded descendants");
             Toggle(rootCheck);
-            Check(!await vm.SaveAsync() && musicCheck.IsChecked == false, "clearing entire root clears subtree");
+            Check(PreparedRoots() is null && musicCheck.IsChecked == false, "clearing entire root clears subtree");
             await vm.ConnectCommand.ExecuteAsync(null);
-            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot, "reconnect restores original without broadening");
+            Check(PreparedRoots() == musicRoot, "reconnect restores original without broadening");
             await UntilAsync(() => HasText(tree, "音乐") && HasIcon(tree, "\uE8B7"), "reconnected names and icons render");
             await Task.Delay(300); // 等待原生展开动画结束再留存截图。
             await SaveImageAsync(tree, "connection-tree.png");
         }
         finally { dialog.Hide(); await shown; }
+
+        string? PreparedRoots() => vm.TryPrepareSave(out var saved, out _) ? saved.Roots : null;
     }
 
     private static void Toggle(CheckBox check)

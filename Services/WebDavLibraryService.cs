@@ -24,7 +24,6 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
     RemoteAudioCache cache, ILogger<WebDavLibraryService> logger)
 {
     private readonly CancellationTokenSource _stop = new();
-    private readonly Dictionary<int, (CancellationTokenSource Cancel, Task Work)> _scans = [];
     private readonly SemaphoreSlim _metadataSlots = new(2, 2);
     private readonly SemaphoreSlim _coverSlot = new(1, 1);
     // Older readers cached DSF as coverless. Recheck these misses once per bounded working set.
@@ -154,27 +153,6 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
         var trust = string.IsNullOrEmpty(source.TrustedCertificateSha256) ? null
             : new WebDavCertificateTrust(source.TrustedCertificateOrigin, source.TrustedCertificateSha256);
         return new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, password, trust);
-    }
-    public Task ScanAsync(WebDavSource source)
-    {
-        lock (_gate)
-        {
-            if (_stop.IsCancellationRequested || !source.Enabled || _changingSources.Contains(source.Id)) return Task.CompletedTask;
-            if (_scans.TryGetValue(source.Id, out var previous) && !previous.Work.IsCompleted) return previous.Work;
-            previous.Cancel?.Dispose();
-            var cancel = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
-            var work = Task.Run(() => source.Kind == RemoteSourceKind.WebDav
-                ? ScanCoreAsync(source, cancel.Token) : ScanCatalogAsync(source, cancel.Token));
-            _scans[source.Id] = (cancel, work);
-            return work;
-        }
-    }
-    public async Task CancelScanAsync(int sourceId)
-    {
-        Task? work = null;
-        lock (_gate)
-            if (_scans.TryGetValue(sourceId, out var scan)) { scan.Cancel.Cancel(); work = scan.Work; }
-        if (work is not null) await work;
     }
     public Task RemoveSourceAsync(WebDavSource source) => RunSourceOperationAsync(() => RemoveSourceCoreAsync(source));
 
@@ -372,15 +350,21 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
         return bytes;
     }
 
-    public async Task<byte[]> ReadCoverAsync(Music music, CancellationToken token = default)
+    public async Task<byte[]> ReadCoverAsync(Music music, CancellationToken token = default) =>
+        (await ReadCoverResultAsync(music, token).ConfigureAwait(false)).Bytes;
+
+    /// <summary>CanMatch only permits online matching for a Jellyfin item with a confirmed cover miss.</summary>
+    public async Task<(byte[] Bytes, bool CanMatch)> ReadCoverResultAsync(Music music, CancellationToken token = default)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, token);
         await _coverSlot.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
             var (source, track) = await ResolveAsync(music).ConfigureAwait(false);
+            if (source.Kind == RemoteSourceKind.Jellyfin)
+                return await ReadJellyfinCoverAsync(music, source, track, linked.Token).ConfigureAwait(false);
             bool dav = source.Kind == RemoteSourceKind.WebDav;
-            if (!dav && string.IsNullOrEmpty(track.CoverId)) return [];
+            if (!dav && string.IsNullOrEmpty(track.CoverId)) return ([], false);
             string cacheRoot = AppSettings.MusicCoverCache;
             string folder = WebDavCachePaths.Covers(cacheRoot);
             string file = WebDavCachePaths.Cover(cacheRoot, music.ImageHash);
@@ -388,10 +372,10 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             long cachedLength = File.Exists(file) ? new FileInfo(file).Length : -1;
             if (cachedLength is >= 0 and <= 8 * 1024 * 1024 &&
                 (cachedLength > 0 || !dsf || _checkedDsfCoverMisses.Contains(music.ImageHash)))
-                return await File.ReadAllBytesAsync(file, linked.Token).ConfigureAwait(false);
+                return (await File.ReadAllBytesAsync(file, linked.Token).ConfigureAwait(false), false);
             byte[] bytes = dav
                 ? await ReadDavCoverAsync(source, track, music.Extension, linked).ConfigureAwait(false)
-                : await ReadCatalogCoverAsync(source, track, linked.Token).ConfigureAwait(false);
+                : (await ReadCatalogCoverAsync(source, track, linked.Token).ConfigureAwait(false)).Bytes;
             try
             {
                 // 与详情页按同一个 ImageHash 读写同一文件，发布完整文件后才返回字节。
@@ -406,10 +390,10 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             { logger.LogWarning(ex, "写入 WebDAV 封面缓存失败"); }
-            return bytes;
+            return (bytes, false);
         }
-        catch (OperationCanceledException) when (linked.IsCancellationRequested) { return []; }
-        catch (Exception ex) when (ex is IOException or OperationCanceledException or ArgumentException) { return []; }
+        catch (OperationCanceledException) when (linked.IsCancellationRequested) { return ([], false); }
+        catch (Exception ex) when (ex is IOException or OperationCanceledException or ArgumentException) { return ([], false); }
         finally { _coverSlot.Release(); }
     }
     private static void TrimCovers(string folder, string currentFile)

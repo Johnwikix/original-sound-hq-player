@@ -419,12 +419,7 @@ namespace WinUIMusicPlayer.Utils
             if (!string.IsNullOrEmpty(music.CoverOverridePath) && File.Exists(music.CoverOverridePath))
                 return await File.ReadAllBytesAsync(music.CoverOverridePath, cancellationToken);
             if (music.IsRemote)
-            {
-                var remotePicture = await App.Services.GetRequiredService<WebDavLibraryService>()
-                    .ReadCoverAsync(music, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                return remotePicture;
-            }
+                return await GetRemoteRawImageAsync(music, isManual, cancellationToken).ConfigureAwait(false);
             long expectedAudioTicks = music.CoverAudioWriteTicks;
             string expectedStamp = music.CoverSourceStamp ?? "";
             string expectedHash = music.ImageHash ?? "";

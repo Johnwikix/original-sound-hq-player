@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using SQLite;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services.WebDav;
 
 // Only the shell/library publication boundary, playback commands and raw artwork I/O are substituted.
 // The page, statistics queries, observable rows, view model, behavior, WIC decode and WinRT source are production code.
@@ -61,24 +62,66 @@ namespace WinUIMusicPlayer.Services
     {
         public SQLiteAsyncConnection GetDbConnection() => connection;
     }
+
+    public sealed class WebDavLibraryService
+    {
+        public readonly System.Collections.Concurrent.ConcurrentDictionary<int, (byte[] Bytes, bool CanMatch)> Covers = new();
+
+        public async Task<(byte[] Bytes, bool CanMatch)> ReadCoverResultAsync(Music music, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!Covers.TryGetValue(music.Id, out var result)) return ([], false);
+            string path = MatchedPath(music);
+            return result.CanMatch && File.Exists(path)
+                ? (await File.ReadAllBytesAsync(path, token), false)
+                : result;
+        }
+
+        public Task CacheMatchedCoverAsync(Music music, string imageHash, byte[] picture, CancellationToken token)
+        {
+            string path = MatchedPath(music);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            return File.WriteAllBytesAsync(path, picture, token);
+        }
+
+        private static string MatchedPath(Music music)
+            => WebDavCachePaths.MatchedCover(Utils.AppSettings.MusicCoverCache, music.ImageHash.Length > 0 ? music.ImageHash : $"legacy-{music.Id}");
+    }
+}
+namespace WinUIMusicPlayer.WebService
+{
+    public sealed class LrcService
+    {
+        public int MatchCount;
+        public Func<Music, CancellationToken, Task<byte[]?>> MatchAsync { get; set; } = (_, _) => Task.FromResult<byte[]?>(null);
+
+        public Task<byte[]?> GetMixedCoverImageAsync(Music music, CancellationToken token)
+        {
+            Interlocked.Increment(ref MatchCount);
+            return MatchAsync(music, token);
+        }
+    }
 }
 namespace WinUIMusicPlayer.Utils
 {
     public static class AppSettings
     {
         public static string MusicCoverCache { get; set; } = "";
+        public static bool IsAutoCoverEnabled { get; set; }
     }
     public static class CjkStringComparer
     {
         public static int Compare(string? left, string? right) => string.CompareOrdinal(left, right);
     }
-    public static class ToolUtils
+    public partial class ToolUtils
     {
         public static int Reads;
         public static TaskCompletionSource? ReadGate;
         public static Action<Music>? ReadStarted;
         public static async Task<byte[]> GetRawImage(Music music, bool manual, CancellationToken token)
         {
+            if (music.IsRemote && music.Path.StartsWith("remote://", StringComparison.Ordinal))
+                return await GetRemoteRawImageAsync(music, manual, token);
             Interlocked.Increment(ref Reads);
             ReadStarted?.Invoke(music);
             if (ReadGate is { } gate) await gate.Task.WaitAsync(token);

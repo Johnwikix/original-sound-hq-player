@@ -2963,4 +2963,13 @@ SHA-256：{5}
   <data name="MusicSourcesRemoteAudio" xml:space="preserve">
     <value>远程音频</value>
   </data>
+  <data name="MusicSourcesSaving" xml:space="preserve">
+    <value>正在保存远程来源…</value>
+  </data>
+  <data name="MusicSourcesSaveFailed" xml:space="preserve">
+    <value>未能保存“{0}”。请重新添加或编辑此来源后重试。</value>
+  </data>
+  <data name="MusicSourcesNameRequired" xml:space="preserve">
+    <value>请输入来源名称。</value>
+  </data>
 </root>

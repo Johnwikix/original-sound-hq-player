@@ -216,6 +216,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 if (usesDefaultPalette)
                     palette = await GetCurrentDefaultPaletteAsync(token);
                 if (token.IsCancellationRequested) return;
+                string artworkHash = music.IsRemote && picData is { Length: 0 } ? "" : music.ImageHash ?? "";
 
                 void PublishArtwork()
                 {
@@ -224,7 +225,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                     _artworkMusic = music;
                     _usesDefaultPalette = usesDefaultPalette;
                     state.Presentation.LyricPageBackdrop = (palette, artwork);
-                    state.Presentation.LyricPageBackgroundHash = music.ImageHash ?? "";
+                    state.Presentation.LyricPageBackgroundHash = artworkHash;
                 }
 
                 // The UI sees the prepared artwork before the preview task reports completion.
@@ -318,8 +319,9 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 
     private void DisplayCoverChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName is not (nameof(Music.CoverSourceStamp) or nameof(Music.CoverOverridePath))) return;
         if (_disposed || sender is not Music music || !ReferenceEquals(music, _displayMusic)) return;
+        if (args.PropertyName is not (nameof(Music.CoverSourceStamp) or nameof(Music.CoverOverridePath)) &&
+            (args.PropertyName != nameof(Music.ImageHash) || !music.IsRemote)) return;
         _artworkMusic = null;
         _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
     }
@@ -375,6 +377,12 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
             _defaultPaletteVersion++;
             state.Presentation.LyricPageBackgroundHash = "";
             _ = UpdatePlayBar(music, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
+        }
+        else if (e.PropertyName == nameof(state.Preferences.IsAutoCoverEnabled) && state.Preferences.IsAutoCoverEnabled &&
+            state.Playback.DisplayedPlaybackMusic is { IsRemote: true } remoteMusic)
+        {
+            _artworkMusic = null;
+            _ = UpdatePlayBar(remoteMusic, publishMedia: state.Playback.TransitionPresentation is not { IsCommitted: false });
         }
     }
 

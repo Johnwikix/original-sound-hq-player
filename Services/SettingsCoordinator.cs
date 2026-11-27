@@ -199,6 +199,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 break;
             case nameof(state.Preferences.IsAutoCoverEnabled):
                 AppSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
+                if (!AppSettings.IsAutoCoverEnabled) ToolUtils.CancelRemoteCoverMatch();
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();

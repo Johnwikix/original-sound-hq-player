@@ -2961,4 +2961,13 @@ See the log for full details.</value></data>
   <data name="MusicSourcesRemoteAudio" xml:space="preserve">
     <value>Remote audio</value>
   </data>
+  <data name="MusicSourcesSaving" xml:space="preserve">
+    <value>Saving remote source…</value>
+  </data>
+  <data name="MusicSourcesSaveFailed" xml:space="preserve">
+    <value>Could not save “{0}”. Add or edit the source to try again.</value>
+  </data>
+  <data name="MusicSourcesNameRequired" xml:space="preserve">
+    <value>Enter a source name.</value>
+  </data>
 </root>

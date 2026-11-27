@@ -41,7 +41,7 @@ public sealed class MusicDetailsEditorFactory(IServiceProvider services) : IMusi
     {
         public async Task<byte[]?> ReadCoverAsync(Music music, CancellationToken token)
         {
-            var bytes = await Task.Run(() => ToolUtils.GetRawImage(music, true, token), token);
+            var bytes = await Task.Run(() => ToolUtils.GetRawImage(music, isManual: !music.IsRemote, cancellationToken: token), token);
             token.ThrowIfCancellationRequested();
             return bytes;
         }

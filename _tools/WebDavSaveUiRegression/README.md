@@ -17,3 +17,9 @@ dotnet build _tools/WebDavSaveUiRegression -c Release -p:Platform=x64 -p:LiveCat
 在主机进程为两个服务分别设置 `REMOTE_CATALOG_JELLYFIN_URL`、`REMOTE_CATALOG_JELLYFIN_USER`、`REMOTE_CATALOG_JELLYFIN_PASSWORD` 和对应的 `REMOTE_CATALOG_NAVIDROME_*` 变量，再启动构建输出目录的 `WebDavSaveUiRegression.exe`。请使用专用测试账号与含封面的 FLAC 曲目。本测试会先故意验证一次错误密码，随后用正确密码恢复。
 
 结果写入可执行文件旁的 `catalog-service-result.txt`。检查覆盖错误密码拒绝保存、修正与同步、三种来源共用曲库、通过来源解析音频和封面、关闭后重开和重复同步、停用及移除。测试只写随机临时曲库和新建的随机凭据键，结束时清理。
+
+只验证保存并扫描时，设置 `REMOTE_CATALOG_LOCAL_SAVE_AND_SCAN=1`。此模式使用隔离 SQLite 和代码内的本机 WebDAV 服务器，覆盖连接表单释放后提交、数据库失败补偿、初次扫描失败，以及服务恢复后从已保存的来源重试扫描。无需服务器账号。
+
+仅检查 Jellyfin 封面时，设置 `REMOTE_CATALOG_JELLYFIN_COVER_ONLY=1`，再用 `REMOTE_CATALOG_JELLYFIN_MISSING_IMAGE_ID` 提供专辑封面返回 404 且专辑中还有其他歌曲的曲目 ID，用 `REMOTE_CATALOG_JELLYFIN_NO_IMAGE_ITEM_ID` 提供无封面候选的曲目 ID。此模式只连接 Jellyfin，使用内置字节检查匹配结果的缓存与隔离。
+
+验证 Jellyfin 补图后的同步时，设置 `REMOTE_CATALOG_JELLYFIN_RESTORED_COVER_ID` 为已补上自身图片的曲目 ID。如果该曲目原先回退到缺图专辑，再设置 `REMOTE_CATALOG_JELLYFIN_PREVIOUS_ALBUM_ID`。此模式使用隔离曲库和旧缓存夹具，检查同步保留曲目 ID、更换封面键并从 Jellyfin 读取新图。

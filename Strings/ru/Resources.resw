@@ -2961,4 +2961,13 @@ SHA-256: {5}
   <data name="MusicSourcesRemoteAudio" xml:space="preserve">
     <value>Удалённое аудио</value>
   </data>
+  <data name="MusicSourcesSaving" xml:space="preserve">
+    <value>Сохранение удалённого источника…</value>
+  </data>
+  <data name="MusicSourcesSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить «{0}». Добавьте источник заново или отредактируйте его и повторите попытку.</value>
+  </data>
+  <data name="MusicSourcesNameRequired" xml:space="preserve">
+    <value>Введите название источника.</value>
+  </data>
 </root>

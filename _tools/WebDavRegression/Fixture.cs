@@ -18,6 +18,7 @@ internal sealed class Fixture : IAsyncDisposable
     private readonly string _trackName;
     public string Root { get; }
     public int Gets, UnauthorizedRedirects;
+    public volatile bool FailDirectoryListings;
     public string CdnETag = "\"cdn-v1\"";
     public bool CdnHasETag = true, CdnSupportsRange = true;
     public DateTimeOffset CdnModified = new(2026, 9, 25, 15, 6, 11, TimeSpan.Zero);
@@ -66,16 +67,22 @@ internal sealed class Fixture : IAsyncDisposable
                 { ServerCertificate = _certificate, EnabledSslProtocols = SslProtocols.Tls12 }, _stop.Token);
             using var reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
             string first = await reader.ReadLineAsync(_stop.Token) ?? "";
-            string? range = null, auth = null;
+            string? range = null, auth = null, depth = null;
             while (await reader.ReadLineAsync(_stop.Token) is { Length: > 0 } line)
             {
                 if (line.StartsWith("Range:")) range = line[6..].Trim();
                 if (line.StartsWith("Authorization:")) auth = line[14..].Trim();
+                if (line.StartsWith("Depth:", StringComparison.OrdinalIgnoreCase)) depth = line[6..].Trim();
             }
             var parts = first.Split(' ');
             string path = parts[1];
             if (parts[0] == "PROPFIND")
             {
+                if (FailDirectoryListings && depth == "1")
+                {
+                    await Header(503, 0, "");
+                    return;
+                }
                 const string musicFolder = "/dav/%E9%9F%B3%E4%B9%90/";
                 string requested = path.StartsWith(musicFolder + "live/", StringComparison.Ordinal) ? musicFolder + "live/"
                     : path.StartsWith(musicFolder + "studio/", StringComparison.Ordinal) ? musicFolder + "studio/"

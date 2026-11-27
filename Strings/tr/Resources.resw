@@ -2961,4 +2961,13 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="MusicSourcesRemoteAudio" xml:space="preserve">
     <value>Uzak ses</value>
   </data>
+  <data name="MusicSourcesSaving" xml:space="preserve">
+    <value>Uzak kaynak kaydediliyor…</value>
+  </data>
+  <data name="MusicSourcesSaveFailed" xml:space="preserve">
+    <value>“{0}” kaydedilemedi. Yeniden denemek için kaynağı tekrar ekleyin veya düzenleyin.</value>
+  </data>
+  <data name="MusicSourcesNameRequired" xml:space="preserve">
+    <value>Bir kaynak adı girin.</value>
+  </data>
 </root>

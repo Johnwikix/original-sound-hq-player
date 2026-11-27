@@ -1,4 +1,5 @@
 using CommunityToolkit.WinUI;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -14,9 +15,14 @@ public sealed partial class WebDavLibraryService
     private readonly HashSet<Task> _sourceSaves = [];
     private readonly HashSet<int> _changingSources = [];
     private readonly SemaphoreSlim _sourceWrites = new(1, 1);
+    private bool CanPublishCommittedSource => !_stop.IsCancellationRequested && _library?.CanPublishState != false;
 
     public Task SaveSourceAsync(WebDavSource source, string? password) =>
-        RunSourceOperationAsync(() => SaveSourceCoreAsync(source, password));
+        RunSourceOperationAsync(() => SaveSourceCoreAsync(source, password, scanAfterSave: false));
+
+    /// <summary>The save result includes scan registration. The scan itself belongs to the source service.</summary>
+    internal Task SaveAndScanSourceAsync(WebDavSource source, string? password) =>
+        RunSourceOperationAsync(() => SaveSourceCoreAsync(source, password, scanAfterSave: true));
 
     private Task RunSourceOperationAsync(Func<Task> operation)
     {
@@ -24,17 +30,23 @@ public sealed partial class WebDavLibraryService
         {
             _stop.Token.ThrowIfCancellationRequested();
             // PasswordVault 是同步 WinRT 调用。凭据开始写入后要完成事务或补偿，退出等待真实任务收尾。
-            var work = Task.Run(operation);
-            _sourceSaves.Add(work);
-            _ = ObserveSourceSaveAsync(work);
-            return work;
+            return StartSourceOperationLocked(operation);
         }
     }
 
-    private async Task SaveSourceCoreAsync(WebDavSource source, string? password)
+    private Task StartSourceOperationLocked(Func<Task> operation)
     {
-        bool isNew = source.Id == 0;
+        var work = Task.Run(operation);
+        _sourceSaves.Add(work);
+        _ = ObserveSourceSaveAsync(work);
+        return work;
+    }
+
+    private async Task SaveSourceCoreAsync(WebDavSource source, string? password, bool scanAfterSave)
+    {
         await _sourceWrites.WaitAsync(_stop.Token).ConfigureAwait(false);
+        bool isNew = source.Id == 0;
+        bool refreshScope = !isNew && source.Kind == RemoteSourceKind.WebDav;
         try
         {
             source.BaseUri = WebDavTransport.NormalizeRoot(source.BaseUri).AbsoluteUri;
@@ -77,30 +89,79 @@ public sealed partial class WebDavLibraryService
             catch
             {
                 if (provisionalCredential) RemoveSourceSecret(source);
-                if (previous is not null) source.CredentialKey = previous.CredentialKey;
+                if (isNew)
+                {
+                    // SQLite can assign the ID before a later step in the transaction fails.
+                    source.Id = 0;
+                }
+                else if (previous is not null)
+                {
+                    source.CredentialKey = previous.CredentialKey;
+                    source.ConfigurationRevision = previous.ConfigurationRevision;
+                }
                 throw;
             }
             if (previous is not null)
             {
                 if (source.UserName.Length == 0 || updateSecret) RemoveSourceSecret(previous);
-                OnSourceConfigurationChanged(previous, source.Enabled);
+                try { OnSourceConfigurationChanged(previous, source.Enabled); }
+                catch (Exception ex)
+                {
+                    logger.LogWarning("Committed source {SourceId} could not publish availability: {ErrorType}", source.Id, ex.GetType().Name);
+                }
             }
+            if (scanAfterSave && source.Enabled)
+            {
+                lock (_gate)
+                {
+                    // Still hold the source-write gate so an edit or removal cannot get ahead of this scan registration.
+                    _changingSources.Remove(source.Id);
+                    if (CanPublishCommittedSource)
+                    {
+                        _ = ScanAsync(source, refreshScope);
+                        _ = StartSourceOperationLocked(() => PublishSavedSourceAsync(source));
+                    }
+                }
+                return;
+            }
+            // Save-only edits must finish publishing the new scope before a later scan can append to it.
+            if (refreshScope) await RefreshSavedScopeAsync(source.Id, _stop.Token).ConfigureAwait(false);
         }
         finally
         {
             if (!isNew) lock (_gate) _changingSources.Remove(source.Id);
             _sourceWrites.Release();
         }
-        // 新来源尚无曲目，由扫描批次增量发布；编辑来源仍需立即收敛已排除目录的可见性。
-        if (!isNew && _library is not null && !_stop.IsCancellationRequested)
-            await _library.RefreshSongsSourceAsync(_stop.Token).ConfigureAwait(false);
-        if (_stop.IsCancellationRequested) return;
-        await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+        await PublishSavedSourceAsync(source).ConfigureAwait(false);
+    }
+
+    private async Task RefreshSavedScopeAsync(int sourceId, CancellationToken token)
+    {
+        if (_library is null || !_library.CanPublishState || token.IsCancellationRequested) return;
+        try { await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
         {
-            if (_stop.IsCancellationRequested) return;
-            if (source.Enabled) _ = ProbeAsync(source);
-            SourcesChanged?.Invoke();
-        }).ConfigureAwait(false);
+            logger.LogWarning("Committed source {SourceId} scope refresh failed: {ErrorType}", sourceId, ex.GetType().Name);
+        }
+    }
+
+    private async Task PublishSavedSourceAsync(WebDavSource source)
+    {
+        if (!CanPublishCommittedSource) return;
+        try
+        {
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                if (!CanPublishCommittedSource) return;
+                if (source.Enabled) _ = ProbeAsync(source);
+                SourcesChanged?.Invoke();
+            }).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Committed source {SourceId} publication failed: {ErrorType}", source.Id, ex.GetType().Name);
+        }
     }
 
     private static void ValidateReplacement(WebDavSource source, WebDavSource? previous, string root)

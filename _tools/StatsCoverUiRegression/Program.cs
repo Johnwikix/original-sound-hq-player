@@ -13,9 +13,11 @@ using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.WebDav;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.WebService;
 
 namespace WinUIMusicPlayer;
 
@@ -62,6 +64,7 @@ public sealed partial class App : Application
                 await encoder.FlushAsync();
             }
             AppSettings.MusicCoverCache = Path.Combine(fixture, "covers");
+            Directory.CreateDirectory(AppSettings.MusicCoverCache);
             db = new SQLiteAsyncConnection(Path.Combine(fixture, Guid.NewGuid() + ".db"));
             await db.CreateTableAsync<Music>();
             await db.CreateTableAsync<PlaybackHistory>();
@@ -76,7 +79,9 @@ public sealed partial class App : Application
             var service = new PlaybackStatsService(app, new MusicDatabaseService(db), NullLogger<PlaybackStatsService>.Instance);
             stats = new StatsViewModel(app, service, NullLogger<StatsViewModel>.Instance,
                 new ShutdownCoordinator(new AppLifecycle(), NullLogger<ShutdownCoordinator>.Instance));
-            Services = new ServiceCollection().AddSingleton(stats).BuildServiceProvider();
+            var remote = new WebDavLibraryService();
+            var matcher = new LrcService();
+            Services = new ServiceCollection().AddSingleton(stats).AddSingleton(remote).AddSingleton(matcher).BuildServiceProvider();
             var frame = new Frame();
             MainWindow = new Window { Content = frame };
             MainWindow.AppWindow.Move(new Windows.Graphics.PointInt32(-10000, -10000));
@@ -144,6 +149,7 @@ public sealed partial class App : Application
             frame.Navigate(typeof(StatsPage));
             await Until(() => !stats.IsLoading, "reentry refresh");
             Check(album.Music is null && artist.Music is null && song.Music is null, "reentry resolves retained rows against current library");
+            await CheckRemoteCoversAsync(app, (StatsPage)frame.Content, remote, matcher, await File.ReadAllBytesAsync(cover));
             await stats.StopAsync();
             await stats.StopAsync();
             await CheckCoverPriorityAsync(cover);
@@ -161,6 +167,93 @@ public sealed partial class App : Application
             CoverLoadQueue.Shutdown();
             MainWindow?.Close();
             Exit();
+        }
+    }
+
+    private async Task CheckRemoteCoversAsync(AppViewModel app, StatsPage page, WebDavLibraryService remote, LrcService matcher, byte[] png)
+    {
+        Music legacy = new() { Id = 101, Path = "remote://1/track/legacy", IsRemote = true };
+        remote.Covers[legacy.Id] = ([], true);
+        matcher.MatchAsync = (_, _) => Task.FromResult<byte[]?>(png);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        CancellationToken token = timeout.Token;
+        var image = await CoverLoadQueue.EnqueueAsync(legacy, token);
+        Check(image is null && matcher.MatchCount == 0, "disabled auto matching leaves a blank remote thumbnail without calling the matcher");
+
+        AppSettings.IsAutoCoverEnabled = true;
+        app.Publish(legacy);
+        await Until(() => Images(page).Count(candidate => candidate.Source is not null) == 2, "legacy blank hash album and artist artwork");
+        Check(legacy.ImageHash.Length == 0 && matcher.MatchCount == 1,
+            "real album and artist templates render an empty-hash remote cover through one shared match");
+
+        AppSettings.IsAutoCoverEnabled = false;
+        Music reopened = new() { Id = legacy.Id, Path = legacy.Path, IsRemote = true };
+        image = await CoverLoadQueue.EnqueueAsync(reopened, token);
+        Check(image is not null && matcher.MatchCount == 1, "reopening a legacy row with auto matching disabled displays the stored cover");
+        (image as IDisposable)?.Dispose();
+
+        AppSettings.IsAutoCoverEnabled = true;
+        Music otherSource = new() { Id = 102, Path = "remote://2/track/legacy", IsRemote = true };
+        remote.Covers[otherSource.Id] = ([], false);
+        image = await CoverLoadQueue.EnqueueAsync(otherSource, token);
+        Check(image is null && matcher.MatchCount == 1, "another source's remote failure cannot use the cached match or trigger a new one");
+
+        remote.Covers[otherSource.Id] = (png, false);
+        image = await CoverLoadQueue.EnqueueAsync(otherSource, token);
+        Check(image is not null && matcher.MatchCount == 1, "a server image does not invoke automatic matching");
+        (image as IDisposable)?.Dispose();
+
+        remote.Covers[otherSource.Id] = ([], true);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        matcher.MatchAsync = async (_, cancellationToken) =>
+        {
+            started.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return png;
+        };
+        var pending = CoverLoadQueue.EnqueueAsync(otherSource, token);
+        await started.Task.WaitAsync(token);
+        AppSettings.IsAutoCoverEnabled = false;
+        ToolUtils.CancelRemoteCoverMatch();
+        image = await pending;
+        Check(image is null && matcher.MatchCount == 2, "disabling matching cancels an in-flight remote search without displaying or caching it");
+
+        AppSettings.IsAutoCoverEnabled = true;
+        string sharedAlbumArt = new('A', 64);
+        Music first = new() { Id = 103, Path = "remote://1/track/first", IsRemote = true, Title = "First" };
+        Music second = new() { Id = 104, Path = "remote://1/track/second", IsRemote = true, Title = "Second" };
+        first.ImageHash = WebDavCachePaths.GetJellyfinImageHash(1, "first", sharedAlbumArt, first.Title, first.Author, first.Album);
+        second.ImageHash = WebDavCachePaths.GetJellyfinImageHash(1, "second", sharedAlbumArt, second.Title, second.Author, second.Album);
+        string cacheRoot = AppSettings.MusicCoverCache;
+        Check(WebDavCachePaths.Cover(cacheRoot, first.ImageHash) == WebDavCachePaths.Cover(cacheRoot, second.ImageHash),
+            "album songs share the server artwork cache key");
+        remote.Covers[first.Id] = ([], true);
+        remote.Covers[second.Id] = ([], true);
+        using var alternate = new MemoryStream();
+        using var alternateStream = alternate.AsRandomAccessStream();
+        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, alternateStream);
+        encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, 1, 1, 96, 96, [255, 0, 0, 255]);
+        await encoder.FlushAsync();
+        byte[] alternatePng = alternate.ToArray();
+        matcher.MatchAsync = (music, _) => Task.FromResult<byte[]?>(music.Title == first.Title ? png : alternatePng);
+        var covers = await Task.WhenAll(CoverLoadQueue.EnqueueAsync(first, token, prioritize: true),
+            CoverLoadQueue.EnqueueAsync(second, token, prioritize: true));
+        Check(matcher.MatchCount == 4 && covers[0] is not null && covers[1] is not null &&
+            FirstPixel(covers[0]!).SequenceEqual(new byte[] { 0, 128, 255, 255 }) &&
+            FirstPixel(covers[1]!).SequenceEqual(new byte[] { 255, 0, 0, 255 }) &&
+            File.Exists(WebDavCachePaths.MatchedCover(cacheRoot, first.ImageHash)) &&
+            File.Exists(WebDavCachePaths.MatchedCover(cacheRoot, second.ImageHash)) &&
+            File.Exists(CoverLoadQueue.GetThumbCachePath(first.ImageHash, CoverLoadQueue.CoverSize)) &&
+            File.Exists(CoverLoadQueue.GetThumbCachePath(second.ImageHash, CoverLoadQueue.CoverSize)),
+            "two songs in one album resolve their own matched image, decoded thumbnail and disk thumbnail");
+
+        static byte[] FirstPixel(ImageSource cover)
+        {
+            var bitmap = (Microsoft.UI.Xaml.Media.Imaging.WriteableBitmap)cover;
+            using var pixels = bitmap.PixelBuffer.AsStream();
+            byte[] result = new byte[4];
+            pixels.ReadExactly(result);
+            return result;
         }
     }
 

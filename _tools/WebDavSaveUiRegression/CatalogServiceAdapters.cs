@@ -9,6 +9,14 @@ using WinUIMusicPlayer.Services.Lyrics;
 
 namespace WinUIMusicPlayer.Services
 {
+    public sealed partial class WebDavLibraryService
+    {
+        internal Task GetScheduledScanForFixture(int sourceId)
+        {
+            lock (_gate) return _scans[sourceId].Work;
+        }
+    }
+
     public partial class MusicDatabaseService(SQLiteAsyncConnection connection)
     {
         private readonly SQLiteAsyncConnection _dbConnection = connection;
@@ -30,6 +38,7 @@ namespace WinUIMusicPlayer.ViewModel
         public List<Music> CurrentPlayingList { get; } = [];
         public Music? CurrentPlayingMusic => null;
         public bool PublishedOffUiThread { get; private set; }
+        public bool CanPublishState => true;
 
         public Music? FindById(int id) => SongsSource.Find(music => music.Id == id);
 

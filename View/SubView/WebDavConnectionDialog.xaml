@@ -7,60 +7,64 @@
     xmlns:utils="using:WinUIMusicPlayer.Utils"
     x:Uid="WebDavConnectionDialog"
     Title="{x:Bind ViewModel.SourceName}"
+    IsPrimaryButtonEnabled="{x:Bind ViewModel.CanSubmit, Mode=OneWay}"
     PrimaryButtonClick="Save_Click">
-    <ScrollViewer MaxHeight="640">
-        <StackPanel Width="440" Spacing="10">
-            <TextBlock Text="{x:Bind ViewModel.HelpText}" TextWrapping="Wrap" />
-            <TextBox x:Uid="WebDavName" Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBox Header="{x:Bind ViewModel.AddressHeader}" IsReadOnly="{x:Bind ViewModel.IsIdentityReadOnly}"
-                     Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBox x:Uid="WebDavUserName" IsReadOnly="{x:Bind ViewModel.IsIdentityReadOnly}"
-                     Text="{x:Bind ViewModel.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <PasswordBox x:Uid="WebDavPassword" Password="{x:Bind ViewModel.Password, Mode=TwoWay}" />
-            <Button Content="{x:Bind ViewModel.ConnectLabel}" Command="{x:Bind ViewModel.ConnectCommand}" />
-            <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" />
-            <InfoBar IsOpen="{x:Bind ViewModel.HasCertificate, Mode=OneWay}" IsClosable="False" Severity="Warning"
-                     Title="{x:Bind utils:ToolUtils.GetString('WebDavCertificateTitle')}"
-                     Message="{x:Bind utils:ToolUtils.GetString('WebDavCertificateHelp')}">
-                <StackPanel Spacing="8" MaxWidth="390">
-                    <TextBlock Text="{x:Bind ViewModel.CertificateDetails, Mode=OneWay}" TextWrapping="Wrap"
-                               IsTextSelectionEnabled="True" />
-                    <Button Content="{x:Bind utils:ToolUtils.GetString('WebDavTrustCertificate')}"
-                            Command="{x:Bind ViewModel.TrustCertificateCommand}" AutomationProperties.AutomationId="WebDavTrustCertificate" />
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer MaxHeight="640">
+            <StackPanel Width="440" Spacing="10">
+                <TextBlock Text="{x:Bind ViewModel.HelpText}" TextWrapping="Wrap" />
+                <TextBox x:Uid="WebDavName" Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Header="{x:Bind ViewModel.AddressHeader}" IsReadOnly="{x:Bind ViewModel.IsIdentityReadOnly}"
+                         Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox x:Uid="WebDavUserName" IsReadOnly="{x:Bind ViewModel.IsIdentityReadOnly}"
+                         Text="{x:Bind ViewModel.UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <PasswordBox x:Uid="WebDavPassword" Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Content="{x:Bind ViewModel.ConnectLabel}" Command="{x:Bind ViewModel.ConnectCommand}" />
+                <InfoBar IsOpen="{x:Bind ViewModel.HasCertificate, Mode=OneWay}" IsClosable="False" Severity="Warning"
+                         Title="{x:Bind utils:ToolUtils.GetString('WebDavCertificateTitle')}"
+                         Message="{x:Bind utils:ToolUtils.GetString('WebDavCertificateHelp')}">
+                    <StackPanel Spacing="8" MaxWidth="390">
+                        <TextBlock Text="{x:Bind ViewModel.CertificateDetails, Mode=OneWay}" TextWrapping="Wrap"
+                                   IsTextSelectionEnabled="True" />
+                        <Button Content="{x:Bind utils:ToolUtils.GetString('WebDavTrustCertificate')}"
+                                Command="{x:Bind ViewModel.TrustCertificateCommand}" AutomationProperties.AutomationId="WebDavTrustCertificate" />
+                    </StackPanel>
+                </InfoBar>
+                <StackPanel Spacing="6" Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.HasTrustedCertificate), Mode=OneWay}">
+                    <TextBlock Text="{x:Bind utils:ToolUtils.GetString('WebDavCertificateRemembered')}" TextWrapping="Wrap" />
+                    <Button Content="{x:Bind utils:ToolUtils.GetString('WebDavForgetCertificate')}"
+                            Command="{x:Bind ViewModel.ForgetCertificateCommand}" />
                 </StackPanel>
-            </InfoBar>
-            <StackPanel Spacing="6" Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.HasTrustedCertificate), Mode=OneWay}">
-                <TextBlock Text="{x:Bind utils:ToolUtils.GetString('WebDavCertificateRemembered')}" TextWrapping="Wrap" />
-                <Button Content="{x:Bind utils:ToolUtils.GetString('WebDavForgetCertificate')}"
-                        Command="{x:Bind ViewModel.ForgetCertificateCommand}" />
+                <StackPanel Spacing="6" Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.HasFolders), Mode=OneWay}">
+                    <TextBlock x:Uid="WebDavFolderTreeHelp" TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TreeView x:Name="FolderTree" Height="210" SelectionMode="None"
+                              Expanding="Tree_Expanding"
+                              AutomationProperties.Name="WebDAV">
+                        <TreeView.ItemTemplate>
+                            <DataTemplate x:DataType="controls:TreeViewNode">
+                                <TreeViewItem>
+                                    <!-- 模型负责级联显示和扫描根；部分选中不会自动扩大为父目录。 -->
+                                    <CheckBox x:Name="ScanRootCheckBox" IsChecked="{x:Bind ((vm:WebDavTreeItem)Content).SelectionState, Mode=OneWay}"
+                                              Tag="{x:Bind Content}" Click="ScanRoot_Click"
+                                              AutomationProperties.Name="{x:Bind ((vm:WebDavTreeItem)Content).Name}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="{x:Bind ((vm:WebDavTreeItem)Content).IconGlyph}" FontSize="15" />
+                                            <TextBlock Text="{x:Bind ((vm:WebDavTreeItem)Content).Name}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </CheckBox>
+                                </TreeViewItem>
+                            </DataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </StackPanel>
+                <CheckBox x:Uid="WebDavReadMetadata" IsChecked="{x:Bind ViewModel.ReadMetadata, Mode=TwoWay}"
+                          Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.IsWebDav)}" />
+                <CheckBox Content="{x:Bind ViewModel.ScanOnStartupLabel}" IsChecked="{x:Bind ViewModel.ScanOnStartup, Mode=TwoWay}" />
+                <CheckBox x:Uid="WebDavSourceEnabled" IsChecked="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
             </StackPanel>
-            <StackPanel Spacing="6" Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.HasFolders), Mode=OneWay}">
-                <TextBlock x:Uid="WebDavFolderTreeHelp" TextWrapping="Wrap"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <TreeView x:Name="FolderTree" Height="210" SelectionMode="None"
-                          Expanding="Tree_Expanding"
-                          AutomationProperties.Name="WebDAV">
-                    <TreeView.ItemTemplate>
-                        <DataTemplate x:DataType="controls:TreeViewNode">
-                            <TreeViewItem>
-                                <!-- 模型负责级联显示和扫描根；部分选中不会自动扩大为父目录。 -->
-                                <CheckBox x:Name="ScanRootCheckBox" IsChecked="{x:Bind ((vm:WebDavTreeItem)Content).SelectionState, Mode=OneWay}"
-                                          Tag="{x:Bind Content}" Click="ScanRoot_Click"
-                                          AutomationProperties.Name="{x:Bind ((vm:WebDavTreeItem)Content).Name}">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="{x:Bind ((vm:WebDavTreeItem)Content).IconGlyph}" FontSize="15" />
-                                        <TextBlock Text="{x:Bind ((vm:WebDavTreeItem)Content).Name}" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </CheckBox>
-                            </TreeViewItem>
-                        </DataTemplate>
-                    </TreeView.ItemTemplate>
-                </TreeView>
-            </StackPanel>
-            <CheckBox x:Uid="WebDavReadMetadata" IsChecked="{x:Bind ViewModel.ReadMetadata, Mode=TwoWay}"
-                      Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.IsWebDav)}" />
-            <CheckBox Content="{x:Bind ViewModel.ScanOnStartupLabel}" IsChecked="{x:Bind ViewModel.ScanOnStartup, Mode=TwoWay}" />
-            <CheckBox x:Uid="WebDavSourceEnabled" IsChecked="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
-        </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+        <TextBlock Grid.Row="1" Margin="0,8,0,0" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap"
+                   AutomationProperties.LiveSetting="Polite" Visibility="{x:Bind utils:BindUtils.NonEmptyTextVisibility(ViewModel.Status), Mode=OneWay}" />
+    </Grid>
 </ContentDialog>

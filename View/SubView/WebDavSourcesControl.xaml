@@ -11,6 +11,13 @@
             <TextBlock Text="{x:Bind ViewModel.Sources.Count, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
         </StackPanel>
         <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" Visibility="{x:Bind tools:BindUtils.NonEmptyTextVisibility(ViewModel.Status), Mode=OneWay}" />
+        <StackPanel Orientation="Horizontal" Spacing="8"
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.IsSavingSource), Mode=OneWay}">
+            <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsSavingSource, Mode=OneWay}" />
+            <TextBlock VerticalAlignment="Center" Text="{x:Bind tools:ToolUtils.GetString('MusicSourcesSaving')}" />
+        </StackPanel>
+        <InfoBar IsOpen="{x:Bind tools:BindUtils.IsNotEmptyString(ViewModel.SourceSaveError), Mode=OneWay}" IsClosable="False" Severity="Error"
+                 Message="{x:Bind ViewModel.SourceSaveError, Mode=OneWay}" />
         <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
                 Visibility="{x:Bind tools:BindUtils.EmptyCollectionVisibility(ViewModel.Sources.Count), Mode=OneWay}">
             <TextBlock x:Uid="WebDavSourcesEmpty" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />

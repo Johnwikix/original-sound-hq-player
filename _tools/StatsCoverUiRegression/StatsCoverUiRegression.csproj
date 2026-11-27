@@ -37,5 +37,5 @@
     </ItemGroup>
     <Copy SourceFiles="@(FixtureXaml)" DestinationFiles="@(FixtureXaml->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
-  <ItemGroup><Compile Include="../../Utils/LocalCoverSource.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../../Utils/LocalCoverSource.cs;../../Utils/ToolUtils.RemoteCovers.cs;../../Services/WebDav/WebDavCachePaths.cs" /></ItemGroup>
 </Project>

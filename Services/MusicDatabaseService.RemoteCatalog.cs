@@ -19,10 +19,29 @@ public partial class MusicDatabaseService
         await db.CreateTableAsync<WebDavSource>().ConfigureAwait(false);
         await db.CreateTableAsync<RemoteTrack>().ConfigureAwait(false);
         await db.CreateTableAsync<WebDavCacheSettings>().ConfigureAwait(false);
-        if (upgrading)
-            await db.ExecuteAsync("UPDATE WebDavSource SET Kind=0,ConfigurationRevision=0 WHERE Kind IS NULL").ConfigureAwait(false);
         await db.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)")
             .ConfigureAwait(false);
+        if (upgrading)
+            await db.RunInTransactionAsync(MigrateJellyfinCoverKeys).ConfigureAwait(false);
+    }
+
+    private static void MigrateJellyfinCoverKeys(SQLiteConnection db)
+    {
+        db.Execute("UPDATE WebDavSource SET Kind=0,ConfigurationRevision=0 WHERE Kind IS NULL");
+        // The legacy server digest remains valid for cached bytes. Only Jellyfin's display key becomes per-song.
+        var tracks = db.Query<Music>("""
+            SELECT m.Id,m.SourceId,r.Href AS Path,coalesce(m.Title,'') AS Title,coalesce(m.Author,'') AS Author,
+                coalesce(m.Album,'') AS Album,CASE WHEN coalesce(r.CoverId,'')='' THEN '' ELSE coalesce(m.ImageHash,'') END AS ImageHash
+            FROM RemoteTrack r JOIN Music m ON m.Id=r.MusicId
+            WHERE r.SourceId IN (SELECT Id FROM WebDavSource WHERE Kind=?)
+                AND coalesce(m.CoverOverridePath,'')='' AND coalesce(m.ImageHash,'') NOT LIKE 'jf-%'
+            """, RemoteSourceKind.Jellyfin);
+        foreach (var track in tracks)
+        {
+            string key = WebDavCachePaths.GetJellyfinImageHash(track.SourceId, track.Path, track.ImageHash,
+                track.Title, track.Author, track.Album);
+            db.Execute("UPDATE Music SET ImageHash=? WHERE Id=?", key, track.Id);
+        }
     }
 
     internal async Task<List<Music>> CommitCatalogTracksAsync(WebDavSource source, string run, IReadOnlyList<CatalogTrack> tracks,
@@ -46,7 +65,7 @@ public partial class MusicDatabaseService
                 if (music is null)
                 {
                     music = new Music { SourceId = source.Id, Path = path, CreateTime = DateTime.Now };
-                    ApplyCatalogTrack(music, track, folder, folderName, CoverHash(source.Id, track));
+                    ApplyCatalogTrack(music, track, folder, folderName, CoverHash(source, track));
                     db.Insert(music);
                     MusicMetadataStorage.AttachSong(db, music);
                     remote = new RemoteTrack { MusicId = music.Id, SourceId = source.Id, Href = track.Id, ResourcePath = path };
@@ -54,7 +73,9 @@ public partial class MusicDatabaseService
                 }
                 else
                 {
-                    string coverHash = CoverHash(source.Id, track);
+                    string coverHash = source.Kind == RemoteSourceKind.Jellyfin && !string.IsNullOrEmpty(music.CoverOverridePath)
+                        ? music.ImageHash
+                        : CoverHash(source, track);
                     if (CatalogMusicChanged(music, track, folder, folderName, coverHash))
                     {
                         ApplyCatalogTrack(music, track, folder, folderName, coverHash);
@@ -134,6 +155,12 @@ public partial class MusicDatabaseService
         music.UpdateTime = DateTime.Now;
     }
 
-    private static string CoverHash(int sourceId, CatalogTrack track) => track.CoverId.Length == 0 ? "" :
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{sourceId}\n{track.CoverId}\n{track.CoverVersion}")));
+    private static string CoverHash(WebDavSource source, CatalogTrack track)
+    {
+        string serverKey = track.CoverId.Length == 0 ? "" :
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{source.Id}\n{track.CoverId}\n{track.CoverVersion}")));
+        return source.Kind == RemoteSourceKind.Jellyfin
+            ? WebDavCachePaths.GetJellyfinImageHash(source.Id, track.Id, serverKey, track.Title, track.Artist, track.Album)
+            : serverKey;
+    }
 }

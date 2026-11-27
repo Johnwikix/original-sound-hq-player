@@ -108,7 +108,7 @@ public sealed partial class WebDavLibraryService
         lock (_gate)
             if (_probes.Remove(previous.Id, out var probe) && !probe.Work.IsCompleted) probe.Cancel.Cancel();
         _catalog.Forget(previous);
-        PublishAvailability(previous.Id);
+        if (CanPublishCommittedSource) PublishAvailability(previous.Id);
     }
 
     private async Task ProbeCatalogAsync(WebDavSource source, CancellationToken token)
@@ -175,9 +175,9 @@ public sealed partial class WebDavLibraryService
         Publish(new(source.Id, phase, found, found, error));
     }
 
-    private async Task<byte[]> ReadCatalogCoverAsync(WebDavSource source, RemoteTrack track, CancellationToken token)
+    private async Task<(byte[] Bytes, bool NotFound)> ReadCatalogCoverAsync(WebDavSource source, RemoteTrack track, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(track.CoverId)) return [];
+        if (string.IsNullOrEmpty(track.CoverId)) return ([], true);
         var provider = _catalog.Get(source.Kind);
         var session = await ConnectCatalogAsync(source, provider, token).ConfigureAwait(false);
         try
@@ -186,9 +186,9 @@ public sealed partial class WebDavLibraryService
             deadline.CancelAfter(TimeSpan.FromSeconds(20));
             await using var response = await provider.OpenCoverAsync(session, track.CoverId, deadline.Token).ConfigureAwait(false);
             using var body = await RemoteMediaHttp.ReadBodyAsync(response, 8 * 1024 * 1024, deadline.Token).ConfigureAwait(false);
-            return body.ToArray();
+            return (body.ToArray(), false);
         }
-        catch (WebDavException ex) when (ex.Status == HttpStatusCode.NotFound || ex.Code == "ResourceMissing") { return []; }
+        catch (WebDavException ex) when (ex.Status == HttpStatusCode.NotFound || ex.Code == "ResourceMissing") { return ([], true); }
         catch (WebDavException ex) when (ex.Code == "AuthenticationFailed")
         {
             _catalog.Forget(source);

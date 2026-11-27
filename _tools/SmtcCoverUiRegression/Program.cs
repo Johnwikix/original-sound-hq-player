@@ -135,7 +135,7 @@ namespace WinUIMusicPlayer
                 await WaitAsync(() => !control.IsLoaded && Current(control) is null);
                 await AssertSourceCollectedAsync(unloadedWeak, "卸载后的当前封面");
                 await CoverPipelineRegression.RunAsync();
-                result = "PASS: 真实 ImageSwitcher 与 CoverPresentation/SMTC 缓存失败兜底、限尺寸解码、SoftwareBitmapSource 类型与回收、连续切歌、取消、退出与句柄释放";
+                result = "PASS: 真实 ImageSwitcher 与 CoverPresentation/SMTC，远程匹配开关刷新、同曲封面标识更新、缓存失败兜底、限尺寸解码、连续切歌、取消、退出与句柄释放";
             }
             catch (Exception ex) { result = "FAIL: " + ex; }
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), result);

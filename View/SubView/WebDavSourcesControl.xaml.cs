@@ -13,6 +13,7 @@ namespace WinUIMusicPlayer.View.SubView;
 
 public sealed partial class WebDavSourcesControl : UserControl
 {
+    private bool _editing;
     public WebDavSourcesViewModel ViewModel { get; }
     public WebDavSourcesControl()
     {
@@ -27,10 +28,15 @@ public sealed partial class WebDavSourcesControl : UserControl
     }
     private async Task EditAsync(WebDavSource? source, RemoteSourceKind kind)
     {
-        var form = new WebDavConnectionViewModel(App.Services.GetRequiredService<WebDavTransport>(), App.Services.GetRequiredService<WebDavLibraryService>(), source, kind);
-        var result = await new WebDavConnectionDialog(form).ShowThemedAsync(XamlRoot);
-        if (result == ContentDialogResult.Primary && form.SavedSource is { Enabled: false } saved)
-            await ViewModel.StopDisabledSourceAsync(saved.Id);
+        if (_editing) return;
+        _editing = true;
+        try
+        {
+            using var form = new WebDavConnectionViewModel(App.Services.GetRequiredService<WebDavTransport>(),
+                App.Services.GetRequiredService<WebDavLibraryService>(), source, kind);
+            await new WebDavConnectionDialog(form, ViewModel.TryQueueSourceSave).ShowThemedAsync(XamlRoot);
+        }
+        finally { _editing = false; }
     }
     private async void Browse_Click(object sender, RoutedEventArgs e)
     {

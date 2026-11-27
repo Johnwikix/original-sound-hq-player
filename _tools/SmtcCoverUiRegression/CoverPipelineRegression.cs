@@ -42,6 +42,7 @@ internal static class CoverPipelineRegression
             await ShowAsync(normalMusic, 1536, 1536);
             Check(ToolUtils.RawReads == reads, "正常热缓存新增了原图数组读取");
 
+            await CheckRemoteRefreshAsync();
             await CheckPreviewContinuityAsync(normalMusic, rawMusic, bytesMusic);
 
             // 预览已完成后，交接只补发系统媒体封面。
@@ -102,6 +103,43 @@ internal static class CoverPipelineRegression
             ToolUtils.ContinueRead = null;
             Directory.Delete(blockedDisplay);
             Directory.Delete(blockedRaw);
+        }
+
+        async Task CheckRemoteRefreshAsync()
+        {
+            var music = new Music
+            {
+                IsRemote = true, ImageHash = "remote-matched", Path = ToolUtils.FindRawCachePath("small"), Title = "remote matched"
+            };
+            ToolUtils.IsRemoteMatchingEnabled = () => state.Preferences.IsAutoCoverEnabled;
+            try
+            {
+                state.Playback.CurrentPlayingMusic = music;
+                await covers.UpdatePlayBar(music);
+                Check(state.Presentation.LyricPageBackgroundHash.Length == 0, "未找到远程封面之前应使用可切换的占位图身份");
+                state.Preferences.IsAutoCoverEnabled = true;
+                await WaitForDisplayedCoverAsync(music.ImageHash);
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                while (media.SystemMediaControls.DisplayUpdater.Thumbnail is null)
+                    await Task.Delay(10, timeout.Token);
+                await WaitForMediaAsync(music, 320, 200);
+                state.Preferences.IsAutoCoverEnabled = false;
+                Check(state.Presentation.LyricPageBackgroundHash == music.ImageHash, "关闭匹配后仍显示已缓存的远程封面");
+
+                const string updatedHash = "remote-server-artwork";
+                File.Copy(ToolUtils.FindRawCachePath("portrait"), ToolUtils.FindRawCachePath(updatedHash), overwrite: true);
+                var oldStamp = music.CoverSourceStamp;
+                media.SystemMediaControls.DisplayUpdater.MusicProperties.Title = "waiting for the updated server cover";
+                music.ImageHash = updatedHash;
+                await WaitForDisplayedCoverAsync(updatedHash, requirePalette: true);
+                await WaitForMediaAsync(music, 512, 1536);
+                Check(ReferenceEquals(state.Playback.CurrentPlayingMusic, music) && music.CoverSourceStamp == oldStamp,
+                    "更新远程封面标识会在同一首歌中刷新播放页和系统媒体缩略图");
+            }
+            finally
+            {
+                ToolUtils.IsRemoteMatchingEnabled = null;
+            }
         }
 
         async Task CheckPreviewContinuityAsync(Music outgoing, Music next, Music blocked)

@@ -15,13 +15,13 @@ namespace WinUIMusicPlayer.Model
         public long CoverAudioWriteTicks { get; set; }
         public string CoverSourceStamp { get; set { if (field == value) return; field = value; PropertyChanged?.Invoke(this, new(nameof(CoverSourceStamp))); } } = "";
         public string CoverOverridePath { get; set; } = "";
-        public string ImageHash { get; init; } = "";
+        public string ImageHash { get; set { if (field == value) return; field = value; PropertyChanged?.Invoke(this, new(nameof(ImageHash))); } } = "";
         public string Path { get; init; } = "";
         public string Title { get; init; } = "";
         public string Author => "artist";
         public string Album => "album";
         public string Extension => ".flac";
-        public bool IsRemote => false;
+        public bool IsRemote { get; init; }
         public int SampleRate => 44100;
         public int BitDepth => 16;
         public int BitRate => 1000;
@@ -81,6 +81,16 @@ namespace WinUIMusicPlayer.State
         }
         public string ThemeType => "Light";
         public string MusicCoverCache => AppContext.BaseDirectory;
+        public bool IsAutoCoverEnabled
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                PropertyChanged?.Invoke(this, new(nameof(IsAutoCoverEnabled)));
+            }
+        }
         public PaletteAlgorithm PaletteAlgorithm => PaletteAlgorithm.KMeansPP;
         public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader { get; set; }
     }
@@ -106,7 +116,7 @@ namespace WinUIMusicPlayer.Services
     public sealed class WebDavLibraryService
     {
         internal Task TrimCoverCacheAsync(string path, CancellationToken token)
-            => throw new Exception("本地回归不应调用远程裁剪");
+            => Task.CompletedTask;
     }
     public sealed class PlaybackCommands
     {
@@ -143,12 +153,14 @@ namespace WinUIMusicPlayer.Utils
     {
         internal static int RawReads, StoreFailures;
         internal static TaskCompletionSource? ReadStarted, ContinueRead;
+        internal static Func<bool>? IsRemoteMatchingEnabled;
         internal static bool GetIsLightTheme() => true;
         internal static async Task<byte[]> GetRawImage(Model.Music music, bool manual, CancellationToken token)
         {
             Interlocked.Increment(ref RawReads);
             ReadStarted?.TrySetResult();
             if (ContinueRead is { } gate) await gate.Task.WaitAsync(token);
+            if (music.IsRemote && IsRemoteMatchingEnabled?.Invoke() != true) return [];
             if (music.Path.Length == 0) return [];
             byte[] bytes = await File.ReadAllBytesAsync(music.Path, token);
             try { await PlaybackCoverCache.StoreAsync(FindRawCachePath(music.ImageHash), bytes, token); }

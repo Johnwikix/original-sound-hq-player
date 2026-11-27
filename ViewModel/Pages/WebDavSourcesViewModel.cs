@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -25,12 +26,15 @@ public partial class WebDavSourcesViewModel : ObservableObject
     private readonly LibraryQueries _queries;
     private bool _loaded, _loading, _stopped;
     private Task _save = Task.CompletedTask;
+    private readonly HashSet<Task> _sourceSaves = [];
     private Task _sizeRefresh = Task.CompletedTask;
     private int _sizeRefreshVersion;
     private readonly System.Threading.SemaphoreSlim _loadGate = new(1, 1);
     public ObservableCollection<WebDavSourceItem> Sources { get; } = [];
     public ObservableCollection<MusicSourceChoice> Choices { get; } = [];
     public string Status { get; private set => SetProperty(ref field, value); } = "";
+    public bool IsSavingSource => _sourceSaves.Count != 0;
+    public string SourceSaveError { get; private set => SetProperty(ref field, value); } = "";
     public bool CacheEnabled { get; set { if (SetProperty(ref field, value) && !_loading) SaveCache(); } }
     public double CacheLimitGiB { get; set { if (SetProperty(ref field, value) && !_loading) SaveCache(); } } = 10;
     public string CacheSize { get; private set => SetProperty(ref field, value); } = "";
@@ -169,7 +173,46 @@ public partial class WebDavSourcesViewModel : ObservableObject
     private Task StopCurrentSourceAsync(int sourceId) => _app.CurrentPlayingMusic?.SourceId == sourceId
         ? _playback.StopSourceAsync(sourceId) : Task.CompletedTask;
 
-    internal async Task StopDisabledSourceAsync(int sourceId)
+    internal bool TryQueueSourceSave(WebDavSource source, string? password)
+    {
+        if (_stopped || _library.StoppingToken.IsCancellationRequested) return false;
+        SourceSaveError = "";
+        var work = CommitSourceAsync(source, password);
+        _sourceSaves.Add(work);
+        OnPropertyChanged(nameof(IsSavingSource));
+        _ = ObserveSourceSaveAsync(work);
+        return true;
+    }
+
+    private async Task CommitSourceAsync(WebDavSource source, string? password)
+    {
+        // 登记后交还 WinUI 点击线程，让原生对话框关闭，再由应用级服务提交并安排扫描。
+        await Task.Yield();
+        try { await _library.SaveAndScanSourceAsync(source, password); }
+        catch (OperationCanceledException) when (_stopped || _library.StoppingToken.IsCancellationRequested) { return; }
+        catch (Exception ex)
+        {
+            if (!_stopped)
+            {
+                var message = string.Format(ToolUtils.GetString("MusicSourcesSaveFailed"), source.Name);
+                SourceSaveError = ex is WebDavException remote ? message + " " + WebDavText.Error(remote.Code) : message;
+            }
+            return;
+        }
+        if (!source.Enabled) await StopDisabledSourceAsync(source.Id);
+    }
+
+    private async Task ObserveSourceSaveAsync(Task work)
+    {
+        try { await work; }
+        finally
+        {
+            _sourceSaves.Remove(work);
+            if (!_stopped) OnPropertyChanged(nameof(IsSavingSource));
+        }
+    }
+
+    private async Task StopDisabledSourceAsync(int sourceId)
     {
         if (sourceId <= 0 || _stopped) return;
         try { await StopCurrentSourceAsync(sourceId); }
@@ -217,6 +260,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
         _library.SourceAvailabilityChanged -= OnSourceAvailabilityChanged;
         _library.SourcesChanged -= OnSourcesChanged;
         _app.State.Preferences.PropertyChanged -= OnPreferencesChanged;
+        await Task.WhenAll(_sourceSaves);
         await _save;
         await _sizeRefresh;
         await _loadGate.WaitAsync();

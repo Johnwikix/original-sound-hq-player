@@ -20,19 +20,19 @@ internal static class ConnectionViewModelRegression
         form.SetSelected(root, false);
         form.SetSelected(musicFolder, false);
         form.SetSelected(musicFolder.Children[0], true);
-        Check(await form.SaveAsync() && library.Saved?.Roots == "/dav/%E9%9F%B3%E4%B9%90/live/",
+        Check(await SavePreparedAsync(form, library) && library.Saved?.Roots == "/dav/%E9%9F%B3%E4%B9%90/live/",
             "saving a nested selection keeps its exact path");
         using var edited = new WebDavConnectionViewModel(transport, library, library.Saved);
         await edited.ConnectCommand.ExecuteAsync(null);
         Check(edited.Folders[0].Children[0].IsExpanded && edited.Folders[0].Children[0].Children[0].IsSelected &&
-            await edited.SaveAsync() && library.Saved?.Roots == "/dav/%E9%9F%B3%E4%B9%90/live/",
+            await SavePreparedAsync(edited, library) && library.Saved?.Roots == "/dav/%E9%9F%B3%E4%B9%90/live/",
             "editing reveals and preserves a nested selected root");
         edited.SetSelected(edited.Folders[0].Children[0].Children[1], true);
-        Check(await edited.SaveAsync() && library.Saved?.Roots ==
+        Check(await SavePreparedAsync(edited, library) && library.Saved?.Roots ==
             "/dav/%E9%9F%B3%E4%B9%90/live/\n/dav/%E9%9F%B3%E4%B9%90/studio/",
             "multiple nested roots are saved in tree order");
         edited.SetSelected(edited.Folders[0], true);
-        Check(await edited.SaveAsync() && library.Saved?.Roots == "/dav/",
+        Check(await SavePreparedAsync(edited, library) && library.Saved?.Roots == "/dav/",
             "selected parent removes duplicate child roots");
     }
 
@@ -42,11 +42,11 @@ internal static class ConnectionViewModelRegression
         var library = new WebDavLibraryService();
         using var form = new WebDavConnectionViewModel(transport, library) { Name = "Fixture", Address = server.Root };
         await form.ConnectCommand.ExecuteAsync(null);
-        Check(form.HasCertificate && form.TrustCertificateCommand.CanExecute(null) && !await form.SaveAsync(),
+        Check(form.HasCertificate && form.TrustCertificateCommand.CanExecute(null) && !await SavePreparedAsync(form, library),
             "connection form requires explicit certificate confirmation before saving");
         await form.TrustCertificateCommand.ExecuteAsync(null);
         Check(!form.HasCertificate && form.HasTrustedCertificate && form.Folders.Count == 1 &&
-            form.Folders[0].Children.Count == 1 && await form.SaveAsync(),
+            form.Folders[0].Children.Count == 1 && await SavePreparedAsync(form, library),
             "confirmation reconnects and saves source certificate identity");
         var saved = library.Saved!;
         Check(saved.TrustedCertificateOrigin == new Uri(server.Root).GetLeftPart(UriPartial.Authority) && saved.TrustedCertificateSha256.Length == 64,
@@ -68,7 +68,7 @@ internal static class ConnectionViewModelRegression
         Check(!restored.HasCertificate && restored.Folders.Count == 1 && restored.Folders[0].IsSelected,
             "editing saved source restores certificate confirmation and root selection");
         restored.ForgetCertificateCommand.Execute(null);
-        Check(!restored.HasTrustedCertificate && !await restored.SaveAsync(), "forgetting trust invalidates prior connection test");
+        Check(!restored.HasTrustedCertificate && !await SavePreparedAsync(restored, library), "forgetting trust invalidates prior connection test");
         await restored.ConnectCommand.ExecuteAsync(null);
         Check(restored.HasCertificate, "forgotten certificate requires confirmation again");
         var nestedSource = new WinUIMusicPlayer.Model.WebDavSource
@@ -83,14 +83,14 @@ internal static class ConnectionViewModelRegression
         var root = nested.Folders[0];
         var musicFolder = root.Children[0];
         Check(!root.IsSelected && musicFolder.IsExpanded && musicFolder.Children.Count == 2 &&
-            musicFolder.Children[0].IsSelected && await nested.SaveAsync() &&
+            musicFolder.Children[0].IsSelected && await SavePreparedAsync(nested, library) &&
             library.Saved?.Roots == "/dav/%E9%9F%B3%E4%B9%90/live/",
             "editing restores a nested selected folder without broadening the scan root");
         nested.SetSelected(root, true);
-        Check(await nested.SaveAsync() && library.Saved?.Roots == "/dav/",
+        Check(await SavePreparedAsync(nested, library) && library.Saved?.Roots == "/dav/",
             "selected ancestor removes duplicate descendant roots");
         form.Address = server.Root + "different/";
-        Check(!form.HasTrustedCertificate && !await form.SaveAsync(), "editing address clears certificate confirmation and tested connection");
+        Check(!form.HasTrustedCertificate && !await SavePreparedAsync(form, library), "editing address clears certificate confirmation and tested connection");
         using var changing = new WebDavConnectionViewModel(transport, library) { Address = server.Root };
         Task pending = changing.ConnectCommand.ExecuteAsync(null);
         changing.Address = "https://localhost:1/";
@@ -100,7 +100,7 @@ internal static class ConnectionViewModelRegression
         Task closingRequest = closing.ConnectCommand.ExecuteAsync(null);
         closing.Dispose();
         await closingRequest;
-        Check(!closing.HasCertificate && !await closing.SaveAsync(), "closed connection form cancels in-flight TLS and cannot save");
+        Check(!closing.HasCertificate && !await SavePreparedAsync(closing, library), "closed connection form cancels in-flight TLS and cannot save");
 
         await CheckCredentialScopeAsync(transport);
     }
@@ -115,6 +115,8 @@ internal static class ConnectionViewModelRegression
         form.Address = first.Root.TrimEnd('/');
         await form.ConnectCommand.ExecuteAsync(null);
         Check(library.CredentialReads == 1 && form.HasFolders, "equivalent normalized DAV address permits stored password reuse");
+        Check(form.TryPrepareSave(out _, out var reusedSecret) && reusedSecret is null && library.CredentialReads == 1,
+            "submitting a tested DAV edit does not read the credential store again");
 
         form.Address = second.Root;
         await form.ConnectCommand.ExecuteAsync(null);
@@ -136,6 +138,13 @@ internal static class ConnectionViewModelRegression
         form.Password = "";
         await form.ConnectCommand.ExecuteAsync(null);
         Check(library.CredentialReads == 1 && form.HasFolders, "anonymous DAV access still works after address and account changes");
+    }
+
+    private static async Task<bool> SavePreparedAsync(WebDavConnectionViewModel form, WebDavLibraryService library)
+    {
+        if (!form.TryPrepareSave(out var source, out var password)) return false;
+        await library.SaveSourceAsync(source, password);
+        return true;
     }
     private static void Check(bool condition, string name)
     {

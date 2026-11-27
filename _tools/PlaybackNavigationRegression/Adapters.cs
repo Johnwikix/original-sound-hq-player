@@ -387,6 +387,7 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed class WebDavLibraryService
     {
+        public CancellationToken StoppingToken => CancellationToken.None;
         public event Action<WebDavScanStatus>? StatusChanged;
         public event Action<int, bool>? SourceAvailabilityChanged;
         public event Action? SourcesChanged;
@@ -402,6 +403,7 @@ namespace WinUIMusicPlayer.Services
             SourceAvailabilityChanged?.Invoke(sourceId, offline);
         }
         public Task ApplyCacheSettingsAsync(WebDavCacheSettings settings) => Task.CompletedTask;
+        internal Task SaveAndScanSourceAsync(WebDavSource source, string? password) => Task.CompletedTask;
         public Task ScanAsync(WebDavSource source) => Task.CompletedTask;
         public Task CancelScanAsync(int sourceId) => Task.CompletedTask;
         public Task RemoveSourceAsync(WebDavSource source) => Task.CompletedTask;

@@ -9,6 +9,7 @@ using SQLite;
 using Windows.Security.Credentials;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.RemoteSources;
 using WinUIMusicPlayer.Services.WebDav;
 using WinUIMusicPlayer.ViewModel;
 
@@ -44,8 +45,17 @@ internal sealed partial class CatalogServiceApp : Application
         using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(3));
         try
         {
-            await VerifyAsync(window.DispatcherQueue, directory.FullName, deadline.Token);
-            Log("PASS: real connection forms, source service, Windows Vault, DispatcherQueue, and SQLite library lifecycle");
+            if (Environment.GetEnvironmentVariable("REMOTE_CATALOG_LOCAL_SAVE_AND_SCAN") == "1")
+                await VerifyLocalSaveAndScanAsync(window.DispatcherQueue, directory.FullName, deadline.Token);
+            else if (Environment.GetEnvironmentVariable("REMOTE_CATALOG_JELLYFIN_COVER_ONLY") == "1")
+                await VerifyJellyfinCoversAsync(window.DispatcherQueue, directory.FullName, deadline.Token);
+            else if (Environment.GetEnvironmentVariable("REMOTE_CATALOG_JELLYFIN_RESTORED_COVER_ID") is { Length: > 0 } restored)
+                await VerifyJellyfinRestoredCoverAsync(window.DispatcherQueue, directory.FullName, restored, deadline.Token);
+            else
+            {
+                await VerifyAsync(window.DispatcherQueue, directory.FullName, deadline.Token);
+                Log("PASS: real connection forms, source service, Windows Vault, DispatcherQueue, and SQLite library lifecycle");
+            }
         }
         catch (Exception ex)
         {
@@ -59,6 +69,225 @@ internal sealed partial class CatalogServiceApp : Application
             window.Close();
             Exit();
         }
+    }
+
+    private static async Task VerifyLocalSaveAndScanAsync(DispatcherQueue dispatcher, string directory, CancellationToken token)
+    {
+        using var transport = new WebDavTransport();
+        await using var server = new Fixture();
+        var sqlite = await OpenAsync(directory, mustBeFresh: true);
+        try
+        {
+            var database = await InitializeAsync(sqlite);
+            var projection = new AppViewModel(database, dispatcher);
+            var service = new WebDavLibraryService(database, transport, new RemoteAudioCache(), NullLogger<WebDavLibraryService>.Instance);
+            try
+            {
+                await service.StartAsync(projection);
+                using var form = new WebDavConnectionViewModel(transport, service)
+                {
+                    Address = server.Root, Name = "Local save and scan", ReadMetadata = false
+                };
+                await form.ConnectCommand.ExecuteAsync(null).WaitAsync(token);
+                Check(form.TryPrepareSave(out var source, out var password), "real loopback connection did not prepare a save snapshot");
+                form.Dispose();
+                await sqlite.ExecuteAsync("CREATE TRIGGER FailFixtureSource BEFORE INSERT ON WebDavSource BEGIN SELECT RAISE(ABORT, 'fixture save failure'); END");
+                try
+                {
+                    await service.SaveAndScanSourceAsync(source, password).WaitAsync(token);
+                    throw new CheckException("Expected a fixture database failure.");
+                }
+                catch (SQLiteException) { }
+                Check(source.Id == 0 && (await database.GetRemoteSourcesAsync()).Count == 0 && service.GetStatus(source.Id) is null,
+                    "failed real transaction left a source or scan");
+                await sqlite.ExecuteAsync("DROP TRIGGER FailFixtureSource");
+
+                server.FailDirectoryListings = true;
+                await service.SaveAndScanSourceAsync(source, password).WaitAsync(token);
+                Check((await database.GetRemoteSourcesAsync()).Single().Id == source.Id, "retry did not durably save the prepared source exactly once");
+                await service.GetScheduledScanForFixture(source.Id).WaitAsync(token);
+                Check(service.GetStatus(source.Id) is { Phase: "Failed", Error: "RequestFailed" }
+                    && (await database.Versions.ReadLibraryAsync(false)).Music.Count == 0,
+                    "the first scan hid the provider failure or imported tracks while the server failed");
+                server.FailDirectoryListings = false;
+                await service.ScanAsync(source).WaitAsync(token);
+                Check(service.GetStatus(source.Id) is { Phase: "Completed", Found: 1 }
+                    && (await database.Versions.ReadLibraryAsync(false)).Music.Count == 1
+                    && (await database.GetRemoteSourcesAsync()).Single().Id == source.Id,
+                    "scan retry after provider recovery did not import exactly one song under the saved source");
+                Log("PASS: real loopback, prepared and closed form, SQLite failure and retry, provider failure and manual scan retry");
+            }
+            finally { await service.StopAsync(); }
+        }
+        finally { await sqlite.CloseAsync(); }
+    }
+
+    private async Task VerifyJellyfinCoversAsync(DispatcherQueue dispatcher, string directory, CancellationToken token)
+    {
+        using var transport = new WebDavTransport();
+        var sqlite = await OpenAsync(directory, mustBeFresh: true);
+        try
+        {
+            var database = await InitializeAsync(sqlite);
+            var projection = new AppViewModel(database, dispatcher);
+            var service = new WebDavLibraryService(database, transport, new RemoteAudioCache(), NullLogger<WebDavLibraryService>.Instance);
+            try
+            {
+                await service.StartAsync(projection);
+                var source = new WebDavSource
+                {
+                    Kind = RemoteSourceKind.Jellyfin, Name = "Jellyfin test",
+                    BaseUri = Require("REMOTE_CATALOG_JELLYFIN_URL"), UserName = Require("REMOTE_CATALOG_JELLYFIN_USER")
+                };
+                string password = Require("REMOTE_CATALOG_JELLYFIN_PASSWORD", allowEmpty: true);
+                await service.TestSourceAsync(source, password, token);
+                await service.SaveSourceAsync(source, password);
+                _vaultEntries.Add(source.CredentialKey);
+                await service.ScanAsync(source).WaitAsync(token);
+                Check(service.GetStatus(source.Id) is { Phase: "Completed" }, "Jellyfin fixture scan failed");
+                var missing = await FindTrackAsync("REMOTE_CATALOG_JELLYFIN_MISSING_IMAGE_ID");
+                var noCandidate = await FindTrackAsync("REMOTE_CATALOG_JELLYFIN_NO_IMAGE_ITEM_ID");
+                var (music, _) = await database.Versions.ReadLibraryAsync(false);
+                byte[]? found = null;
+                var requested = new HashSet<string>();
+                foreach (var song in music)
+                {
+                    var remote = await database.GetRemoteTrackAsync(song.Id);
+                    if (remote is null || string.IsNullOrEmpty(remote.CoverId) || !requested.Add(remote.CoverId)) continue;
+                    var candidate = await service.ReadCoverResultAsync(song, token);
+                    if (candidate.Bytes.Length == 0) continue;
+                    Check(!candidate.CanMatch, "positive server art permitted external matching");
+                    found = candidate.Bytes;
+                    break;
+                }
+                Check(found is { Length: > 0 }, "expected server art in the Jellyfin test library");
+                string missingAlbum = WebDavCachePaths.GetServerCoverKey(missing.ImageHash);
+                var sibling = music.FirstOrDefault(song => song.Id != missing.Id && song.Title != missing.Title &&
+                    WebDavCachePaths.GetServerCoverKey(song.ImageHash) == missingAlbum);
+                Check(sibling is not null, "expected another track in the missing-art album fixture");
+                await CheckJellyfinCoverCacheAsync(service, source, missing, sibling!, noCandidate, found!, token);
+                Log("PASS: Jellyfin server art, confirmed 404, legacy cache and key, match reuse and precedence, cache clear, and offline gate");
+
+                async Task<Music> FindTrackAsync(string variable)
+                {
+                    var result = await database.GetRemoteMusicAsync(source.Id, Require(variable));
+                    return result ?? throw new CheckException("Expected Jellyfin cover fixture track ID.");
+                }
+            }
+            finally { await service.StopAsync(); }
+        }
+        finally { await sqlite.CloseAsync(); }
+    }
+
+    private async Task VerifyJellyfinRestoredCoverAsync(DispatcherQueue dispatcher, string directory, string itemId, CancellationToken token)
+    {
+        itemId = Guid.Parse(itemId).ToString("N");
+        string albumId = Environment.GetEnvironmentVariable("REMOTE_CATALOG_JELLYFIN_PREVIOUS_ALBUM_ID") is { Length: > 0 } album
+            ? Guid.Parse(album).ToString("N") : "";
+        using var transport = new WebDavTransport();
+        var sqlite = await OpenAsync(directory, mustBeFresh: true);
+        try
+        {
+            var database = await InitializeAsync(sqlite);
+            var projection = new AppViewModel(database, dispatcher);
+            var service = new WebDavLibraryService(database, transport, new RemoteAudioCache(), NullLogger<WebDavLibraryService>.Instance);
+            try
+            {
+                await service.StartAsync(projection);
+                var source = new WebDavSource
+                {
+                    Kind = RemoteSourceKind.Jellyfin, Name = "Restored cover fixture",
+                    BaseUri = Require("REMOTE_CATALOG_JELLYFIN_URL"), UserName = Require("REMOTE_CATALOG_JELLYFIN_USER")
+                };
+                string password = Require("REMOTE_CATALOG_JELLYFIN_PASSWORD", allowEmpty: true);
+                await service.TestSourceAsync(source, password, token);
+                await service.SaveSourceAsync(source, password);
+                _vaultEntries.Add(source.CredentialKey);
+
+                // Start at the previous catalog state without item art. Its optional album candidate had no primary image either.
+                var old = new CatalogTrack(itemId, "Previously missing cover", "Fixture artist", "Fixture album", albumId, "", "",
+                    1, 1, 0, TimeSpan.Zero, "flac", -1, albumId, "");
+                var imported = await database.CommitCatalogTracksAsync(source, "previous-cover-fixture", [old], token);
+                var playing = imported.Single();
+                projection.SongsSource.Add(playing);
+                string oldHash = playing.ImageHash;
+                string cacheRoot = AppSettings.MusicCoverCache;
+                Directory.CreateDirectory(WebDavCachePaths.Covers(cacheRoot));
+                string oldRaw = WebDavCachePaths.Cover(cacheRoot, oldHash);
+                string oldMiss = WebDavCachePaths.MissingCover(cacheRoot, oldHash);
+                await File.WriteAllBytesAsync(oldRaw, [], token);
+                await File.WriteAllBytesAsync(oldMiss, [], token);
+                byte[] fallback = [1, 2, 3, 4];
+                await service.CacheMatchedCoverAsync(playing, oldHash, fallback, token);
+                string oldMatch = WebDavCachePaths.MatchedCover(cacheRoot, oldHash);
+                Check(File.Exists(oldMatch) && (await service.ReadCoverAsync(playing, token)).AsSpan().SequenceEqual(fallback),
+                    "previous Jellyfin fallback was not present before resync");
+
+                await service.ScanAsync(source).WaitAsync(token);
+                var updated = await database.GetRemoteMusicAsync(source.Id, itemId);
+                var remote = await database.GetRemoteTrackAsync(playing.Id);
+                Check(service.GetStatus(source.Id) is { Phase: "Completed" } && updated is not null && updated.Id == playing.Id
+                    && remote?.CoverId == itemId && playing.ImageHash == updated.ImageHash && updated.ImageHash != oldHash
+                    && WebDavCachePaths.GetServerCoverKey(updated.ImageHash) != WebDavCachePaths.GetServerCoverKey(oldHash),
+                    "resync did not publish the same song's new Jellyfin item cover key");
+                var (bytes, canMatch) = await service.ReadCoverResultAsync(playing, token);
+                bool validImage = bytes.AsSpan().StartsWith(new byte[] { 0xff, 0xd8, 0xff }) ||
+                    bytes.AsSpan().StartsWith(new byte[] { 0x89, 0x50, 0x4e, 0x47 });
+                string freshRaw = WebDavCachePaths.Cover(cacheRoot, playing.ImageHash);
+                Check(validImage && !canMatch && File.Exists(freshRaw) && File.Exists(oldRaw) && File.Exists(oldMiss) && File.Exists(oldMatch)
+                    && WebDavCachePaths.FindCover(cacheRoot, playing.ImageHash) == freshRaw,
+                    "the player did not use the server image while the previous miss and fallback were still cached");
+                Log($"PASS: resync replaced the previous cover cache key with Jellyfin item art ({bytes.Length} bytes), keeping track ID and previous cache files");
+            }
+            finally { await service.StopAsync(); }
+        }
+        finally { await sqlite.CloseAsync(); }
+    }
+
+    private static async Task CheckJellyfinCoverCacheAsync(WebDavLibraryService service, WebDavSource source, Music missing,
+        Music sibling, Music noCandidate, byte[] serverArt, CancellationToken token)
+    {
+        string root = AppSettings.MusicCoverCache;
+        Directory.CreateDirectory(WebDavCachePaths.Covers(root));
+        string raw = WebDavCachePaths.Cover(root, missing.ImageHash);
+        string negative = WebDavCachePaths.MissingCover(root, missing.ImageHash);
+        string matched = WebDavCachePaths.MatchedCover(root, missing.ImageHash);
+        // Isolate this 404 from optional catalog probing for a song whose album may happen to be reused.
+        if (File.Exists(negative)) File.Delete(negative);
+        await File.WriteAllBytesAsync(raw, [], token);
+        var missingResult = await service.ReadCoverResultAsync(missing, token);
+        Check(missingResult.CanMatch && missingResult.Bytes.Length == 0 && File.Exists(negative),
+            "legacy zero cache did not resolve into a confirmed 404");
+        byte[] fixtureMatch = [1, 2, 3, 4];
+        await service.CacheMatchedCoverAsync(missing, "outdated-hash", fixtureMatch, token);
+        Check(!File.Exists(matched), "a stale matching result reached the cache");
+        await service.CacheMatchedCoverAsync(missing, missing.ImageHash, fixtureMatch, token);
+        Check(await service.ReadCoverResultAsync(missing, token) is { CanMatch: false } cached &&
+            cached.Bytes.AsSpan().SequenceEqual(fixtureMatch) && WebDavCachePaths.FindCover(root, missing.ImageHash) == matched,
+            "matched cover was not reused");
+        Check(await service.ReadCoverResultAsync(sibling, token) is { CanMatch: true, Bytes.Length: 0 },
+            "another track inherited its sibling's matched cover");
+        byte[] differentMatch = [8, 7, 6];
+        await service.CacheMatchedCoverAsync(sibling, sibling.ImageHash, differentMatch, token);
+        Check((await service.ReadCoverResultAsync(sibling, token)).Bytes.AsSpan().SequenceEqual(differentMatch),
+            "same-album sibling could not retain a different matched cover");
+        await File.WriteAllBytesAsync(raw, serverArt, token);
+        Check(await service.ReadCoverResultAsync(missing, token) is { CanMatch: false } preferred &&
+            preferred.Bytes.AsSpan().SequenceEqual(serverArt) && WebDavCachePaths.FindCover(root, missing.ImageHash) == raw,
+            "server raw art did not retain priority over the match");
+
+        string newKey = noCandidate.ImageHash;
+        noCandidate.ImageHash = "";
+        Check((await service.ReadCoverResultAsync(noCandidate, token)).CanMatch,
+            "an older track without ImageHash could not match");
+        await service.CacheMatchedCoverAsync(noCandidate, "", fixtureMatch, token);
+        Check((await service.ReadCoverResultAsync(noCandidate, token)).Bytes.AsSpan().SequenceEqual(fixtureMatch)
+            && File.Exists(WebDavCachePaths.MatchedCover(root, newKey)), "legacy track could not reuse its new stable match key");
+        await service.ClearCoverCacheAsync(root);
+        Check(!File.Exists(raw) && !File.Exists(matched) && !File.Exists(negative), "clearing covers left a Jellyfin cache entry");
+        service.ReportSourceFailure(source.Id);
+        Check(await service.ReadCoverResultAsync(noCandidate, token) is { CanMatch: false, Bytes.Length: 0 },
+            "an unavailable Jellyfin source triggered an external match");
     }
 
     private async Task VerifyAsync(DispatcherQueue dispatcher, string directory, CancellationToken token)
@@ -147,7 +376,7 @@ internal sealed partial class CatalogServiceApp : Application
 
                 var disabled = sources.Single(source => source.Id == jellyfin.Id);
                 using var edit = new WebDavConnectionViewModel(transport, service, disabled) { Enabled = false };
-                Check(await edit.SaveAsync(), "could not disable Jellyfin source");
+                Check(await CommitSourceAsync(service, edit) is not null, "could not disable Jellyfin source");
                 var jellyfinTrack = reopened.First(track => track.SourceId == disabled.Id);
                 await ExpectUnavailableAsync(service, jellyfinTrack);
 
@@ -222,20 +451,32 @@ internal sealed partial class CatalogServiceApp : Application
             && !warning.Message.Contains(form.UserName, StringComparison.Ordinal) && !warning.Message.Contains(form.Password, StringComparison.Ordinal)
             && (kind != RemoteSourceKind.Jellyfin || warning.Message.Contains("HTTP 401", StringComparison.Ordinal)),
             $"{kind} authentication diagnostic must contain only failure metadata");
-        Check(!await form.SaveAsync() && (await database.GetRemoteSourcesAsync()).All(source => source.Kind != kind),
+        Check(!form.TryPrepareSave(out _, out _) && (await database.GetRemoteSourcesAsync()).All(source => source.Kind != kind),
             $"{kind} invalid login was persisted");
         form.Password = password;
         await form.ConnectCommand.ExecuteAsync(null).WaitAsync(token);
         Check(form.Status == "MusicSourcesTestSucceeded", $"{kind} real authenticated connection failed: {form.Status}");
-        Check(await form.SaveAsync() && form.SavedSource is not null, $"{kind} real source form could not save");
-        var source = form.SavedSource!;
+        var source = await CommitSourceAsync(service, form) ?? throw new CheckException($"{kind} real source form could not save");
         _vaultEntries.Add(source.CredentialKey);
         Check(HasCredential(source.CredentialKey), $"{kind} save did not publish its isolated vault entry");
-        await service.ScanAsync(source).WaitAsync(token);
+        await WaitForScanCompletionAsync(service, source.Id, token);
         var status = service.GetStatus(source.Id);
         Check(status is { Phase: "Completed", Found: > 0 }, $"{kind} source scan failed: {status?.Error ?? status?.Phase}");
         Log($"PASS {kind} rejected failed login, recovered, saved, and scanned {status!.Found} tracks");
         return source;
+    }
+
+    private static async Task<WebDavSource?> CommitSourceAsync(WebDavLibraryService service, WebDavConnectionViewModel form)
+    {
+        if (!form.TryPrepareSave(out var source, out var password)) return null;
+        await service.SaveAndScanSourceAsync(source, password);
+        return source;
+    }
+
+    private static async Task WaitForScanCompletionAsync(WebDavLibraryService service, int sourceId, CancellationToken token)
+    {
+        while (service.GetStatus(sourceId)?.Phase is not ("Completed" or "Failed" or "Cancelled"))
+            await Task.Delay(20, token);
     }
 
     private static async Task ExpectUnavailableAsync(WebDavLibraryService service, Music song)

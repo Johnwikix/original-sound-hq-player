@@ -2961,4 +2961,13 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="MusicSourcesRemoteAudio" xml:space="preserve">
     <value>Audio remoto</value>
   </data>
+  <data name="MusicSourcesSaving" xml:space="preserve">
+    <value>Guardando la fuente remota…</value>
+  </data>
+  <data name="MusicSourcesSaveFailed" xml:space="preserve">
+    <value>No se pudo guardar «{0}». Vuelve a añadir o editar la fuente para intentarlo de nuevo.</value>
+  </data>
+  <data name="MusicSourcesNameRequired" xml:space="preserve">
+    <value>Introduce un nombre para la fuente.</value>
+  </data>
 </root>

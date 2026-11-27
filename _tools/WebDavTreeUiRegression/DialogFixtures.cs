@@ -47,5 +47,6 @@ namespace WinUIMusicPlayer.Utils
     public static class BindUtils
     {
         public static Visibility BoolToVisibilityConverter(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility NonEmptyTextVisibility(string text) => BoolToVisibilityConverter(!string.IsNullOrWhiteSpace(text));
     }
 }
