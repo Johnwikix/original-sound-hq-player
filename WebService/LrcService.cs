@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.WebService
         NetworkError,
     }
 
-    public class LrcService : IDisposable
+    public partial class LrcService : IDisposable
     {
         private HttpClient _httpClient;
         private readonly HttpClientHandler _clientHandler;
@@ -118,13 +118,11 @@ namespace WinUIMusicPlayer.WebService
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var search = await SearchHelper.Search(new TrackMultiArtistMetadata()
-                {
-                    Album = music.Album,
-                    Artists = [music.Author],
-                    DurationMs = (int)music.Duration.TotalMilliseconds,
-                    Title = music.Title,
-                }, searchers, CompareHelper.MatchType.Low, cancellationToken);
+                var search = searchers == Searchers.Netease
+                    ? await FindLyricsTrackAsync(_neteaseLyricsSearcher, CreateLyricsQuery(music),
+                        CompareHelper.MatchType.Medium, cancellationToken).ConfigureAwait(false)
+                    : await SearchHelper.Search(CreateLyricsQuery(music), searchers,
+                        CompareHelper.MatchType.Medium, cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 string lyrics, trans;
                 if (search is NeteaseSearchResult neteaseSearch)
@@ -167,13 +165,8 @@ namespace WinUIMusicPlayer.WebService
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var search = await SearchHelper.Search(new TrackMultiArtistMetadata()
-                {
-                    Album = music.Album,
-                    Artists = [music.Author],
-                    DurationMs = (int)music.Duration.TotalMilliseconds,
-                    Title = music.Title,
-                }, Searchers.QQMusic, CompareHelper.MatchType.Medium, cancellationToken);
+                var search = await FindLyricsTrackAsync(_qqLyricsSearcher, CreateLyricsQuery(music),
+                    CompareHelper.MatchType.PrettyHigh, cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (search is not QQMusicSearchResult qQMusicSearchResult)
                     return (string.Empty, string.Empty, LyricsSearchStatus.NoResult);

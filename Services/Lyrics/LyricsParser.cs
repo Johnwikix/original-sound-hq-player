@@ -104,6 +104,21 @@ public sealed partial class LyricsParser
         catch (Exception ex) when (ex is FormatException or OverflowException or RegexMatchTimeoutException or System.Xml.XmlException) { return false; }
     }
 
+    internal IEnumerable<string> GetAlignedTranslationLines(LyricsDocument document, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(document.TranslationLrc)) yield break;
+        var original = ParseSource(document.Original.Content, document.Original.Format, token)
+            .OrderBy(line => line.Start).ToList();
+        var translation = ParseSource(document.TranslationLrc, LyricsFormat.Lrc, token);
+        var aligned = AlignTranslations(original, translation);
+        for (int i = 0; i < aligned.Length; i++)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!string.IsNullOrWhiteSpace(aligned[i]) && aligned[i] != original[i].Text)
+                yield return aligned[i]!;
+        }
+    }
+
     public ImmutableArray<ParsedLyricLine> Parse(LyricsDocument document, double durationMs, CancellationToken token = default)
     {
         var format = Detect(document.Original.Content);

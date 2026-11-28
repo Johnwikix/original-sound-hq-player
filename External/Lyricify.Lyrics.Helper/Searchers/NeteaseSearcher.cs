@@ -10,7 +10,11 @@ namespace Lyricify.Lyrics.Searchers
 
         public override Searchers SearcherType => Searchers.Netease;
 
-        private bool useNewSearchFirst = false;
+        private volatile bool useNewSearchFirst;
+
+        public NeteaseSearcher() { }
+
+        public NeteaseSearcher(bool preferNew) => useNewSearchFirst = preferNew;
 
         public override Task<List<ISearchResult>?> SearchForResults(string searchString)
             => SearchForResults(searchString, CancellationToken.None);
@@ -25,14 +29,14 @@ namespace Lyricify.Lyrics.Searchers
                 try { result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString, cancellationToken); }
                 catch (Exception) when (!cancellationToken.IsCancellationRequested)
                 {
-                    useNewSearchFirst = !useNewSearchFirst;
+                    useNewSearchFirst = false;
                     try
                     {
                         result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID, cancellationToken);
                     }
                     catch (Exception) when (!cancellationToken.IsCancellationRequested)
                     {
-                        useNewSearchFirst = !useNewSearchFirst;
+                        useNewSearchFirst = true;
                         // 两个接口都失败视为网络/服务故障，向上抛出以便上层与"搜索成功但无结果"区分
                         throw;
                     }
@@ -46,7 +50,7 @@ namespace Lyricify.Lyrics.Searchers
                 }
                 catch (Exception) when (!cancellationToken.IsCancellationRequested)
                 {
-                    useNewSearchFirst = !useNewSearchFirst;
+                    useNewSearchFirst = true;
                     // 尝试新接口，可以在外网使用；接口失败同样向上抛出（网络/服务故障）
                     result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString, cancellationToken);
                 }

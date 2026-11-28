@@ -6,7 +6,7 @@ using System.Xml;
 
 namespace Lyricify.Lyrics.Providers.Web.QQMusic
 {
-    public class Api : BaseApi
+    public partial class Api : BaseApi
     {
         protected override string HttpRefer => "https://c.y.qq.com/";
 
@@ -32,7 +32,14 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
 
         public Task<MusicFcgApiResult?> Search(string keyword, SearchTypeEnum searchType) => Search(keyword, searchType, CancellationToken.None);
 
-        public async Task<MusicFcgApiResult?> Search(string keyword, SearchTypeEnum searchType, CancellationToken cancellationToken)
+        public Task<MusicFcgApiResult?> Search(string keyword, SearchTypeEnum searchType, CancellationToken cancellationToken)
+            => SearchDesktop(keyword, searchType, "https://u.y.qq.com/cgi-bin/musicu.fcg", cancellationToken);
+
+        public Task<MusicFcgApiResult?> SearchDesktopForLyrics(string keyword, CancellationToken cancellationToken)
+            => SearchDesktop(keyword, SearchTypeEnum.SONG_ID, SongSearchUrl, cancellationToken);
+
+        private async Task<MusicFcgApiResult?> SearchDesktop(string keyword, SearchTypeEnum searchType, string url,
+            CancellationToken cancellationToken)
         {
             // 0单曲 2专辑 1歌手 3歌单 7歌词 12mv
             var type = searchType switch
@@ -62,7 +69,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                 }
             };
 
-            var resp = await PostAsync("https://u.y.qq.com/cgi-bin/musicu.fcg", data, cancellationToken);
+            var resp = await PostAsync(url, data, cancellationToken);
 
             return resp.ToEntity<MusicFcgApiResult>();
         }

@@ -42,22 +42,30 @@ namespace Lyricify.Lyrics.Searchers
 
         public Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch) => SearchForResult(track, minimumMatch, CancellationToken.None);
 
-        public async Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch, CancellationToken cancellationToken)
+        public Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch,
+            CancellationToken cancellationToken) => SearchForResult(track, minimumMatch, null, cancellationToken);
+
+        public async Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch,
+            Predicate<ISearchResult>? isCompatible, CancellationToken cancellationToken)
         {
-            var search = await SearchForResults(track, false, cancellationToken);
+            var results = await SearchForResults(track, false, cancellationToken);
+            var match = FindMatch(results);
+            if (match is not null)
+                return match;
 
-            // 没有搜到时，尝试完整搜索
-            if (search is not { Count: > 0 } || (int)search[0].MatchType! < (int)minimumMatch)
-                search = await SearchForResults(track, true, cancellationToken);
+            return FindMatch(await SearchForResults(track, true, cancellationToken));
 
-            // 仍然没有搜到，直接返回 null
-            if (search is not { Count: > 0 })
+            ISearchResult? FindMatch(List<ISearchResult> candidates)
+            {
+                foreach (var candidate in candidates)
+                {
+                    if (candidate.MatchType < minimumMatch)
+                        break;
+                    if (isCompatible is null || isCompatible(candidate))
+                        return candidate;
+                }
                 return null;
-
-            if ((int)search[0].MatchType! >= (int)minimumMatch)
-                return search[0];
-            else
-                return null;
+            }
         }
 
         public async Task<List<ISearchResult>> SearchForResults(ITrackMetadata track)

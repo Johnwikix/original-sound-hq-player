@@ -37,13 +37,13 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
             var data2 = EApi(url, data);
             url = Regex.Replace(url, @"\w*api", "eapi");
 
-            httpClient.DefaultRequestHeaders.Clear();
-            foreach (var h in headers)
+            using var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
-                httpClient.DefaultRequestHeaders.Add(h.Key, h.Value);
-            }
-            using var content = new FormUrlEncodedContent(data2);
-            using var response = await httpClient.PostAsync(url, content, cancellationToken);
+                Content = new FormUrlEncodedContent(data2)
+            };
+            foreach (var headerEntry in headers)
+                request.Headers.TryAddWithoutValidation(headerEntry.Key, headerEntry.Value);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
             byte[] buffer = await response.Content.ReadAsByteArrayAsync(cancellationToken);
             return Encoding.UTF8.GetString(buffer);

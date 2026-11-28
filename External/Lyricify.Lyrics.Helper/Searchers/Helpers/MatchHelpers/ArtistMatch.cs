@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Helpers.General;
+using Lyricify.Lyrics.Helpers.General;
 
 namespace Lyricify.Lyrics.Searchers.Helpers
 {
@@ -16,6 +16,7 @@ namespace Lyricify.Lyrics.Searchers.Helpers
 
             var list1 = artist1.ToList();
             var list2 = artist2.ToList();
+            if (list1.Count == 0 || list2.Count == 0) return null;
 
             // 预处理：转小写 & 中文转换
             for (int i = 0; i < list1.Count; i++)

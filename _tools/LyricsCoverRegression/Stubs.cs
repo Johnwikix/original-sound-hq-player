@@ -36,7 +36,14 @@ namespace WinUIMusicPlayer.Model
 
 namespace WinUIMusicPlayer.Model
 {
-    public static class AppSettings { public static bool IsAutoLyricsEnabled = true; }
+    public static class AppSettings
+    {
+        public static bool IsAutoLyricsEnabled = true;
+        public static bool IsMandarinPronunciationEnabled => false;
+        public static bool IsCantonesePronunciationEnabled => false;
+        public static bool IsJapanesePronunciationEnabled => false;
+        public static bool IsKoreanPronunciationEnabled => false;
+    }
 }
 namespace WinUIMusicPlayer.Services
 {

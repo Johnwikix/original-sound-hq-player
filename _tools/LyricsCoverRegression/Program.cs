@@ -19,6 +19,51 @@ int failed = 0;
 using var service = new LrcService(NullLogger<LrcService>.Instance);
 await Run("切歌 500 ms 防抖、在途取消与迟到缓存守卫", () => Task.Run(() => LoaderCancellationChecks.RunSwitching(service)));
 await Run("统一在线搜索状态、强制请求与自动取消", () => UnifiedSearchChecks.RunAsync(service));
+await Run("QQ 无结果时回退到酷狗 KRC", OnlineLyricsFallbackChecks.KugouFallbackAsync);
+await Run("中文译文优先于同步精度，支持回退和语言切换", OnlineLyricsFallbackChecks.ChineseTranslationPriorityAsync);
+await Run("QQ 移动搜索跳过同名错版，采用后续 QRC 候选", OnlineLyricsFallbackChecks.QqMobileAsync);
+await Run("QQ 逐字接口返回普通 LRC 时继续查网易云新版", OnlineLyricsFallbackChecks.NeteaseAsync);
+await Run("LRCLIB 仅采纳版本吻合的同步歌词", OnlineLyricsFallbackChecks.LrcLibAsync);
+await Run("取消酷狗下载时等待实际请求退出且停止回退", OnlineLyricsFallbackChecks.CancelDownloadAsync);
+await Run("逐行歌词过滤同名低置信度候选并回退到 QQ", async () =>
+{
+    const string neteaseLowMatch = """
+    {"code":200,"result":{"songCount":1,"songs":[{"id":"1","name":"Test Song","dt":200000,"ar":[{"name":"Different Singer"}],"al":{"name":"Test Album","id":1}}]}}
+    """;
+    int neteaseDownloads = 0;
+    SetHttp(request =>
+    {
+        var uri = request.RequestUri!;
+        if (!uri.Host.Contains("163.com"))
+            return Json(uri.AbsolutePath.Contains("musicu.fcg") ? qqSong : QqLyric(0, "[00:00.00]correct"));
+        if (uri.AbsolutePath == "/eapi/cloudsearch/pc")
+            return Json(neteaseLowMatch);
+        neteaseDownloads++;
+        return Json("""{"code":200,"lrc":{"lyric":"[00:00.00]wrong version"}}""");
+    });
+    var result = await service.GetMixedLyricsAsync(new Music());
+    Check(neteaseDownloads == 0 && result.Status == LyricsSearchStatus.Found && result.Lyrics.Contains("correct"));
+});
+await Run("QQ 逐字歌词过滤中等置信度候选，逐行仍可匹配", async () =>
+{
+    string qqMediumMatch = qqSong.Replace("Test Album", "Anthology").Replace("\"interval\":180", "\"interval\":200");
+    int wordDownloads = 0;
+    SetHttp(request =>
+    {
+        string path = request.RequestUri!.AbsolutePath;
+        if (path.Contains("musicu.fcg"))
+            return Json(qqMediumMatch);
+        if (path.Contains("lyric_download.fcg"))
+        {
+            wordDownloads++;
+            return Json("<result><retcode>0</retcode><content>[00:00.00]wrong version</content></result>");
+        }
+        return Json(QqLyric(0, "[00:00.00]line"));
+    });
+    var word = await service.GetWordLyricsAsync(new Music());
+    Check(wordDownloads == 0 && word.Status == LyricsSearchStatus.NoResult);
+    Check((await service.GetLyricsAsync(new Music())).Status == LyricsSearchStatus.Found);
+});
 await Run("网易云不可用仍回退 QQ", async () =>
 {
     SetHttp(request => request.RequestUri!.Host.Contains("163.com")

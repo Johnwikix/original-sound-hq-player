@@ -1,4 +1,4 @@
-﻿using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
+using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using System.Text;
 
 namespace Lyricify.Lyrics.Decrypter.Krc
@@ -12,7 +12,9 @@ namespace Lyricify.Lyrics.Decrypter.Krc
         /// </summary>
         /// <param name="encryptedLyrics">加密的歌词</param>
         /// <returns>解密后的 KRC 歌词</returns>
-        public static string? DecryptLyrics(string encryptedLyrics)
+        public static string? DecryptLyrics(string encryptedLyrics) => DecryptLyrics(encryptedLyrics, int.MaxValue);
+
+        public static string? DecryptLyrics(string encryptedLyrics, int maxDecompressedBytes)
         {
             var data = Convert.FromBase64String(encryptedLyrics)[4..];
 
@@ -21,18 +23,23 @@ namespace Lyricify.Lyrics.Decrypter.Krc
                 data[i] = (byte)(data[i] ^ DecryptKey[i % DecryptKey.Length]);
             }
 
-            var res = Encoding.UTF8.GetString(SharpZipLibDecompress(data));
+            var res = Encoding.UTF8.GetString(SharpZipLibDecompress(data, maxDecompressedBytes));
             return res[1..];
         }
 
-        protected static byte[] SharpZipLibDecompress(byte[] data)
+        private static byte[] SharpZipLibDecompress(byte[] data, int maxDecompressedBytes)
         {
-            var compressed = new MemoryStream(data);
-            var decompressed = new MemoryStream();
-            var inputStream = new InflaterInputStream(compressed);
-
-            inputStream.CopyTo(decompressed);
-
+            using var compressed = new MemoryStream(data);
+            using var decompressed = new MemoryStream();
+            using var inputStream = new InflaterInputStream(compressed);
+            var buffer = new byte[8192];
+            int read;
+            while ((read = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                if (decompressed.Length + read > maxDecompressedBytes)
+                    throw new InvalidDataException("KRC decompression exceeds the lyric size limit.");
+                decompressed.Write(buffer, 0, read);
+            }
             return decompressed.ToArray();
         }
     }

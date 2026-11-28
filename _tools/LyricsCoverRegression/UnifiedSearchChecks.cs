@@ -20,11 +20,12 @@ internal static class UnifiedSearchChecks
         using var search = new LyricsOnlineSearch(database, provider, new(), NullLogger<LyricsOnlineSearch>.Instance);
         var empty = new EmptyHandler();
         BaseApi.HttpClient.Dispose(); BaseApi.HttpClient = new(empty);
-        var music = new Music { Id = 1, Path = "library.flac" };
+        var music = new Music { Id = 1, Path = "library.flac", IsKrcSearched = true, IsLrcSearched = true };
+        await database.Lyrics.SetSearchAsync(music.Id, "qq-word", "old-policy", "NoResult");
         await search.SearchAsync(music, false, default);
         int initialRequests = empty.Calls;
         int states = await db.Table<LyricsSearchStateRecord>().CountAsync();
-        Check(initialRequests > 0 && states == 3, $"provider states are distinct: requests={initialRequests}, states={states}");
+        Check(initialRequests > 0 && states == 4, $"provider states are distinct: requests={initialRequests}, states={states}");
         await search.SearchAsync(music, false, default);
         Check(empty.Calls == initialRequests, "unchanged NoResult skips network");
         music.Title = "Metadata changed";
@@ -58,12 +59,15 @@ internal static class UnifiedSearchChecks
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
             token.ThrowIfCancellationRequested(); Calls++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            string host = request.RequestUri!.Host;
+            string body = host switch
             {
-                Content = new StringContent(request.RequestUri!.Host.Contains("163.com")
-                    ? "{\"code\":200,\"result\":{\"songCount\":0,\"songs\":[]}}"
-                    : "{\"code\":0,\"req_1\":{\"code\":0,\"data\":{\"code\":0,\"body\":{\"song\":{\"list\":[]}}}}}")
-            });
+                "mobilecdn.kugou.com" => """{"status":1,"errcode":0,"data":{"total":0,"info":[]}}""",
+                "lrclib.net" => "[]",
+                var h when h.Contains("163.com") => """{"code":200,"result":{"songCount":0,"songs":[]}}""",
+                _ => """{"code":0,"req_1":{"code":0,"data":{"code":0,"body":{"song":{"list":[]}}}}}"""
+            };
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) });
         }
     }
 }

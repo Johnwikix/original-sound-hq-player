@@ -38,15 +38,24 @@ public sealed class LyricsOnlineSearch(MusicDatabaseService database, LrcService
         _gate.Dispose(); // Host disposal follows ApplicationTasks.DrainAsync.
     }
 
+    private const string KugouWord = "kugou-word";
+    private const string QqWord = "qq-word";
+    private const string NeteaseLine = "netease-line";
+    private const string LrcLibLine = "lrclib-line";
+    private static readonly string[] Channels = [QqWord, KugouWord, NeteaseLine, LrcLibLine];
+    private static readonly TimeSpan ProviderTimeout = TimeSpan.FromSeconds(6);
+
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private readonly LyricsSearchCircuitBreaker[] _circuits = [new(3, 600000), new(3, 600000), new(3, 600000)];
+    private readonly LyricsSearchCircuitBreaker[] _circuits = Array.ConvertAll(Channels, static _ => new LyricsSearchCircuitBreaker(3, 600000));
     private readonly Dictionary<string, LyricsSearchStateRecord> _external = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly string[] Channels = ["qq-word", "netease-line", "qq-line"];
 
     public async Task<LyricsDocument?> SearchAsync(Music music, bool force, CancellationToken token)
     {
         music = new Music { Id = music.Id, CueTrackNo = music.CueTrackNo, CuePath = music.CuePath, Path = music.Path, Title = music.Title ?? "", Author = music.Author ?? "",
-            Album = music.Album ?? "", Duration = music.Duration, IsLrcSearched = music.IsLrcSearched, IsKrcSearched = music.IsKrcSearched };
+            Album = music.Album ?? "", Duration = music.Duration };
+        string language = AppData.SystemLanguage;
+        bool preferChineseTranslation = language.Equals("zh", StringComparison.OrdinalIgnoreCase)
+            || language.StartsWith("zh-", StringComparison.OrdinalIgnoreCase);
         CancellationToken callerToken = token;
         CancellationTokenSource linked;
         lock (_automaticLock)
@@ -61,48 +70,74 @@ public sealed class LyricsOnlineSearch(MusicDatabaseService database, LrcService
         {
             await _gate.WaitAsync(token).ConfigureAwait(false);
             acquired = true;
-            string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{music.Title.Length}:{music.Title}{music.Author.Length}:{music.Author}{music.Album.Length}:{music.Album}:{music.Duration.Ticks}")));
+            string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"v2:{music.Title.Length}:{music.Title}{music.Author.Length}:{music.Author}{music.Album.Length}:{music.Album}:{music.Duration.Ticks}")));
+            LyricsDocument? fallback = null;
             for (int i = 0; i < Channels.Length; i++)
             {
                 token.ThrowIfCancellationRequested();
                 string channel = Channels[i];
+                // LRCLIB 只提供原文。已有可用原文时，查它无法改善译文。
+                if (channel == LrcLibLine && fallback is not null) return fallback;
                 string key = music.LocalTrackKey + "|" + channel;
                 var search = music.Id > 0 ? await database.Lyrics.GetSearchAsync(music.Id, channel).ConfigureAwait(false)
                     : _external.GetValueOrDefault(key);
-                if (search is null && (i == 0 ? music.IsKrcSearched : music.IsLrcSearched))
-                {
-                    await RecordAsync(music.Id, key, channel, hash, "LegacyCompleted").ConfigureAwait(false);
-                    if (!force) continue;
-                }
-                if (!force && search?.QueryHash == hash && search.Status is "NoResult" or "LegacyCompleted") continue;
+                token.ThrowIfCancellationRequested();
+                // 旧搜索状态使用了不同的接口和匹配规则。按歌曲重新验证，无需重写曲库。
+                if (!force && search?.QueryHash == hash && search.Status == "NoResult") continue;
                 int generation = 0;
                 if (!force && !_circuits[i].TryBegin(Environment.TickCount64, out generation)) continue;
                 LyricsSearchStatus? outcome = null;
                 try
                 {
-                    var response = i switch
+                    using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    deadline.CancelAfter(ProviderTimeout);
+                    var providerToken = deadline.Token;
+                    var response = channel switch
                     {
-                        0 => await service.GetWordLyricsAsync(music, token).ConfigureAwait(false),
-                        1 => await service.GetLyricsAsync(music, Lyricify.Lyrics.Searchers.Searchers.Netease, token).ConfigureAwait(false),
-                        _ => await service.GetLyricsAsync(music, Lyricify.Lyrics.Searchers.Searchers.QQMusic, token).ConfigureAwait(false)
+                        QqWord => await service.GetWordLyricsAsync(music, providerToken).ConfigureAwait(false),
+                        KugouWord => await service.GetKugouWordLyricsAsync(music, providerToken).ConfigureAwait(false),
+                        NeteaseLine => await service.GetLyricsAsync(music, Lyricify.Lyrics.Searchers.Searchers.Netease, providerToken).ConfigureAwait(false),
+                        LrcLibLine => await service.GetLrcLibLyricsAsync(music, providerToken).ConfigureAwait(false),
+                        _ => throw new InvalidOperationException($"Unknown lyrics channel: {channel}"),
                     };
-                    token.ThrowIfCancellationRequested();
+                    providerToken.ThrowIfCancellationRequested();
                     outcome = response.Status;
                     if (response.Status == LyricsSearchStatus.Found)
                     {
                         LyricsDocument document;
-                        try { document = parser.Import(response.Lyrics, response.Trans, token); }
+                        try { document = parser.Import(response.Lyrics, response.Trans, providerToken, preferredLanguage: language); }
                         catch (FormatException ex)
                         {
                             logger.LogWarning(ex, "Invalid provider translation: {Channel}", channel);
-                            document = parser.Import(response.Lyrics, null, token);
+                            document = parser.Import(response.Lyrics, token: providerToken, preferredLanguage: language, extractEmbeddedTranslation: false);
                         }
-                        if (!parser.HasLyrics(document, token)) { outcome = LyricsSearchStatus.NetworkError; continue; }
-                        await RecordAsync(music.Id, key, channel, hash, "Found").ConfigureAwait(false);
-                        return document;
+                        if (!parser.HasLyrics(document, providerToken))
+                        {
+                            outcome = LyricsSearchStatus.NetworkError;
+                            continue;
+                        }
+                        // 逐字请求也可能返回普通 LRC，不能让它抢占后续提供方的逐字候选。
+                        if ((channel == KugouWord && document.Original.Format != LyricsFormat.Krc) ||
+                            (channel == QqWord && document.Original.Format != LyricsFormat.Qrc))
+                            outcome = LyricsSearchStatus.NoResult;
+                        else
+                        {
+                            providerToken.ThrowIfCancellationRequested();
+                            await RecordAsync(music.Id, key, channel, hash, "Found").ConfigureAwait(false);
+                            token.ThrowIfCancellationRequested();
+                            if (!preferChineseTranslation || channel == LrcLibLine ||
+                                LyricsLanguagePolicy.DetectLines(parser.GetAlignedTranslationLines(document, providerToken)) == LyricsLanguage.Mandarin)
+                                return document;
+
+                            // 按逐字到逐行的顺序寻找译文，首个可用结果用于回退。
+                            fallback ??= document;
+                        }
                     }
-                    if (response.Status == LyricsSearchStatus.NoResult)
+                    if (outcome == LyricsSearchStatus.NoResult)
+                    {
+                        providerToken.ThrowIfCancellationRequested();
                         await RecordAsync(music.Id, key, channel, hash, "NoResult").ConfigureAwait(false);
+                    }
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
                 catch (Exception ex)
@@ -112,7 +147,8 @@ public sealed class LyricsOnlineSearch(MusicDatabaseService database, LrcService
                 }
                 finally { if (!force) _circuits[i].Complete(generation, outcome, Environment.TickCount64); }
             }
-            return null;
+            token.ThrowIfCancellationRequested();
+            return fallback;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested && !callerToken.IsCancellationRequested) { return null; }
         finally { if (acquired) _gate.Release(); }

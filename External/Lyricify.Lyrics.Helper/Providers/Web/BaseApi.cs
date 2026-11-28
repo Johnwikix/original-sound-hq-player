@@ -16,98 +16,50 @@ namespace Lyricify.Lyrics.Providers.Web
 
         protected abstract Dictionary<string, string>? AdditionalHeaders { get; }
 
+        protected virtual string? HttpCookie => null;
+
         protected Task<string> GetAsync(string url) => GetAsync(url, CancellationToken.None);
 
-        protected async Task<string> GetAsync(string url, CancellationToken cancellationToken)
+        protected Task<string> GetAsync(string url, CancellationToken cancellationToken)
+            => SendAsync(HttpMethod.Get, url, null, cancellationToken);
+
+        protected Task<string> PostAsync(string url, Dictionary<string, string> paramDict)
+            => PostAsync(url, paramDict, CancellationToken.None);
+
+        protected Task<string> PostAsync(string url, Dictionary<string, string> paramDict, CancellationToken cancellationToken)
+            => SendAsync(HttpMethod.Post, url, new FormUrlEncodedContent(paramDict), cancellationToken);
+
+        protected Task<string> PostJsonAsync(string url, object param)
+            => PostAsync(url, LyricsJson.Serialize(param));
+
+        protected Task<string> PostAsync(string url, Dictionary<string, object> paramDict)
+            => PostAsync(url, paramDict, CancellationToken.None);
+
+        protected Task<string> PostAsync(string url, Dictionary<string, object> paramDict, CancellationToken cancellationToken)
+            => SendAsync(HttpMethod.Post, url, new StringContent(LyricsJson.Serialize(paramDict), Encoding.UTF8, "application/json"), cancellationToken);
+
+        protected Task<string> PostAsync(string url, string param)
+            => SendAsync(HttpMethod.Post, url, new StringContent(param, Encoding.UTF8, "application/json"), CancellationToken.None);
+
+        private async Task<string> SendAsync(HttpMethod method, string url, HttpContent? content, CancellationToken cancellationToken)
         {
+            using var request = new HttpRequestMessage(method, url) { Content = content };
             cancellationToken.ThrowIfCancellationRequested();
-            SetRequestHeaders();
-
-            using var response = await HttpClient.GetAsync(url, cancellationToken);
-
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            return result;
-        }
-
-        protected Task<string> PostAsync(string url, Dictionary<string, string> paramDict) => PostAsync(url, paramDict, CancellationToken.None);
-
-        protected async Task<string> PostAsync(string url, Dictionary<string, string> paramDict, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            SetRequestHeaders();
-
-            using var content = new FormUrlEncodedContent(paramDict);
-            using var response = await HttpClient.PostAsync(url, content, cancellationToken);
-
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            return result;
-        }
-
-        protected async Task<string> PostJsonAsync(string url, object param)
-        {
-            SetRequestHeaders();
-
-            var content = new StringContent(LyricsJson.Serialize(param), Encoding.UTF8, "application/json");
-
-            var response = await HttpClient.PostAsync(url, content);
-
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync();
-
-            return result;
-        }
-
-        protected Task<string> PostAsync(string url, Dictionary<string, object> paramDict) => PostAsync(url, paramDict, CancellationToken.None);
-
-        protected async Task<string> PostAsync(string url, Dictionary<string, object> paramDict, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            SetRequestHeaders();
-
-            using var jsonContent = new StringContent(paramDict.ToJson(), Encoding.UTF8, "application/json");
-            using var response = await HttpClient.PostAsync(url, jsonContent, cancellationToken);
-
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            return result;
-        }
-
-        protected async Task<string> PostAsync(string url, string param)
-        {
-            SetRequestHeaders();
-
-            var jsonContent = new StringContent(param, Encoding.UTF8, "application/json");
-            var response = await HttpClient.PostAsync(url, jsonContent);
-
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync();
-
-            return result;
-        }
-
-        private void SetRequestHeaders()
-        {
-            HttpClient.DefaultRequestHeaders.Clear();
-
-            if (!string.IsNullOrEmpty(UserAgent))
-                HttpClient.DefaultRequestHeaders.Add("User-Agent", UserAgent);
+            request.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
             if (!string.IsNullOrEmpty(HttpRefer))
-                HttpClient.DefaultRequestHeaders.Add("Referer", HttpRefer);
-            if (!string.IsNullOrEmpty(Cookie))
-                HttpClient.DefaultRequestHeaders.Add("Cookie", Cookie);
+                request.Headers.TryAddWithoutValidation("Referer", HttpRefer);
+            if (!string.IsNullOrEmpty(HttpCookie))
+                request.Headers.TryAddWithoutValidation("Cookie", HttpCookie);
 
-            if (AdditionalHeaders is not null)
+            if (AdditionalHeaders is { } additional)
             {
-                foreach (var pair in AdditionalHeaders)
-                {
-                    HttpClient.DefaultRequestHeaders.Add(pair.Key, pair.Value);
-                }
+                foreach (var pair in additional)
+                    request.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
             }
+
+            using var response = await HttpClient.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync(cancellationToken);
         }
     }
 

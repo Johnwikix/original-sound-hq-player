@@ -1,3 +1,18 @@
+## 2026-11-28 中文界面优先匹配译文，QQ 逐字排首位
+
+- `LyricsOnlineSearch` 在中文界面先选有可对齐中文译文的结果，同档优先逐字，找不到中文译文时回退到首个可用结果。原始查询顺序调整为 QQ 逐字、酷狗逐字、网易云逐行、LRCLIB。
+- `LyricsParser` 复用播放时的对齐规则判断译文能否显示，排除错位和重复原文的候选。
+
+## 2026-11-28 在线歌词优先匹配逐字版本
+
+- `LyricsOnlineSearch` 按酷狗 KRC、QQ QRC、网易云逐行、LRCLIB 同步歌词依次回退，每个来源独立记录无结果和网络失败。
+- `LrcService` 核对曲名、艺人、时长及版本标记，拒绝同名错版，并重新验证旧规则缓存的无结果。
+- `Lyricify.Lyrics.Helper` 为 QQ 歌词接入移动搜索及桌面回退，网易云歌词优先新版搜索，请求头随单次请求发送。
+
+## 2026-11-28 提高在线歌词匹配阈值
+
+- `WebService/LrcService.cs` 将 QQ 音乐和网易云的逐行歌词门槛从 Low 提高到 Medium，QQ 逐字歌词从 Medium 提高到 PrettyHigh。
+
 ## 2026-11-28 本地化听歌报告总结图的播放器名称
 
 - `ListeningReportPreviewDialog.xaml` 复用应用标题资源，在年度和月度报告的总结图预览及 PNG 中显示对应语言的完整播放器名称。

@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Providers.Web.QQMusic;
+using Lyricify.Lyrics.Providers.Web.QQMusic;
 using Lyricify.Lyrics.Searchers.Helpers;
 
 namespace Lyricify.Lyrics.Searchers
@@ -20,16 +20,24 @@ namespace Lyricify.Lyrics.Searchers
         }
 
         public QQMusicSearchResult(Song song) : this(
-            song.Title,
-            song.Singer.Select(s => s.Name).ToArray(),
-            song.Album.Title,
-            song.Album.Mid,
+            WithoutHighlight(song.Title ?? song.Name),
+            song.Singer?.Select(s => WithoutHighlight(s.Name)).ToArray() ?? [],
+            WithoutHighlight(song.Album?.Title),
+            song.Album?.Mid ?? "",
             null,
             song.Interval * 1000,
             song.Id,
             song.Mid
             )
-        { }
+        {
+            Subtitle = WithoutHighlight(song.Subtitle);
+        }
+
+        private static string WithoutHighlight(string? text)
+            => text?.Replace("<em>", "", StringComparison.Ordinal)
+                .Replace("</em>", "", StringComparison.Ordinal) ?? "";
+
+        public string? Subtitle { get; }
 
         public string Title { get; }
 

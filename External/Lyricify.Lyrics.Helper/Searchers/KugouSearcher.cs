@@ -1,4 +1,6 @@
-﻿namespace Lyricify.Lyrics.Searchers
+using Lyricify.Lyrics.Helpers;
+
+namespace Lyricify.Lyrics.Searchers
 {
     public class KugouSearcher : Searcher, ISearcher
     {
@@ -8,33 +10,34 @@
 
         public override Searchers SearcherType => Searchers.Kugou;
 
-        public override async Task<List<ISearchResult>?> SearchForResults(string searchString)
+        public override Task<List<ISearchResult>?> SearchForResults(string searchString)
+            => SearchForResults(searchString, CancellationToken.None);
+
+        public override async Task<List<ISearchResult>?> SearchForResults(string searchString, CancellationToken cancellationToken)
         {
+            var result = await ProviderHelper.KugouApi.GetSearchSong(searchString, cancellationToken);
+            if (result?.Status != 1 || result.ErrorCode != 0 || result.Data is null)
+                throw new InvalidOperationException("酷狗歌曲搜索服务返回失败状态。");
+            var results = result.Data.Info;
+            if (results is null && result.Data.Total > 0)
+                throw new InvalidOperationException("酷狗搜索响应缺少歌曲列表。");
+
             var search = new List<ISearchResult>();
-
-            try
+            foreach (var track in results ?? [])
             {
-                var result = await Providers.Web.Providers.KugouApi.GetSearchSong(searchString);
-                var results = result?.Data?.Info;
-                if (results == null) return null;
-                foreach (var track in results)
-                {
-                    search.Add(new KugouSearchResult(track));
-                    if (track.Group is { Count: > 0 } group)
-                    {
-                        foreach (var subTrack in group)
-                        {
-                            search.Add(new KugouSearchResult(subTrack));
-                        }
-                    }
-                }
+                AddCandidate(track);
+                if (track.Group is { } group)
+                    foreach (var subTrack in group)
+                        AddCandidate(subTrack);
             }
-            catch
-            {
-                return null;
-            }
-
             return search;
+
+            void AddCandidate(Providers.Web.Kugou.SearchSongResponse.DataItem.InfoItem candidate)
+            {
+                if (!string.IsNullOrWhiteSpace(candidate.Hash) && !string.IsNullOrWhiteSpace(candidate.SongName) &&
+                    !string.IsNullOrWhiteSpace(candidate.SingerName))
+                    search.Add(new KugouSearchResult(candidate));
+            }
         }
     }
 }
