@@ -10,10 +10,8 @@ namespace AnimatedWin2dControls.Controls;
 
 public sealed partial class NowPlayingCanvas
 {
-    // Foreground drawing is serialized by the scene cache gate. The title effect is
-    // separate because title drawing and its presentation handoff are UI-thread work.
+    // Foreground drawing is serialized by the scene cache gate.
     private Transform3DEffect? _foregroundProjectionEffect;
-    private Transform3DEffect? _hdrTitleProjectionEffect;
 
     /// <summary>Applies a viewport-local playback projection. Pass null to restore standalone lyric projection.</summary>
     public void SetPlaybackSpatialProjection(Matrix4x4? projection)
@@ -46,26 +44,7 @@ public sealed partial class NowPlayingCanvas
 
     private void DrawProjectedHdrTitle(AnimatedTextBlock.AnimatedTextBlock? title, CanvasDrawingSession destination,
         PlaybackCanvasFrame frame, Rect bounds, TimeSpan elapsed, Matrix4x4 projection)
-    {
-        if (title is null) return;
-        if (projection.IsIdentity)
-        {
-            title.DrawInScene(destination, frame, bounds, elapsed);
-            return;
-        }
-
-        using var commands = new CanvasCommandList(frame.Device);
-        bool drewTitle;
-        using (var drawing = commands.CreateDrawingSession())
-        {
-            drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
-            drewTitle = title.DrawInScene(drawing, frame, bounds, elapsed);
-        }
-
-        if (!drewTitle) return;
-        using var scope = CanvasDrawingSessionScope.Borrow(destination);
-        DrawProjectedImage(scope.Context, commands, projection, hdr: true, ref _hdrTitleProjectionEffect);
-    }
+        => title?.DrawProjectedInScene(destination, frame, bounds, elapsed, projection);
 
     private static void DrawProjectedImage(CanvasDrawContext destination, CanvasCommandList commands,
         Matrix4x4 projection, bool hdr, ref Transform3DEffect? cachedEffect)
@@ -90,9 +69,4 @@ public sealed partial class NowPlayingCanvas
         _foregroundProjectionEffect = null;
     }
 
-    private void ReleaseHdrTitleProjection()
-    {
-        _hdrTitleProjectionEffect?.Dispose();
-        _hdrTitleProjectionEffect = null;
-    }
 }

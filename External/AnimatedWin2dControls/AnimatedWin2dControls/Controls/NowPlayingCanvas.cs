@@ -834,6 +834,8 @@ namespace AnimatedWin2dControls.Controls
         {
             DrawBackground(frame, ds);
             var foregroundProjection = projection ?? Matrix4x4.Identity;
+            if (foregroundProjection.IsIdentity)
+                ReleaseForegroundProjection();
             // The spectrum updates at frame rate and is outside the background cache.
             DrawProjectedSpectrum(frame, ds, foregroundProjection);
             if (_advanced)

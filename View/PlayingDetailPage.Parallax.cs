@@ -15,6 +15,8 @@ public sealed partial class PlayingDetailPage
     private const float AutomaticTiltAngle = 10;
     private const float AutomaticTiltDepth = 800;
     private FrameEventSubscription? _spatialClock;
+    private Action? _advanceSpatialProjection;
+    private PointerEventHandler? _cancelSpatialPointer;
     private long _spatialTimestamp;
     private Vector2? _spatialPointer;
     private Vector3 _spatialAutomaticAngles;
@@ -22,6 +24,7 @@ public sealed partial class PlayingDetailPage
     private bool _spatialWindowPaused;
     private bool _spatialPagePaused;
     private bool _trackingSpatialLayout;
+    private bool _trackingSpatialPointer;
     private FrameworkElement? _spatialTitleAnchor;
     private FrameworkElement? _spatialTitleContent;
     private Matrix3DProjection? _spatialCoverProjection;
@@ -37,15 +40,15 @@ public sealed partial class PlayingDetailPage
 
     private void PlaybackParallaxPointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        var settings = ViewModel.AppViewModel;
-        if (!settings.Is3DLyricsEnabled || !settings.IsAuto3DLyricsEnabled || ActualWidth <= 0 || ActualHeight <= 0)
-            return;
+        double width = ActualWidth;
+        double height = ActualHeight;
+        if (width <= 0 || height <= 0) return;
 
         using var point = PointerPointScope.GetCurrentPoint(e, this);
         var position = point.Position;
-        bool inside = position.X >= 0 && position.X < ActualWidth && position.Y >= 0 && position.Y < ActualHeight;
+        bool inside = position.X >= 0 && position.X < width && position.Y >= 0 && position.Y < height;
         SetSpatialPointer(inside
-            ? new Vector2((float)(2 * position.X / ActualWidth - 1), (float)(2 * position.Y / ActualHeight - 1))
+            ? new Vector2((float)(2 * position.X / width - 1), (float)(2 * position.Y / height - 1))
             : null);
     }
 
@@ -55,11 +58,13 @@ public sealed partial class PlayingDetailPage
         PlaybackParallaxPointerMoved(sender, e);
     }
 
+    private void PlaybackParallaxPointerCanceled(object sender, PointerRoutedEventArgs e) => SetSpatialPointer(null);
+
     private void SetSpatialPointer(Vector2? position)
     {
-        if (_spatialPointer == position) return;
+        if (!_trackingSpatialPointer || _spatialPointer == position) return;
         _spatialPointer = position;
-        RefreshSpatialProjection();
+        SyncSpatialClock();
     }
 
     private void RefreshSpatialProjection()
@@ -67,33 +72,49 @@ public sealed partial class PlayingDetailPage
         if (!_isLoaded || _disposed) return;
 
         var settings = ViewModel.AppViewModel;
-        SetSpatialLayoutTracking(settings.Is3DLyricsEnabled);
+        bool active = settings.Is3DLyricsEnabled && settings.IsPlayingDetailVisible
+            && !_spatialWindowPaused && !_spatialPagePaused;
+        bool automatic = active && settings.IsAuto3DLyricsEnabled;
+        SetSpatialPointerTracking(automatic);
         if (!settings.Is3DLyricsEnabled || !settings.IsAuto3DLyricsEnabled)
-        {
-            StopSpatialClock();
-            _spatialPointer = null;
             _spatialAutomaticAngles = Vector3.Zero;
-            UpdateSpatialProjection();
-            return;
-        }
+        SetSpatialLayoutTracking(active);
 
-        if (_spatialWindowPaused || _spatialPagePaused || !settings.IsPlayingDetailVisible)
+        // Preserve the outgoing frame while hidden and measure the new layout on resume.
+        if (active || !settings.Is3DLyricsEnabled) UpdateSpatialProjection();
+        SyncSpatialClock();
+    }
+
+    private void SetSpatialPointerTracking(bool enabled)
+    {
+        if (_trackingSpatialPointer == enabled) return;
+        _trackingSpatialPointer = enabled;
+        if (enabled)
+        {
+            AddHandler(PointerMovedEvent, _parallaxPointerMoved, handledEventsToo: true);
+            AddHandler(PointerExitedEvent, _parallaxPointerExited, handledEventsToo: true);
+            AddHandler(PointerCanceledEvent, _cancelSpatialPointer ??= PlaybackParallaxPointerCanceled, handledEventsToo: true);
+        }
+        else
+        {
+            RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
+            RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
+            RemoveHandler(PointerCanceledEvent, _cancelSpatialPointer);
+            _spatialPointer = null;
+        }
+    }
+
+    private void SyncSpatialClock()
+    {
+        if (!_trackingSpatialPointer || _spatialAutomaticAngles == GetAutomaticSpatialTarget())
         {
             StopSpatialClock();
-            _spatialPointer = null;
             return;
         }
 
-        if (_spatialAutomaticAngles == GetAutomaticSpatialTarget())
-        {
-            UpdateSpatialProjection();
-            return;
-        }
-        if (_spatialClock is null)
-        {
-            _spatialTimestamp = Stopwatch.GetTimestamp();
-            _spatialClock = FrameEventSubscription.SubscribeRendering(AdvanceSpatialProjection);
-        }
+        if (_spatialClock is not null) return;
+        _spatialTimestamp = Stopwatch.GetTimestamp();
+        _spatialClock = FrameEventSubscription.SubscribeRendering(_advanceSpatialProjection ??= AdvanceSpatialProjection);
     }
 
     private Vector3 GetAutomaticSpatialTarget()
@@ -127,8 +148,8 @@ public sealed partial class PlayingDetailPage
     private void DetachSpatialProjection()
     {
         StopSpatialClock();
+        SetSpatialPointerTracking(false);
         SetSpatialLayoutTracking(false);
-        _spatialPointer = null;
         _spatialAutomaticAngles = Vector3.Zero;
         _spatialProjection = Matrix4x4.Identity;
         PublishSpatialProjection();
@@ -157,7 +178,7 @@ public sealed partial class PlayingDetailPage
         if (!_trackingSpatialLayout)
         {
             // A lazily loaded canvas still needs an explicit flat override.
-            if (force) PublishSpatialProjection();
+            if (force && _spatialProjection.IsIdentity) PublishSpatialProjectionToCanvases();
             return;
         }
 
@@ -169,10 +190,13 @@ public sealed partial class PlayingDetailPage
         var halfExtents = new Vector2((float)PlayingDetail.ActualWidth, (float)PlayingDetail.ActualHeight) / 2;
         var center = contentOrigin + halfExtents;
 
-        if (!force && center == _spatialContentCenter && halfExtents == _spatialContentHalfExtents
-            && sceneOrigin == _spatialSceneOrigin
-            && lyricsOrigin == _spatialLyricsOrigin && coverOrigin == _spatialCoverOrigin && titleOrigin == _spatialTitleOrigin)
+        if (center == _spatialContentCenter && halfExtents == _spatialContentHalfExtents
+            && sceneOrigin == _spatialSceneOrigin && lyricsOrigin == _spatialLyricsOrigin
+            && coverOrigin == _spatialCoverOrigin && titleOrigin == _spatialTitleOrigin)
+        {
+            if (force) PublishSpatialProjectionToCanvases();
             return;
+        }
 
         _spatialContentCenter = center;
         _spatialContentHalfExtents = halfExtents;
@@ -218,11 +242,17 @@ public sealed partial class PlayingDetailPage
         PublishSpatialProjection();
     }
 
-    private void PublishSpatialProjection()
+    private void PublishSpatialProjectionToCanvases()
     {
         var projection = _spatialProjection;
         NowPlaying?.SetPlaybackSpatialProjection(PlaybackSpatialProjection.ToLocal(projection, _spatialSceneOrigin));
         LyricsView?.SetPlaybackSpatialProjection(PlaybackSpatialProjection.ToLocal(projection, _spatialLyricsOrigin));
+    }
+
+    private void PublishSpatialProjection()
+    {
+        PublishSpatialProjectionToCanvases();
+        var projection = _spatialProjection;
 
         // The flat anchors stay available for Win2D layout. Only the XAML presentation
         // is projected, and the existing frame handoff controls when it is visible.

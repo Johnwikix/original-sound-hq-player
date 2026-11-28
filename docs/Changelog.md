@@ -1,3 +1,9 @@
+## 2026-11-28 优化播放页视差斜视的资源使用
+
+- `PlayingDetailPage` 在隐藏、暂停或关闭视差时停掉相应回调，重新显示后恢复效果。
+- `AnimatedTextBlock` 复用 HDR 标题的绘制缓存，`NowPlayingCanvas` 在场景资源重建或停用时释放投影资源。
+- `PlaybackSpectrumRenderer` 在录制投影频谱时沿用目标画布 DPI，保持辉光宽度一致。
+
 ## 2026-11-28 扩展播放页视差斜视
 
 - `Strings/*/Resources.resw` 将播放设置页签改为“空间效果”，同步七种语言。

@@ -7,6 +7,7 @@ using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Renderer.Background;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.UI;
 using Windows.Foundation;
@@ -50,7 +51,7 @@ internal sealed partial class ProbeApplication
             Glow = false,
         };
         sceneType.GetMethod("SetActiveSpectrumSource", privateInstance)!.Invoke(scene, [new ConstantSpectrumSource()]);
-        sceneType.GetMethod("UpdateSpectrum", privateInstance)!.Invoke(scene, [TimeSpan.FromSeconds(1)]);
+
 
         const float width = 480;
         const float height = 270;
@@ -61,9 +62,19 @@ internal sealed partial class ProbeApplication
         var frame = new PlaybackCanvasFrame(device, new Size(width, height), dpi, hdr ? PaperWhite : default);
         var center = new Vector2(width / 2, height / 2);
         var pose = PlaybackSpatialProjection.CreatePerspective(center, new(13, -19, 14), 800, center);
+        var silent = Draw(pose);
+        if (marker.ArtworkBoundsReads != 0 || Measure(1, silent).Count != 0)
+            throw new InvalidOperationException("The silent spectrum entered the projected artwork draw path.");
+
+        sceneType.GetMethod("UpdateSpectrum", privateInstance)!.Invoke(scene, [TimeSpan.FromSeconds(1)]);
         var neutral = Draw(Matrix4x4.Identity);
         var tilted = Draw(pose);
+        var effectField = sceneType.GetField("_foregroundProjectionEffect", privateInstance)!;
+        if (effectField.GetValue(scene) is not Transform3DEffect { Source: null })
+            throw new InvalidOperationException("The projected foreground retained its command list.");
         var settled = Draw(Matrix4x4.Identity);
+        if (effectField.GetValue(scene) is not null)
+            throw new InvalidOperationException("The disabled effect retained its projection effect.");
 
         if (!neutral.AsSpan().SequenceEqual(settled))
             throw new InvalidOperationException("The production foreground did not restore its identity pixels.");
@@ -77,6 +88,8 @@ internal sealed partial class ProbeApplication
 
         return new
         {
+            SilentArtworkBoundsReads = 0,
+            ProjectionSourcesReleased = true,
             Cover = new { cover.Count, cover.Movement, cover.Peak },
             Spectrum = new { spectrum.Count, spectrum.Movement, spectrum.Peak },
             Background = new { background.Count, X = background.Center.X, Y = background.Center.Y },
@@ -164,8 +177,11 @@ internal sealed partial class ProbeApplication
             return true;
         }
 
+        public int ArtworkBoundsReads { get; private set; }
+
         public bool TryGetArtworkBounds(out Rect bounds, out float radius)
         {
+            ArtworkBoundsReads++;
             bounds = Bounds;
             radius = 0;
             return true;

@@ -74,8 +74,6 @@ namespace WinUIMusicPlayer.View
         {
             if (_isLoaded || _disposed) return;
             _isLoaded = true;
-            AddHandler(PointerMovedEvent, _parallaxPointerMoved, true);
-            AddHandler(PointerExitedEvent, _parallaxPointerExited, true);
             _hdrXamlRoot = XamlRoot;
             _hdrRasterizationScale = _hdrXamlRoot?.RasterizationScale ?? 1;
             if (_hdrXamlRoot is not null)
@@ -103,8 +101,6 @@ namespace WinUIMusicPlayer.View
             CancelHdrEntrance();
             if (!_isLoaded) return;
             _isLoaded = false;
-            RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
-            RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
             DetachSpatialProjection();
             if (_hdrXamlRoot is { } root)
                 root.Changed -= PlaybackXamlRootChanged;

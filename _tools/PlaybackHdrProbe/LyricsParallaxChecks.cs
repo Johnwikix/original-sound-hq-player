@@ -132,7 +132,15 @@ public sealed partial class ProbeApp
                 await WaitUntilAsync(() => pageProjection.GetValue(page) is Matrix4x4 m && !m.IsIdentity
                     && page.Cover.Projection is not null && page.IsSpatialProbeTitleReady, $"{label} foreground tilt without lyrics");
                 page.CheckSpatialVisuals();
-                SetReplayPointer(null);
+                var tracksLayout = typeof(PlayingDetailPage).GetField("_trackingSpatialLayout", fields)!;
+                var tracksPointer = typeof(PlayingDetailPage).GetField("_trackingSpatialPointer", fields)!;
+                vm.IsPlayingDetailVisible = false;
+                await WaitUntilAsync(() => spatialClock.GetValue(page) is null && pointer.GetValue(page) is null
+                    && tracksLayout.GetValue(page) is false && tracksPointer.GetValue(page) is false,
+                    $"{label} hidden playback page stops callbacks");
+                vm.IsPlayingDetailVisible = true;
+                await WaitUntilAsync(() => tracksLayout.GetValue(page) is true && tracksPointer.GetValue(page) is true,
+                    $"{label} visible playback page reinstates callbacks");
                 await WaitUntilAsync(() => spatialClock.GetValue(page) is null && page.Cover.Projection is null,
                     $"{label} neutral foreground stops its frame subscription");
                 PublishParallaxLyrics();

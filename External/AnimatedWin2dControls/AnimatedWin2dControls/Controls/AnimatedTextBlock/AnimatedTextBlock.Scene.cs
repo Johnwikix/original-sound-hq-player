@@ -5,8 +5,10 @@ using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Shaders;
 using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
 using System;
+using System.Numerics;
 using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
@@ -22,6 +24,8 @@ public sealed partial class AnimatedTextBlock
     private float _sceneDpi;
     private float _sceneWhite;
     private PixelShaderEffect<ScRgbPlaybackEffect>? _sceneOutput;
+    private CropEffect? _sceneProjectionSource;
+    private Transform3DEffect? _sceneProjectionEffect;
     private bool _preparingStandalone;
     private bool _standaloneFramePending;
 
@@ -82,6 +86,14 @@ public sealed partial class AnimatedTextBlock
     }
 
     internal bool DrawInScene(CanvasDrawingSession presentation, PlaybackCanvasFrame frame, Rect bounds, TimeSpan elapsed)
+        => DrawScene(presentation, frame, bounds, elapsed, Matrix4x4.Identity);
+
+    internal bool DrawProjectedInScene(CanvasDrawingSession presentation, PlaybackCanvasFrame frame, Rect bounds,
+        TimeSpan elapsed, Matrix4x4 projection)
+        => DrawScene(presentation, frame, bounds, elapsed, projection);
+
+    private bool DrawScene(CanvasDrawingSession presentation, PlaybackCanvasFrame frame, Rect bounds, TimeSpan elapsed,
+        Matrix4x4 projection)
     {
         if (!IsLoaded || !_isActive || Document is null || bounds.Width * frame.Dpi < 96 || bounds.Height * frame.Dpi < 96)
             return false;
@@ -121,7 +133,31 @@ public sealed partial class AnimatedTextBlock
             output.ConstantBuffer = new ScRgbPlaybackEffect(_sceneWhite);
         }
         var source = new Rect(0, 0, bounds.Width, bounds.Height);
-        presentation.DrawImage(output, bounds, source);
+        if (projection.IsIdentity)
+        {
+            ReleaseSceneProjection();
+            presentation.DrawImage(output, bounds, source);
+        }
+        else
+        {
+            // Reuse the title-sized scene image. Cropping preserves the logical extent
+            // of the tile when its DIP dimensions round to whole physical pixels.
+            _sceneProjectionSource ??= new CropEffect
+            {
+                Source = output,
+                SourceRectangle = source,
+                BufferPrecision = CanvasBufferPrecision.Precision16Float
+            };
+            var effect = _sceneProjectionEffect ??= new Transform3DEffect
+            {
+                Source = _sceneProjectionSource,
+                BufferPrecision = CanvasBufferPrecision.Precision16Float
+            };
+            var origin = new Vector2((float)bounds.X, (float)bounds.Y);
+            effect.TransformMatrix = PlaybackSpatialProjection.ToLocal(projection, origin);
+            presentation.DrawImage(effect, origin);
+        }
+
         return true;
     }
 
@@ -139,8 +175,17 @@ public sealed partial class AnimatedTextBlock
         _documentLayoutDirty = true;
     }
 
+    private void ReleaseSceneProjection()
+    {
+        _sceneProjectionEffect?.Dispose();
+        _sceneProjectionEffect = null;
+        _sceneProjectionSource?.Dispose();
+        _sceneProjectionSource = null;
+    }
+
     private void ReleaseSceneTarget()
     {
+        ReleaseSceneProjection();
         _sceneOutput?.Dispose();
         _sceneOutput = null;
         _sceneTarget?.Dispose();

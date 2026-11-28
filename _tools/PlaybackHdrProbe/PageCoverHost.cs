@@ -120,8 +120,6 @@ namespace WinUIMusicPlayer.View
             Loaded += (_, _) =>
             {
                 _isLoaded = true;
-                AddHandler(PointerMovedEvent, _parallaxPointerMoved, true);
-                AddHandler(PointerExitedEvent, _parallaxPointerExited, true);
                 appViewModel.PropertyChanged += RefreshPresentation;
                 ViewModel.PropertyChanged += UpdatePresentation;
                 ViewModel.RefreshPresentation();
@@ -130,8 +128,6 @@ namespace WinUIMusicPlayer.View
             Unloaded += (_, _) =>
             {
                 _isLoaded = false;
-                RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
-                RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
                 DetachSpatialProjection();
                 appViewModel.PropertyChanged -= RefreshPresentation;
                 ViewModel.PropertyChanged -= UpdatePresentation;
@@ -261,8 +257,6 @@ namespace WinUIMusicPlayer.View
         {
             if (_disposed) return;
             _disposed = true;
-            RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
-            RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
             DetachSpatialProjection();
             CancelHdrEntrance();
             ViewModel.AppViewModel.PropertyChanged -= RefreshPresentation;

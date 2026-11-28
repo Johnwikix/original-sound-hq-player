@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using AnimatedWin2dControls.Controls;
@@ -8,6 +9,11 @@ using Microsoft.Graphics.Display;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.Graphics.DirectX;
+using WinUIMusicPlayer.Controls;
+using WinUIMusicPlayer.Helper;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock;
 using Windows.Foundation;
 using Windows.Graphics;
 
@@ -54,9 +60,26 @@ public sealed partial class ProbeApp
             IsDark = false,
             IsSnowEnabled = true,
             IsFogEnabled = true,
-            LyricsRegion = new Rect(100, 40, 640, 500)
+            LyricsRegion = new Rect(380, 130, 640, 500),
+            SpectrumOptions = new PlaybackSpectrumOptions { Enabled = true, Placement = SpectrumPlacement.AroundArtwork },
+            SpectrumSource = new MemoryProbeSpectrumSource()
         };
-        var hdrDeviceField = typeof(NowPlayingCanvas).GetField("_hdrDevice", BindingFlags.Instance | BindingFlags.NonPublic)
+        using var cover = new PlaybackSceneCoverPresenter();
+        cover.SetLayout(new Rect(70, 100, 276, 276), 12, 6);
+        cover.SetArtwork(new PlaybackSceneCover([20, 55, 180, 255, 100, 180, 20, 255,
+            100, 180, 20, 255, 20, 55, 180, 255], 2, 2, DirectXPixelFormat.B8G8R8A8UIntNormalized, 0),
+            ImageSwitchType.Crossfade, animate: false);
+        host.SetSceneCover(cover);
+        var title = new AnimatedTextBlock
+        {
+            Width = 200,
+            Height = 64,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+            Document = new AnimatedTextDocument(new AnimatedTextParagraph("HDR memory", 40, Microsoft.UI.Text.FontWeights.Bold, 54)),
+        };
+        var hdrDeviceField =  typeof(NowPlayingCanvas).GetField("_hdrDevice", BindingFlags.Instance | BindingFlags.NonPublic)
             ?? throw new InvalidOperationException("Missing HDR device ownership field.");
         int hdrFrames = 0;
         bool presented = false, failed = false;
@@ -72,7 +95,11 @@ public sealed partial class ProbeApp
         try
         {
             root.Children.Add(host);
-            await WaitUntilAsync(() => host.IsLoaded && host.ActualWidth > 0, "memory probe playback host");
+            root.Children.Add(title);
+            await WaitUntilAsync(() => host.IsLoaded && host.ActualWidth > 0 && title.IsLoaded, "memory probe playback host");
+            host.SetHdrTitle(title, new Rect(70, 380, 200, 64));
+            var extent = new Vector2((float)host.ActualWidth, (float)host.ActualHeight) / 2;
+            var tilt = PlaybackSpatialProjection.CreatePerspective(extent, new Vector3(12, -16, 8), 800, extent);
             var canvas = FindChild<CanvasAnimatedControl>(host, "PART_Canvas") ?? throw new Exception("Missing SDR canvas");
             var panel = FindChild<CanvasSwapChainPanel>(host, "PART_HdrPanel") ?? throw new Exception("Missing HDR panel");
             int sdrFrames = 0;
@@ -81,11 +108,14 @@ public sealed partial class ProbeApp
             IsPlayingBus.Publish(true);
             PublishLyrics();
             await WaitUntilAsync(() => Volatile.Read(ref sdrFrames) >= 12, "warm SDR renderer");
-            var baseline = await SampleAsync("SDR baseline");
+            var flatSdr = await SampleAsync("SDR flat foreground");
+            host.SetPlaybackSpatialProjection(tilt);
+            var baseline = await SampleAsync("SDR tilted foreground");
+            Console.WriteLine($"Activated SDR tilt: total change {baseline.Total - flatSdr.Total:+0.0;-0.0;0.0} MiB.");
 
             for (int round = 1; round <= 2; round++)
             {
-                host.SetHdrPresentation(white, peak, true, displayId);
+                host.SetHdrPresentation(white, peak, true, displayId, frameReady: true);
                 await ResumeAsync();
                 var hdr = await SampleAsync($"round {round} HDR");
                 if (hdr.Total <= baseline.Total + 24)
@@ -93,16 +123,23 @@ public sealed partial class ProbeApp
 
                 if (round == 1)
                 {
+                    host.SetPlaybackSpatialProjection(Matrix4x4.Identity);
+                    await ResumeAsync();
+                    var hdrFlat = await SampleAsync("HDR flat foreground");
+                    host.SetPlaybackSpatialProjection(tilt);
+                    await ResumeAsync();
+                    var hdrTilted = await SampleAsync("HDR tilted foreground again");
+                    Console.WriteLine($"Activated HDR tilt: total change {hdrTilted.Total - hdrFlat.Total:+0.0;-0.0;0.0} MiB.");
                     await CheckPauseAndLuminanceReuseAsync();
                 }
 
                 int sdr = Volatile.Read(ref sdrFrames);
-                host.SetHdrPresentation(0, 0, true, displayId);
+                host.SetHdrPresentation(0, 0, true, displayId, frameReady: true);
                 await WaitUntilAsync(() => !presented && panel.SwapChain is null
                     && Volatile.Read(ref sdrFrames) >= sdr + 8, "SDR fallback after disabling HDR");
                 await ExpectReleasedAsync($"round {round} HDR disabled", baseline, hdr);
 
-                host.SetHdrPresentation(white, peak, true, displayId);
+                host.SetHdrPresentation(white, peak, true, displayId, frameReady: true);
                 await ResumeAsync();
                 await SampleAsync($"round {round} HDR reopened");
 
@@ -145,6 +182,10 @@ public sealed partial class ProbeApp
         {
             TimeProgressBus.SetClock(null);
             IsPlayingBus.Publish(false);
+            host.SetHdrTitle(null, default);
+            host.SetSceneCover(null);
+            host.SpectrumSource = null;
+            root.Children.Remove(title);
             if (root.Children.Contains(host)) root.Children.Remove(host);
         }
 
@@ -161,7 +202,7 @@ public sealed partial class ProbeApp
         {
             var device = hdrDeviceField.GetValue(host);
             if (device is null) throw new Exception("HDR device missing while the scene is rendering.");
-            host.SetHdrPresentation(white + .5, peak, true, displayId);
+            host.SetHdrPresentation(white + .5, peak, true, displayId, frameReady: true);
             await ResumeAsync();
             if (!ReferenceEquals(device, hdrDeviceField.GetValue(host)))
                 throw new Exception("Luminance adjustment recreated the HDR device.");
@@ -216,6 +257,19 @@ public sealed partial class ProbeApp
         }
         Console.WriteLine($"{label}: {minimum.Local:F1} MiB local, {minimum.NonLocal:F1} MiB non-local ({adapters} adapter(s))");
         return minimum;
+    }
+
+    private sealed class MemoryProbeSpectrumSource : IPlaybackSpectrumSource
+    {
+        private readonly float[] _bins = Enumerable.Repeat(.5f, 513).ToArray();
+
+        public void SetActive(bool active) { }
+
+        public bool TryRead(out PlaybackSpectrumFrame frame)
+        {
+            frame = new(1, 1, Environment.TickCount64, 48000, 1024, _bins, _bins);
+            return true;
+        }
     }
 
     private readonly record struct GpuUsage(double Local, double NonLocal)

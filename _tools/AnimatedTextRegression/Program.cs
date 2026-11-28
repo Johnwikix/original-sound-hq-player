@@ -154,8 +154,17 @@ public sealed partial class TestApp : Application
         Check(moved, $"The projected {frame.Dpi:G} DPI HDR title moves");
         Check(Math.Abs(projectedWhite - frame.Hdr.White) < .025f,
             $"The projected {frame.Dpi:G} DPI HDR title remains visible at reference white ({projectedWhite:F3})");
-        Check(flatPixels.AsSpan().SequenceEqual(DrawSceneTitle(Matrix4x4.Identity)),
-            $"The {frame.Dpi:G} DPI HDR scene title restores its original pixels after projection");
+        var cachedEffect = Field(control, "_sceneProjectionEffect");
+        var cachedSource = Field(control, "_sceneProjectionSource");
+        var repeated = DrawSceneTitle(projection);
+        Check(cachedEffect is not null && cachedSource is not null
+            && ReferenceEquals(cachedEffect, Field(control, "_sceneProjectionEffect"))
+            && ReferenceEquals(cachedSource, Field(control, "_sceneProjectionSource"))
+            && tiltedPixels.AsSpan().SequenceEqual(repeated),
+            $"The {frame.Dpi:G} DPI HDR title reuses its projected tile graph with identical pixels");
+        Check(flatPixels.AsSpan().SequenceEqual(DrawSceneTitle(Matrix4x4.Identity))
+            && Field(control, "_sceneProjectionEffect") is null && Field(control, "_sceneProjectionSource") is null,
+            $"The {frame.Dpi:G} DPI HDR scene title restores its original pixels and releases the projection graph");
         return projectedWhite;
 
         byte[] DrawSceneTitle(Matrix4x4 matrix)
@@ -199,16 +208,16 @@ public sealed partial class TestApp : Application
             float CheckDpi(float dpi, float scale)
             {
                 var size = canvas.Size;
-                var region = new Rect(0, 0, size.Width, size.Height);
+                var region = new Rect(55, 36, size.Width, size.Height);
                 var frame = new PlaybackCanvasFrame(canvas.Device, size, dpi, PlaybackHdrColor.FromNits(200, 600));
-                using var target = new CanvasRenderTarget(canvas.Device, (float)size.Width * scale, (float)size.Height * scale,
+                using var target = new CanvasRenderTarget(canvas.Device, (float)(region.Right + 55) * scale, (float)(region.Bottom + 36) * scale,
                     dpi, DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
                 using (var drawing = target.CreateDrawingSession())
                 {
                     drawing.Clear(Microsoft.UI.Colors.Transparent);
                     drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
                     drawing.Transform = Matrix3x2.CreateScale(scale);
-                    Invoke(title, "DrawInScene", drawing, frame, region, TimeSpan.Zero);
+                    Invoke(title, "DrawProjectedInScene", drawing, frame, region, TimeSpan.Zero, Matrix4x4.Identity);
                 }
 
                 return CheckProjectedHdrTitle(title, target, frame, region, scale, target.GetPixelBytes());

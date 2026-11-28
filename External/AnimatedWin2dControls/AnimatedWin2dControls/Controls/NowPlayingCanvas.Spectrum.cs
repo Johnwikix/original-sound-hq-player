@@ -68,7 +68,7 @@ public sealed partial class NowPlayingCanvas
 
     private void DrawProjectedSpectrum(PlaybackCanvasFrame frame, CanvasDrawContext destination, Matrix4x4 projection)
     {
-        if (_spectrum is not { } spectrum) return;
+        if (_spectrum is not { HasEnergy: true } spectrum) return;
         Rect artwork = default;
         float radius = 0f;
         if (_spectrumOptions.Placement == SpectrumPlacement.AroundArtwork)

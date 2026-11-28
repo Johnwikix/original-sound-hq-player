@@ -38,10 +38,12 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
         if (!options.Glow && _surface is not null) ReleaseGlowResources();
     }
 
+    internal bool HasEnergy => _signal.HasEnergy;
+
     public void Draw(PlaybackCanvasFrame canvas, CanvasDrawContext session, PlaybackSpectrumOptions options,
         Rect artwork, float radius, PaletteResult? palette, bool dark)
     {
-        if (!_signal.HasEnergy || canvas.Size.Width < 1 || canvas.Size.Height < 1) return;
+        if (!HasEnergy || canvas.Size.Width < 1 || canvas.Size.Height < 1) return;
         if (!ReferenceEquals(_device, canvas.Device))
         {
             ReleaseDeviceResources();

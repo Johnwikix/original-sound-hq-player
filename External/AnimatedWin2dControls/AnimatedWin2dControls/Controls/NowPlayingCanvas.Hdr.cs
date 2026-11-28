@@ -458,7 +458,6 @@ public sealed partial class NowPlayingCanvas
     {
         var clear = _hdrClear;
         var device = _hdrDevice;
-        ReleaseHdrTitleProjection();
         if (device is null && pending is null) return;
         var outstanding = pending?.Present ?? _retiringHdrSwapChain;
         _retiringHdrSwapChain = null;
