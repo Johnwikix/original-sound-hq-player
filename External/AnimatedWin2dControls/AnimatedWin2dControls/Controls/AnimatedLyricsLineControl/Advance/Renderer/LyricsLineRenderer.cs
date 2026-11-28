@@ -17,6 +17,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
     {
         private PlaybackHdrColor _hdr;
         private float _hdrGlowPeak;
+        private double _glowAmount;
         private double _hdrGlowFullStrengthRadius;
 
         internal void SetPlaybackColor(PlaybackHdrColor hdr, double glowAmount)
@@ -25,6 +26,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 ClearSharedResources();
             _hdr = hdr;
             IsGlowEnabled = glowAmount > 0;
+            _glowAmount = glowAmount;
             _hdrGlowPeak = Math.Min(float.Lerp(hdr.White, hdr.Peak, (float)(glowAmount / 10d)), hdr.Peak);
             _hdrGlowFullStrengthRadius = Math.Min(glowAmount, 1d);
         }
@@ -112,6 +114,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 bounds.Y + Line.CachedPrimaryPosition.Y - CropHorizonPadding,
                 bounds.Width + CropHorizonPadding * 2, bounds.Height + CropHorizonPadding * 2);
 
+            float entryGlowStrength = IsGlowEnabled && Line.EntryGlowTransition is { Value: > 0 } glow
+                && !Line.UsesWordAnimation(WordByWordEffectMode) ? (float)glow.Value : 0;
+
             if (!IsPlaying)
             {
                 var opacity = Math.Max(Line.PlayedPrimaryOpacityTransition.Value,
@@ -125,14 +130,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     blurFx.BlurAmount = (float)blur;
                     opacityFx.Opacity = (float)opacity;
                     var output = srcRect.ExtendForGaussianBlur(blur);
-                    if (_hdr.IsEnabled)
-                    {
-                        ds.DrawImage(Line.GetHdrUnplayed(opacityFx, _hdr.White), output, output);
-                    }
-                    else
-                    {
-                        ds.DrawImage(opacityFx, output, output);
-                    }
+                    ICanvasImage ink = _hdr.IsEnabled ? Line.GetHdrUnplayed(opacityFx, _hdr.White) : opacityFx;
+                    if (entryGlowStrength > 0)
+                        ink = DrawEntryGlowHalo(ds, ink, output, entryGlowStrength);
+                    ds.DrawImage(ink, output, output);
                 }
                 return;
             }
@@ -142,7 +143,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (double.IsNaN(playedOpacity) || double.IsNaN(unplayedOpacity)) return;
             if (playedOpacity <= 0 && unplayedOpacity <= 0) return;
 
+            if (entryGlowStrength > 0)
+            {
+                var color = BuildSolidMatrix(_hdr.GetRgb(PlayedFillColor), (float)playedOpacity);
+                var ink = Line.GetEntryGlowFill(color);
+                ds.DrawImage(DrawEntryGlowHalo(ds, ink, srcRect, entryGlowStrength));
+                return;
+            }
+
             DrawPrimaryRegions(ds, Line.UsesWordAnimation(WordByWordEffectMode));
+        }
+
+        private ICanvasImage DrawEntryGlowHalo(CanvasDrawContext ds, ICanvasImage source, Rect bounds, float strength)
+        {
+            float radius = (float)(_glowAmount * strength);
+            var (ink, halo) = Line!.PrepareEntryGlow(source, radius, _hdr, _hdrGlowPeak, strength);
+            var haloBounds = bounds.ExtendForGaussianBlur(radius);
+            ds.DrawImage(halo, haloBounds, haloBounds, strength);
+            return ink;
         }
 
         private void DrawPrimaryRegions(CanvasDrawContext ds, bool useWordAnimation)

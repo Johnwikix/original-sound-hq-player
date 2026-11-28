@@ -131,6 +131,7 @@ internal sealed partial class ProbeApplication
         var spatial = MeasureLyricSweep(device);
         var haloClipping = MeasureLyricHaloClipping(device);
         var hover = MeasureLyricHoverContrast(device);
+        var lineGlow = MeasureLineEntryGlow(device);
         TimeProgressBus.SetClock(null);
         if (Math.Abs(spatial.PlayedCore - Hdr.White) > 0.015f || Math.Abs(spatial.NextWordCore - Hdr.White) > 0.015f
             || Math.Abs(spatial.UnplayedInk - 0.5f * Hdr.White) > 0.03f
@@ -146,7 +147,7 @@ internal sealed partial class ProbeApplication
             || spatial.FadingGlowPeak <= Hdr.White || spatial.FadingGlowPeak >= spatial.GlowPeak
             || Math.Abs(spatial.SettledGlowPeak - Hdr.White) > 0.015f)
             throw new InvalidOperationException($"Failed sustained lyric fill, boundary or glow luminance: {spatial}.");
-        return (backgrounds, new { Readback = lyrics, Sweep = spatial, HaloClipping = haloClipping, Hover = hover }, warmMotion);
+        return (backgrounds, new { Readback = lyrics, Sweep = spatial, HaloClipping = haloClipping, Hover = hover, LineGlow = lineGlow }, warmMotion);
     }
 
     private object CheckLyricSwitch()

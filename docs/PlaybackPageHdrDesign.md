@@ -29,7 +29,7 @@
 **白位和高光。** 窗口移动、尺寸或呈现状态改变时，通过 `DisplayArea.GetFromWindowId` 确定实际输出。跨屏时重新使用 `DisplayInformation.CreateForDisplayId` 获取该显示器的 HDR 状态与峰值，并替换颜色变更订阅。W 为用户设置的参考白点，P 为用户设置的高光峰值，两者分别受显示器峰值限制，并满足 W ≤ P。两者相等时场景保留纸白动态范围。Windows 的 SDR 白点继续用于上层 XAML。[窗口显示信息](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.graphics.display.displayinformation) · [系统白位调整](https://learn.microsoft.com/en-us/windows/win32/direct2d/white-level-adjustment-effect)
 
 - 进入 FP16 场景的 sRGB 输入先解码为线性值。标准白像素为 `W / 80`，目标为 P 尼特的中性高光为 `P / 80`。例如 W = 200、P = 600 时分别是 2.5 和 7.5。XAML 控件留在自己的 SDR 表面，由 Windows 对白；应用只校正自己合成进 HDR 表面的 SDR 像素。
-- 背景保留原调色板与连续亮度变化。已唱过的默认白色字芯与静止标题对齐参考白，仅逐字歌词产生辉光，活动字芯的中性白上限为 W + (P − W) × 发光强度 / 10。强度 0、5、10 分别对应参考白、参考白与有效峰值的中点、有效峰值。模糊核及原有覆盖率沿用相应动画。验收同时检查背景色阶分布、歌词字芯及其周围的亮度。浅色主题的黑字保持黑色。已有线性 HDR 值直接进入线性场景，避免再次进行 sRGB 解码。
+- 背景保留原调色板与连续亮度变化。已唱过的默认白色字芯与静止标题对齐参考白，逐字歌词在活动音节上产生辉光，整行歌词在该行开始滚动时同步淡入和亮起。字芯亮度和光晕半径在 500 ms 内升到峰值，停留 200 ms，再用 1.5 秒淡出。快速切行、手动滚动或跳播打断切入时，已显示的辉光从当前值回落，尚未显示的辉光取消。两种模式下活动字芯的中性白上限均为 W + (P − W) × 发光强度 / 10。强度 0、5、10 分别对应参考白、参考白与有效峰值的中点、有效峰值。模糊核及原有覆盖率沿用相应动画。验收同时检查背景色阶分布、歌词字芯及其周围的亮度。浅色主题的黑字保持黑色。已有线性 HDR 值直接进入线性场景，避免再次进行 sRGB 解码。
 - 重点检查 [FluidBackgroundEffect.cs](../External/AnimatedWin2dControls/AnimatedWin2dControls/Shaders/FluidBackgroundEffect.cs) 等着色器的最终 `Saturate`、8 位输出抖动、`NowPlayingCanvas._bgCache` 的默认格式和 RotatingMesh 的最终复合及低精度回退。权重、遮罩、透明度仍可限幅，需要跨过 1.0 的颜色必须在限幅之前保留或独立生成。RotatingMesh 的坐标求解纹理承载数据，沿用其自身精度约束。8 位字形覆盖率、SDR 调色板也可以继续用。暂停、背景跳帧和重用缓存时，最终 HDR 亮度应一致。
 - 对已预乘的 sRGB 图层，先去预乘，再线性化、映射亮度、在线性空间重新预乘；透明像素写全零。对 HDR 文字优先用覆盖率遮罩加线性颜色或 HDR 画刷，逐字透明度独立于 RGB 亮度。用灰阶抗锯齿检查透明边缘。参考分支的输出着色器适合处理约定为 sRGB 的输入；给整个已线性化的场景套同一着色器会重复变换。[BetterLyrics-HDR 输出着色器](https://github.com/DrivingGodJ/BetterLyrics-HDR/blob/57763f5a86ebb89e101f13a7e855c072fafd9e4e/src/BetterLyrics.DotNet/BetterLyrics.WinUI3/BetterLyrics.WinUI3/Shaders/ScRgbOutputEffect.cs)
 
@@ -39,7 +39,7 @@
 
 带全范围 BT.2020/PQ cICP 标记的 PNG 原图单独解码成线性 scRGB。HDR 按目标峰值压缩高光，SDR 将高光映射到 SDR 范围并编码为 sRGB。页面在首次测量时确定横竖布局，XAML 和场景共用布局框与等比缩放规则。着色器模式下，两种输出都用同一套圆角、阴影和换曲过渡。场景首帧就绪后交接 XAML 预览，切换着色器场景的动态范围时保留过渡进度。退到图片背景 SDR 或透明亚克力时由 XAML 显示封面。切歌或退出场景时取消过期请求。[原图解码](../Helper/PlaybackSceneCover.cs) · [场景绘制](../Helper/PlaybackSceneCoverDrawing.cs)
 
-**动态标题。** 两种不透明 HDR 背景下，播放页使用 AnimatedTextBlock 的原有排版、字形差分、动画与悬停滚动，将其绘入同一 FP16 场景。标题、艺术家与专辑共用白点和实际前景色。系统默认前景在 HDR 中使用实色，副标题保持原有层级透明度，自定义前景仍保留用户给定的颜色和透明度。静止和转场都将原文档的像素按同一参考白映射，保留淡入、擦除、模糊各自的时间曲线和覆盖率。辉光只在逐字歌词中绘制。Windows 关闭动画时，同一个控件直接显示当前曲目信息。
+**动态标题。** 两种不透明 HDR 背景下，播放页使用 AnimatedTextBlock 的原有排版、字形差分、动画与悬停滚动，将其绘入同一 FP16 场景。标题、艺术家与专辑共用白点和实际前景色。系统默认前景在 HDR 中使用实色，副标题保持原有层级透明度，自定义前景仍保留用户给定的颜色和透明度。静止和转场都将原文档的像素按同一参考白映射，保留淡入、擦除、模糊各自的时间曲线和覆盖率。辉光随逐字扫光或整行歌词切入绘制。Windows 关闭动画时，同一个控件直接显示当前曲目信息。
 
 ## 5. 透明亚克力和 HDR 同时开启
 

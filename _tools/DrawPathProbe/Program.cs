@@ -92,6 +92,12 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
                 File.WriteAllText(resultPath, JsonSerializer.Serialize(new { Status = "PASS", Backdrop = result }));
                 return;
             }
+            if (Environment.GetCommandLineArgs().Contains("--check-line-glow"))
+            {
+                var result = MeasureLineEntryGlow(_canvas.Device);
+                File.WriteAllText(resultPath, JsonSerializer.Serialize(new { Status = "PASS", LineGlow = result }));
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--playback-hdr"))
             {
                 var result = MeasurePlaybackHdr();

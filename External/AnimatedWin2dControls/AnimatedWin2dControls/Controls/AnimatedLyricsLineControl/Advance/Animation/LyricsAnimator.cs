@@ -8,6 +8,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
     {
         // 与已有播放投影的 300ms 末字留白衔接；真实长空档不保持重音。
         private const double FinalWordEffectHoldWindowMs = 300;
+        private const double LineGlowRiseSeconds = 0.2;
+        private const double LineGlowHoldSeconds = 0.2;
+        private const double LineGlowDecaySeconds = 1.5;
+        private const double InterruptedLineGlowDecaySeconds = 0.65;
+        private static readonly Func<double, double, double, double> s_lineGlowInterpolator = static (from, to, progress) =>
+            double.Lerp(from, to, EasingHelper.Ease<double>(progress,
+                from < to ? EaseMode.Out : EaseMode.InOut, EasingHelper.EaseInSine));
         private readonly double _defaultScale = 0.75;
         private readonly double _highlightedScale = 1.0;
 
@@ -48,7 +55,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             bool isSeek = false,
             bool useFlowWaveWordExit = false,
             bool isLayoutAnimating = false,
-            WordByWordEffectMode wordByWordEffectMode = WordByWordEffectMode.Auto)
+            WordByWordEffectMode wordByWordEffectMode = WordByWordEffectMode.Auto,
+            bool animateLineGlow = false)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
@@ -95,6 +103,30 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (resetWordEffects)
                     ResetWordEffects(line);
 
+                bool lineGlowEnabled = isGlowEnabled && !isWordAnimationEnabled;
+                bool canGlowOnEntry = lineGlowEnabled && animateLineGlow && isSecondaryLinePlaying
+                    && !isSeek && !isMouseScrolling;
+                if (line.EntryGlowTransition is { IsTransitioning: true } entryGlow)
+                {
+                    if (!lineGlowEnabled || line.LastProcessedVersion < animationVersion - 1)
+                    {
+                        entryGlow.JumpTo(0);
+                    }
+                    else if (!canGlowOnEntry)
+                    {
+                        if (entryGlow.Value == 0)
+                        {
+                            // Drop a queued entrance before its scroll delay can expire.
+                            entryGlow.JumpTo(0);
+                        }
+                        else if (entryGlow.TargetValue > 0)
+                        {
+                            entryGlow.SetDelay(0);
+                            entryGlow.Start(new Keyframe<double>(0, InterruptedLineGlowDecaySeconds));
+                        }
+                    }
+                }
+
                 var playProgress = line.GetPlayProgress(currentPositionMs);
 
                 if (isLayoutChanged || isLayoutAnimating || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged
@@ -114,6 +146,23 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     if (scrollTiming.HasValue)
                     {
                         (yScrollDuration, scrollDelay) = scrollTiming.Value.GetLineTiming(i);
+                    }
+
+                    bool startLineGlow = canGlowOnEntry && isSecondaryLinePlayingChanged;
+                    double playedOpacityDuration = yScrollDuration;
+                    if (startLineGlow)
+                    {
+                        // The glow and played opacity begin on the same scroll cue and share the fade-in.
+                        playedOpacityDuration = LineGlowRiseSeconds;
+                        var glow = line.EntryGlowTransition ??= new(0, s_lineGlowInterpolator);
+                        glow.SetDelay(scrollDelay);
+                        ReadOnlySpan<Keyframe<double>> stages =
+                        [
+                            new(1, playedOpacityDuration),
+                            new(1, LineGlowHoldSeconds),
+                            new(0, LineGlowDecaySeconds)
+                        ];
+                        glow.Start(stages);
                     }
 
                     double targetPlayedOpacity = CalculateTargetOpacity(unplayedPrimaryOpacity, isSecondaryLinePlaying ? 1.0 : unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled);
@@ -148,10 +197,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                         (_highlightedScale - distanceFactor * (_highlightedScale - _defaultScale)) :
                         _highlightedScale));
 
-                    line.PlayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
-                    line.PlayedPrimaryOpacityTransition.SetDelay(scrollDelay);
-                    line.PlayedPrimaryOpacityTransition.Start(
-                        isSecondaryLinePlaying ? 1.0 : targetPlayedOpacity);
+                    // Reflow and earlier rows can retarget the scroll while this fade is in flight.
+                    if (startLineGlow || !canGlowOnEntry || line.EntryGlowTransition is not { IsTransitioning: true })
+                    {
+                        line.PlayedPrimaryOpacityTransition.SetDuration(playedOpacityDuration);
+                        line.PlayedPrimaryOpacityTransition.SetDelay(scrollDelay);
+                        line.PlayedPrimaryOpacityTransition.Start(
+                            isSecondaryLinePlaying ? 1.0 : targetPlayedOpacity);
+                    }
 
                     line.UnplayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
                     line.UnplayedPrimaryOpacityTransition.SetDelay(scrollDelay);

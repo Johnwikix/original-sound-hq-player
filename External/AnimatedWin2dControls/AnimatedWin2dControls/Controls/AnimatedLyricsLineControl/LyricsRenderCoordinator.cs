@@ -765,7 +765,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 isScrollSeek,
                 _cachedScrollEasingMode == EaseMode.FlowWave && !_userScrolling,
                 isSecondaryLayoutAnimating,
-                wordByWordEffectMode: _cachedWordByWordEffectMode);
+                wordByWordEffectMode: _cachedWordByWordEffectMode,
+                animateLineGlow: _cachedIsPlaying);
 
             if (_cachedIsFanLyricsEnabled)
             {

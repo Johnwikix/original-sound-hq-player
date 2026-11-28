@@ -159,9 +159,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             BeginFirstSegment();
         }
 
-        public void Start(params Keyframe<T>[] keyframes)
+        public void Start(params Keyframe<T>[] keyframes) => Start(keyframes.AsSpan());
+
+        internal void Start(ReadOnlySpan<Keyframe<T>> keyframes)
         {
-            if (keyframes == null || keyframes.Length == 0) return;
+            if (keyframes.IsEmpty) return;
             if (keyframes.Length == 1) { Start(keyframes[0]); return; }
             if (keyframes.Length == 2) { Start(keyframes[0], keyframes[1]); return; }
 
@@ -172,8 +174,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 _hasDelay = true;
             }
             EnsureExtraCapacity(keyframes.Length);
-            for (int i = 0; i < keyframes.Length; i++)
-                _extraKeyframes![i] = keyframes[i];
+            keyframes.CopyTo(_extraKeyframes);
             _extraCount = keyframes.Length;
             _segmentCount = _hasDelay ? keyframes.Length + 1 : keyframes.Length;
             BeginFirstSegment();

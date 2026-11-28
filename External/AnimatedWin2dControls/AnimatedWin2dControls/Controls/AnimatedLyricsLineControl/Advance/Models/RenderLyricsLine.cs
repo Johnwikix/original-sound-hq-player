@@ -1,4 +1,5 @@
 using AnimatedWin2dControls.Enums;
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Shaders;
 using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
@@ -25,6 +26,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         internal double FanAngleTarget { get; set; }
 
         public ValueTransition<double> PlayedPrimaryOpacityTransition { get; set; }
+        internal ValueTransition<double>? EntryGlowTransition { get; set; }
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryOpacityTransition { get; set; }
         public RenderLyricsAuxiliaryLayer PronunciationLayer { get; } = new();
@@ -128,6 +130,51 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public OpacityEffect? CachedOpacityEffect { get; private set; }
         private PixelShaderEffect<ScRgbPlaybackEffect>? _hdrUnplayed;
         private float _hdrUnplayedWhite;
+        private ColorMatrixEffect? _entryGlowInk;
+        private GaussianBlurEffect? _entryGlowHalo;
+        private PixelShaderEffect<PlaybackTextGlowCoreEffect>? _hdrEntryGlowInk;
+        private bool _entryGlowUsesHdr;
+
+        internal ICanvasImage GetEntryGlowFill(Matrix5x4 color)
+        {
+            var fill = _entryGlowInk ??= new ColorMatrixEffect
+            {
+                Source = CachedFill,
+                BufferPrecision = _entryGlowUsesHdr ? CanvasBufferPrecision.Precision16Float : null
+            };
+            fill.ColorMatrix = color;
+            return fill;
+        }
+
+        internal (ICanvasImage Ink, GaussianBlurEffect Halo) PrepareEntryGlow(
+            ICanvasImage ink, float radius, PlaybackHdrColor hdr, float peak, float strength)
+        {
+            // A projected command list can record several rows before replaying them.
+            // Each row owns the effect chain and its source for that replay.
+            _entryGlowHalo ??= new GaussianBlurEffect { BorderMode = EffectBorderMode.Soft };
+            if (_entryGlowUsesHdr != hdr.IsEnabled)
+            {
+                CanvasBufferPrecision? precision = hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
+                if (_entryGlowInk is { } fill)
+                    fill.BufferPrecision = precision;
+                _entryGlowHalo.BufferPrecision = precision;
+                _entryGlowUsesHdr = hdr.IsEnabled;
+            }
+
+            if (hdr.IsEnabled && peak > hdr.White)
+            {
+                _hdrEntryGlowInk ??= new PixelShaderEffect<PlaybackTextGlowCoreEffect>();
+                if (!ReferenceEquals(_hdrEntryGlowInk.Sources[0], ink))
+                    _hdrEntryGlowInk.Sources[0] = ink;
+                _hdrEntryGlowInk.ConstantBuffer = new PlaybackTextGlowCoreEffect(hdr.White, peak, strength);
+                ink = _hdrEntryGlowInk;
+            }
+
+            if (!ReferenceEquals(_entryGlowHalo.Source, ink))
+                _entryGlowHalo.Source = ink;
+            _entryGlowHalo.BlurAmount = radius;
+            return (ink, _entryGlowHalo);
+        }
 
         internal ICanvasImage GetHdrUnplayed(OpacityEffect opacity, float white)
         {
@@ -500,6 +547,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         {
             TranslationLayer.DisposeCache();
             PronunciationLayer.DisposeCache();
+            _entryGlowHalo?.Dispose();
+            _entryGlowHalo = null;
+            _hdrEntryGlowInk?.Dispose();
+            _hdrEntryGlowInk = null;
+            _entryGlowInk?.Dispose();
+            _entryGlowInk = null;
+            _entryGlowUsesHdr = false;
             UnplayedComposite?.Dispose();
             UnplayedStrokeTint?.Dispose();
             UnplayedFillTint?.Dispose();
@@ -550,6 +604,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             BlurAmountTransition.Update(elapsedTime);
 
             PlayedPrimaryOpacityTransition.Update(elapsedTime);
+            EntryGlowTransition?.Update(elapsedTime);
             UnplayedPrimaryOpacityTransition.Update(elapsedTime);
             SecondaryOpacityTransition.Update(elapsedTime);
 
