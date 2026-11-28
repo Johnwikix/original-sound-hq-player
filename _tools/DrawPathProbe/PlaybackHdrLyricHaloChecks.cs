@@ -20,7 +20,9 @@ internal sealed partial class ProbeApplication
     {
         const int width = 1100, height = 700;
         using var target = CreateFloatTarget(device, width, height);
-        var backdrop = new Vector4(.16f * Hdr.White, .24f * Hdr.White, .52f * Hdr.White, 1);
+        // Keep the established luminance range for the spatial clipping checks.
+        var haloHdr = PlaybackHdrColor.FromNits(200, 400);
+        var backdrop = new Vector4(.16f * haloHdr.White, .24f * haloHdr.White, .52f * haloHdr.White, 1);
         using var brush = CanvasSolidColorBrush.CreateHdr(device, backdrop);
         LyricsFontSizeBus.Publish(30);
         var lyrics = new LyricLine
@@ -44,15 +46,15 @@ internal sealed partial class ProbeApplication
             throw new InvalidOperationException("The timed Japanese fixture must have individual glyphs and both auxiliary tracks.");
         PublishSettings(0);
         SetGlow(0);
-        var mask = Draw(Hdr, false);
-        var basePurple = Draw(Hdr, true);
+        var mask = Draw(haloHdr, false);
+        var basePurple = Draw(haloHdr, true);
         PublishSettings(5);
         SetGlow(5);
-        var standard = Measure(Draw(Hdr, true), basePurple, mask);
+        var standard = Measure(Draw(haloHdr, true), basePurple, mask);
         PublishSettings(10);
         SetGlow(10);
-        var active = Draw(Hdr, false);
-        var purple = Draw(Hdr, true);
+        var active = Draw(haloHdr, false);
+        var purple = Draw(haloHdr, true);
         var maximum = Measure(active, mask, mask);
         var maximumPurple = Measure(purple, basePurple, mask);
 
@@ -61,7 +63,7 @@ internal sealed partial class ProbeApplication
             typeof(RenderLyricsChar).GetProperty(nameof(RenderLyricsChar.GlowExitStartAmount))!.SetValue(character, 10d);
         SetGlow(5);
         line.BlurAmountTransition.JumpTo(8);
-        var retirementPixels = Draw(Hdr, false);
+        var retirementPixels = Draw(haloHdr, false);
         var retirement = Measure(retirementPixels, mask, mask);
         var ordinaryRetirementPixels = Draw(PaperWhite, false);
         var retirementNoGain = Measure(ordinaryRetirementPixels, mask, mask);
@@ -69,7 +71,7 @@ internal sealed partial class ProbeApplication
         for (int offset = 6; offset < retirementPixels.Length; offset += 8)
             retirementAlphaShift = Math.Max(retirementAlphaShift,
                 Math.Abs(ReadHalf(retirementPixels, offset) - ReadHalf(ordinaryRetirementPixels, offset)));
-        var retirementPurple = Measure(Draw(Hdr, true), basePurple, mask);
+        var retirementPurple = Measure(Draw(haloHdr, true), basePurple, mask);
         var bounds = MeasureBlurredTrackBounds();
         if (Math.Abs(standard.PrimaryCore - 1.5f) > .01f || Math.Abs(maximum.PrimaryCore - 2f) > .01f
             || maximum.Peak > 1.05f || maximumPurple.NearPaperWhitePixels > 180
@@ -94,7 +96,7 @@ internal sealed partial class ProbeApplication
                 Line = line, IsPlaying = false, PlayedFillColor = Colors.White, UnplayedFillColor = Colors.White
             };
             typeof(LyricsLineRenderer).GetMethod("SetPlaybackColor", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(renderer, [Hdr, 0d]);
+                .Invoke(renderer, [haloHdr, 0d]);
             var local = line.PrimaryTextLayout!.LayoutBounds;
             var primaryBounds = new Rect(local.X + line.CachedPrimaryPosition.X + x - 10,
                 local.Y + line.CachedPrimaryPosition.Y + y - 10, local.Width + 20, local.Height + 20);
@@ -121,7 +123,7 @@ internal sealed partial class ProbeApplication
                 drawing.Clear(Colors.Transparent);
                 drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
                 using var scope = CanvasDrawingSessionScope.Borrow(drawing);
-                layer.Draw(target, scope.Context, new(x, y), 1, blur, 0, Colors.White, Hdr);
+                layer.Draw(target, scope.Context, new(x, y), 1, blur, 0, Colors.White, haloHdr);
             }
 
             int primaryOutsideOldBounds = CountBlurTail(inactive, primaryBounds);
@@ -169,7 +171,7 @@ internal sealed partial class ProbeApplication
             return target.GetPixelBytes();
         }
 
-        static LyricHaloFrame Measure(byte[] pixels, byte[] background, byte[] mask)
+        LyricHaloFrame Measure(byte[] pixels, byte[] background, byte[] mask)
         {
             float peak = 0, alphaPeak = 0, step = 0, energy = 0, core = 0;
             int bright = 0, lit = 0;
@@ -178,14 +180,14 @@ internal sealed partial class ProbeApplication
             {
                 int i = (y * width + x) * 8;
                 if (ReadHalf(mask, i + 6) >= .999f)
-                    core = Math.Max(core, Luminance(pixels, i) / Hdr.White);
+                    core = Math.Max(core, Luminance(pixels, i) / haloHdr.White);
                 if (!OutsideInk(i)) continue;
                 float change = Delta(i);
                 peak = Math.Max(peak, change);
                 alphaPeak = Math.Max(alphaPeak, ReadHalf(pixels, i + 6) - ReadHalf(background, i + 6));
                 energy += Math.Max(0, change);
                 if (change > .01f) lit++;
-                if (change > .01f && Luminance(pixels, i) >= .80f * Hdr.White) bright++;
+                if (change > .01f && Luminance(pixels, i) >= .80f * haloHdr.White) bright++;
                 int left = i - 8;
                 int above = i - width * 8;
                 if (OutsideInk(left)) step = Math.Max(step, Math.Abs(change - Delta(left)));
@@ -194,7 +196,7 @@ internal sealed partial class ProbeApplication
             return new(peak, alphaPeak, step, bright, lit, energy, core);
 
             bool OutsideInk(int offset) => ReadHalf(mask, offset + 6) <= .001f;
-            float Delta(int offset) => (Luminance(pixels, offset) - Luminance(background, offset)) / Hdr.White;
+            float Delta(int offset) => (Luminance(pixels, offset) - Luminance(background, offset)) / haloHdr.White;
         }
     }
 }

@@ -2815,7 +2815,7 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="PlaybackHdrDescription" xml:space="preserve"><value>Requiere activar HDR en Windows y usar un fondo de sombreador o una imagen de fondo personalizada.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Brillo del blanco de referencia</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Brillo máximo de las luces</value></data>
-  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>En reproducción HDR, los niveles de resplandor de la letra 0, 5 y 10 aumentan el blanco de referencia un 0 %, 50 % y 100 %, hasta el pico HDR.</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>En la página de reproducción HDR, el límite de brillo del resplandor de la letra aumenta linealmente desde el blanco de referencia en 0 hasta el pico configurado en 10, sin superar el brillo máximo de la pantalla.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Varias pistas CUE comparten este archivo de audio. Guarda los cambios en la biblioteca.</value></data>
   <data name="LyricsWordAnimation.Header" xml:space="preserve">
     <value>Animación palabra por palabra</value>

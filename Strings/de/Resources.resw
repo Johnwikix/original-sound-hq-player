@@ -2815,7 +2815,7 @@ Vollständige Details stehen im Protokoll.</value></data>
   <data name="PlaybackHdrDescription" xml:space="preserve"><value>Erfordert aktiviertes HDR in Windows und einen Shader-Hintergrund oder ein eigenes Hintergrundbild.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Helligkeit des Referenzweiß</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Spitzenhelligkeit der Glanzlichter</value></data>
-  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>Auf der HDR-Wiedergabeseite erhöhen die Leuchtstufen des Liedtexts 0, 5 und 10 das Referenzweiß um 0 %, 50 % und 100 %. Die HDR-Spitzenhelligkeit begrenzt die Verstärkung.</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>Auf der HDR-Wiedergabeseite steigt die maximale Helligkeit des Liedtextleuchtens linear von Referenzweiß bei 0 bis zur eingestellten Spitzenhelligkeit bei 10, begrenzt durch die Spitzenhelligkeit des Displays.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Mehrere CUE-Titel verwenden diese Audiodatei. Speichere Änderungen in der Bibliothek.</value></data>
   <data name="LyricsWordAnimation.Header" xml:space="preserve">
     <value>Wortweise Animation</value>

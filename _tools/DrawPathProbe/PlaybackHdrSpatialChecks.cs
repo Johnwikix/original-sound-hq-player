@@ -24,7 +24,8 @@ internal sealed partial class ProbeApplication
         float CustomGlowHueDrift, float FadingGlowPeak, float SettledGlowPeak, LyricGlowComparison GlowSettings);
     private sealed record GlowSpread(float Core, float CoreLoss, float HaloPeak, float HaloEnergy, int HaloPixels);
     private sealed record LyricGlowComparison(GlowSpread Sdr, GlowSpread Disabled, GlowSpread NoGain,
-        GlowSpread Amount5, GlowSpread Amount10, GlowSpread Tight, float MaximumHdrAlphaShift,
+        GlowSpread Amount05, GlowSpread Amount5, GlowSpread Amount10, GlowSpread Tight5, GlowSpread Tight10,
+        float MaximumHdrAlphaShift,
         float MaximumSdrAlphaDelta, float SamePrecisionSdrAlphaDelta, float BrightBackgroundLoss,
         float BrightBackgroundDriftOutsideHalo);
 
@@ -274,12 +275,17 @@ internal sealed partial class ProbeApplication
             SetSettings(double.NaN);
             if (!Draw(false).AsSpan().SequenceEqual(disabled))
                 throw new InvalidOperationException("A non-finite lyric glow setting enabled glow.");
+            SetSettings(0.5);
+            foreach (var character in characters) character.GlowTransition.JumpTo(0.5);
+            byte[] amount05 = Draw(false);
+            foreach (var character in characters) character.GlowTransition.JumpTo(5);
             SetSettings(5);
             byte[] noGain = Draw(false, PaperWhite);
             byte[] amount5 = Draw(false);
+            byte[] tight5 = Draw(false, TightHeadroom);
             SetSettings(10);
             byte[] amount10 = Draw(false);
-            byte[] tight = Draw(false, TightHeadroom);
+            byte[] tight10 = Draw(false, TightHeadroom);
             byte[] brightNoGain = Draw(true, PaperWhite, 5.5f);
             byte[] brightWithGain = Draw(true, Hdr, 5.5f);
             SetSettings(11);
@@ -291,7 +297,8 @@ internal sealed partial class ProbeApplication
                 float alpha = ReadHalf(noGain, i);
                 hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(amount5, i) - alpha));
                 hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(amount10, i) - alpha));
-                hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(tight, i) - alpha));
+                hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(tight5, i) - alpha));
+                hdrAlphaShift = Math.Max(hdrAlphaShift, Math.Abs(ReadHalf(tight10, i) - alpha));
                 if (ReadHalf(mask, i) <= .001f && sdrMask[i / 2] == 0)
                 {
                     sdrAlphaDelta = Math.Max(sdrAlphaDelta, Math.Abs(sdrGlow[i / 2] / 255f - alpha));
@@ -303,14 +310,16 @@ internal sealed partial class ProbeApplication
             }
 
             var result = new LyricGlowComparison(Measure(sdrGlow, true), Measure(disabled), Measure(noGain),
-                Measure(amount5), Measure(amount10), Measure(tight), hdrAlphaShift, sdrAlphaDelta, floatSdrAlphaDelta,
-                brightLoss, outsideGlow);
+                Measure(amount05), Measure(amount5), Measure(amount10), Measure(tight5), Measure(tight10),
+                hdrAlphaShift, sdrAlphaDelta, floatSdrAlphaDelta, brightLoss, outsideGlow);
             if (Math.Abs(result.Disabled.Core - 1) > .006f || result.Disabled.HaloPixels != 0
                 || Math.Abs(result.NoGain.Core - 1) > .006f
-                || Math.Abs(result.Amount5.Core - 1.5f) > .006f
-                || Math.Abs(result.Amount10.Core - 2f) > .006f
-                || Math.Abs(result.Tight.Core - TightHeadroom.Peak / Hdr.White) > .006f
-                || result.Amount5.CoreLoss > .015f || result.Tight.CoreLoss > .015f
+                || Math.Abs(result.Amount05.Core - 1.1f) > .006f
+                || Math.Abs(result.Amount5.Core - 2f) > .006f
+                || Math.Abs(result.Amount10.Core - 3f) > .006f
+                || Math.Abs(result.Tight5.Core - 1.015f) > .006f
+                || Math.Abs(result.Tight10.Core - 1.03f) > .006f
+                || result.Amount5.CoreLoss > .015f || result.Tight10.CoreLoss > .015f
                 || result.Amount5.HaloEnergy <= result.NoGain.HaloEnergy
                 || result.Amount5.HaloEnergy <= result.Sdr.HaloEnergy
                 || result.Amount10.HaloEnergy <= result.Amount5.HaloEnergy

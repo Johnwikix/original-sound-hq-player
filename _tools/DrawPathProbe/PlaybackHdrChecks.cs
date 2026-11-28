@@ -137,8 +137,8 @@ internal sealed partial class ProbeApplication
             || Math.Abs(spatial.BeforeWordEnd - Hdr.White) > 0.015f || Math.Abs(spatial.AfterWordEnd - Hdr.White) > 0.015f
             || spatial.MaximumCoreLossWithGlow > 0.035f || spatial.MaximumBackgroundLossWithGlow > 0.02f
             || spatial.MaximumGlowOutsideInk < 0.12f || spatial.GlowArea is < 0.001f or > 0.06f
-            || Math.Abs(spatial.GlowPeak - 1.7f * Hdr.White) > 0.012f
-            || Math.Abs(spatial.TightGlowPeak - TightHeadroom.Peak) > 0.006f
+            || Math.Abs(spatial.GlowPeak - 6f) > 0.012f
+            || Math.Abs(spatial.TightGlowPeak - 2.5525f) > 0.006f
             || Math.Abs(spatial.NoHeadroomPeak - Hdr.White) > 0.015f
             || Math.Abs(spatial.RaisedWhiteInk - 4f) > 0.015f
             || spatial.BlackGlowPeak > 0.015f || spatial.DarkHaloLoss < 0.025f || spatial.DarkHaloLoss >= Hdr.White
@@ -277,8 +277,9 @@ internal sealed partial class ProbeApplication
         {
             var color = Math.Max(ReadHalf(pixels, i), Math.Max(ReadHalf(pixels, i + 2), ReadHalf(pixels, i + 4)));
             var opacity = ReadHalf(pixels, i + 6);
+            // RGB and alpha round independently at the bottom of the FP16 range.
             if (!float.IsFinite(color) || !float.IsFinite(opacity) || opacity is < 0 or > 1
-                || opacity == 0 && color != 0)
+                || opacity == 0 && Math.Abs(color) > (float)Half.Epsilon)
                 throw new InvalidOperationException($"Invalid premultiplied FP16 pixel at {i / 8}: {color}, {opacity}.");
             rgb = Math.Max(rgb, color);
             alpha = Math.Max(alpha, opacity);

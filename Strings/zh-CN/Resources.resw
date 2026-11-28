@@ -2817,7 +2817,7 @@ SHA-256：{5}
   <data name="PlaybackHdrDescription" xml:space="preserve"><value>使用着色器背景或自定义背景图时，播放页可呈现 HDR。需要先在 Windows 中开启 HDR。</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>参考白点亮度</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>高光峰值亮度</value></data>
-  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>在 HDR 播放页，歌词发光强度 0、5、10 分别在参考白基础上提亮 0%、50%、100%，受 HDR 峰值限制。</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR 播放页的歌词辉光亮度上限随发光强度线性变化。0 对应参考白，10 对应设置的峰值亮度，最高以显示器支持的峰值为准。</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>多个 CUE 音轨共用此音频文件。请将更改保存到曲库。</value></data>
   <data name="LyricsWordAnimation.Header" xml:space="preserve">
     <value>逐字动画</value>

@@ -2815,7 +2815,7 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="PlaybackHdrDescription" xml:space="preserve"><value>Windows'ta HDR'nin açık olması ve gölgelendirici arka plan veya özel arka plan resmi kullanılması gerekir.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Referans beyaz parlaklığı</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Vurguların tepe parlaklığı</value></data>
-  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR oynatma sayfasında şarkı sözlerinin 0, 5 ve 10 parlama düzeyleri referans beyazın parlaklığını sırasıyla %0, %50 ve %100 artırır. Üst sınır HDR tepe parlaklığıdır.</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>HDR oynatma sayfasında şarkı sözü parlamasının parlaklık sınırı, 0 düzeyinde referans beyazdan 10 düzeyinde ayarlanan tepe parlaklığına kadar doğrusal artar ve ekranın tepe parlaklığıyla sınırlıdır.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Bu ses dosyasını birden fazla CUE parçası kullanıyor. Değişiklikleri kitaplığa kaydedin.</value></data>
   <data name="LyricsWordAnimation.Header" xml:space="preserve">
     <value>Kelime kelime animasyon</value>

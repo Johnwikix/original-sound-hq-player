@@ -2815,7 +2815,7 @@ SHA-256: {5}
   <data name="PlaybackHdrDescription" xml:space="preserve"><value>Требуется включить HDR в Windows и использовать шейдерный фон или собственное фоновое изображение.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Яркость опорного белого</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Пиковая яркость бликов</value></data>
-  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>На странице воспроизведения HDR уровни свечения текста песни 0, 5 и 10 повышают яркость опорного белого на 0 %, 50 % и 100 % в пределах пика HDR.</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>На странице воспроизведения HDR предельная яркость свечения текста песни растёт линейно от опорного белого при 0 до заданной пиковой яркости при 10 с учётом предела яркости дисплея.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>Несколько дорожек CUE используют этот аудиофайл. Сохраните изменения в медиатеке.</value></data>
   <data name="LyricsWordAnimation.Header" xml:space="preserve">
     <value>Анимация по словам</value>

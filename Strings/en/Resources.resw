@@ -2815,7 +2815,7 @@ See the log for full details.</value></data>
   <data name="PlaybackHdrDescription" xml:space="preserve"><value>Requires HDR to be enabled in Windows and a shader or custom image background.</value></data>
   <data name="PlaybackHdrWhite" xml:space="preserve"><value>Reference white brightness</value></data>
   <data name="PlaybackHdrPeak" xml:space="preserve"><value>Highlight peak brightness</value></data>
-  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>On the HDR playback page, lyric glow levels 0, 5, and 10 add 0%, +50%, and +100% to reference white, up to the HDR peak.</value></data>
+  <data name="PlaybackHdrGlowAmountDescription" xml:space="preserve"><value>On the HDR playback page, the lyric glow brightness limit rises linearly from reference white at 0 to the configured peak at 10, capped by the display’s peak brightness.</value></data>
   <data name="CueSharedSource" xml:space="preserve"><value>This audio file is shared by CUE tracks. Save your changes to the library.</value></data>
   <data name="LyricsWordAnimation.Header" xml:space="preserve">
     <value>Word-by-word animation</value>

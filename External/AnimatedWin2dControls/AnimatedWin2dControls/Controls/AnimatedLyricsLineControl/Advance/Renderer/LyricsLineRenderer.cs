@@ -17,6 +17,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
     {
         private PlaybackHdrColor _hdr;
         private float _hdrGlowPeak;
+        private double _hdrGlowFullStrengthRadius;
 
         internal void SetPlaybackColor(PlaybackHdrColor hdr, double glowAmount)
         {
@@ -24,7 +25,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 ClearSharedResources();
             _hdr = hdr;
             IsGlowEnabled = glowAmount > 0;
-            _hdrGlowPeak = Math.Min(hdr.White * (1f + 0.10f * (float)glowAmount), hdr.Peak);
+            _hdrGlowPeak = Math.Min(float.Lerp(hdr.White, hdr.Peak, (float)(glowAmount / 10d)), hdr.Peak);
+            _hdrGlowFullStrengthRadius = Math.Min(glowAmount, 1d);
         }
 
         private PlaybackHdrColor _lastHdr;
@@ -406,7 +408,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private float GetHdrGlowStrength(RenderLyricsChar character)
         {
             double radius = character.GlowTransition.Value;
-            float strength = (float)Math.Clamp(radius, 0d, 1d);
+            // Subpixel glow settings reach full strength at their configured radius.
+            float strength = (float)Math.Clamp(radius / _hdrGlowFullStrengthRadius, 0d, 1d);
             if (!Line!.IsWordEffectsRetiring)
                 return strength;
             double start = character.GlowExitStartAmount;
