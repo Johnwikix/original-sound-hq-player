@@ -56,7 +56,7 @@
 
         <controls:SwitchPresenter
             Grid.Row="2"
-            Height="420"
+            Height="470"
             Margin="10,0,10,0"
             Value="{x:Bind SectionSelector.SelectedItem.Tag, Mode=OneWay}">
             <controls:SwitchPresenter.ContentTransitions>
@@ -412,17 +412,20 @@
                                 SelectedItem="{x:Bind VM.FontFamily, Mode=TwoWay}" />
                         </Grid>
                     </StackPanel>
-                    <StackPanel
+                    <Grid
                         Grid.Row="0"
                         Grid.Column="1"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <TextBlock
                             x:Uid="TargetFrameRate"
                             FontSize="14"
                             FontWeight="SemiBold" />
                         <ComboBox
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             ItemsSource="{x:Bind VM.TargetFrameRateOptions}"
                             SelectedItem="{x:Bind VM.TargetFrameRate, Mode=TwoWay}">
                             <ComboBox.ItemTemplate>
@@ -434,7 +437,7 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                    </StackPanel>
+                    </Grid>
                     <StackPanel
                         Grid.Row="0"
                         Grid.Column="2"
@@ -462,41 +465,47 @@
                                 Value="{x:Bind VM.GlobalFontSize, Mode=TwoWay}" />
                         </Grid>
                     </StackPanel>
-                    <StackPanel
+                    <Grid
                         Grid.Row="1"
                         Grid.Column="0"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <TextBlock
                             x:Uid="LyricsAlignment"
                             FontSize="14"
                             FontWeight="SemiBold" />
                         <ComboBox
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             SelectedValue="{x:Bind VM.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
                             SelectedValuePath="Tag">
                             <ComboBoxItem x:Uid="Left" Tag="Left" />
                             <ComboBoxItem x:Uid="Center" Tag="Center" />
                             <ComboBoxItem x:Uid="Right" Tag="Right" />
                         </ComboBox>
-                    </StackPanel>
-                    <StackPanel
+                    </Grid>
+                    <Grid
                         Grid.Row="1"
                         Grid.Column="1"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <TextBlock
                             x:Uid="LyricsMargin"
                             FontSize="14"
                             FontWeight="SemiBold" />
                         <NumberBox
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             LargeChange="10"
                             Minimum="0"
                             SmallChange="1"
                             SpinButtonPlacementMode="Inline"
                             Value="{x:Bind VM.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
-                    </StackPanel>
+                    </Grid>
                     <StackPanel
                         Grid.Row="1"
                         Grid.Column="2"
@@ -771,10 +780,11 @@
                             TickPlacement="Outside"
                             Value="{x:Bind VM.CharScaleAmount, Mode=TwoWay}" />
                     </StackPanel>
-                    <StackPanel
+                    <Grid
                         Grid.Row="5"
                         Grid.Column="0"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <Grid
                             Width="250"
                             HorizontalAlignment="Left"
@@ -791,19 +801,22 @@
                                 Text="{x:Bind tool:BindUtils.FormatF1(VM.GlowAmount), Mode=OneWay}" />
                         </Grid>
                         <Slider
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             Maximum="10"
                             Minimum="0"
                             SnapsTo="Ticks"
                             TickFrequency="0.1"
                             TickPlacement="Outside"
                             Value="{x:Bind VM.GlowAmount, Mode=TwoWay}" />
-                    </StackPanel>
-                    <StackPanel
+                    </Grid>
+                    <Grid
                         Grid.Row="5"
                         Grid.Column="1"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <Grid
                             Width="250"
                             HorizontalAlignment="Left"
@@ -820,15 +833,17 @@
                                 Text="{x:Bind tool:BindUtils.FormatMs(VM.LongSyllableThreshold), Mode=OneWay}" />
                         </Grid>
                         <Slider
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             Maximum="1000"
                             Minimum="400"
                             SnapsTo="Ticks"
                             TickFrequency="10"
                             TickPlacement="Outside"
                             Value="{x:Bind VM.LongSyllableThreshold, Mode=TwoWay}" />
-                    </StackPanel>
+                    </Grid>
                     <StackPanel
                         Grid.Row="5"
                         Grid.Column="2"
@@ -859,10 +874,11 @@
                             FontWeight="SemiBold" />
                         <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsFanLyricsEnabled, Mode=TwoWay}" />
                     </StackPanel>
-                    <StackPanel
+                    <Grid
                         Grid.Row="0"
                         Grid.Column="1"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <Grid
                             Width="250"
                             HorizontalAlignment="Left"
@@ -879,15 +895,17 @@
                                 Text="{x:Bind tool:BindUtils.FormatF0(VM.FanLyricsAngle), Mode=OneWay}" />
                         </Grid>
                         <Slider
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             IsEnabled="{x:Bind VM.IsFanLyricsEnabled, Mode=OneWay}"
                             Maximum="90"
                             Minimum="-90"
                             SnapsTo="Ticks"
                             TickFrequency="1"
                             Value="{x:Bind VM.FanLyricsAngle, Mode=TwoWay}" />
-                    </StackPanel>
+                    </Grid>
                     <StackPanel
                         Grid.Row="0"
                         Grid.Column="2"
@@ -911,10 +929,11 @@
                             IsEnabled="{x:Bind VM.Is3DLyricsEnabled, Mode=OneWay}"
                             IsOn="{x:Bind VM.IsAuto3DLyricsEnabled, Mode=TwoWay}" />
                     </StackPanel>
-                    <StackPanel
+                    <Grid
                         Grid.Row="1"
                         Grid.Column="1"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <Grid
                             Width="250"
                             HorizontalAlignment="Left"
@@ -931,19 +950,22 @@
                                 Text="{x:Bind tool:BindUtils.FormatF0(VM.Lyrics3DXAngle), Mode=OneWay}" />
                         </Grid>
                         <Slider
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             IsEnabled="{x:Bind VM.Is3DLyricsAdjustable, Mode=OneWay}"
                             Maximum="90"
                             Minimum="-90"
                             SnapsTo="Ticks"
                             TickFrequency="1"
                             Value="{x:Bind VM.Lyrics3DXAngle, Mode=TwoWay}" />
-                    </StackPanel>
-                    <StackPanel
+                    </Grid>
+                    <Grid
                         Grid.Row="1"
                         Grid.Column="2"
-                        Spacing="4">
+                        RowDefinitions="Auto,*"
+                        RowSpacing="4">
                         <Grid
                             Width="250"
                             HorizontalAlignment="Left"
@@ -960,15 +982,17 @@
                                 Text="{x:Bind tool:BindUtils.FormatF0(VM.Lyrics3DYAngle), Mode=OneWay}" />
                         </Grid>
                         <Slider
+                            Grid.Row="1"
                             Width="250"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             IsEnabled="{x:Bind VM.Is3DLyricsAdjustable, Mode=OneWay}"
                             Maximum="90"
                             Minimum="-90"
                             SnapsTo="Ticks"
                             TickFrequency="1"
                             Value="{x:Bind VM.Lyrics3DYAngle, Mode=TwoWay}" />
-                    </StackPanel>
+                    </Grid>
                     <StackPanel
                         Grid.Row="2"
                         Grid.Column="0"
