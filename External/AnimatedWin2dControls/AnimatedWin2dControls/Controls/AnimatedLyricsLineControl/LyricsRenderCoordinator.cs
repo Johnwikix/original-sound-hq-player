@@ -129,8 +129,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _isPointerOnSurface;
         private Point _lastMousePos;
         private bool _hoverDirty;
-        private bool _isDarkTheme;
-        private volatile bool _usesAutomaticWhite;
         private CanvasSolidColorBrush? _hdrHoverBrush;
         private CanvasDevice? _hdrHoverDevice;
         private float _hdrHoverWhite = -1;
@@ -147,8 +145,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// </summary>
         private int _animationVersion;
 
-        private Color _playedColor = Colors.White;
-        private Color _unplayedColor = Color.FromArgb(80, 255, 255, 255);
+        private sealed record LyricsColors(Color Played, Color Unplayed, bool IsDark, bool UsesAutomaticWhite);
+
+        private static readonly LyricsColors s_lightColors = new(Colors.Black, Colors.Black, false, false);
+        private static readonly LyricsColors s_darkColors = new(Colors.White, Colors.White, true, true);
+        private volatile LyricsColors _colors = new(Colors.White, Color.FromArgb(80, 255, 255, 255), false, false);
 
         private double _cachedLyricsFontSize = 36.0;
         private string _cachedFontFamilyName = "Segoe UI";
@@ -204,8 +205,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_shutdown) return;
             // 先设初始默认色，再订阅并请求同步；Request 会同步回灌真实 isDark，
             // 必须早于此默认，避免把正确颜色覆盖回浅色默认（导致暗色模式显示黑字）。
-            _usesAutomaticWhite = false;
-            OnIsDarkChanged(false);
+            _colors = s_lightColors;
+            InvalidateHost();
 
             TimeProgressBus.CurrentPlayingTimeChanged += OnCurrentPlayingTimeChanged;
             IsPlayingBus.Changed += OnIsPlayingChanged;
@@ -365,23 +366,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (Canvas is not null)
                 Canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / s.TargetFrameRate);
 
-            _isDarkTheme = s.IsDark;
-            if (s.IsCustomColorEnabled)
-            {
-                _playedColor = s.LyricsCustomColor;
-                _unplayedColor = s.LyricsCustomColor;
-            }
-            else if (_isDarkTheme)
-            {
-                _playedColor = Colors.White;
-                _unplayedColor = Colors.White;
-            }
-            else
-            {
-                _playedColor = Color.FromArgb(255, 0, 0, 0);
-                _unplayedColor = Color.FromArgb(255, 0, 0, 0);
-            }
-            _usesAutomaticWhite = s.IsDark && !s.IsCustomColorEnabled;
+            _colors = s.IsCustomColorEnabled
+                ? new(s.LyricsCustomColor, s.LyricsCustomColor, s.IsDark, false)
+                : s.IsDark ? s_darkColors : s_lightColors;
 
             _layoutDirty = true;
             InvalidateHost();
@@ -471,22 +458,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _userScrollCooldownSec = 0;
             _layoutDirty = true;
             return true;
-        }
-
-        private void OnIsDarkChanged(bool isDark)
-        {
-            _isDarkTheme = isDark;
-            if (isDark)
-            {
-                _playedColor = Colors.White;
-                _unplayedColor = Colors.White;
-            }
-            else
-            {
-                _playedColor = Color.FromArgb(255, 0, 0, 0);
-                _unplayedColor = Color.FromArgb(255, 0, 0, 0);
-            }
-            InvalidateHost();
         }
 
         // ── 布局 ──────────────────────────────────────────────────────────────
@@ -880,68 +851,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// <summary>Draws production lyric state using the scoped ABI context.</summary>
         public void OnDraw(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr = default,
             bool consumePendingLyrics = true)
-            => OnDraw(sender, ds, hdr, consumePendingLyrics, backdropTintApplied: false);
+            => OnDraw(sender, ds, hdr, consumePendingLyrics, tintPlayedText: false);
 
         internal void OnDraw(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr,
-            bool consumePendingLyrics, bool backdropTintApplied, bool skipHover = false)
+            bool consumePendingLyrics, bool tintPlayedText)
         {
             lock (_renderGate)
             {
                 if (_shutdown) return;
                 // Invalidate may request a draw while the animation is paused, without Update.
                 if (consumePendingLyrics && AdvanceLyricsTransition(TimeSpan.Zero)) UpdateCore(sender, TimeSpan.Zero);
-                if (_renderLines.Count > 0 && _lyricsOpacity > 0)
-                    DrawCore(sender, ds, hdr, backdropTintApplied ? LyricsDrawPass.Played : LyricsDrawPass.All,
-                        skipHover);
-            }
-        }
+                if (_renderLines.Count == 0 || _lyricsOpacity <= 0) return;
 
-        internal bool CanDrawBackdropTint => !_shutdown && _usesAutomaticWhite;
-        internal bool HasBackdropTintHover => Volatile.Read(ref _hoveredLineIndex) >= 0;
-
-        internal void DrawBackdropTintHover(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr)
-        {
-            if (!HasBackdropTintHover) return;
-
-            lock (_renderGate)
-            {
-                if (!_shutdown && _renderLines.Count > 0 && _lyricsOpacity > 0 && HasBackdropTintHover)
-                    DrawCore(sender, ds, hdr, LyricsDrawPass.Hover);
-            }
-        }
-
-        internal bool TryGetBackdropTintBounds(out Rect bounds)
-        {
-            lock (_renderGate)
-            {
-                double width = RegionW;
-                double height = RegionH;
-                if (!CanDrawBackdropTint || width <= 0 || height <= 0
-                    || (_renderLines.Count == 0 && Volatile.Read(ref _pendingLines) is not { Count: > 0 }))
-                {
-                    bounds = default;
-                    return false;
-                }
-
-                bounds = GetLyricsPaintBounds(new Rect(RegionX, RegionY, width, height));
-                return true;
-            }
-        }
-
-        internal bool DrawBackdropTintMask(ICanvasResourceCreator sender, CanvasDrawContext ds,
-            bool consumePendingLyrics = true, bool smoothSweep = false)
-        {
-            lock (_renderGate)
-            {
-                if (_shutdown) return false;
-                if (consumePendingLyrics && AdvanceLyricsTransition(TimeSpan.Zero)) UpdateCore(sender, TimeSpan.Zero);
-                if (!CanDrawBackdropTint || _renderLines.Count == 0 || _lyricsOpacity <= 0) return false;
-
-                // HDR uses red for played coverage and blue for waiting coverage. Unit white
-                // keeps the channels normalized and selects the same sweep curve as the foreground.
-                var maskColor = smoothSweep ? new PlaybackHdrColor(1f, 1f) : default;
-                DrawCore(sender, ds, maskColor, LyricsDrawPass.BackdropTintMask);
-                return true;
+                DrawCore(sender, ds, hdr, tintPlayedText);
             }
         }
 
@@ -969,8 +891,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        private void DrawCore(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr,
-            LyricsDrawPass drawPass, bool skipHover = false)
+        private void DrawCore(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr, bool tintPlayedText)
         {
             double rw = RegionW;
             double rh = RegionH;
@@ -982,7 +903,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             using var clip = ds.CreateLayer(_lyricsOpacity, _lyricsProjection.IsIdentity ? sourceBounds : viewport);
             if (_lyricsProjection.IsIdentity)
             {
-                DrawFeatheredLyrics(sender, ds, layout, sourceBounds, hdr, drawPass, skipHover);
+                DrawFeatheredLyrics(sender, ds, layout, sourceBounds, hdr, tintPlayedText);
                 return;
             }
 
@@ -996,7 +917,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 var source = scope.Context;
                 using var sourceClip = source.CreateLayer(1, sourceBounds);
-                DrawFeatheredLyrics(sender, source, layout, sourceBounds, hdr, drawPass, skipHover);
+                DrawFeatheredLyrics(sender, source, layout, sourceBounds, hdr, tintPlayedText);
             }
 
             var effect = _lyricsPerspectiveEffect ??= new Microsoft.Graphics.Canvas.Effects.Transform3DEffect();
@@ -1013,7 +934,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private void DrawFeatheredLyrics(ICanvasResourceCreator sender, CanvasDrawContext ds,
-            Rect layout, Rect bounds, PlaybackHdrColor hdr, LyricsDrawPass drawPass, bool skipHover)
+            Rect layout, Rect bounds, PlaybackHdrColor hdr, bool tintPlayedText)
         {
             if (_cachedIsLyricsEdgeFeatheringEffectEnabled)
             {
@@ -1045,21 +966,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (_edgeFadeMask.Brush is { } mask)
                 {
                     using var feather = ds.CreateLayer(mask);
-                    DrawLyricsContent(sender, ds, layout, hdr, drawPass, skipHover);
+                    DrawLyricsContent(sender, ds, layout.X, layout.Y, layout.Width, layout.Height, hdr, tintPlayedText);
                     return;
                 }
             }
 
-            DrawLyricsContent(sender, ds, layout, hdr, drawPass, skipHover);
+            DrawLyricsContent(sender, ds, layout.X, layout.Y, layout.Width, layout.Height, hdr, tintPlayedText);
         }
 
-        private void DrawLyricsContent(ICanvasResourceCreator sender, CanvasDrawContext ds, Rect layout,
-            PlaybackHdrColor hdr, LyricsDrawPass drawPass, bool skipHover)
+        private void DrawLyricsContent(ICanvasResourceCreator sender, CanvasDrawContext ds, double rx, double ry,
+            double rw, double rh, PlaybackHdrColor hdr, bool tintPlayedText)
         {
-            double rx = layout.X;
-            double ry = layout.Y;
-            double rw = layout.Width;
-            double rh = layout.Height;
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
@@ -1072,8 +989,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             double lineOrigin = ry + rh * playingLineTopOffsetFactor;
             double yOffsetBase = lineOrigin + combinedScroll;
-            if (!skipHover && drawPass is (LyricsDrawPass.All or LyricsDrawPass.Hover)
-                && _hoveredLineIndex >= startIdx && _hoveredLineIndex <= endIdx
+            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
+            // Settings can change during a draw. Keep the color and its tint eligibility together.
+            var colors = _colors;
+            _lineRenderer.SetPlaybackColor(hdr, _cachedGlowAmount, tintPlayedText && colors.UsesAutomaticWhite);
+
+            if (_hoveredLineIndex >= startIdx && _hoveredLineIndex <= endIdx
                 && lines[_hoveredLineIndex] is { } hovered && hovered.PrimaryTextLayout?.LayoutBounds.Width > 0)
             {
                 double hoveredY = UsesLineScroll
@@ -1085,7 +1006,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     try
                     {
                         ds.Transform = CreateLineTransform(hovered, rx, hoveredY, rw) * originalTransform;
-                        DrawHoverBackground(sender, ds, hovered, 0, rw, 0, hdr);
+                        DrawHoverBackground(sender, ds, hovered, 0, rw, 0, hdr, colors.IsDark);
                     }
                     finally
                     {
@@ -1094,41 +1015,31 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
                 else
                 {
-                    DrawHoverBackground(sender, ds, hovered, rx, rw, hoveredY, hdr);
+                    DrawHoverBackground(sender, ds, hovered, rx, rw, hoveredY, hdr, colors.IsDark);
                 }
             }
 
-            if (drawPass == LyricsDrawPass.Hover) return;
-
-            double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
-            _lineRenderer.SetPlaybackColor(hdr, _cachedGlowAmount, drawPass);
-            bool isHdrBackdropMask = drawPass == LyricsDrawPass.BackdropTintMask && hdr.IsEnabled;
-            var playedColor = drawPass == LyricsDrawPass.All ? _playedColor : Colors.White;
-            var unplayedColor = drawPass == LyricsDrawPass.All ? _unplayedColor : Colors.White;
-            if (isHdrBackdropMask) unplayedColor = Colors.Blue;
             for (int i = startIdx; i <= endIdx; i++)
             {
                 var line = lines[i];
                 if (line == null || line.PrimaryTextLayout == null) continue;
                 if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) continue;
 
+                double yOffset = UsesLineScroll
+                    ? lineOrigin + line.ScrollMotion.Value + _mouseYScrollTransition.Value
+                    : yOffsetBase;
+
                 bool isPlayingLine = line.GetIsHighlighted(currentTimeMs) || line.IsWordEffectsRetiring;
-                if (drawPass == LyricsDrawPass.Played && !isPlayingLine) continue;
-                if (drawPass == LyricsDrawPass.BackdropTintMask && !isHdrBackdropMask && isPlayingLine
-                    && !line.UsesWordAnimation(_cachedWordByWordEffectMode)) continue;
 
                 line.EnsureCaches(sender, _cachedStrokeWidth);
                 if (line.CachedFill == null) continue;
                 if (line.UnplayedComposite == null) continue;
 
                 if (line.UnplayedFillTint != null)
-                    line.UnplayedFillTint.Color = unplayedColor;
+                    line.UnplayedFillTint.Color = colors.Unplayed;
                 if (line.UnplayedStrokeTint != null)
-                    line.UnplayedStrokeTint.Color = unplayedColor;
+                    line.UnplayedStrokeTint.Color = colors.Unplayed;
 
-                double yOffset = UsesLineScroll
-                    ? lineOrigin + line.ScrollMotion.Value + _mouseYScrollTransition.Value
-                    : yOffsetBase;
                 var prevTransform = ds.Transform;
                 // Render caches are recorded at Cached*Position. Height transitions
                 // move the logical row without forcing per-frame Win2D cache rebuilds.
@@ -1138,8 +1049,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _lineRenderer.IsPlaying = isPlayingLine;
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
-                _lineRenderer.PlayedFillColor = playedColor;
-                _lineRenderer.UnplayedFillColor = unplayedColor;
+                _lineRenderer.PlayedFillColor = colors.Played;
+                _lineRenderer.UnplayedFillColor = colors.Unplayed;
                 _lineRenderer.IsScaleEnabled = _cachedCharScaleAmount > 0;
                 _lineRenderer.IsFloatEnabled = _cachedCharFloatAmount > 0;
                 _lineRenderer.WordByWordEffectMode = _cachedWordByWordEffectMode;
@@ -1156,7 +1067,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private void DrawHoverBackground(ICanvasResourceCreator sender, CanvasDrawContext ds, RenderLyricsLine line,
-            double regionX, double regionWidth, double lineY, PlaybackHdrColor hdr)
+            double regionX, double regionWidth, double lineY, PlaybackHdrColor hdr, bool isDark)
         {
             // Brighten the surface at paper white and give light themes a visible edge near white.
             const byte hoverAlpha = 30;
@@ -1186,7 +1097,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 ds.FillRoundedRectangle(bounds, 6, 6, Color.FromArgb(hoverAlpha, 255, 255, 255));
             }
-            if (!_isDarkTheme && bounds.Width > 1 && bounds.Height > 1)
+            if (!isDark && bounds.Width > 1 && bounds.Height > 1)
             {
                 var edge = new Rect(bounds.X + 0.5, bounds.Y + 0.5, bounds.Width - 1, bounds.Height - 1);
                 ds.DrawRoundedRectangle(edge, 5.5f, 5.5f, Color.FromArgb(32, 0, 0, 0), 1f);

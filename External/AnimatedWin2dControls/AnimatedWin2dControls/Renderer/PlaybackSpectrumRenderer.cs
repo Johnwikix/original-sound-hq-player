@@ -38,10 +38,8 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
         if (!options.Glow && _surface is not null) ReleaseGlowResources();
     }
 
-    internal bool HasEnergy => _signal.HasEnergy;
-
     public void Draw(PlaybackCanvasFrame canvas, CanvasDrawContext session, PlaybackSpectrumOptions options,
-        Rect artwork, float radius, PaletteResult? palette, bool dark, CanvasDrawContext backdrop = default)
+        Rect artwork, float radius, PaletteResult? palette, bool dark)
     {
         if (!_signal.HasEnergy || canvas.Size.Width < 1 || canvas.Size.Height < 1) return;
         if (!ReferenceEquals(_device, canvas.Device))
@@ -70,9 +68,8 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
             AddEdge(builder, (float)canvas.Size.Width, height, options.Placement == SpectrumPlacement.Bottom, extent, options.Style);
 
         using var geometry = CanvasGeometry.CreatePath(builder);
-        if (options.Glow) DrawGlow(canvas, session, geometry, backdrop);
+        if (options.Glow) DrawGlow(canvas, session, geometry);
         session.FillGeometry(geometry, _brush);
-        if (backdrop.IsValid) backdrop.FillGeometry(geometry, _brush);
     }
 
     private void AddEdge(CanvasPathBuilder builder, float width, float height, bool bottom, float extent, SpectrumStyle style)
@@ -213,7 +210,7 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
         }
     }
 
-    private void DrawGlow(PlaybackCanvasFrame frame, CanvasDrawContext session, CanvasGeometry geometry, CanvasDrawContext backdrop)
+    private void DrawGlow(PlaybackCanvasFrame frame, CanvasDrawContext session, CanvasGeometry geometry)
     {
         var format = frame.Hdr.IsEnabled ? DirectXPixelFormat.R16G16B16A16Float : DirectXPixelFormat.B8G8R8A8UIntNormalized;
         // 半分辨率纹理只用于辉光，频谱轮廓直接画在主会话。
@@ -241,7 +238,6 @@ internal sealed class PlaybackSpectrumRenderer : IDisposable
             BufferPrecision = frame.Hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null
         };
         session.DrawImage(_glow);
-        if (backdrop.IsValid) backdrop.DrawImage(_glow);
     }
 
     private static Color ResolveColor(PlaybackSpectrumOptions options, PaletteResult? palette, bool dark)

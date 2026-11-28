@@ -349,11 +349,6 @@ namespace AnimatedWin2dControls.Controls
                 }
                 if (_background is ImageBackgroundRenderer image)
                     image.SetActive(false);
-                lock (_cacheGate)
-                {
-                    ReleaseLyricsBackdropResources();
-                    _lyricsBackdropFailure = null;
-                }
             }
             else if (_advanced && IsLoaded && !_coordinatorAttached)
             {
@@ -493,13 +488,6 @@ namespace AnimatedWin2dControls.Controls
         }
 
         private void ReleaseBackgroundCache()
-        {
-            ReleaseLyricsBackdropResources();
-            _lyricsBackdropFailure = null;
-            ReleaseBackgroundTexture();
-        }
-
-        private void ReleaseBackgroundTexture()
         {
             _bgCache?.Dispose();
             _bgCache = null;
@@ -840,31 +828,22 @@ namespace AnimatedWin2dControls.Controls
 
         private void DrawScene(PlaybackCanvasFrame frame, CanvasDrawContext ds)
         {
+            DrawBackground(frame, ds);
+            // 频谱按画布帧率更新，背景的半帧率缓存不保存音频图层。
+            DrawSpectrum(frame, ds);
             if (_advanced)
+            {
                 _coordinator.LyricsViewport = new Rect(0, 0, frame.Size.Width, frame.Size.Height);
-
-            bool tint = TryPrepareLyricsBackdrop(frame, out var tintBounds, out bool pendingLyricsHandled);
-            // The SDR surface is cleared transparent. Give additive text an opaque destination
-            // even if the shader does not draw a complete first frame.
-            if (tint && !frame.Hdr.IsEnabled)
-                ds.FillRectangle(new Rect(0, 0, frame.Size.Width, frame.Size.Height), Colors.Black);
-
-            DrawBackground(frame, ds, tint && frame.Hdr.IsEnabled);
-            tint = DrawSpectrumAndLyricsBackdrop(frame, ds, tint, tintBounds, out bool hoverDrawn);
-            ReleaseIdleLyricsBackdropPatch();
-            if (_advanced)
-                _coordinator.OnDraw(frame.Device, ds, frame.Hdr,
-                    consumePendingLyrics: !frame.Hdr.IsEnabled && !pendingLyricsHandled,
-                    backdropTintApplied: tint, skipHover: hoverDrawn);
+                _coordinator.OnDraw(frame.Device, ds, frame.Hdr, consumePendingLyrics: !frame.Hdr.IsEnabled,
+                    tintPlayedText: _isDark && !_useImageBackground);
+            }
         }
 
-        private void DrawBackground(PlaybackCanvasFrame frame, CanvasDrawContext ds, bool needsSample = false)
+        private void DrawBackground(PlaybackCanvasFrame frame, CanvasDrawContext ds)
         {
             _frameCounter++;
-            if ((!needsSample && _backgroundFrameSkip <= 0) || _useImageBackground && frame.Hdr.IsEnabled)
+            if (_backgroundFrameSkip <= 0 || _useImageBackground && frame.Hdr.IsEnabled)
             {
-                // The sample can temporarily require this texture even with background frame skipping disabled.
-                if (_bgCache is not null) ReleaseBackgroundTexture();
                 DrawBackgroundLayers(frame, ds);
                 return;
             }
@@ -876,8 +855,7 @@ namespace AnimatedWin2dControls.Controls
             var format = frame.Hdr.IsEnabled
                 ? DirectXPixelFormat.R16G16B16A16Float
                 : DirectXPixelFormat.B8G8R8A8UIntNormalized;
-            bool render = _backgroundFrameSkip <= 0
-                || _frameCounter % (_backgroundFrameSkip + 1) == 0 || _bgCacheHdr != frame.Hdr;
+            bool render = _frameCounter % (_backgroundFrameSkip + 1) == 0 || _bgCacheHdr != frame.Hdr;
             if (_bgCache is null || _bgCacheWidthDip != width || _bgCacheHeightDip != height
                 || _bgCacheDpi != frame.Dpi || _bgCache.Format != format)
             {

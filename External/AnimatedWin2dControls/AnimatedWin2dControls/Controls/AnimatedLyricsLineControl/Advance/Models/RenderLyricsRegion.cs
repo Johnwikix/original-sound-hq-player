@@ -53,7 +53,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// 导致 Ramp 白→黑渐变直通显示（"诡异渐变"）。此标志强制首次赋值。
         /// </summary>
         public bool FillMatricesApplied;
-        internal long FillRevision;
 
         /// <summary>初始全零矩阵：未赋值时输出透明，绝不透传 Ramp 渐变。</summary>
         private static readonly Matrix5x4 s_transparentMatrix = new();

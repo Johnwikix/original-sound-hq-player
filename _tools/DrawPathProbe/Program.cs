@@ -73,6 +73,7 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
         window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
         window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
         string resultPath = Path.Combine(AppContext.BaseDirectory, "result.json");
+        bool checkLyricBackdropTint = Environment.GetCommandLineArgs().Contains("--check-lyric-backdrop-tint");
         FrameEventSubscription? update = null;
         try
         {
@@ -81,8 +82,13 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
             _lyrics.LyricsRegion = new Rect(0, 0, 1100, 700);
             _lyrics.Attach();
             _canvas.CreateResources += (_, _) => { _lyrics.OnCreateResources(); _ready.TrySetResult(); };
-            _canvas.Draw += OnLiveDraw;
-            update = FrameEventSubscription.SubscribeUpdate(_canvas, OnLiveUpdate);
+            // The off-screen tint check drives production draw calls directly. The live
+            // benchmark uses a projected overload that the packaged player does not need.
+            if (!checkLyricBackdropTint)
+            {
+                _canvas.Draw += OnLiveDraw;
+                update = FrameEventSubscription.SubscribeUpdate(_canvas, OnLiveUpdate);
+            }
             window.Activate();
             await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
             _canvas.Paused = true;
@@ -92,7 +98,7 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
                 File.WriteAllText(resultPath, JsonSerializer.Serialize(new { Status = "PASS", Backdrop = result }));
                 return;
             }
-            if (Environment.GetCommandLineArgs().Contains("--check-lyric-backdrop-tint"))
+            if (checkLyricBackdropTint)
             {
                 var tint = CheckLyricBackdropTint();
                 File.WriteAllText(resultPath, JsonSerializer.Serialize(new
@@ -172,7 +178,8 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
         {
             _canvas.Paused = true;
             update?.Dispose();
-            _canvas.Draw -= OnLiveDraw;
+            if (!checkLyricBackdropTint)
+                _canvas.Draw -= OnLiveDraw;
             _lyrics.PrepareForShutdown();
             _canvas.RemoveFromVisualTree();
             window.Close();

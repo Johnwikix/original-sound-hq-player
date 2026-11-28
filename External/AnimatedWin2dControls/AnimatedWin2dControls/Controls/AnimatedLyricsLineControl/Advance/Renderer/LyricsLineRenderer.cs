@@ -13,33 +13,38 @@ using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
-    internal enum LyricsDrawPass
-    {
-        All,
-        BackdropTintMask,
-        Played,
-        Hover
-    }
-
     public class LyricsLineRenderer
     {
-        private PlaybackHdrColor _hdr;
-        private LyricsDrawPass _drawPass;
-        private float _hdrGlowPeak;
-        private bool IsHdrBackdropMask => _drawPass == LyricsDrawPass.BackdropTintMask && _hdr.IsEnabled;
+        private const float FullTintOpacityDifference = 0.5f;
+        private const float PlayedBackdropShare = 0.05f;
+        private const float SdrTintWhite = 0.98f;
+        private const float HdrTintWhite = 0.93f;
 
-        internal void SetPlaybackColor(PlaybackHdrColor hdr, double glowAmount, LyricsDrawPass drawPass)
+        private PlaybackHdrColor _hdr;
+        private float _hdrGlowPeak;
+        private bool _tintPlayedText;
+        private float _playedOpacityScale = 1f;
+
+        internal void SetPlaybackColor(PlaybackHdrColor hdr, double glowAmount, bool tintPlayedText)
         {
             if (_hdr.IsEnabled && !hdr.IsEnabled)
                 ClearSharedResources();
             _hdr = hdr;
-            _drawPass = drawPass;
+            _tintPlayedText = tintPlayedText;
+            float backdropShare = PlayedBackdropShare;
+            if (tintPlayedText && hdr.IsEnabled)
+            {
+                // Bound fully covered ink to paper white even where the HDR scene reaches peak.
+                float ink = HdrTintWhite * hdr.White;
+                backdropShare = Math.Min(backdropShare,
+                    (hdr.White - ink) / (Math.Max(hdr.White, hdr.Peak) - ink));
+            }
+            _playedOpacityScale = tintPlayedText ? 1f - backdropShare : 1f;
             IsGlowEnabled = glowAmount > 0;
             _hdrGlowPeak = Math.Min(hdr.White * (1f + 0.10f * (float)glowAmount), hdr.Peak);
         }
 
         private PlaybackHdrColor _lastHdr;
-        private LyricsDrawPass _lastFillPass;
 
         public bool IsPlaying { get; set; }
         public WordByWordEffectMode WordByWordEffectMode { get; set; }
@@ -85,11 +90,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         // ── 行级填充矩阵（脏检查缓存）────────────────────────────────────
         private RenderLyricsLine? _lastFillLine;
-        private long _fillRevision;
         private Color _lastPlayedColor;
         private Color _lastUnplayedColor;
         private float _lastPlayedAlpha = float.NegativeInfinity;
         private float _lastUnplayedAlpha = float.NegativeInfinity;
+        private float _lastPlayedWhiteScale = 1f;
         private Matrix5x4 _playedMatrix;
         private Matrix5x4 _unplayedMatrix;
         // straight（非预乘）端点（fade 线性插值用）。
@@ -101,14 +106,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         private void DrawSecondaryText(ICanvasResourceCreator creator, CanvasDrawContext ds)
         {
-            // Auxiliary tracks follow the line highlight and have no timed regions.
-            if (Line == null || (_drawPass == LyricsDrawPass.BackdropTintMask && IsPlaying && !IsHdrBackdropMask))
-                return;
+            if (Line == null) return;
             // The host already translates the cached primary origin to its live position.
             // Auxiliary caches use local coordinates and compensate for that translation.
             var offset = new Vector2(0, (float)Line.LayoutOffsetY);
             var color = Line.UnplayedFillTint?.Color ?? UnplayedFillColor;
-            if (IsHdrBackdropMask && IsPlaying) color = Colors.Red;
             Line.PronunciationLayer.Draw(creator, ds, Line.PronunciationLayer.Position - offset,
                 Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color, _hdr);
             Line.TranslationLayer.Draw(creator, ds, Line.TranslationLayer.Position - offset,
@@ -120,47 +122,60 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (Line?.PrimaryTextLayout == null || Line.PrimaryTextRegions == null) return;
             if (Line.UnplayedComposite == null) return;
 
+            float playedOpacity = (float)Line.PlayedPrimaryOpacityTransition.Value;
+            float unplayedOpacity = (float)Line.UnplayedPrimaryOpacityTransition.Value;
+            if (float.IsNaN(playedOpacity) || float.IsNaN(unplayedOpacity)) return;
+            if (playedOpacity <= 0 && unplayedOpacity <= 0) return;
+
+            // Follow the existing line brightness through handoff. When the two opacities
+            // meet, the outgoing row has settled back to ordinary waiting ink.
+            float tint = _tintPlayedText
+                ? Math.Clamp((playedOpacity - unplayedOpacity) / FullTintOpacityDifference, 0f, 1f)
+                : 0f;
+            float playedWhiteScale = float.Lerp(1f, _hdr.IsEnabled ? HdrTintWhite : SdrTintWhite, tint);
+            playedOpacity *= float.Lerp(1f, _playedOpacityScale, tint);
+
+            var bounds = Line.PrimaryTextLayout.LayoutBounds;
+            var srcRect = new Rect(
+                bounds.X + Line.CachedPrimaryPosition.X - CropHorizonPadding,
+                bounds.Y + Line.CachedPrimaryPosition.Y - CropHorizonPadding,
+                bounds.Width + CropHorizonPadding * 2, bounds.Height + CropHorizonPadding * 2);
+
             if (!IsPlaying)
             {
-                var opacity = Math.Max(Line.PlayedPrimaryOpacityTransition.Value,
-                    Line.UnplayedPrimaryOpacityTransition.Value);
-                if (double.IsNaN(opacity) || opacity <= 0) return;
-
                 var blur = Line.BlurAmountTransition.Value;
                 if (Line.CachedCropEffect is { } crop && Line.CachedBlurEffect is { } blurFx && Line.CachedOpacityEffect is { } opacityFx)
                 {
-                    var bounds = Line.PrimaryTextLayout.LayoutBounds;
-                    var srcRect = new Rect(
-                        bounds.X + Line.CachedPrimaryPosition.X - CropHorizonPadding,
-                        bounds.Y + Line.CachedPrimaryPosition.Y - CropHorizonPadding,
-                        bounds.Width + CropHorizonPadding * 2, bounds.Height + CropHorizonPadding * 2);
                     crop.SourceRectangle = srcRect;
                     blurFx.BlurAmount = (float)blur;
-                    opacityFx.Opacity = (float)opacity;
+                    opacityFx.Opacity = Math.Max(playedOpacity, unplayedOpacity);
                     var output = srcRect.ExtendForGaussianBlur(blur);
                     if (_hdr.IsEnabled)
                     {
-                        ds.DrawImage(Line.GetHdrUnplayed(opacityFx, _hdr.White), output, output);
+                        ds.DrawImage(Line.GetHdrUnplayed(opacityFx, _hdr.White * playedWhiteScale), output, output);
                     }
                     else
                     {
+                        // The coordinator restores both native tints before the next draw.
+                        // Auxiliary text has already been drawn with its usual color.
+                        if (tint > 0)
+                        {
+                            var ink = new Vector4(playedWhiteScale, playedWhiteScale, playedWhiteScale, 1f);
+                            if (Line.UnplayedFillTint is { } fill) fill.ColorHdr = ink;
+                            if (Line.UnplayedStrokeTint is { } stroke) stroke.ColorHdr = ink;
+                        }
                         ds.DrawImage(opacityFx, output, output);
                     }
                 }
                 return;
             }
 
-            var playedOpacity = Line.PlayedPrimaryOpacityTransition.Value;
-            var unplayedOpacity = Line.UnplayedPrimaryOpacityTransition.Value;
-            if (double.IsNaN(playedOpacity) || double.IsNaN(unplayedOpacity)) return;
-            if (_drawPass == LyricsDrawPass.BackdropTintMask && !IsHdrBackdropMask) playedOpacity = 0;
-            if (_drawPass == LyricsDrawPass.Played) unplayedOpacity = 0;
-            if (playedOpacity <= 0 && unplayedOpacity <= 0) return;
-
-            DrawPrimaryRegions(ds, Line.UsesWordAnimation(WordByWordEffectMode), (float)playedOpacity, (float)unplayedOpacity);
+            DrawPrimaryRegions(ds, Line.UsesWordAnimation(WordByWordEffectMode),
+                playedOpacity, unplayedOpacity, playedWhiteScale);
         }
 
-        private void DrawPrimaryRegions(CanvasDrawContext ds, bool useWordAnimation, float playedOpacity, float unplayedOpacity)
+        private void DrawPrimaryRegions(CanvasDrawContext ds, bool useWordAnimation,
+            float playedOpacity, float unplayedOpacity, float playedWhiteScale)
         {
             if (Line?.PrimaryTextRegions == null || Line.RenderLyricsRegions == null) return;
 
@@ -169,8 +184,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             int regionCount = regions.Length;
             var primaryChars = Line.PrimaryRenderChars;
 
-            // Each region retains its applied revision when a pass skips an empty slice.
-            UpdateLineFillMatrices(playedOpacity, unplayedOpacity);
+            // 矩阵脏检查每 line 一次：同一 line 的所有 region 必须看到相同的
+            // lineFillChanged（若在循环内逐 region 调用，只有第一个 region 能
+            // 消费到 true，后续 region 的 ColorMatrix 停留在首次赋值的旧值，
+            // 表现为 wrap 多行时第二行及之后扫光无效果）。
+            bool lineFillChanged = UpdateLineFillMatrices(playedOpacity, unplayedOpacity, playedWhiteScale);
 
             for (int i = 0; i < regionCount; i++)
             {
@@ -201,10 +219,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                             fade = 0.5f * firstCharProgress / subLineRegion.CharacterCount;
                     }
                 }
-                if (_drawPass == LyricsDrawPass.BackdropTintMask && !IsHdrBackdropMask && progressInRegion >= 1) continue;
-                if (_drawPass == LyricsDrawPass.Played && progressInRegion <= 0 && fade <= 0) continue;
-
-                UpdateRegionFill(renderRegion, subLineRect, progressInRegion, fade);
+                UpdateRegionFill(renderRegion, subLineRect, progressInRegion, fade, lineFillChanged);
 
                 ICanvasImage finalOutputImage = renderRegion.FinalFillEffect;
 
@@ -215,7 +230,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 else
                 {
                     int endCharIndex = Math.Min(primaryChars.Count, subLineRegion.CharacterIndex + subLineRegion.CharacterCount);
-                    if (_drawPass != LyricsDrawPass.BackdropTintMask && _hdr.IsEnabled && IsGlowEnabled)
+                    if (_hdr.IsEnabled && IsGlowEnabled)
                     {
                         // Finish the halos before drawing the glyphs to keep dark halos off the ink.
                         for (int ci = subLineRegion.CharacterIndex; ci < endCharIndex; ci++)
@@ -232,7 +247,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// 更新 region 的三切片（已播 / 淡出带 / 未播）裁剪矩形与颜色矩阵。
         /// 仅做属性写入，零资源创建；变化不足 DirtyEpsilonPx 时整体跳过。
         /// </summary>
-        private void UpdateRegionFill(RenderLyricsRegion region, Rect rect, float p, float fade)
+        /// <param name="lineFillChanged">由调用方每 line 计算一次的矩阵脏标记（见 <see cref="UpdateLineFillMatrices"/>）。</param>
+        private void UpdateRegionFill(RenderLyricsRegion region, Rect rect, float p, float fade, bool lineFillChanged)
         {
             float rX = (float)rect.X, rY = (float)rect.Y;
             float rW = (float)rect.Width, rH = (float)rect.Height;
@@ -247,9 +263,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 Math.Abs(playedW - region.LastPlayedWidthPx) > DirtyEpsilonPx
                 || Math.Abs(fadeW - region.LastFadeWidthPx) > DirtyEpsilonPx;
 
+            // 注意 !FillMatricesApplied：布局重建可能用同一 line 对象重建 region，
+            // 此时 lineFillChanged 不会命中，但新 region 的 ColorMatrix 初始为透明矩阵，
+            // 必须强制赋值一次，否则切片永久显示透明（或恒等矩阵透传 Ramp 渐变）。
+            if (!lineFillChanged && !regionDirty && region.FillMatricesApplied) return;
+
+            // 几何（裁剪矩形 + fade 平移）与矩阵同门：新 region 的 Transform2DEffect
+            // 初始为恒等矩阵，若沿用旧几何会按 [0, fadeWMax] 处采样（band 之外透明）。
             bool needGeometry = regionDirty || !region.FillMatricesApplied;
-            bool needFill = !region.FillMatricesApplied || region.FillRevision != _fillRevision;
-            if (!needGeometry && !needFill) return;
             if (needGeometry)
             {
                 region.LastPlayedWidthPx = playedW;
@@ -261,39 +282,40 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 region.FillTransformFade.TransformMatrix = Matrix3x2.CreateTranslation(rX + p * rW, 0);
             }
 
-            if (needFill)
+            if (lineFillChanged || !region.FillMatricesApplied)
             {
                 region.FillMatricesApplied = true;
-                region.FillRevision = _fillRevision;
                 region.FillColorPlayed.ColorMatrix = _playedMatrix;
                 region.FillColorUnplayed.ColorMatrix = _unplayedMatrix;
             }
 
-            region.SetHdr(_hdr,
-                new Vector4(_playedR, _playedG, _playedB, _playedA),
-                new Vector4(_unplayedR, _unplayedG, _unplayedB, _unplayedA),
-                Line!.FadeBandWidthMax / Math.Max(fadeW, DirtyEpsilonPx));
-            if (!_hdr.IsEnabled && fadeW >= DirtyEpsilonPx)
-                region.FillColorFade.ColorMatrix = BuildFadeMatrix(fadeW);
+            if (lineFillChanged || regionDirty)
+            {
+                region.SetHdr(_hdr,
+                    new Vector4(_playedR, _playedG, _playedB, _playedA),
+                    new Vector4(_unplayedR, _unplayedG, _unplayedB, _unplayedA),
+                    Line!.FadeBandWidthMax / Math.Max(fadeW, DirtyEpsilonPx));
+                if (!_hdr.IsEnabled && fadeW >= DirtyEpsilonPx)
+                    region.FillColorFade.ColorMatrix = BuildFadeMatrix(fadeW);
+            }
         }
 
         /// <summary>
         /// 行级填充矩阵脏检查：仅当颜色/不透明度（含过渡动画）/行对象变化时重建。
         /// </summary>
-        private void UpdateLineFillMatrices(float playedAlpha, float unplayedAlpha)
+        private bool UpdateLineFillMatrices(float playedAlpha, float unplayedAlpha, float playedWhiteScale)
         {
-            if (Line == null) return;
+            if (Line == null) return false;
 
             bool changed = !ReferenceEquals(Line, _lastFillLine)
                 || playedAlpha != _lastPlayedAlpha
                 || unplayedAlpha != _lastUnplayedAlpha
                 || _hdr != _lastHdr
-                || _drawPass != _lastFillPass
+                || playedWhiteScale != _lastPlayedWhiteScale
                 || PlayedFillColor != _lastPlayedColor
                 || UnplayedFillColor != _lastUnplayedColor;
-            if (!changed) return;
+            if (!changed) return false;
 
-            _fillRevision++;
             _lastFillLine = Line;
             _lastPlayedAlpha = playedAlpha;
             _lastUnplayedAlpha = unplayedAlpha;
@@ -301,18 +323,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             _lastUnplayedColor = UnplayedFillColor;
 
             _lastHdr = _hdr;
-            _lastFillPass = _drawPass;
-            Vector3 playedRgb = _hdr.GetRgb(PlayedFillColor);
+            _lastPlayedWhiteScale = playedWhiteScale;
+            Vector3 playedRgb = _hdr.GetRgb(PlayedFillColor) * playedWhiteScale;
             Vector3 unplayedRgb = _hdr.GetRgb(UnplayedFillColor);
-            if (IsHdrBackdropMask)
-            {
-                // The channels carry both opacity endpoints; alpha tracks shared glyph coverage.
-                // This keeps the fade band a linear combination of the two coverage masks.
-                playedRgb = new Vector3(Math.Clamp(playedAlpha, 0f, 1f), 0f, 0f);
-                unplayedRgb = new Vector3(0f, 0f, Math.Clamp(unplayedAlpha, 0f, 1f));
-                playedAlpha = 1f;
-                unplayedAlpha = 1f;
-            }
             _playedMatrix = BuildSolidMatrix(playedRgb, playedAlpha);
             _unplayedMatrix = BuildSolidMatrix(unplayedRgb, unplayedAlpha);
 
@@ -320,6 +333,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             _playedA = playedAlpha;
             (_unplayedR, _unplayedG, _unplayedB) = (unplayedRgb.X, unplayedRgb.Y, unplayedRgb.Z);
             _unplayedA = unplayedAlpha;
+
+            return true;
         }
 
         /// <summary>
@@ -452,14 +467,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (IsStrokeEnabled && Line.UnplayedStrokeTint is { } stroke)
                 ds.DrawImage(stroke, destCharRect, sourceCharRect);
 
-            if (_drawPass != LyricsDrawPass.BackdropTintMask && !_hdr.IsEnabled && glow > 0)
+            if (!_hdr.IsEnabled && glow > 0)
                 DrawCharacterGlow(ds, renderChar, source);
 
             double blur = Line.BlurAmountTransition.Value;
             bool defocus = Line.IsWordEffectsRetiring && blur > 0;
-            // In the tinted scene, preserve reference-white ink and put the HDR lift in its halo.
-            if (_drawPass == LyricsDrawPass.All && !defocus && _hdr.IsEnabled && IsGlowEnabled
-                && _hdrGlowPeak > _hdr.White && glow > 0 && renderChar.ProgressPlayed > 0)
+            // Keep the blurred halo for tinted lyrics while preserving their paper-white ink.
+            if (!_tintPlayedText && !defocus && _hdr.IsEnabled && IsGlowEnabled && _hdrGlowPeak > _hdr.White
+                && glow > 0 && renderChar.ProgressPlayed > 0)
             {
                 var litInk = renderChar.GetHdrGlow();
                 if (!ReferenceEquals(litInk.Sources[0], source))

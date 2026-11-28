@@ -17,7 +17,6 @@ public readonly unsafe ref struct CanvasDrawContext
 {
     private readonly nint _session;
     internal CanvasDrawContext(nint session) => _session = session;
-    internal bool IsValid => _session != 0;
     private nint Method(int slot) => (*(nint**)_session)[slot];
 
     // 未知的外部背景扩展仍可实现旧的托管 Draw 契约；内置渲染器不经过此回退。
@@ -92,18 +91,6 @@ public readonly unsafe ref struct CanvasDrawContext
         using var source = new CanvasInterfaceReference<ICanvasImage>(image);
         ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, nint, RectAbi, RectAbi, float, int>)Method(18))(
             _session, source.GetAbi(), new(destination), new(sourceRectangle), opacity));
-        GC.KeepAlive(image);
-    }
-
-    /// <summary>Draws an image with an explicit composite mode and leaves the session blend unchanged.</summary>
-    internal void DrawImage(ICanvasImage image, Rect destination, Rect sourceRectangle, float opacity,
-        CanvasImageInterpolation interpolation, CanvasComposite composite)
-    {
-        using var source = new CanvasInterfaceReference<ICanvasImage>(image);
-        // ICanvasDrawingSession::DrawImageToRectWithSourceRectAndOpacityAndInterpolationAndComposite (Win2D 1.4.0).
-        ExceptionHelpers.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, nint, RectAbi, RectAbi,
-            float, CanvasImageInterpolation, CanvasComposite, int>)Method(24))(
-            _session, source.GetAbi(), new(destination), new(sourceRectangle), opacity, interpolation, composite));
         GC.KeepAlive(image);
     }
 
