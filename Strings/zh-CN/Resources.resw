@@ -2930,9 +2930,6 @@ SHA-256：{5}
   <data name="DspQuickPresetBright" xml:space="preserve">
     <value>明亮通透</value>
   </data>
-  <data name="DspConcertHallDescription" xml:space="preserve">
-    <value>为单声道或立体声 PCM 添加更明显的厅堂反射和更长的混响尾音，可与个人均衡器叠加。</value>
-  </data>
   <data name="DspSceneEqualizerMessage" xml:space="preserve">
     <value>已选用“{0}”均衡曲线。你的个人均衡器设置已保留。</value>
   </data>
@@ -3132,6 +3129,6 @@ SHA-256：{5}
     <value>更多播放选项</value>
   </data>
   <data name="DspEditCorrectionCurve" xml:space="preserve">
-    <value>编辑校正曲线…</value>
+    <value>编辑校正曲线</value>
   </data>
 </root>

@@ -2928,9 +2928,6 @@ SHA-256: {5}
   <data name="DspQuickPresetBright" xml:space="preserve">
     <value>Яркий и прозрачный звук</value>
   </data>
-  <data name="DspConcertHallDescription" xml:space="preserve">
-    <value>Добавляет более яркие отражения зала и длительное затухание для моно- и стереосигнала PCM. Можно сочетать с личным эквалайзером.</value>
-  </data>
   <data name="DspSceneEqualizerMessage" xml:space="preserve">
     <value>Выбранная кривая эквалайзера: {0}. Ваши настройки сохранены.</value>
   </data>
@@ -3130,6 +3127,6 @@ SHA-256: {5}
     <value>Дополнительные параметры воспроизведения</value>
   </data>
   <data name="DspEditCorrectionCurve" xml:space="preserve">
-    <value>Изменить кривую коррекции…</value>
+    <value>Изменить кривую коррекции</value>
   </data>
 </root>

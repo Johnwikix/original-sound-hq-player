@@ -2928,9 +2928,6 @@ SHA-256: {5}
   <data name="DspQuickPresetBright" xml:space="preserve">
     <value>明るくクリア</value>
   </data>
-  <data name="DspConcertHallDescription" xml:space="preserve">
-    <value>モノラルまたはステレオの PCM に、ホールの強い反射音と長い残響を加えます。個人用イコライザーと併用できます。</value>
-  </data>
   <data name="DspSceneEqualizerMessage" xml:space="preserve">
     <value>選択中のイコライザーカーブ: {0}。個人設定は保持されています。</value>
   </data>
@@ -3130,6 +3127,6 @@ SHA-256: {5}
     <value>その他の再生オプション</value>
   </data>
   <data name="DspEditCorrectionCurve" xml:space="preserve">
-    <value>補正カーブを編集…</value>
+    <value>補正カーブを編集</value>
   </data>
 </root>

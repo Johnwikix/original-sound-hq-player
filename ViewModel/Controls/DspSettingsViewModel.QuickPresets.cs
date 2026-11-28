@@ -72,14 +72,4 @@ public partial class DspSettingsViewModel
         OnPropertyChanged(nameof(HasSceneEqualizer));
         OnPropertyChanged(nameof(SceneEqualizerMessage));
     }
-
-    public bool ConcertHallEditable => EffectsActive && _lastState is { Channels: <= 2 };
-    public bool ConcertHallEnabled
-    {
-        get => field;
-        set
-        {
-            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.None);
-        }
-    }
 }

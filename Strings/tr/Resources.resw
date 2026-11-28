@@ -2928,9 +2928,6 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   <data name="DspQuickPresetBright" xml:space="preserve">
     <value>Parlak ve berrak</value>
   </data>
-  <data name="DspConcertHallDescription" xml:space="preserve">
-    <value>Mono veya stereo PCM sese daha belirgin salon yansımaları ve daha uzun yankı ekler. Kendi ekolayzer ayarlarınızla birlikte kullanabilirsiniz.</value>
-  </data>
   <data name="DspSceneEqualizerMessage" xml:space="preserve">
     <value>Seçili ekolayzır eğrisi: {0}. Kişisel ayarlarınız saklanır.</value>
   </data>
@@ -3130,6 +3127,6 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
     <value>Diğer oynatma seçenekleri</value>
   </data>
   <data name="DspEditCorrectionCurve" xml:space="preserve">
-    <value>Düzeltme eğrisini düzenle…</value>
+    <value>Düzeltme eğrisini düzenle</value>
   </data>
 </root>

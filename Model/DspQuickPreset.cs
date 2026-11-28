@@ -9,10 +9,14 @@ internal readonly record struct DspQuickPreset(
     bool CompressorEnabled = false,
     double CompressorThresholdDb = -18,
     double CompressorRatio = 4,
+    double CompressorMakeupDb = 0,
     bool ConcertHallEnabled = false,
     SceneEqualizer Equalizer = SceneEqualizer.Personal,
     bool RequiresStereoImage = false)
 {
+    private static readonly DspQuickPreset Radio = new(CompressorEnabled: true, CompressorThresholdDb: -24,
+        CompressorRatio: 5, CompressorMakeupDb: 12, Equalizer: SceneEqualizer.Radio);
+
     private static readonly DspQuickPreset[] Presets =
     [
         new(StereoWidth: 1), // Original
@@ -20,7 +24,7 @@ internal readonly record struct DspQuickPreset(
         new(StereoWidth: 1.3, ConcertHallEnabled: true, Equalizer: SceneEqualizer.ConcertHall),
         new(Equalizer: SceneEqualizer.ClearVocals),
         new(Equalizer: SceneEqualizer.WarmBass),
-        new(CompressorEnabled: true, CompressorThresholdDb: -30, CompressorRatio: 5, Equalizer: SceneEqualizer.Radio),
+        Radio,
         new(StereoWidth: 1.35, CompressorEnabled: true, CompressorThresholdDb: -14, CompressorRatio: 2.5,
             Equalizer: SceneEqualizer.Club, RequiresStereoImage: true),
         new(Equalizer: SceneEqualizer.Bright)
@@ -52,9 +56,19 @@ internal readonly record struct DspQuickPreset(
             CompressorEnabled = preset.CompressorEnabled,
             CompressorThresholdDb = preset.CompressorEnabled ? preset.CompressorThresholdDb : settings.CompressorThresholdDb,
             CompressorRatio = preset.CompressorEnabled ? preset.CompressorRatio : settings.CompressorRatio,
-            CompressorMakeupDb = preset.CompressorEnabled ? 0 : settings.CompressorMakeupDb,
+            CompressorMakeupDb = preset.CompressorEnabled ? preset.CompressorMakeupDb : settings.CompressorMakeupDb,
             ConcertHallEnabled = preset.ConcertHallEnabled
         };
+    }
+
+    internal static DspSettings UpgradeRadioPreset(DspSettings settings, SceneEqualizer equalizer)
+    {
+        // An earlier stock preset wrote a lower threshold and no makeup gain.
+        var legacy = new DspQuickPreset(CompressorEnabled: true, CompressorThresholdDb: -30,
+            CompressorRatio: 5, Equalizer: SceneEqualizer.Radio);
+        return legacy.Matches(settings, equalizer)
+            ? settings with { CompressorThresholdDb = Radio.CompressorThresholdDb, CompressorMakeupDb = Radio.CompressorMakeupDb }
+            : settings;
     }
 
     private bool Matches(DspSettings settings, SceneEqualizer equalizer) =>
@@ -64,7 +78,7 @@ internal readonly record struct DspQuickPreset(
         && settings.Crossfeed == 0
         && settings.CompressorEnabled == CompressorEnabled
         && (!CompressorEnabled || (settings.CompressorThresholdDb == CompressorThresholdDb
-            && settings.CompressorRatio == CompressorRatio && settings.CompressorMakeupDb == 0));
+            && settings.CompressorRatio == CompressorRatio && settings.CompressorMakeupDb == CompressorMakeupDb));
 }
 
 internal static class SceneEqualizerCurves

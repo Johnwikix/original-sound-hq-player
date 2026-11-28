@@ -2928,9 +2928,6 @@ See the log for full details.</value></data>
   <data name="DspQuickPresetBright" xml:space="preserve">
     <value>Bright and clear</value>
   </data>
-  <data name="DspConcertHallDescription" xml:space="preserve">
-    <value>Adds stronger hall reflections and a longer reverb tail to mono or stereo PCM. You can combine it with your own EQ.</value>
-  </data>
   <data name="DspSceneEqualizerMessage" xml:space="preserve">
     <value>EQ curve selected: {0}. Your personal equalizer settings are saved.</value>
   </data>
@@ -3130,6 +3127,6 @@ See the log for full details.</value></data>
     <value>More playback options</value>
   </data>
   <data name="DspEditCorrectionCurve" xml:space="preserve">
-    <value>Edit correction curve…</value>
+    <value>Edit correction curve</value>
   </data>
 </root>

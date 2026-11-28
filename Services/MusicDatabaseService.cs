@@ -1072,7 +1072,7 @@ namespace WinUIMusicPlayer.Services
             if (settings is not null)
             {
                 var audio = await LoadAudioPreferencesAsync(settings);
-                AppSettings.Dsp = audio.Dsp;
+                AppSettings.Dsp = DspQuickPreset.UpgradeRadioPreset(audio.Dsp, audio.SceneEqualizer);
                 AppSettings.SceneEqualizer = audio.SceneEqualizer;
                 _audioCorrectionStore = new BassPlayerIpc.Shared.AudioCorrectionStore(Path.Combine(Path.GetDirectoryName(SettingsPath)!, "AudioCorrections.json"));
                 try

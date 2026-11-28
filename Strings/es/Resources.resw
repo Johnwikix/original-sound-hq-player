@@ -2928,9 +2928,6 @@ Consulta el registro para ver todos los detalles.</value></data>
   <data name="DspQuickPresetBright" xml:space="preserve">
     <value>Brillante y claro</value>
   </data>
-  <data name="DspConcertHallDescription" xml:space="preserve">
-    <value>Añade reflejos de sala más marcados y una reverberación más larga al PCM mono o estéreo. Se puede combinar con tu propio ecualizador.</value>
-  </data>
   <data name="DspSceneEqualizerMessage" xml:space="preserve">
     <value>Curva de ecualización seleccionada: {0}. Tu configuración personal se conserva.</value>
   </data>
@@ -3130,6 +3127,6 @@ Consulta el registro para ver todos los detalles.</value></data>
     <value>Más opciones de reproducción</value>
   </data>
   <data name="DspEditCorrectionCurve" xml:space="preserve">
-    <value>Editar curva de corrección…</value>
+    <value>Editar curva de corrección</value>
   </data>
 </root>

@@ -130,14 +130,6 @@
                     <Button x:Uid="DspOpenEqualizer" Click="OpenEqualizer_Click" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
-                    Header="{x:Bind tool:ToolUtils.GetString('DspQuickPresetConcertHall')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('DspConcertHallDescription')}"
-                    IsEnabled="{x:Bind ViewModel.ConcertHallEditable, Mode=OneWay}">
-                    <ToggleSwitch MinWidth="0"
-                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspQuickPresetConcertHall')}"
-                        IsOn="{x:Bind ViewModel.ConcertHallEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-                <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspNormalize')}"
                     IsEnabled="{x:Bind ViewModel.NormalizeEditable, Mode=OneWay}">

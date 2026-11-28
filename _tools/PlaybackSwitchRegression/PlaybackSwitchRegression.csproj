@@ -19,6 +19,7 @@
     <None Include="Fixtures/flac-invalid-tail.flac" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../FolderScanRegression/Fixtures/Image.*" Link="CueFixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Model/EqualizerModel.cs" />
+    <Compile Include="../../Model/DspQuickPreset.cs" />
     <Compile Include="../../Utils/EqualizerHelper.cs" />
     <!-- Exercise the shipping engine/decoder/interop without starting IPC or a real device. -->
     <Compile Include="../../External/AudioPlayer/**/*.cs"

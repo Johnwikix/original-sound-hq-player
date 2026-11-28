@@ -386,7 +386,6 @@ public partial class DspSettingsViewModel : ObservableObject
         LoadPcmValues(settings, effectsActive);
         PlaybackRate = settings.PlaybackRate;
         CompressorEnabled = effectsActive && settings.CompressorEnabled;
-        ConcertHallEnabled = effectsActive && settings.ConcertHallEnabled;
         CompressorThresholdDb = settings.CompressorThresholdDb;
         CompressorRatio = settings.CompressorRatio;
         CompressorMakeupDb = settings.CompressorMakeupDb;
@@ -454,7 +453,6 @@ public partial class DspSettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(StereoImagePresetEditable));
         OnPropertyChanged(nameof(GraphicEqPresetEditable));
         OnPropertyChanged(nameof(ClubPresetEditable));
-        OnPropertyChanged(nameof(ConcertHallEditable));
         RefreshPcmAvailability();
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
@@ -520,7 +518,6 @@ public partial class DspSettingsViewModel : ObservableObject
             CompressorThresholdDb = CompressorThresholdDb,
             CompressorRatio = CompressorRatio,
             CompressorMakeupDb = CompressorMakeupDb,
-            ConcertHallEnabled = ConcertHallEnabled,
             ConvolutionEnabled = ConvolutionEnabled,
             AutoPreamp = AutoPreamp, ConvolutionTrimDb = 0, AutoConvolutionHeadroom = false,
             IsEnabled = AppSettings.Dsp.IsEnabled,
