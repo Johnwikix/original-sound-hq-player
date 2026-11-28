@@ -1,3 +1,4 @@
+using System.Globalization;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
@@ -17,6 +18,7 @@ public partial class DspSettingsViewModel
             if (!double.IsFinite(value) || !SetProperty(ref field, value)) return;
             OnPropertyChanged(nameof(PlaybackRateIndex));
             OnPropertyChanged(nameof(PlaybackRateText));
+            OnPropertyChanged(nameof(HasCustomPlaybackRate));
             SettingChanged(LicenseFeature.None);
         }
     } = AppSettings.Dsp.PlaybackRate;
@@ -33,7 +35,18 @@ public partial class DspSettingsViewModel
         }
     }
 
-    public string PlaybackRateText => PlaybackRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "×";
+    public bool HasCustomPlaybackRate => PlaybackRateIndex < 0;
+    public string PlaybackRateText => FormatPlaybackRate(PlaybackRate);
+
+    public static string GetPlaybackRateOptionText(int index) => FormatPlaybackRate(PlaybackRates[index]);
+
+    private static string FormatPlaybackRate(double rate) => rate.ToString("0.##", CultureInfo.InvariantCulture) + "×";
+
+    internal void SelectPlaybackRate(int index)
+    {
+        if (PlaybackRateEditable)
+            PlaybackRateIndex = index;
+    }
 
     public bool CompressorEnabled
     {

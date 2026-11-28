@@ -474,18 +474,6 @@
                             <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
                         </Button>
                         <Button
-                            x:Name="EqualizerButton"
-                            Margin="10,0,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.EqualizerButtonCommand, Mode=OneWay}"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon x:Name="EqualizerIcon" Glyph="&#xE9E9;" />
-                        </Button>
-                        <Button
                             x:Name="DesktopLyricsButton"
                             Margin="10,0,0,0"
                             HorizontalAlignment="Left"
@@ -583,6 +571,7 @@
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind tools:BindUtils.PlayModeToGlyphConverter(ViewModel.AppViewModel.CurrentPlayMode), Mode=OneWay}" />
                         </Button>
+                        <localControls:PlaybackMoreButton Margin="0,0,5,0" VerticalAlignment="Center" />
                     </StackPanel>
                 </Grid>
             </Grid>

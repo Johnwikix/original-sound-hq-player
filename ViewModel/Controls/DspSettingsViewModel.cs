@@ -22,6 +22,7 @@ public partial class DspSettingsViewModel : ObservableObject
     private readonly DispatcherQueue _queue;
     private readonly DispatcherQueueTimer _commitTimer;
     private bool _syncing = true, _loaded, _available, _dirty;
+    private bool _trackCorrectionDevices;
     private DspState? _lastState;
     private long _lastRevision;
     private LicenseFeature _lastRestrictedFeatures = (LicenseFeature)(-1);
@@ -61,6 +62,13 @@ public partial class DspSettingsViewModel : ObservableObject
             _commitTimer.Stop();
             _ = CommitAsync();
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(MasterAvailable))]
+    private void ToggleMaster()
+    {
+        if (MasterAvailable)
+            MasterEnabled = !MasterEnabled;
     }
 
     /// <summary>NumberBox 输入非法时会推送 NaN，忽略该次写回，保留旧有效值。</summary>
@@ -215,7 +223,15 @@ public partial class DspSettingsViewModel : ObservableObject
     }
 
     /// <summary>播放端在线且为 PCM 渲染，总开关仅此时可操作。</summary>
-    public bool MasterAvailable { get => field; private set => SetProperty(ref field, value); }
+    public bool MasterAvailable
+    {
+        get => field;
+        private set
+        {
+            if (SetProperty(ref field, value))
+                ToggleMasterCommand.NotifyCanExecuteChanged();
+        }
+    }
     /// <summary>播放端已确认 DSP 生效，PCM 子设置仅此时可编辑。</summary>
     public bool EffectsActive { get => field; private set => SetProperty(ref field, value); }
     public bool ConvolutionRestricted => _license.IsFeatureRestricted(LicenseFeature.Convolution);
@@ -242,20 +258,54 @@ public partial class DspSettingsViewModel : ObservableObject
     public string AnalysisText { get => field; private set => SetProperty(ref field, value); } = "";
 
     /// <summary>先订阅再读取缓存，避免首次读取与订阅之间遗漏通知。</summary>
-    public Task OnViewLoadedAsync()
+    public Task OnViewLoadedAsync(bool trackCorrectionDevices = true)
     {
         if (_stopping || _loaded) return Task.CompletedTask;
         _loaded = true;
         _lastRevision = 0;
         AppSettings.SceneEqualizerChanged += OnSceneEqualizerChanged;
+        AppSettings.PlaybackRateChanged += OnPlaybackRateChanged;
         _ipc.DspStateChanged += OnDspStateChanged;
-        _ipc.CorrectionSyncChanged += OnCorrectionSyncChanged;
         _license.StateChanged += OnLicenseStateChanged;
-        LicenseRestricted = _license.IsFeatureRestricted(LicenseFeature.AllDsp);
-        RefreshCorrectionSyncState();
         LoadValues();
         ApplyLatestState();
+        return trackCorrectionDevices ? StartTrackingCorrectionDevicesAsync() : Task.CompletedTask;
+    }
+
+    internal Task StartTrackingCorrectionDevicesAsync()
+    {
+        if (!_loaded || _trackCorrectionDevices) return _loadTask;
+
+        _trackCorrectionDevices = true;
+        _ipc.CorrectionSyncChanged += OnCorrectionSyncChanged;
+        RefreshCorrectionSyncState();
+        RefreshCorrectionState();
         return _loadTask = RefreshCorrectionDevicesAsync();
+    }
+
+    internal void SelectUpsampling(int index)
+    {
+        if (_loaded && EffectsActive && (uint)index <= (uint)SpectralEnhancementMode.LossyAndLowRateLossless)
+            AppViewModel.SpectralEnhancement = index;
+    }
+
+    private void OnPlaybackRateChanged(object? sender, EventArgs args)
+    {
+        if (_queue.HasThreadAccess)
+            RefreshPlaybackRate();
+        else
+            _queue.TryEnqueue(RefreshPlaybackRate);
+    }
+
+    private void RefreshPlaybackRate()
+    {
+        if (!_loaded || PlaybackRate.Equals(AppSettings.Dsp.PlaybackRate)) return;
+
+        // Reflect changes from other editors without saving the rest of this editor's values.
+        bool syncing = _syncing;
+        _syncing = true;
+        PlaybackRate = AppSettings.Dsp.PlaybackRate;
+        _syncing = syncing;
     }
 
     private void OnDspStateChanged() => _queue.TryEnqueue(ApplyLatestState);
@@ -290,7 +340,10 @@ public partial class DspSettingsViewModel : ObservableObject
     public async Task OnViewUnloadedAsync()
     {
         _loaded = false;
+        MasterAvailable = false;
+        _trackCorrectionDevices = false;
         AppSettings.SceneEqualizerChanged -= OnSceneEqualizerChanged;
+        AppSettings.PlaybackRateChanged -= OnPlaybackRateChanged;
         _ipc.DspStateChanged -= OnDspStateChanged;
         _ipc.CorrectionSyncChanged -= OnCorrectionSyncChanged;
         _license.StateChanged -= OnLicenseStateChanged;
@@ -365,9 +418,12 @@ public partial class DspSettingsViewModel : ObservableObject
         _lastState = state;
         bool outputChanged = _actualCorrectionDeviceId != state?.OutputDeviceId;
         _actualCorrectionDeviceId = state?.OutputDeviceId;
-        RefreshCorrectionState();
-        if (outputChanged && _loaded && !string.IsNullOrEmpty(_actualCorrectionDeviceId) && !CorrectionBusy)
-            _ = RefreshCorrectionDevicesAsync();
+        if (_trackCorrectionDevices)
+        {
+            RefreshCorrectionState();
+            if (outputChanged && !string.IsNullOrEmpty(_actualCorrectionDeviceId) && !CorrectionBusy)
+                _loadTask = RefreshCorrectionDevicesAsync();
+        }
         if (reload)
             LoadValues();
         MasterAvailable = available;

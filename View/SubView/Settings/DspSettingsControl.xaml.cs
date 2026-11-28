@@ -38,16 +38,8 @@ public sealed partial class DspSettingsControl : UserControl
         finally { session?.Dispose(); }
     }
 
-    private async void EditCurve_Click(object sender, RoutedEventArgs args)
-    {
-        if (!ViewModel.CanEditCorrection) return;
-        var dialog = new ConvolutionCurveDialog(ViewModel) { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
-        try
-        {
-            await dialog.ShowWithLayoutAsync();
-        }
-        finally { ViewModel.EndCorrectionEditing(); ViewModel.RefreshValues(); }
-    }
+    private async void EditCurve_Click(object sender, RoutedEventArgs args) =>
+        await ConvolutionCurveDialog.ShowEditorAsync(ViewModel, this);
 
     private async void ManageDeviceBindings_Click(object sender, RoutedEventArgs args)
     {

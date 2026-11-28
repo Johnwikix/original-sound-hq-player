@@ -343,11 +343,6 @@ namespace WinUIMusicPlayer.View
             finally { ViewModel.AppViewModel.IsManualSelect = false; }
         }
 
-        private void EqualizerButton_Click(object sender, RoutedEventArgs e)
-        {
-            _ = App.Services.GetRequiredService<MainPage>().EqualizerDialog.ShowThemedAsync(this.XamlRoot);
-        }
-
         private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)
         {
             CurrentPlayListTeachingTipPlayingDetail.IsOpen = true;

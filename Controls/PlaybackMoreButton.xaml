@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.Controls.PlaybackMoreButton"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUIMusicPlayer.Controls"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel.Controls"
+    Unloaded="OnUnloaded">
+    <Button
+        x:Name="MoreButton"
+        AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('PlaybackMoreActions')}"
+        Background="Transparent"
+        BorderBrush="Transparent"
+        BorderThickness="0"
+        Style="{StaticResource MenuButtonStyle}"
+        ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('PlaybackMoreActions')}">
+        <SymbolIcon Symbol="More" />
+        <Button.Flyout>
+            <MenuFlyout Placement="TopEdgeAlignedRight" Opening="OnMenuOpening" Closed="OnMenuClosed">
+                <MenuFlyoutItem
+                    Click="OpenEqualizer_Click"
+                    Text="{x:Bind tools:ToolUtils.GetString('DspEqualizer')}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE9E9;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSubItem
+                    x:Name="QuickPresets"
+                    IsEnabled="{x:Bind ViewModel.QuickPresetEditable, Mode=OneWay}"
+                    Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetTitle')}">
+                    <MenuFlyoutSubItem.Icon>
+                        <SymbolIcon Symbol="Audio" />
+                    </MenuFlyoutSubItem.Icon>
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 0), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetOriginal')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.StereoImagePresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 1), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetWide')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 2), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetConcertHall')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 3), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetClearVocals')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 4), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetWarmBass')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 5), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetRadio')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.ClubPresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 6), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetClub')}" />
+                    <RadioMenuFlyoutItem
+                        Click="ApplyPreset_Click"
+                        IsEnabled="{x:Bind ViewModel.GraphicEqPresetEditable, Mode=OneWay}"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 7), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetBright')}" />
+                    <RadioMenuFlyoutItem
+                        IsEnabled="False"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.QuickPresetIndex, 8), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('DspQuickPresetCustom')}" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutItem
+                    Click="EditCurve_Click"
+                    IsEnabled="{x:Bind ViewModel.CanEditCorrection, Mode=OneWay}"
+                    Text="{x:Bind tools:ToolUtils.GetString('DspEditCorrectionCurve')}">
+                    <MenuFlyoutItem.Icon>
+                        <SymbolIcon Symbol="Edit" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutSubItem
+                    x:Name="UpsamplingOptions"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}"
+                    Text="{x:Bind tools:ToolUtils.GetString('SpectralEnhancementTitle')}">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xE9D2;" />
+                    </MenuFlyoutSubItem.Icon>
+                    <RadioMenuFlyoutItem
+                        Click="SelectUpsampling_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.AppViewModel.SpectralEnhancement, 0), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('SpectralEnhancementOff')}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectUpsampling_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.AppViewModel.SpectralEnhancement, 1), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('SpectralEnhancementLossy')}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectUpsampling_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.AppViewModel.SpectralEnhancement, 2), Mode=OneWay}"
+                        Text="{x:Bind tools:ToolUtils.GetString('SpectralEnhancementAll')}" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSubItem
+                    x:Name="PlaybackRateOptions"
+                    IsEnabled="{x:Bind ViewModel.PlaybackRateEditable, Mode=OneWay}"
+                    Text="{x:Bind tools:ToolUtils.GetString('DspPlaybackRate')}">
+                    <MenuFlyoutSubItem.Icon>
+                        <FontIcon Glyph="&#xEC58;" />
+                    </MenuFlyoutSubItem.Icon>
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 0), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(0)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 1), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(1)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 2), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(2)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 3), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(3)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 4), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(4)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 5), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(5)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 6), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(6)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 7), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(7)}" />
+                    <RadioMenuFlyoutItem
+                        Click="SelectPlaybackRate_Click"
+                        IsChecked="{x:Bind local:PlaybackMoreButton.IsOptionSelected(ViewModel.PlaybackRateIndex, 8), Mode=OneWay}"
+                        Text="{x:Bind vm:DspSettingsViewModel.GetPlaybackRateOptionText(8)}" />
+                    <RadioMenuFlyoutItem
+                        IsChecked="{x:Bind ViewModel.HasCustomPlaybackRate, Mode=OneWay}"
+                        IsEnabled="False"
+                        Text="{x:Bind ViewModel.PlaybackRateText, Mode=OneWay}"
+                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.HasCustomPlaybackRate), Mode=OneWay}" />
+                </MenuFlyoutSubItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem
+                    AutomationProperties.ItemStatus="{x:Bind tools:BindUtils.DspMasterStatusTextConverter(ViewModel.MasterEnabled), Mode=OneWay}"
+                    Command="{x:Bind ViewModel.ToggleMasterCommand}"
+                    Text="{x:Bind tools:ToolUtils.GetString('DspMaster')}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.CheckBoxGlyphConverter(ViewModel.MasterEnabled), Mode=OneWay}" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+            </MenuFlyout>
+        </Button.Flyout>
+    </Button>
+</UserControl>

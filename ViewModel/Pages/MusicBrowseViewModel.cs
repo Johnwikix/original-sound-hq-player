@@ -204,8 +204,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _navigation.ShowPlayingDetail();
         }
-        [RelayCommand]
-        private async Task OnEqualizerButton() => await _navigation.ShowEqualizerAsync();
 
         public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false, long entryId = 0)
             => _coordinator.PlayAsync(music, entryId);

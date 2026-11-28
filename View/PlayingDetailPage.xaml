@@ -429,21 +429,6 @@
                                 FontSize="18"
                                 Glyph="&#xE90B;" />
                         </Button>
-                        <Button
-                            x:Name="EqualizerButtonPlayingDetail"
-                            Margin="5"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Click="EqualizerButton_Click"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                x:Name="EqualizerIconPlayingDetail"
-                                FontSize="18"
-                                Glyph="&#xE9E9;" />
-                        </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTipPlayingDetail"
                             Closed="CurrentPlayListTeachingTipPlayingDetail_Closed"
@@ -577,6 +562,7 @@
                                 FontSize="18"
                                 Glyph="{x:Bind tools:BindUtils.PlayModeToGlyphConverter(ViewModel.AppViewModel.CurrentPlayMode), Mode=OneWay}" />
                         </Button>
+                        <uc:PlaybackMoreButton Margin="0,0,5,0" VerticalAlignment="Center" />
                     </StackPanel>
                 </Grid>
             </Grid>

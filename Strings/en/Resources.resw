@@ -1837,6 +1837,12 @@
   <data name="DspMaster" xml:space="preserve">
     <value>Enable DSP</value>
   </data>
+  <data name="DspMasterOn" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="DspMasterOff" xml:space="preserve">
+    <value>Off</value>
+  </data>
   <data name="DspMasterDescription" xml:space="preserve">
     <value>Bypass speed, dynamics and other PCM effects while retaining preferences. Gapless playback is controlled separately.</value>
   </data>
@@ -3119,5 +3125,11 @@ See the log for full details.</value></data>
   </data>
   <data name="ListeningReportShader.Header" xml:space="preserve">
     <value>Background Shader</value>
+  </data>
+  <data name="PlaybackMoreActions" xml:space="preserve">
+    <value>More playback options</value>
+  </data>
+  <data name="DspEditCorrectionCurve" xml:space="preserve">
+    <value>Edit correction curve…</value>
   </data>
 </root>

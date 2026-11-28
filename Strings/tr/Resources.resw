@@ -1837,6 +1837,12 @@
   <data name="DspMaster" xml:space="preserve">
     <value>DSP'yi etkinleştir</value>
   </data>
+  <data name="DspMasterOn" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="DspMasterOff" xml:space="preserve">
+    <value>Kapalı</value>
+  </data>
   <data name="DspMasterDescription" xml:space="preserve">
     <value>Ayarları koruyarak hız, dinamik ve diğer PCM efektlerini atlar. Kesintisiz çalma ayrı olarak denetlenir.</value>
   </data>
@@ -3119,5 +3125,11 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
   </data>
   <data name="ListeningReportShader.Header" xml:space="preserve">
     <value>Arka plan gölgeleyicisi</value>
+  </data>
+  <data name="PlaybackMoreActions" xml:space="preserve">
+    <value>Diğer oynatma seçenekleri</value>
+  </data>
+  <data name="DspEditCorrectionCurve" xml:space="preserve">
+    <value>Düzeltme eğrisini düzenle…</value>
   </data>
 </root>

@@ -176,7 +176,13 @@ namespace WinUIMusicPlayer.Utils
 
         /// <summary>逐字效果开关状态 → 复选框图形，显示当前状态（开启=勾选 e73a，关闭=空框 e739）。</summary>
         public static string KaraokeGlyphConverter(bool enabled)
-            => enabled ? "\uE73A" : "\uE739";
+            => CheckBoxGlyphConverter(enabled);
+
+        public static string CheckBoxGlyphConverter(bool isChecked)
+            => isChecked ? "\uE73A" : "\uE739";
+
+        public static string DspMasterStatusTextConverter(bool isEnabled)
+            => GetString(isEnabled ? "DspMasterOn" : "DspMasterOff");
 
         /// <summary>桌面歌词锁定状态 → 托盘菜单文字，显示点击后的动作（未锁=锁定，已锁=解锁），文案经 resw 本地化。</summary>
         public static string LockDesktopLyricsTextConverter(bool locked)

@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Controls;
 using WinUIMusicPlayer.View.SubView.Settings;
@@ -38,6 +40,22 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
             finally { deferral.Complete(); }
         };
     }
+    internal static async Task ShowEditorAsync(DspSettingsViewModel bindings, FrameworkElement owner)
+    {
+        if (!bindings.CanEditCorrection || owner.XamlRoot is not { } root) return;
+
+        try
+        {
+            var dialog = new ConvolutionCurveDialog(bindings) { XamlRoot = root, RequestedTheme = owner.ActualTheme };
+            await dialog.ShowWithLayoutAsync();
+        }
+        finally
+        {
+            bindings.EndCorrectionEditing();
+            bindings.RefreshValues();
+        }
+    }
+
     private void RefreshPreview()
     {
         Response.SetPoints(ViewModel.Points, ViewModel.SelectedNode);

@@ -1839,6 +1839,12 @@
   <data name="DspMaster" xml:space="preserve">
     <value>DSP 总开关</value>
   </data>
+  <data name="DspMasterOn" xml:space="preserve">
+    <value>已开启</value>
+  </data>
+  <data name="DspMasterOff" xml:space="preserve">
+    <value>已关闭</value>
+  </data>
   <data name="DspMasterDescription" xml:space="preserve">
     <value>关闭后旁路倍速、压限及其他 PCM 音效，并保留设置。无缝播放独立控制。</value>
   </data>
@@ -3121,5 +3127,11 @@ SHA-256：{5}
   </data>
   <data name="ListeningReportShader.Header" xml:space="preserve">
     <value>背景着色器</value>
+  </data>
+  <data name="PlaybackMoreActions" xml:space="preserve">
+    <value>更多播放选项</value>
+  </data>
+  <data name="DspEditCorrectionCurve" xml:space="preserve">
+    <value>编辑校正曲线…</value>
   </data>
 </root>

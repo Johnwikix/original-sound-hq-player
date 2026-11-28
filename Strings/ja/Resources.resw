@@ -1834,6 +1834,12 @@
   <data name="DspMaster" xml:space="preserve">
     <value>DSP を有効にする</value>
   </data>
+  <data name="DspMasterOn" xml:space="preserve">
+    <value>オン</value>
+  </data>
+  <data name="DspMasterOff" xml:space="preserve">
+    <value>オフ</value>
+  </data>
   <data name="DspMasterDescription" xml:space="preserve">
     <value>速度変更、ダイナミクス、その他の PCM 音声効果をバイパスし、設定を保持します。ギャップレス再生は個別に制御します。</value>
   </data>
@@ -3119,5 +3125,11 @@ SHA-256: {5}
   </data>
   <data name="ListeningReportShader.Header" xml:space="preserve">
     <value>背景シェーダー</value>
+  </data>
+  <data name="PlaybackMoreActions" xml:space="preserve">
+    <value>その他の再生オプション</value>
+  </data>
+  <data name="DspEditCorrectionCurve" xml:space="preserve">
+    <value>補正カーブを編集…</value>
   </data>
 </root>

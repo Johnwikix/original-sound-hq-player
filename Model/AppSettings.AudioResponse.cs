@@ -8,6 +8,7 @@ public static partial class AppSettings
 {
     public static event EventHandler? AudioResponseChanged;
     public static event EventHandler? PlaybackTransitionsChanged;
+    internal static event EventHandler? PlaybackRateChanged;
 
     public static DspSettings Dsp
     {
@@ -17,7 +18,9 @@ public static partial class AppSettings
             if (field == value) return;
             bool transitionsChanged = field.GaplessPlayback != value.GaplessPlayback
                 || field.TransitionStyle != value.TransitionStyle || field.CrossfadeMilliseconds != value.CrossfadeMilliseconds;
+            bool rateChanged = !field.PlaybackRate.Equals(value.PlaybackRate);
             field = value;
+            if (rateChanged) PlaybackRateChanged?.Invoke(null, EventArgs.Empty);
             if (transitionsChanged) PlaybackTransitionsChanged?.Invoke(null, EventArgs.Empty);
             AudioResponseChanged?.Invoke(null, EventArgs.Empty);
         }
