@@ -54,9 +54,6 @@ public sealed partial class NowPlayingCanvas
         }
     }
 
-    private bool DrawSceneCover(PlaybackCanvasFrame frame, CanvasDrawContext session)
-        => (frame.Hdr.IsEnabled || _background is not ImageBackgroundRenderer) && _sceneCover?.Draw(frame, session) == true;
-
     private void CommitSceneCover(bool drawn)
     {
         if (_sceneCoverPresented == drawn) return;

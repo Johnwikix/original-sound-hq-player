@@ -212,7 +212,7 @@ public sealed partial class PlayingDetailPage
         if (_sceneCoverCanvas is not { IsLoaded: true } canvas || !_coverAttached || !DetailCoverSwitcher.IsLoaded)
             return;
         bool wasReady = CanPresentHdrCover;
-        var slot = DetailCoverSwitcher.TransformToVisual(canvas).TransformBounds(
+        var slot = CoverSpatialAnchor.TransformToVisual(canvas).TransformBounds(
             new Rect(0, 0, DetailCoverSwitcher.ActualWidth, DetailCoverSwitcher.ActualHeight));
         if (_sceneCoverSlot != slot)
         {

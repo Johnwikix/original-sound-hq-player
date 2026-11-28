@@ -2895,7 +2895,7 @@ SHA-256：{5}
     <value>透视深度</value>
   </data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
-    <value>歌词空间效果</value>
+    <value>空间效果</value>
   </data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>正在准备歌曲…</value>

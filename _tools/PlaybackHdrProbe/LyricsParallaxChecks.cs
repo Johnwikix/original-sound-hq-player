@@ -95,6 +95,7 @@ public sealed partial class ProbeApp
             };
             App.MainWindow = window;
             using var page = new PlayingDetailPage(vm);
+            page.AddSpatialProbeTitle();
             if (fluid)
             {
                 var teal = new byte[32 * 32 * 4];
@@ -122,8 +123,18 @@ public sealed partial class ProbeApp
                 if (!replay) await FindPointerPlacementAsync(page.ActualWidth, page.ActualHeight);
                 object host = fluid ? page.BackgroundCanvas! : page.StandaloneLyrics;
                 object coordinator = host.GetType().GetField("_coordinator", fields)!.GetValue(host)!;
-                var pointer = coordinator.GetType().GetField("_externalParallaxPointer", fields)!;
+                var pointer = typeof(PlayingDetailPage).GetField("_spatialPointer", fields)!;
                 var projection = coordinator.GetType().GetField("_lyricsProjection", fields)!;
+                var spatialClock = typeof(PlayingDetailPage).GetField("_spatialClock", fields)!;
+                var pageProjection = typeof(PlayingDetailPage).GetField("_spatialProjection", fields)!;
+                UILyricsBus.Publish([]);
+                SetReplayPointer(new Vector2(.7f, -.6f));
+                await WaitUntilAsync(() => pageProjection.GetValue(page) is Matrix4x4 m && !m.IsIdentity
+                    && page.Cover.Projection is not null && page.IsSpatialProbeTitleReady, $"{label} foreground tilt without lyrics");
+                page.CheckSpatialVisuals();
+                SetReplayPointer(null);
+                await WaitUntilAsync(() => spatialClock.GetValue(page) is null && page.Cover.Projection is null,
+                    $"{label} neutral foreground stops its frame subscription");
                 PublishParallaxLyrics();
                 if (replay) SetReplayPointer(null);
                 else Move(page.ActualWidth / 2, page.ActualHeight / 2);
@@ -145,7 +156,7 @@ public sealed partial class ProbeApp
                     {
                         int before = moves;
                         Move(page.ActualWidth * x, page.ActualHeight * y);
-                        await WaitUntilAsync(() => moves > before && pointer.GetValue(coordinator) is Vector2 p &&
+                        await WaitUntilAsync(() => moves > before && pointer.GetValue(page) is Vector2 p &&
                             Math.Abs(p.X - (x * 2 - 1)) < .1 && Math.Abs(p.Y - (y * 2 - 1)) < .1,
                             $"{label} production routed pointer from ({x:F2}, {y:F2})");
                     }
@@ -153,7 +164,7 @@ public sealed partial class ProbeApp
                         $"{label} 3D transform");
                     await Task.Delay(300);
                     var measured = CountRowInk(page, render, hdr && fluid, fluid);
-                    Console.WriteLine($"{label} pointer {pointer.GetValue(coordinator)}: {FormatInk(measured)}");
+                    Console.WriteLine($"{label} pointer {pointer.GetValue(page)}: {FormatInk(measured)}");
                     int verifiedRows = 0;
                     foreach (var (row, neutral) in baseline)
                     {
@@ -173,15 +184,18 @@ public sealed partial class ProbeApp
                 {
                     int previousExits = exits;
                     Move(page.ActualWidth / 2, page.ActualHeight + 28);
-                    await WaitUntilAsync(() => exits > previousExits && pointer.GetValue(coordinator) is null,
+                    await WaitUntilAsync(() => exits > previousExits && pointer.GetValue(page) is null,
                         $"{label} routed pointer exit");
                 }
 
+                SetReplayPointer(new Vector2(.8f, -.7f));
+                await WaitUntilAsync(() => spatialClock.GetValue(page) is not null, $"{label} clock starts");
+                window.Content = null;
+                await WaitUntilAsync(() => spatialClock.GetValue(page) is null && page.Cover.Projection is null,
+                    $"{label} unload clears the projection and releases its frame subscription");
+
                 void SetReplayPointer(Vector2? position)
-                {
-                    if (host is NowPlayingCanvas shared) shared.SetLyricsParallaxPointer(position);
-                    else ((AdvanceLyricsCanvasControl)host).SetLyricsParallaxPointer(position);
-                }
+                    => typeof(PlayingDetailPage).GetMethod("SetSpatialPointer", fields)!.Invoke(page, [position]);
             }
             finally
             {

@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Reflection;
+using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Interop;
@@ -24,12 +25,58 @@ internal static class ViewportTransformChecks
 
     internal static void Run(CanvasAnimatedControl canvas)
     {
+        VerifyPlaybackProjectionAcrossHostOrigins();
         VerifyViewport(canvas);
         VerifyRightPaneOverflow(canvas);
         VerifyAutomaticPointerOverflow(canvas);
         VerifyFanFocus(canvas, EasingType.FlowWave, EaseMode.FlowWave);
         VerifyFanFocus(canvas, EasingType.Sine, EaseMode.Out);
         VerifyFanFocus(canvas, EasingType.Linear, EaseMode.Continuous);
+    }
+
+    private static void VerifyPlaybackProjectionAcrossHostOrigins()
+    {
+        var pivot = new Vector2(412, 301);
+        var pointOnPage = new Vector2(580, 360);
+        var sceneOrigin = new Vector2(7, 32);
+        var lyricsOrigin = new Vector2(354, 72);
+        var angles = new Vector3(17, -13, 9);
+        var pageProjection = PlaybackSpatialProjection.CreatePerspective(pivot, angles, 650);
+        var projectedPoint = Project(pointOnPage, pageProjection);
+
+        Check(Vector2.Distance(Project(pivot, pageProjection), pivot) < 0.001f,
+            "The common playback pivot must remain fixed after rotating.");
+        Check(Vector2.Distance(projectedPoint, pointOnPage) > 1,
+            "The fixture must measurably project the point.");
+        foreach (var origin in new[] { sceneOrigin, lyricsOrigin })
+        {
+            var localProjection = PlaybackSpatialProjection.ToLocal(pageProjection, origin);
+            var projectedLocalPoint = Project(pointOnPage - origin, localProjection);
+            Check(Vector2.Distance(projectedLocalPoint + origin, projectedPoint) < 0.001f,
+                "Displaced playback hosts must project the same page point to the same screen point.");
+        }
+
+        var halfExtents = new Vector2(2450, 1500);
+        var shallowProjection = PlaybackSpatialProjection.CreatePerspective(pivot, new Vector3(85, -72, 9), 100, halfExtents);
+        foreach (float x in new[] { -halfExtents.X, halfExtents.X })
+        {
+            foreach (float y in new[] { -halfExtents.Y, halfExtents.Y })
+            {
+                var corner = pivot + new Vector2(x, y);
+                var homogeneous = Vector4.Transform(new Vector4(corner, 0, 1), shallowProjection);
+                Check(homogeneous.W >= 0.4999f, "Even maximum tilt and minimum depth must keep the foreground in front of the camera.");
+            }
+        }
+
+        var neutral = PlaybackSpatialProjection.CreatePerspective(pivot, Vector3.Zero, 650);
+        Check(PlaybackSpatialProjection.ToLocal(neutral, lyricsOrigin).IsIdentity,
+            "A neutral playback pose must stay neutral in each host.");
+
+        static Vector2 Project(Vector2 point, Matrix4x4 projection)
+        {
+            var homogeneous = Vector4.Transform(new Vector4(point, 0, 1), projection);
+            return new Vector2(homogeneous.X, homogeneous.Y) / homogeneous.W;
+        }
     }
 
     private static void VerifyViewport(CanvasAnimatedControl canvas)

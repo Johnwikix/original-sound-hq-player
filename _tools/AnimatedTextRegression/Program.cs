@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using AnimatedWin2dControls.Controls;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
@@ -131,6 +133,99 @@ public sealed partial class TestApp : Application
         }
     }
 
+    private float CheckProjectedHdrTitle(AnimatedTextBlock control, CanvasRenderTarget target,
+        PlaybackCanvasFrame frame, Rect region, float scale, byte[] flatPixels)
+    {
+        using var host = new NowPlayingCanvas();
+        var drawProjected = typeof(NowPlayingCanvas).GetMethod("DrawProjectedHdrTitle", Private)!;
+        var projection = PlaybackSpatialProjection.CreatePerspective(
+            new Vector2((float)region.Width / 2, (float)region.Height / 2), new Vector3(13, -18, 12), 800);
+        var tiltedPixels = DrawSceneTitle(projection);
+        bool moved = false;
+        float projectedWhite = 0;
+        for (int alpha = 6; alpha < flatPixels.Length; alpha += 8)
+        {
+            float coverage = (float)BitConverter.ToHalf(tiltedPixels, alpha);
+            moved |= ((float)BitConverter.ToHalf(flatPixels, alpha) > .5f) != (coverage > .5f);
+            if (coverage > .99f)
+                projectedWhite = Math.Max(projectedWhite, (float)BitConverter.ToHalf(tiltedPixels, alpha - 6));
+        }
+
+        Check(moved, $"The projected {frame.Dpi:G} DPI HDR title moves");
+        Check(Math.Abs(projectedWhite - frame.Hdr.White) < .025f,
+            $"The projected {frame.Dpi:G} DPI HDR title remains visible at reference white ({projectedWhite:F3})");
+        Check(flatPixels.AsSpan().SequenceEqual(DrawSceneTitle(Matrix4x4.Identity)),
+            $"The {frame.Dpi:G} DPI HDR scene title restores its original pixels after projection");
+        return projectedWhite;
+
+        byte[] DrawSceneTitle(Matrix4x4 matrix)
+        {
+            using (var drawing = target.CreateDrawingSession())
+            {
+                drawing.Clear(Microsoft.UI.Colors.Transparent);
+                drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+                drawing.Transform = Matrix3x2.CreateScale(scale);
+                drawProjected.Invoke(host, [control, drawing, frame, region, TimeSpan.Zero, matrix]);
+            }
+
+            return target.GetPixelBytes();
+        }
+    }
+
+    private async Task RunProjectedTitleCheckAsync()
+    {
+        string resultPath = Path.Combine(AppContext.BaseDirectory, "result.txt");
+        try
+        {
+            var title = new AnimatedTextBlock
+            {
+                Width = 440,
+                Height = 160,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White),
+                Document = DocumentLayoutRegressionPage.CreateDocument("Static title", "Album\r\nArtist", 44, 30)
+            };
+            _window = new Window { Content = title, Title = "Projected HDR title regression" };
+            _window.Activate();
+            await Until(() => title.IsLoaded && Field(title, "_canvas") is CanvasControl { ReadyToDraw: true },
+                "projected title canvas initialized");
+            var canvas = (CanvasControl)Field(title, "_canvas");
+            Invoke(title, "SetScenePresentation", true);
+            var white96 = CheckDpi(96, 1);
+            var white144 = CheckDpi(144, 1.3f);
+            title.PrepareForShutdown();
+            File.WriteAllText(resultPath,
+                $"PASS: {_assertions} projected HDR title assertions, 96 DPI white {white96:F3}, 144 DPI at 1.3x white {white144:F3}.");
+
+            float CheckDpi(float dpi, float scale)
+            {
+                var size = canvas.Size;
+                var region = new Rect(0, 0, size.Width, size.Height);
+                var frame = new PlaybackCanvasFrame(canvas.Device, size, dpi, PlaybackHdrColor.FromNits(200, 600));
+                using var target = new CanvasRenderTarget(canvas.Device, (float)size.Width * scale, (float)size.Height * scale,
+                    dpi, DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
+                using (var drawing = target.CreateDrawingSession())
+                {
+                    drawing.Clear(Microsoft.UI.Colors.Transparent);
+                    drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+                    drawing.Transform = Matrix3x2.CreateScale(scale);
+                    Invoke(title, "DrawInScene", drawing, frame, region, TimeSpan.Zero);
+                }
+
+                return CheckProjectedHdrTitle(title, target, frame, region, scale, target.GetPixelBytes());
+            }
+        }
+        catch (Exception ex)
+        {
+            Environment.ExitCode = 1;
+            File.WriteAllText(resultPath, $"FAIL after {_assertions} projected title assertions: {ex}");
+        }
+        finally
+        {
+            _window?.Close();
+            Exit();
+        }
+    }
+
     private string CheckHdrTitle(AnimatedTextBlock control, float dpi, float scale)
     {
         control.RequestedTheme = ElementTheme.Dark;
@@ -149,7 +244,9 @@ public sealed partial class TestApp : Application
         int titleBottom = (int)Math.Ceiling(62 * scale * dpi / 96f);
         Invoke(control, "SetScenePresentation", true);
         var defaultPaper = Measure(Draw(TimeSpan.Zero, useFloatPrecision: false));
-        var paper = Measure(Draw(TimeSpan.Zero));
+        var flatPixels = Draw(TimeSpan.Zero);
+        var paper = Measure(flatPixels);
+        float projectedWhite = CheckProjectedHdrTitle(control, target, frame, region, scale, flatPixels);
         Check(Math.Abs(paper.Title.X - 2.5f) < 0.015f && paper.Metadata is > 1 and <= 2.5f,
             $"Static HDR title and metadata stay at paper white ({paper})");
         Check(canvas.Opacity == 0 && !(bool)Field(control, "_isClockRegistered"),
@@ -229,7 +326,7 @@ public sealed partial class TestApp : Application
         if (dpi == 96 && scale == 1)
             CheckDetachedSceneDevice();
 
-        return $"{dpi:G} DPI at {scale:G}x: default static {defaultPaper.Title.X:F3}, FP16 static/wipe/settled {paper.Title.X:F3}/{transition.Title.X:F3}/{settled.Title.X:F3}, tight output peak {tight.Title.X:F3}, 300 nit white {raised.Title.X:F3}, custom hue drift {hueDrift:F5}.";
+        return $"{dpi:G} DPI at {scale:G}x: default static {defaultPaper.Title.X:F3}, FP16 static/wipe/settled {paper.Title.X:F3}/{transition.Title.X:F3}/{settled.Title.X:F3}, tight output peak {tight.Title.X:F3}, 300 nit white {raised.Title.X:F3}, custom hue drift {hueDrift:F5}, projected HDR title {projectedWhite:F3} with identity restore.";
 
         void SetForeground(Windows.UI.Color color)
             => control.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
@@ -422,6 +519,14 @@ public sealed partial class TestApp : Application
         Check(alphaDifference < alphaTotal * 0.001, $"{label} endpoint matches static positions (alpha difference {alphaDifference / (double)alphaTotal:P4})");
     }
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        if (Array.Exists(Environment.GetCommandLineArgs(), argument => argument == "--check-spatial-title"))
+            await RunProjectedTitleCheckAsync();
+        else
+            await RunRegressionAsync();
+    }
+
+    private async Task RunRegressionAsync()
     {
         try
         {

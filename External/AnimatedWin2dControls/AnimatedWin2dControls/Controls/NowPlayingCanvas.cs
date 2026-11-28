@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Serilog;
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Windows.Foundation;
@@ -482,6 +483,7 @@ namespace AnimatedWin2dControls.Controls
                 LoadRendererResources();
 
             ReleaseBackgroundCache();
+            ReleaseForegroundProjection();
             _coordinator.ResetDeviceResources();
             _rendererDevice = device;
             return true;
@@ -746,6 +748,7 @@ namespace AnimatedWin2dControls.Controls
             _snow.Dispose();
             _raindrop.Dispose();
             ReleaseBackgroundCache();
+            ReleaseForegroundProjection();
             _rendererDevice = null;
         }
 
@@ -762,6 +765,7 @@ namespace AnimatedWin2dControls.Controls
                     _rendererResourcesLoaded = false;
                     _rendererDevice = null;
                     ReleaseBackgroundCache();
+                    ReleaseForegroundProjection();
                     _rotatingMeshResourcesInitialized = false;
                     _imageBackgroundResourcesInitialized = false;
                     if (_sdrFrameEnabled)
@@ -811,8 +815,8 @@ namespace AnimatedWin2dControls.Controls
                 var frame = new PlaybackCanvasFrame(canvas);
                 if (PrepareSceneResources(frame.Device))
                     UpdateScene(frame.Device, TimeSpan.Zero);
-                DrawScene(frame, ds);
-                ReportSdrCoverDraw(DrawSceneCover(frame, ds));
+                var projection = _coordinator.GetPlaybackSpatialProjection();
+                ReportSdrCoverDraw(DrawPlaybackScene(frame, ds, projection));
                 if (!_sdrFrameSubmitted)
                     _sdrFrameSubmitted = true;
             }
@@ -826,14 +830,16 @@ namespace AnimatedWin2dControls.Controls
             finally { Monitor.Exit(_cacheGate); }
         }
 
-        private void DrawScene(PlaybackCanvasFrame frame, CanvasDrawContext ds)
+        private bool DrawPlaybackScene(PlaybackCanvasFrame frame, CanvasDrawContext ds, Matrix4x4? projection)
         {
             DrawBackground(frame, ds);
-            // 频谱按画布帧率更新，背景的半帧率缓存不保存音频图层。
-            DrawSpectrum(frame, ds);
+            var foregroundProjection = projection ?? Matrix4x4.Identity;
+            // The spectrum updates at frame rate and is outside the background cache.
+            DrawProjectedSpectrum(frame, ds, foregroundProjection);
             if (_advanced)
                 _coordinator.LyricsViewport = new Rect(0, 0, frame.Size.Width, frame.Size.Height);
-                _coordinator.OnDraw(frame.Device, ds, frame.Hdr, consumePendingLyrics: !frame.Hdr.IsEnabled);
+            _coordinator.DrawPlaybackLyrics(frame.Device, ds, frame.Hdr, !frame.Hdr.IsEnabled, projection);
+            return DrawProjectedCover(frame, ds, foregroundProjection);
         }
 
         private void DrawBackground(PlaybackCanvasFrame frame, CanvasDrawContext ds)

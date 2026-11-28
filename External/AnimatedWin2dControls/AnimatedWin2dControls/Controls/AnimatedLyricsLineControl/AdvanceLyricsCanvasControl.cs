@@ -45,6 +45,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void SetLyricsParallaxPointer(System.Numerics.Vector2? normalizedPosition)
             => _coordinator.SetLyricsParallaxPointer(normalizedPosition);
 
+        /// <summary>Applies a viewport-local playback projection. Pass null to restore standalone lyric projection.</summary>
+        public void SetPlaybackSpatialProjection(System.Numerics.Matrix4x4? projection)
+            => _coordinator.SetPlaybackSpatialProjection(projection);
+
         private bool _pausedByVisibility;
         private bool _pausedByParent;
         private bool _pausedByWindow;

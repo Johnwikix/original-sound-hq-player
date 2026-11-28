@@ -2893,7 +2893,7 @@ SHA-256: {5}
     <value>Глубина перспективы</value>
   </data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
-    <value>Пространственные эффекты текста</value>
+    <value>Пространственные эффекты</value>
   </data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Подготовка композиций…</value>

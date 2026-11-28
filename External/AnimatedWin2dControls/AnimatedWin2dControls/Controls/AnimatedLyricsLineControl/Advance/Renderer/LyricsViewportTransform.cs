@@ -8,19 +8,7 @@ internal static class LyricsViewportTransform
     private const float RadiansPerDegree = MathF.PI / 180;
 
     public static Matrix4x4 CreatePerspective(Vector2 pivot, Vector3 angles, float depth)
-    {
-        if (angles == Vector3.Zero) return Matrix4x4.Identity;
-
-        var center = new Vector3(pivot, 0);
-        var perspective = Matrix4x4.Identity;
-        perspective.M34 = 1 / Math.Clamp(depth, 100, 1000);
-        return Matrix4x4.CreateTranslation(-center)
-            * Matrix4x4.CreateRotationX(angles.X * RadiansPerDegree)
-            * Matrix4x4.CreateRotationY(angles.Y * RadiansPerDegree)
-            * Matrix4x4.CreateRotationZ(angles.Z * RadiansPerDegree)
-            * perspective
-            * Matrix4x4.CreateTranslation(center);
-    }
+        => PlaybackSpatialProjection.CreatePerspective(pivot, angles, depth);
 
     public static bool TryInvertPerspective(Matrix4x4 projection, out Matrix4x4 inverse)
     {

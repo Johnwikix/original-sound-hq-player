@@ -21,7 +21,7 @@
     xmlns:uc="using:WinUIMusicPlayer.Controls"
     mc:Ignorable="d">
 
-    <Grid>
+    <Grid Background="Transparent">
         <awc:NowPlayingCanvas
             x:Name="NowPlaying"
             x:Load="{x:Bind ViewModel.IsBackgroundCreated, Mode=OneWay}"
@@ -73,14 +73,16 @@
                     Grid.Row="1"
                     Grid.Column="1">
                     <Grid Padding="20">
-                        <uc:ImageSwitcher
-                            x:Name="DetailCoverSwitcher"
-                            CornerRadiusAmount="12"
-                            ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
-                            IsActive="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}"
-                            IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
-                            ShadowAmount="16"
-                            SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
+                        <Grid x:Name="CoverSpatialAnchor">
+                            <uc:ImageSwitcher
+                                x:Name="DetailCoverSwitcher"
+                                CornerRadiusAmount="12"
+                                ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
+                                IsActive="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}"
+                                IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
+                                ShadowAmount="16"
+                                SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
+                        </Grid>
                     </Grid>
                 </Grid>
                 <Grid
@@ -89,20 +91,23 @@
                     Grid.Column="1"
                     Margin="20,0,20,0"
                     RowDefinitions="Auto,Auto">
-                    <atb:AnimatedTextBlock
-                        x:Name="AnimatedPlayingDetailTextBlock"
-                        AutomationProperties.Name="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Title, Mode=OneWay}"
-                        AutomationProperties.HelpText="{x:Bind tools:BindUtils.MusicToInfo(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}"
-                        FontFamily="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily.FontFamily, Mode=OneWay}"
-                        Loaded="AnimatedPlayingDetailTextBlock_Loaded"
-                        SizeChanged="AnimatedPlayingDetailTextBlock_SizeChanged"
+                    <Grid
+                        x:Name="TitleSpatialAnchor"
                         Grid.Row="0"
-                        Margin="0,0,0,1"
-                        Document="{x:Bind tools:BindUtils.MusicToAnimatedDocument(ViewModel.AppViewModel.DisplayedPlaybackMusic, ViewModel.TitleFontSize, ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
-                        IsHoverScrollEnabled="True"
-                        TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
-                        TextTrimming="CharacterEllipsis"
-                        TextWrapping="NoWrap" />
+                        Margin="0,0,0,1">
+                        <atb:AnimatedTextBlock
+                            x:Name="AnimatedPlayingDetailTextBlock"
+                            AutomationProperties.Name="{x:Bind ViewModel.AppViewModel.DisplayedPlaybackMusic.Title, Mode=OneWay}"
+                            AutomationProperties.HelpText="{x:Bind tools:BindUtils.MusicToInfo(ViewModel.AppViewModel.DisplayedPlaybackMusic), Mode=OneWay}"
+                            FontFamily="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily.FontFamily, Mode=OneWay}"
+                            Loaded="AnimatedPlayingDetailTextBlock_Loaded"
+                            SizeChanged="AnimatedPlayingDetailTextBlock_SizeChanged"
+                            Document="{x:Bind tools:BindUtils.MusicToAnimatedDocument(ViewModel.AppViewModel.DisplayedPlaybackMusic, ViewModel.TitleFontSize, ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
+                            IsHoverScrollEnabled="True"
+                            TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap" />
+                    </Grid>
                     <StackPanel
                         x:Name="PlayingDetailInfoPanel"
                         Grid.Row="1"

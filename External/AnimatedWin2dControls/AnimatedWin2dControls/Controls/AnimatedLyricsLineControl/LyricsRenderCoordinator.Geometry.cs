@@ -15,9 +15,23 @@ public sealed partial class LyricsRenderCoordinator
     private Vector3 _automaticTilt;
     private bool _hasExternalParallaxInput;
     private Vector2? _externalParallaxPointer;
+    private Matrix4x4? _playbackSpatialProjection;
+    private bool _usedPlaybackSpatialProjection;
     private int _fanAnimationVersion;
     private static readonly Func<double, double, double, double> s_fanFocusInterpolator =
         EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Sine, EaseMode.Out);
+
+    internal void SetPlaybackSpatialProjection(Matrix4x4? projection)
+    {
+        lock (_pendingGate)
+            _playbackSpatialProjection = projection;
+    }
+
+    internal Matrix4x4? GetPlaybackSpatialProjection()
+    {
+        lock (_pendingGate)
+            return _playbackSpatialProjection;
+    }
 
     internal void SetLyricsParallaxPointer(Vector2? normalizedPosition)
     {
@@ -41,7 +55,7 @@ public sealed partial class LyricsRenderCoordinator
             (float)((_lastMousePos.Y - RegionY) / RegionH * 2 - 1));
     }
 
-    private bool HasTransformedLyrics => _cachedIsFanLyricsEnabled || _cachedIs3DLyricsEnabled;
+    private bool HasTransformedLyrics => _cachedIsFanLyricsEnabled || _cachedIs3DLyricsEnabled || !_lyricsProjection.IsIdentity;
 
     private Rect GetLyricsPaintBounds(Rect layout)
     {
@@ -103,6 +117,11 @@ public sealed partial class LyricsRenderCoordinator
             _automaticTilt = Vector3.Zero;
         }
 
+        return SetLyricsProjection(projection);
+    }
+
+    private bool SetLyricsProjection(Matrix4x4 projection)
+    {
         if (projection == _lyricsProjection) return false;
         _lyricsProjection = projection;
         _hasInverseLyricsProjection = LyricsViewportTransform.TryInvertPerspective(projection, out _inverseLyricsProjection);

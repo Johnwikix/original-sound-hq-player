@@ -708,7 +708,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     isScrollSeek,
                     isSecondaryLayoutAnimating && !_userScrolling);
 
-            bool projectionChanged = UpdateLyricsProjection(elapsedTime);
+            bool projectionChanged = GetPlaybackSpatialProjection() is null && UpdateLyricsProjection(elapsedTime);
             var visibleRange = CalculateVisibleLyricsRange(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
 
             _cachedVisibleStart = visibleRange.Start;
@@ -878,12 +878,27 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// <summary>Draws production lyric state using the scoped ABI context.</summary>
         public void OnDraw(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr = default,
             bool consumePendingLyrics = true)
+            => DrawPlaybackLyrics(sender, ds, hdr, consumePendingLyrics, GetPlaybackSpatialProjection());
+
+        internal void DrawPlaybackLyrics(ICanvasResourceCreator sender, CanvasDrawContext ds, PlaybackHdrColor hdr,
+            bool consumePendingLyrics, System.Numerics.Matrix4x4? playbackProjection)
         {
             lock (_renderGate)
             {
                 if (_shutdown) return;
                 // Invalidate may request a draw while the animation is paused, without Update.
                 if (consumePendingLyrics && AdvanceLyricsTransition(TimeSpan.Zero)) UpdateCore(sender, TimeSpan.Zero);
+                bool projectionChanged = playbackProjection is { } projection
+                    ? SetLyricsProjection(projection)
+                    : _usedPlaybackSpatialProjection && UpdateLyricsProjection(TimeSpan.Zero);
+                _usedPlaybackSpatialProjection = playbackProjection.HasValue;
+                if (projectionChanged)
+                {
+                    _hoverDirty = true;
+                    if (_renderLines.Count > 0)
+                        HandleHoverUpdates(_smoothedScrollY + _mouseYScrollTransition.Value, RegionH, _cachedPlayingLineTopOffset);
+                }
+
                 if (_renderLines.Count > 0 && _lyricsOpacity > 0) DrawCore(sender, ds, hdr);
             }
         }
@@ -943,6 +958,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             var effect = _lyricsPerspectiveEffect ??= new Microsoft.Graphics.Canvas.Effects.Transform3DEffect();
             effect.TransformMatrix = _lyricsProjection;
+            effect.BufferPrecision = hdr.IsEnabled ? CanvasBufferPrecision.Precision16Float : null;
             effect.Source = commands;
             try
             {

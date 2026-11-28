@@ -2893,7 +2893,7 @@ Vollständige Details stehen im Protokoll.</value></data>
     <value>Perspektivtiefe</value>
   </data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
-    <value>Räumliche Songtext-Effekte</value>
+    <value>Räumliche Effekte</value>
   </data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Titel werden vorbereitet…</value>

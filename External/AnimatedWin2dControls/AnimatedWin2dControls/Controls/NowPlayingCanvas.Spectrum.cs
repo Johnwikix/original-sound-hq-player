@@ -1,3 +1,5 @@
+using Microsoft.Graphics.Canvas;
+using System.Numerics;
 #nullable enable
 using System;
 using AnimatedWin2dControls.Interop;
@@ -64,7 +66,7 @@ public sealed partial class NowPlayingCanvas
         (_spectrum ??= new()).Update(latest, Environment.TickCount64, elapsed, _spectrumOptions);
     }
 
-    private void DrawSpectrum(PlaybackCanvasFrame frame, CanvasDrawContext session)
+    private void DrawProjectedSpectrum(PlaybackCanvasFrame frame, CanvasDrawContext destination, Matrix4x4 projection)
     {
         if (_spectrum is not { } spectrum) return;
         Rect artwork = default;
@@ -73,6 +75,21 @@ public sealed partial class NowPlayingCanvas
         {
             if (_sceneCover?.TryGetArtworkBounds(out artwork, out radius) != true) return;
         }
-        spectrum.Draw(frame, session, _spectrumOptions, artwork, radius, _lastPalette, _isDark);
+        if (projection.IsIdentity)
+        {
+            spectrum.Draw(frame, destination, _spectrumOptions, artwork, radius, _lastPalette, _isDark);
+            return;
+        }
+
+        using var commands = new CanvasCommandList(frame.Device);
+        using (var drawing = commands.CreateDrawingSession())
+        {
+            if (frame.Hdr.IsEnabled)
+                drawing.EffectBufferPrecision = CanvasBufferPrecision.Precision16Float;
+            using var source = CanvasDrawingSessionScope.Borrow(drawing);
+            spectrum.Draw(frame, source.Context, _spectrumOptions, artwork, radius, _lastPalette, _isDark);
+        }
+
+        DrawProjectedImage(destination, commands, projection, frame.Hdr.IsEnabled, ref _foregroundProjectionEffect);
     }
 }

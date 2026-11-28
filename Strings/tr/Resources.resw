@@ -2893,7 +2893,7 @@ Tüm ayrıntılar için günlüğe bakın.</value></data>
     <value>Perspektif derinliği</value>
   </data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
-    <value>Şarkı sözü uzamsal efektleri</value>
+    <value>Uzamsal efektler</value>
   </data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Şarkılar hazırlanıyor…</value>

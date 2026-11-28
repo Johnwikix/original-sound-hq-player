@@ -2893,7 +2893,7 @@ Consulta el registro para ver todos los detalles.</value></data>
     <value>Profundidad de perspectiva</value>
   </data>
   <data name="PlaybackSettingsSectionSpatial.Text" xml:space="preserve">
-    <value>Efectos espaciales de letras</value>
+    <value>Efectos espaciales</value>
   </data>
   <data name="SongListPreparing.Text" xml:space="preserve">
     <value>Preparando canciones…</value>

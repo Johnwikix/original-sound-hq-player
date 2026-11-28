@@ -69,10 +69,17 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        string resultPath = Path.Combine(AppContext.BaseDirectory, "result.json");
+        if (Environment.GetCommandLineArgs().Contains("--check-spatial-foreground"))
+        {
+            CheckSpatialForeground(resultPath);
+            Exit();
+            return;
+        }
+
         var window = new Window { Content = _canvas, Title = "Draw allocation probe" };
         window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
         window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
-        string resultPath = Path.Combine(AppContext.BaseDirectory, "result.json");
         FrameEventSubscription? update = null;
         try
         {

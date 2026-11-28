@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Numerics;
 using AnimatedWin2dControls.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
 using WinUIMusicPlayer.Controls;
 using WinUIMusicPlayer.Helper;
@@ -72,6 +74,10 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsFanLyricsEnabled { get; set => SetProperty(ref field, value); }
         public bool Is3DLyricsEnabled { get; set => SetProperty(ref field, value); }
         public bool IsAuto3DLyricsEnabled { get; set => SetProperty(ref field, value); }
+        public int Lyrics3DXAngle { get; set; }
+        public int Lyrics3DYAngle { get; set; }
+        public int Lyrics3DZAngle { get; set; }
+        public int Lyrics3DDepth { get; set; } = 800;
         public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
 
         public void ReportPlaybackHdrPresentation(bool active, bool failed)
@@ -119,6 +125,16 @@ namespace WinUIMusicPlayer.View
                 appViewModel.PropertyChanged += RefreshPresentation;
                 ViewModel.PropertyChanged += UpdatePresentation;
                 ViewModel.RefreshPresentation();
+                RefreshSpatialProjection();
+            };
+            Unloaded += (_, _) =>
+            {
+                _isLoaded = false;
+                RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
+                RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
+                DetachSpatialProjection();
+                appViewModel.PropertyChanged -= RefreshPresentation;
+                ViewModel.PropertyChanged -= UpdatePresentation;
             };
         }
 
@@ -133,6 +149,59 @@ namespace WinUIMusicPlayer.View
         internal int SceneCoverPixelWidth => _sceneCoverPresenter.RequestedArtwork?.Width ?? 0;
         internal Action<NowPlayingCanvas>? ConfigureBackgroundCanvas { get; set; }
         internal AnimatedWin2dControls.Controls.AnimatedTextBlock.AnimatedTextBlock? ProbeTitle { get; set; }
+
+        internal bool IsSpatialProbeTitleReady => _spatialTitleContent is { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 };
+
+        internal void AddSpatialProbeTitle()
+        {
+            var anchor = new Grid
+            {
+                Width = 160,
+                Height = 42,
+                HorizontalAlignment = HorizontalAlignment.Left,
+            };
+            var title = new AnimatedWin2dControls.Controls.AnimatedTextBlock.AnimatedTextBlock
+            {
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Text = "Spatial title probe",
+                IsHoverScrollEnabled = true,
+            };
+            anchor.Children.Add(title);
+            AnimatedTextBlock.Children.Add(anchor);
+            _spatialTitleAnchor = anchor;
+            _spatialTitleContent = title;
+        }
+
+        internal void CheckSpatialVisuals()
+        {
+            CheckProjection(CoverSpatialAnchor, DetailCoverSwitcher);
+            CheckProjection(_spatialTitleAnchor!, _spatialTitleContent!);
+            var title = _spatialTitleContent!;
+            var center = title.TransformToVisual(null).TransformPoint(new Point(title.ActualWidth / 2, title.ActualHeight / 2));
+            if (!VisualTreeHelper.FindElementsInHostCoordinates(center, title, includeAllElements: false).Contains(title))
+                throw new InvalidOperationException("The projected title is missing from the native visual-tree hit test.");
+
+            void CheckProjection(FrameworkElement anchor, FrameworkElement content)
+            {
+                if (content.Projection is not Matrix3DProjection || content.ActualWidth <= 0 || content.ActualHeight <= 0)
+                    throw new InvalidOperationException($"{content.GetType().Name} has no arranged projection.");
+
+                var flatOrigin = anchor.TransformToVisual(this).TransformPoint(default);
+                var actualTransform = content.TransformToVisual(this);
+                CheckPoint(new Point(content.ActualWidth * .1, content.ActualHeight * .1));
+                CheckPoint(new Point(content.ActualWidth * .9, content.ActualHeight * .1));
+                CheckPoint(new Point(content.ActualWidth * .1, content.ActualHeight * .9));
+
+                void CheckPoint(Point point)
+                {
+                    var scenePoint = new Vector4((float)(flatOrigin.X + point.X), (float)(flatOrigin.Y + point.Y), 0, 1);
+                    var expected = Vector4.Transform(scenePoint, _spatialProjection);
+                    var actual = actualTransform.TransformPoint(point);
+                    if (Math.Abs(actual.X - expected.X / expected.W) > .75 || Math.Abs(actual.Y - expected.Y / expected.W) > .75)
+                        throw new InvalidOperationException($"{content.GetType().Name} local point {point} mapped to {actual}, expected ({expected.X / expected.W}, {expected.Y / expected.W}).");
+                }
+            }
+        }
 
         public void PauseCanvasRendering()
         {
@@ -163,7 +232,11 @@ namespace WinUIMusicPlayer.View
             ScheduleLyricsRegionUpdate();
         }
 
-        private void RefreshPresentation(object? sender, PropertyChangedEventArgs e) => ViewModel.RefreshPresentation();
+        private void RefreshPresentation(object? sender, PropertyChangedEventArgs e)
+        {
+            ViewModel.RefreshPresentation();
+            RefreshSpatialProjection();
+        }
 
         private void UpdatePresentation(object? sender, PropertyChangedEventArgs e)
         {
@@ -178,6 +251,7 @@ namespace WinUIMusicPlayer.View
                 if (NowPlaying is { } canvas && LyricsRegionHost.ActualWidth > 0)
                     canvas.LyricsRegion = LyricsRegionHost.TransformToVisual(canvas).TransformBounds(
                         new Rect(0, 0, LyricsRegionHost.ActualWidth, LyricsRegionHost.ActualHeight));
+                UpdateSpatialLayout(force: true);
             });
         private void LyricsRegionHost_SizeChanged(object sender, SizeChangedEventArgs args) => ScheduleLyricsRegionUpdate();
         private void PlaybackLyrics_Loaded(object sender, RoutedEventArgs args) => ScheduleLyricsRegionUpdate();
@@ -189,7 +263,7 @@ namespace WinUIMusicPlayer.View
             _disposed = true;
             RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
             RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
-            SetLyricsParallaxPointer(null);
+            DetachSpatialProjection();
             CancelHdrEntrance();
             ViewModel.AppViewModel.PropertyChanged -= RefreshPresentation;
             ViewModel.PropertyChanged -= UpdatePresentation;

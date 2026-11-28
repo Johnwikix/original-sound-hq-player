@@ -49,6 +49,8 @@ namespace WinUIMusicPlayer.View
             _parallaxPointerMoved = PlaybackParallaxPointerMoved;
             _parallaxPointerExited = PlaybackParallaxPointerExited;
             this.InitializeComponent();
+            _spatialTitleAnchor = TitleSpatialAnchor;
+            _spatialTitleContent = AnimatedPlayingDetailTextBlock;
             InitializeSceneCover();
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
             DataContext = this;
@@ -103,7 +105,7 @@ namespace WinUIMusicPlayer.View
             _isLoaded = false;
             RemoveHandler(PointerMovedEvent, _parallaxPointerMoved);
             RemoveHandler(PointerExitedEvent, _parallaxPointerExited);
-            SetLyricsParallaxPointer(null);
+            DetachSpatialProjection();
             if (_hdrXamlRoot is { } root)
                 root.Changed -= PlaybackXamlRootChanged;
             _hdrXamlRoot = null;
@@ -169,10 +171,6 @@ namespace WinUIMusicPlayer.View
             {
                 ApplyBackdrop(NowPlaying);
             }
-            else if (e.PropertyName is nameof(AppViewModel.Is3DLyricsEnabled) or nameof(AppViewModel.IsAuto3DLyricsEnabled))
-            {
-                if (!IsAutomaticLyricsParallaxEnabled) SetLyricsParallaxPointer(null);
-            }
             else if (e.PropertyName == nameof(AppViewModel.LyricsMargin))
             {
                 UpdateLyricsRegion();
@@ -180,6 +178,21 @@ namespace WinUIMusicPlayer.View
             else if (e.PropertyName == nameof(AppViewModel.Win2dTextEffectType))
             {
                 ApplyAnimatedTextEffect();
+            }
+
+            if (e.PropertyName is null or ""
+                or nameof(AppViewModel.IsFanLyricsEnabled)
+                or nameof(AppViewModel.Is3DLyricsEnabled)
+                or nameof(AppViewModel.IsAuto3DLyricsEnabled)
+                or nameof(AppViewModel.Lyrics3DXAngle)
+                or nameof(AppViewModel.Lyrics3DYAngle)
+                or nameof(AppViewModel.Lyrics3DZAngle)
+                or nameof(AppViewModel.Lyrics3DDepth))
+            {
+                if (DispatcherQueue.HasThreadAccess)
+                    RefreshSpatialProjection();
+                else
+                    DispatcherQueue.TryEnqueue(RefreshSpatialProjection);
             }
         }
 
@@ -242,6 +255,8 @@ namespace WinUIMusicPlayer.View
             bool paused = !window.IsVisible || XamlRoot is { IsHostVisible: false }
                 || WindowHelper.IsIconic(AppData.HWnd);
             UpdateHdrEntranceWindowPaused(paused);
+            _spatialWindowPaused = paused;
+            RefreshSpatialProjection();
             NowPlaying?.SetWindowPaused(paused);
             LyricsView?.SetWindowPaused(paused);
         }
@@ -285,8 +300,8 @@ namespace WinUIMusicPlayer.View
             if (NowPlaying is not { IsLoaded: true } canvas || AnimatedPlayingDetailTextBlock is not { } title)
                 return;
 
-            var bounds = title.IsLoaded && title.ActualWidth > 0 && title.ActualHeight > 0
-                ? title.TransformToVisual(canvas).TransformBounds(new Windows.Foundation.Rect(0, 0, title.ActualWidth, title.ActualHeight))
+            var bounds = TitleSpatialAnchor.IsLoaded && title.ActualWidth > 0 && title.ActualHeight > 0
+                ? TitleSpatialAnchor.TransformToVisual(canvas).TransformBounds(new Windows.Foundation.Rect(0, 0, title.ActualWidth, title.ActualHeight))
                 : default;
             canvas.SetHdrTitle(title, bounds);
         }
@@ -434,6 +449,8 @@ namespace WinUIMusicPlayer.View
 
         public void PauseCanvasRendering()
         {
+            _spatialPagePaused = true;
+            RefreshSpatialProjection();
             AnimatedPlayingDetailTextBlock.IsActive = false;
             NowPlaying?.PauseRendering();
             SetTitleScenePreparation(false);
@@ -443,6 +460,8 @@ namespace WinUIMusicPlayer.View
 
         public void ResumeCanvasRendering(bool prepareHdr = false)
         {
+            _spatialPagePaused = false;
+            RefreshSpatialProjection();
             SetTitleScenePreparation(prepareHdr);
             AnimatedPlayingDetailTextBlock.IsActive = true;
             NowPlaying?.ResumeRendering();
@@ -530,6 +549,7 @@ namespace WinUIMusicPlayer.View
             if (!_isLoaded || _disposed) return;
             UpdateLyricsRegion();
             UpdateHdrTitleRegion();
+            UpdateSpatialLayout(force: true);
         }
 
         private void UpdateLyricsRegion()

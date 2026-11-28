@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml;
 using Serilog;
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Foundation;
@@ -203,6 +204,7 @@ public sealed partial class NowPlayingCanvas
             var device = _hdrDevice ??= new CanvasDevice();
             var title = _sceneTitle;
             var cover = _sceneCover;
+            var projection = _coordinator.GetPlaybackSpatialProjection();
             elapsed = elapsed > TimeSpan.FromMilliseconds(100) ? TimeSpan.FromMilliseconds(100) : elapsed;
             if (replace)
             {
@@ -229,11 +231,11 @@ public sealed partial class NowPlayingCanvas
                     session.FillRectangle(new Rect(0, 0, frame.Size.Width, frame.Size.Height), _hdrClear);
                 }
 
-                drewCover = DrawHdrScene(frame, session, elapsed);
+                drewCover = DrawHdrScene(frame, session, elapsed, projection);
 
                 DrawHdrForeground?.Invoke(session, frame.Hdr.Peak * 80f);
                 // The title and lyrics share the swap chain's scRGB space and reference white.
-                title?.DrawInScene(session, frame, _sceneTitleRegion, elapsed);
+                DrawProjectedHdrTitle(title, session, frame, _sceneTitleRegion, elapsed, projection ?? Matrix4x4.Identity);
             }
 
             var content = new HdrFrameContent(title, cover, drewCover);
@@ -317,7 +319,8 @@ public sealed partial class NowPlayingCanvas
         return true;
     }
 
-    private bool DrawHdrScene(PlaybackCanvasFrame frame, CanvasDrawingSession session, TimeSpan elapsed)
+    private bool DrawHdrScene(PlaybackCanvasFrame frame, CanvasDrawingSession session, TimeSpan elapsed,
+        Matrix4x4? projection)
     {
         lock (_cacheGate)
         {
@@ -326,8 +329,7 @@ public sealed partial class NowPlayingCanvas
             PrepareSceneResources(frame.Device);
             UpdateScene(frame.Device, elapsed);
             using var scope = CanvasDrawingSessionScope.Borrow(session);
-            DrawScene(frame, scope.Context);
-            return DrawSceneCover(frame, scope.Context);
+            return DrawPlaybackScene(frame, scope.Context, projection);
         }
     }
 
@@ -456,6 +458,7 @@ public sealed partial class NowPlayingCanvas
     {
         var clear = _hdrClear;
         var device = _hdrDevice;
+        ReleaseHdrTitleProjection();
         if (device is null && pending is null) return;
         var outstanding = pending?.Present ?? _retiringHdrSwapChain;
         _retiringHdrSwapChain = null;
