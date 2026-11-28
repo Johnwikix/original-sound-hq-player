@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Xaml.Interactivity;
 using SQLite;
+using System.Globalization;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Behaviors;
@@ -30,6 +31,10 @@ internal static class Program
         Application.Start(parameters =>
         {
             SynchronizationContext.SetSynchronizationContext(new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread()));
+            // Keep date formatting aligned with the English-only resource file.
+            var uiCulture = CultureInfo.GetCultureInfo("en");
+            CultureInfo.DefaultThreadCurrentUICulture = uiCulture;
+            CultureInfo.CurrentUICulture = uiCulture;
             _ = new App();
         });
     }

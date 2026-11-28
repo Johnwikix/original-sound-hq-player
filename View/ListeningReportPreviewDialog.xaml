@@ -23,7 +23,7 @@
                 </Grid.Background>
                 <Image Source="{x:Bind PreviewBackground, Mode=OneWay}" Stretch="Fill" IsHitTestVisible="False" />
                 <Grid Padding="34" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
-                    <TextBlock Text="OriginalSound" Foreground="#FFE1C8" FontWeight="SemiBold" CharacterSpacing="128" />
+                    <TextBlock x:Uid="AppTitle" Foreground="#FFE1C8" FontWeight="SemiBold" CharacterSpacing="128" />
                     <StackPanel Grid.Row="1" Margin="0,19,0,20" Spacing="4">
                         <TextBlock Text="{x:Bind Presentation.Heading, Mode=OneWay}" Foreground="#FFF6E6"
                                    FontSize="35" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />

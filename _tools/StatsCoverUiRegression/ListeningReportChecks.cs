@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices.WindowsRuntime;
 using AnimatedWin2dControls;
 using AnimatedWin2dControls.Impressionist;
@@ -174,7 +175,15 @@ internal static class ListeningReportChecks
         await UntilAsync(() => reportScroll.VerticalOffset > 0);
         double reportOffset = reportScroll.VerticalOffset;
         string reportPeriod = $"{vm.SelectedYear:0000}-{vm.SelectedMonth:00}";
-        var reportSnapshot = vm.Presentation;
+        var reportSnapshot = vm.Presentation!;
+        var english = CultureInfo.GetCultureInfo("en");
+        var monthStart = new DateOnly((int)vm.SelectedYear, (int)vm.SelectedMonth, 1);
+        string coveragePrefix = $"In progress · {monthStart.ToString("d", english)} through ";
+        check(reportSnapshot.Heading == $"{monthStart.ToString("Y", english)} listening report" &&
+            reportSnapshot.Coverage.StartsWith(coveragePrefix, StringComparison.Ordinal) &&
+            DateTime.TryParseExact(reportSnapshot.Coverage.AsSpan(coveragePrefix.Length), "g",
+                english, DateTimeStyles.None, out _),
+            "the English report uses its UI culture for the month, coverage dates and time");
 
         var preview = await OpenPreviewAsync();
         var shaderPicker = (ComboBox)preview.FindName("ShaderPicker");
@@ -182,6 +191,10 @@ internal static class ListeningReportChecks
         var canvas = Find<Grid>((FrameworkElement)preview.Content, grid => grid.Name == "PosterCanvas")!;
         var posterCover = Find<Border>((FrameworkElement)preview.Content, border => border.Name == "PosterCover")!;
         await UntilAsync(() => viewport.ActualHeight > 0 && canvas.ActualHeight > 0);
+        check(Find<TextBlock>(canvas, item => item.Text == "OriginalSound HQ Player") is not null &&
+            Find<TextBlock>(canvas, item => item.Text == reportSnapshot.Heading) is not null &&
+            Find<TextBlock>(canvas, item => item.Text == reportSnapshot.Coverage) is not null,
+            "the poster shows the localized app name, month and coverage");
         var posterBounds = canvas.TransformToVisual(viewport).TransformBounds(new(0, 0, canvas.ActualWidth, canvas.ActualHeight));
         check(Math.Abs(canvas.ActualWidth - 540) < 1 && Math.Abs(canvas.ActualHeight - 675) < 1 &&
             posterBounds.Width > 0 && posterBounds.Height > 0 &&
