@@ -8,8 +8,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
     {
         // 与已有播放投影的 300ms 末字留白衔接；真实长空档不保持重音。
         private const double FinalWordEffectHoldWindowMs = 300;
-        private const double LineGlowRiseSeconds = 0.2;
-        private const double LineGlowHoldSeconds = 0.2;
+        private const double LineGlowRiseSeconds = 0.35;
+        private const double LineGlowHoldSeconds = 0.25;
         private const double LineGlowDecaySeconds = 1.5;
         private const double InterruptedLineGlowDecaySeconds = 0.65;
         private static readonly Func<double, double, double, double> s_lineGlowInterpolator = static (from, to, progress) =>
